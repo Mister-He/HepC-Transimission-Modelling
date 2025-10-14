@@ -15,6 +15,17 @@ sum(obs_data$pos[1:2]) / sum(obs_data$tot[1:2]) + c(-1,1) * sqrt(sum(obs_data$po
 
 ## For mean years of survival, I don't know
 # Recidivism Probability
+rho <- c(
+  0.5472816,
+  0.6104789,
+  0.5816654,
+  0.5151572,
+  0.4358284,
+  0.4178032,
+  0.4031776,
+  0.4029714,
+  0.4315638
+)
 rearrest = cbind(t=seq(0,10,0.1),as.data.frame(do.call(cbind,lapply(rho,function(x) exp(-x*seq(0,10,0.1))))))
 colnames(rearrest) = c('t','15-19','20-24','25-29','30-34','35-39','40-44','45-49','50-54','55+')
 # Draw all 11 lines in one plot with scale bar
@@ -48,7 +59,6 @@ for (iter in 1:100) {
   TAB$t = TAB$t/360 # convert to 'years'
   
   strategies = read.csv("settings/Final_strategies.csv")
-  # "
   strategies$pD = strategies$pD/12;   # Original is *loosely the annual proportion
   strategies$pJ1 = strategies$pJ1/12; # "
   strategies$pJ2 = strategies$pJ2/12; # "
@@ -272,9 +282,6 @@ grid.lines(x = unit(c(0.11, 0.95), "npc"), y = unit(0.2, "npc"))
 grid.lines(x = unit(0.11, "npc"), y = unit(c(0.2, 0.85), "npc"))
 
 
-
-
-
 # Update Table 3 and Table S1
 revise = readRDS('output/revise_matrix_low_SVR.rds')
 
@@ -288,7 +295,6 @@ TAB = read.csv('settings/tableHIGH_1_wFINALstrategies_yichen_low_SVR.csv')
 TAB$t = TAB$t/360 # convert to 'years'
 
 strategies = read.csv("settings/Final_strategies.csv")
-# "
 strategies$pD = strategies$pD/12;   # Original is *loosely the annual proportion
 strategies$pJ1 = strategies$pJ1/12; # "
 strategies$pJ2 = strategies$pJ2/12; # "

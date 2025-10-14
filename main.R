@@ -1,3 +1,9 @@
+#######################################################
+# Oct 14, 2025
+# 1. Estimate age-specific scaling factors for Contact 
+#   Matrix using MCMC 
+# 2. Convergence Diagnostics using G-R and ESS
+######################################################
 library(data.table)
 library(tictoc)
 library(dplyr)
@@ -8,7 +14,7 @@ library(ggplot2)
 # =========================================#
 cat("======Loading libraries and data...======\n")
 # Load required functions and data
-source("functions/utilis_new.r")
+source("functions/utils.r")
 strategies <- read.csv("settings/Final_strategies.csv")
 
 # Change annual proportions to monthly proportions
@@ -36,8 +42,7 @@ xparam_init_scaling <- log(c(9.0, 0.2, 0.18, 0.13, 0.44, 0.3, 0.08, 0.02, 0.01))
 xparam_init_arrest <- log(c(0.067, 0.21, 0.21, 0.15, 0.2, 0.31, 0.14, 0.4, 0.025) / nsteps_permonth / 12)
 xparam_init <- c(xparam_init_scaling, xparam_init_arrest)
 
-## MCMC
-# logLL fun for adaptive MCMC
+# Set bounds for parameters
 LB_scaling <- log(c(8.5, 0.1, 0.1, 0.1, 0.35, 0.1, 0.06, 0.018, 0.008))
 UB_scaling <- log(c(9.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.022, 0.012))
 
@@ -85,9 +90,6 @@ for (i in seq_along(scales_to_try)) {
 best_scale_idx <- which.min(abs(accept_rates - target_accept))
 best_scale <- scales_to_try[best_scale_idx]
 cat("Best scale:", best_scale, "with accept rate:", accept_rates[best_scale_idx], "\n")
-# Best scale: 0.05 with accept rate: 0.249
-# Turns out to be 0.05, but can try again, might vary by seeds
-# best_scale <- 0.03
 
 # Run pilot with the best scale
 cat("======Run pilot with the best scale...======\n")
@@ -115,32 +117,10 @@ L <- chol(S)
 d <- length(xparam_init)
 c.opt <- 2.38 / sqrt(d)
 scale_mat <- c.opt * t(L)
-# sds <- sqrt(diag(S))
-# d <- length(xparam_init)
-# cat("Standard deviations:", sds, "\n")
-
-# # Check for any unusually large standard deviations
-# if (any(sds > 100)) {
-#     cat("Warning: Detected unusually large standard deviations, using fixed scale\n")
-#     scale_vec <- rep(best_scale, length(xparam_init))
-# } else {
-#     c.opt <- 2.38 / sqrt(d)
-#     scale_vec <- c.opt * sds
-#     # Limit the range of scale_vec
-#     scale_vec <- pmax(scale_vec, 0.001)
-#     scale_vec <- pmin(scale_vec, 10)
-# }
-# cat("Final scale vector:", scale_vec, "\n")
-# # 0.01932146 0.09241020 0.10644060 0.11404735 0.04434506 0.08024176 0.12374342 0.04834530 0.09606886
 
 # Test final scale_vec
 final_test <- metrop(fun_logLL_MCMC, initial = xparam_init, nbatch = 1000, blen = 1, scale = scale_mat)
 cat("Final test acceptance rate:", final_test$accept, "\n")
-# Final test acceptance rate: 0.292
-
-# 2.3 Run MCMC in parallel with the determined scale_vec
-# scale_vec <- c(0.01932146, 0.09241020, 0.10644060, 0.11404735, 0.04434506, 
-#                0.08024176, 0.12374342, 0.04834530, 0.09606886)
 
 cat("======Start parallel MCMC...======\n")
 time1 <- Sys.time()
@@ -156,7 +136,7 @@ run_chain <- function(seed, init) {
 
 plan(multisession, workers = n_chains)
 fits <- future_lapply(1:n_chains, function(k) run_chain(k, inits[[k]]), future.seed = TRUE)
-saveRDS(fits, file = "mcmc_raw_results.rds")
+saveRDS(fits, file = "output/mcmc_raw_results.rds")
 
 # Print acceptance rates for each chain
 for (k in 1:n_chains) {
@@ -186,8 +166,79 @@ results <- list(
 )
 
 # Save to RDS
-saveRDS(results, file = "mcmc_results.rds")
+saveRDS(results, file = "output/mcmc_results.rds")
 
 time2 <- Sys.time()
 cat("======Done======\n")
 cat("It takes", difftime(time2, time1, units = "mins"), "minutes in total.\n")
+
+# =========================================#
+# 4. Post-result analysis
+# =========================================#
+results <- readRDS('output/mcmc_results.rds')
+scaling_params <- do.call(rbind, results$samples)
+
+# 4.1 Save the equilibrium status
+nsteps_permonth <- 1
+intervention <- strategies[1, ]
+configuration <- create_configuration(ny = 600, nsteps_permonth = nsteps_permonth)
+parameters <- set_parameters(nsteps_permonth = configuration$nsteps_permonth)
+initialstates <- make_initial_states(configuration, equilibrium = FALSE, parameters)
+X <- epimodel_fast(initialstates, parameters,
+    configuration, intervention,
+    adjContactMat = colMeans(scaling_params)
+)
+final_prevalence(X)
+store_states(X, outfile = "output/equilibrium_241410_low_SVR.rdata")
+
+# 4.2 Assess intervention impact using posterior mean
+intervention_file_1 <- "settings/tableHIGH_1_wFINALstrategies_yichen_low_SVR.csv"
+tabulator(file = intervention_file_1, header = TRUE)
+for (str in 1:dim(strategies)[1]) {
+    cat("Running strategy", str, "of", dim(strategies)[1], "\n")
+    intervention <- strategies[str, ]
+    configuration <- create_configuration(50)
+    parameters <- set_parameters(nsteps_permonth = configuration$nsteps_permonth)
+    parameters$theta_1 <- parameters$theta_1 * 0.8
+    parameters$theta_2 <- parameters$theta_2 * 0.8
+    initialstates <- make_initial_states(configuration, equilibrium = TRUE, parameters)
+    X <- epimodel_fast(initialstates, parameters,
+        configuration, intervention,
+        adjContactMat = colMeans(scaling_params)
+    )
+    tabulator(X, intervention, file = intervention_file_1, resolution = "HIGH")
+    print(final_prevalence(X))
+}
+
+# 4.3 Interventions with Bayesian Credible Intervals
+for (iteration in 1:100) {
+    # Sample once from the posterior distribution
+    pos_sample <- apply(scaling_params, 2, function(x) sample(x, 1))
+
+    # Create a list to save all results in this iteration
+    result <- list()
+
+    for (str in 1:2) {
+        cat("Running strategy", str, "of", dim(strategies)[1], "in iteration", iteration, "\n")
+        intervention <- strategies[str, ]
+        configuration <- create_configuration(50)
+        parameters <- set_parameters(nsteps_permonth = configuration$nsteps_permonth)
+        initialstates <- make_initial_states(configuration, equilibrium = TRUE, parameters)
+        X <- epimodel_fast(initialstates, parameters,
+            configuration, intervention,
+            adjContactMat = pos_sample
+        )
+        print(final_prevalence(X))
+        result[[str]] <- rdstabulator(X, intervention)
+    }
+    sim_data <- do.call(cbind, result)
+    colnames(simdata) <- c("Strategy,t,Du1,Du2,Du3,Du4,Du5,Du6,Du7,Du8,Du9,D01,D02,D03,D04,D05,D06,D07,D08,D09,D11,D12,D13,D14,D15,D16,D17,D18,D19,D21,D22,D23,D24,D25,D26,D27,D28,D29,D31,D32,D33,D34,D35,D36,D37,D38,D39,D41,D42,D43,D44,D45,D46,D47,D48,D49,D51,D52,D53,D54,D55,D56,D57,D58,D59,D61,D62,D63,D64,D65,D66,D67,D68,D69,Ju1,Ju2,Ju3,Ju4,Ju5,Ju6,Ju7,Ju8,Ju9,J01,J02,J03,J04,J05,J06,J07,J08,J09,J11,J12,J13,J14,J15,J16,J17,J18,J19,J21,J22,J23,J24,J25,J26,J27,J28,J29,J31,J32,J33,J34,J35,J36,J37,J38,J39,J41,J42,J43,J44,J45,J46,J47,J48,J49,J51,J52,J53,J54,J55,J56,J57,J58,J59,J61,J62,J63,J64,J65,J66,J67,J68,J69,Xu1,Xu2,Xu3,Xu4,Xu5,Xu6,Xu7,Xu8,Xu9,X01,X02,X03,X04,X05,X06,X07,X08,X09,X11,X12,X13,X14,X15,X16,X17,X18,X19,X21,X22,X23,X24,X25,X26,X27,X28,X29,X31,X32,X33,X34,X35,X36,X37,X38,X39,X41,X42,X43,X44,X45,X46,X47,X48,X49,X51,X52,X53,X54,X55,X56,X57,X58,X59,X61,X62,X63,X64,X65,X66,X67,X68,X69,ctx,C41,C42,C43,C44,C45,C46,C47,C48,C49,C51,C52,C53,C54,C55,C56,C57,C58,C59,C61,C62,C63,C64,C65,C66,C67,C68,C69")
+}
+
+
+# =========================================#
+# 5. Plotting
+# =========================================#
+Bo <- F
+source("functions/step_1.R")
+source("functions/step_2.R")

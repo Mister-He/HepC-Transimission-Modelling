@@ -1,1 +1,0 @@
-yvec <- TAB$C6

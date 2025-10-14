@@ -1,6 +1,6 @@
 #######################################################
-# Aug 8, 2024
-# All required functions needed in master.r
+# Oct 14, 2025
+# All required functions needed in parallel_master.r
 ######################################################
 num_age = 9
 
@@ -16,228 +16,6 @@ fun_ageing <- function(y){
   y_new[2:num_y] <- y_new[2:num_y] + y_change
   return(y_new)
 } # end fun_ageing
-
-# new 
-# add argument "adjContactMatrix"
-
-epimodel = function(initialstates,parameters,configuration,
-                    intervention, adjContactMatrix)
-{
-  P=parameters
-  S=initialstates
-  i=0 # i relates to time step
-  ntreated = rep(0,configuration$nmonths)
-  
-  # Newly added
-  # Calculate number of deaths for both total population and advanced stages
-  deaths = initialstates
-  deaths <- lapply(deaths, function(x) {
-    if (is.matrix(x) || is.data.frame(x)) {
-      x[1, ] <- 0  # set first row to be 0
-    }
-    return(x)
-  })
-  
-  contactMat = P$contactMat
-  alpha = P$alpha
-  if (!missing(adjContactMatrix)){
-    if (length(adjContactMatrix)==nrow(contactMat)){
-      contactMat <- t(sapply(seq(length(adjContactMatrix)), function(x) adjContactMatrix[x]*contactMat[x,]))
-    } else{
-      print( "length(adjContactMatrix)!=nrow(contactMat). Please check.")
-      stop()
-    }
-  }
-  
-  
-  for(month in 1:configuration$nmonths)
-  {
-    for(day in 1:configuration$nsteps_permonth) # for(week in 1:4)
-    {
-      i = i+1
-      
-      Di = S$D0[i, ]+S$D1[i,]+S$D2[i,]+S$D3[i,]+S$D4[i,]+S$D5[i,]+S$D6[i,] # Di = number of infected drug users by age group
-      Ni = colSums(rbind(S$Du[i,],S$D0[i,],S$D1[i,],S$D2[i,],S$D3[i,],S$D4[i,],S$D5[i,],S$D6[i,])) # Ni = number of drug users by age group
-      for (iage in 1:num_age)
-      {
-        S$total4[i+1, iage] = S$total4[i, iage]
-        S$total5[i+1, iage] = S$total5[i, iage]
-        S$total6[i+1, iage] = S$total6[i, iage]
-        #Di = (S$D0[i]+S$D1[i]+S$D2[i]+S$D3[i]+S$D4[i]+S$D5[i]+S$D6[i]) # original, no age components
-        #Di = (S$D0[i, iage_gp]+S$D1[i, iage_gp]+S$D2[i, iage_gp]+S$D3[i, iage_gp]+S$D4[i, iage_gp]+S$D5[i, iage_gp]+S$D6[i, iage_gp]) # if no contact matrix
-        
-        #1. Drug Users (new transmission)
-        new_infected = P$tau*S$Du[i, iage] * sum((P$delta*contactMat[iage, ]) * (Di/Ni))
-        
-        rates_Du = 0 - new_infected         + P$pi[iage]*P$rho[iage]*S$Ju[i, iage]  - P$alpha[iage]*S$Du[i, iage] + P$kappa*S$D0[i, iage]/P$iota    - P$mu[iage]*S$Du[i, iage]            #Uninfected
-        if (iage==1) 
-        { 
-          rates_Du = rates_Du + P$beta # new drug users to the youngest age group (iage==1) only
-        }
-        rates_D0 = P$kappa*new_infected     + P$pi[iage]*P$rho[iage]*S$J0[i, iage]  - P$alpha[iage]*S$D0[i, iage] - P$kappa*S$D0[i, iage]/P$iota  - P$mu[iage]*S$D0[i, iage]              #acute infection
-        rates_D1 = (1-P$kappa)*new_infected + P$pi[iage]*P$rho[iage]*S$J1[i, iage]  - P$alpha[iage]*S$D1[i, iage] - P$lambda_1*S$D1[i, iage] 	    - P$mu[iage]*S$D1[i, iage]              #mild
-        rates_D2 = P$lambda_1*S$D1[i, iage] + P$pi[iage]*P$rho[iage]*S$J2[i, iage]  - P$alpha[iage]*S$D2[i, iage] - P$lambda_2*S$D2[i, iage] 		- P$mu[iage]*S$D2[i, iage]              #moderate
-        rates_D3 = P$lambda_2*S$D2[i, iage] + P$pi[iage]*P$rho[iage]*S$J3[i, iage]  - P$alpha[iage]*S$D3[i, iage] - P$lambda_3*S$D3[i, iage] 		- P$mu[iage]*S$D3[i, iage]    	- P$lambda_4*S$D3[i, iage] #comp 
-        rates_D4 = P$lambda_3*S$D3[i, iage] + P$pi[iage]*P$rho[iage]*S$J4[i, iage]  - P$alpha[iage]*S$D4[i, iage] - P$lambda_4*S$D4[i, iage] 		- P$mu_4*S$D4[i, iage]  	 	- P$lambda_5*S$D4[i, iage] #decomp 
-        rates_D5 = P$lambda_4*S$D4[i, iage] + P$pi[iage]*P$rho[iage]*S$J5[i, iage]  - P$alpha[iage]*S$D5[i, iage] - P$lambda_5*S$D5[i, iage] 		- P$mu_5*S$D5[i, iage]  		+ P$lambda_4*S$D3[i, iage] #HCC
-        rates_D6 = P$lambda_5*S$D5[i, iage]                                                                        					- P$mu_6*S$D6[i, iage]  		+ P$lambda_5*S$D4[i, iage] #LT - no further transitions to J and X for LT stage
-        
-        S$Du[i+1, iage] <- S$Du[i, iage] + rates_Du
-        S$D0[i+1, iage] <- S$D0[i, iage] + rates_D0
-        S$D1[i+1, iage] <- S$D1[i, iage] + rates_D1
-        S$D2[i+1, iage] <- S$D2[i, iage] + rates_D2
-        S$D3[i+1, iage] <- S$D3[i, iage] + rates_D3
-        S$D4[i+1, iage] <- S$D4[i, iage] + rates_D4
-        S$D5[i+1, iage] <- S$D5[i, iage] + rates_D5
-        S$D6[i+1, iage] <- S$D6[i, iage] + rates_D6
-        S$total4[i+1, iage] <- S$total4[i+1, iage] + P$lambda_3*S$D3[i, iage] # sic: cumulate
-        S$total5[i+1, iage] <- S$total5[i+1, iage] + P$lambda_4*S$D4[i, iage] 
-        S$total6[i+1, iage] <- S$total6[i+1, iage] + P$lambda_5*S$D5[i, iage] 
-        
-        deaths$Du[i+1, iage] = deaths$Du[i, iage] + P$mu[iage]*S$Du[i, iage]
-        deaths$D0[i+1, iage] = deaths$D0[i, iage] + P$mu[iage]*S$D0[i, iage]
-        deaths$D1[i+1, iage] = deaths$D1[i, iage] + P$mu[iage]*S$D1[i, iage]
-        deaths$D2[i+1, iage] = deaths$D2[i, iage] + P$mu[iage]*S$D2[i, iage]
-        deaths$D3[i+1, iage] = deaths$D3[i, iage] + P$mu[iage]*S$D3[i, iage]
-        deaths$D4[i+1, iage] = deaths$D4[i, iage] + P$mu_4*S$D4[i, iage]
-        deaths$D5[i+1, iage] = deaths$D5[i, iage] + P$mu_5*S$D5[i, iage]
-        deaths$D6[i+1, iage] = deaths$D6[i, iage] + P$mu_6*S$D6[i, iage]
-        
-        
-        #2. Prisoners (no drugs)
-        rates_Ju = P$alpha[iage]*S$Du[i, iage] - P$pi[iage]*P$rho[iage]*S$Ju[i, iage] - (1-P$pi[iage])*P$rho[iage]*S$Ju[i, iage] + P$kappa*S$J0[i, iage]/P$iota                    	   - P$mu[iage]*S$Ju[i, iage]                    #Uninfected
-        rates_J0 = P$alpha[iage]*S$D0[i, iage] - P$pi[iage]*P$rho[iage]*S$J0[i, iage] - (1-P$pi[iage])*P$rho[iage]*S$J0[i, iage] - P$kappa*S$J0[i, iage]/P$iota                    	   - P$mu[iage]*S$J0[i, iage]                    #acute infection
-        rates_J1 = P$alpha[iage]*S$D1[i, iage] - P$pi[iage]*P$rho[iage]*S$J1[i, iage] - (1-P$pi[iage])*P$rho[iage]*S$J1[i, iage]                      		- P$lambda_1*S$J1[i, iage] - P$mu[iage]*S$J1[i, iage]                    #mild
-        rates_J2 = P$alpha[iage]*S$D2[i, iage] - P$pi[iage]*P$rho[iage]*S$J2[i, iage] - (1-P$pi[iage])*P$rho[iage]*S$J2[i, iage] + P$lambda_1*S$J1[i, iage] - P$lambda_2*S$J2[i, iage] - P$mu[iage]*S$J2[i, iage]                    #moderate
-        rates_J3 = P$alpha[iage]*S$D3[i, iage] - P$pi[iage]*P$rho[iage]*S$J3[i, iage] - (1-P$pi[iage])*P$rho[iage]*S$J3[i, iage] + P$lambda_2*S$J2[i, iage] - P$lambda_3*S$J3[i, iage] - P$mu[iage]*S$J3[i, iage]   - P$lambda_4*S$J3[i, iage] # 
-        rates_J4 = P$alpha[iage]*S$D4[i, iage] - P$pi[iage]*P$rho[iage]*S$J4[i, iage] - (1-P$pi[iage])*P$rho[iage]*S$J4[i, iage] + P$lambda_3*S$J3[i, iage] - P$lambda_4*S$J4[i, iage] - P$mu_4*S$J4[i, iage] 		- P$lambda_5*S$J4[i, iage] # 
-        rates_J5 = P$alpha[iage]*S$D5[i, iage] - P$pi[iage]*P$rho[iage]*S$J5[i, iage] - (1-P$pi[iage])*P$rho[iage]*S$J5[i, iage] + P$lambda_4*S$J4[i, iage] - P$lambda_5*S$J5[i, iage] - P$mu_5*S$J5[i, iage] 		+ P$lambda_4*S$J3[i, iage] #HCC
-        rates_J6 =                                                                 				   			   P$lambda_5*S$J5[i, iage]                      	   - P$mu_6*S$J6[i, iage] 		+ P$lambda_5*S$J4[i, iage] #LT - no transitions from D6 (assume they don't drugs and get arrested at this stage)
-        S$Ju[i+1, iage] <- S$Ju[i, iage] + rates_Ju
-        S$J0[i+1, iage] <- S$J0[i, iage] + rates_J0
-        S$J1[i+1, iage] <- S$J1[i, iage] + rates_J1
-        S$J2[i+1, iage] <- S$J2[i, iage] + rates_J2
-        S$J3[i+1, iage] <- S$J3[i, iage] + rates_J3
-        S$J4[i+1, iage] <- S$J4[i, iage] + rates_J4
-        S$J5[i+1, iage] <- S$J5[i, iage] + rates_J5
-        S$J6[i+1, iage] <- S$J6[i, iage] + rates_J6
-        S$total4[i+1, iage] <- S$total4[i+1, iage] + P$lambda_3*S$J3[i, iage] # sic: cumulate
-        S$total5[i+1, iage] <- S$total5[i+1, iage] + P$lambda_4*S$J4[i, iage] 
-        S$total6[i+1, iage] <- S$total6[i+1, iage] + P$lambda_5*S$J5[i, iage] 
-        
-        deaths$Ju[i+1, iage] = deaths$Ju[i, iage] + P$mu[iage]*S$Ju[i, iage]
-        deaths$J0[i+1, iage] = deaths$J0[i, iage] + P$mu[iage]*S$J0[i, iage]
-        deaths$J1[i+1, iage] = deaths$J1[i, iage] + P$mu[iage]*S$J1[i, iage]
-        deaths$J2[i+1, iage] = deaths$J2[i, iage] + P$mu[iage]*S$J2[i, iage]
-        deaths$J3[i+1, iage] = deaths$J3[i, iage] + P$mu[iage]*S$J3[i, iage]
-        deaths$J4[i+1, iage] = deaths$J4[i, iage] + P$mu_4*S$J4[i, iage]
-        deaths$J5[i+1, iage] = deaths$J5[i, iage] + P$mu_5*S$J5[i, iage]
-        deaths$J6[i+1, iage] = deaths$J6[i, iage] + P$mu_6*S$J6[i, iage]
-        
-        #3. Ex-Prisoners (no drugs)
-        rates_Xu = (1-P$pi[iage])*P$rho[iage]*S$Ju[i, iage] + P$kappa*S$X0[i, iage]/P$iota                     		- P$mu[iage]*S$Xu[i, iage]                    #Uninfected
-        rates_X0 = (1-P$pi[iage])*P$rho[iage]*S$J0[i, iage] - P$kappa*S$X0[i, iage]/P$iota                     		- P$mu[iage]*S$X0[i, iage]                    #acute infection
-        rates_X1 = (1-P$pi[iage])*P$rho[iage]*S$J1[i, iage]                      	   - P$lambda_1*S$X1[i, iage] 	- P$mu[iage]*S$X1[i, iage]                    #mild
-        rates_X2 = (1-P$pi[iage])*P$rho[iage]*S$J2[i, iage] + P$lambda_1*S$X1[i, iage] - P$lambda_2*S$X2[i, iage] 	- P$mu[iage]*S$X2[i, iage]                    #moderate
-        rates_X3 = (1-P$pi[iage])*P$rho[iage]*S$J3[i, iage] + P$lambda_2*S$X2[i, iage] - P$lambda_3*S$X3[i, iage] 	- P$mu[iage]*S$X3[i, iage]  - P$lambda_4*S$X3[i, iage] # 
-        rates_X4 = (1-P$pi[iage])*P$rho[iage]*S$J4[i, iage] + P$lambda_3*S$X3[i, iage] - P$lambda_4*S$X4[i, iage] 	- P$mu_4*S$X4[i, iage] 		- P$lambda_5*S$X4[i, iage] # 
-        rates_X5 = (1-P$pi[iage])*P$rho[iage]*S$J5[i, iage] + P$lambda_4*S$X4[i, iage] - P$lambda_5*S$X5[i, iage] 	- P$mu_5*S$X5[i, iage] 		+ P$lambda_4*S$X3[i, iage] #HCC
-        rates_X6 =                          			  P$lambda_5*S$X5[i, iage]                      		- P$mu_6*S$X6[i, iage] 		+ P$lambda_5*S$X4[i, iage] #LT - no transitions from D6 (assume they don't drugs and get arrested at this stage)
-        S$Xu[i+1, iage] <- S$Xu[i, iage] + rates_Xu
-        S$X0[i+1, iage] <- S$X0[i, iage] + rates_X0
-        S$X1[i+1, iage] <- S$X1[i, iage] + rates_X1
-        S$X2[i+1, iage] <- S$X2[i, iage] + rates_X2
-        S$X3[i+1, iage] <- S$X3[i, iage] + rates_X3
-        S$X4[i+1, iage] <- S$X4[i, iage] + rates_X4
-        S$X5[i+1, iage] <- S$X5[i, iage] + rates_X5
-        S$X6[i+1, iage] <- S$X6[i, iage] + rates_X6
-        S$total4[i+1, iage] <- S$total4[i+1, iage] + P$lambda_3*S$X3[i, iage] # sic: cumulate
-        S$total5[i+1, iage] <- S$total5[i+1, iage] + P$lambda_4*S$X4[i, iage] 
-        S$total6[i+1, iage] <- S$total6[i+1, iage] + P$lambda_5*S$X5[i, iage] 
-        
-        deaths$Xu[i+1, iage] = deaths$Xu[i, iage] + P$mu[iage]*S$Xu[i, iage]
-        deaths$X0[i+1, iage] = deaths$X0[i, iage] + P$mu[iage]*S$X0[i, iage]
-        deaths$X1[i+1, iage] = deaths$X1[i, iage] + P$mu[iage]*S$X1[i, iage]
-        deaths$X2[i+1, iage] = deaths$X2[i, iage] + P$mu[iage]*S$X2[i, iage]
-        deaths$X3[i+1, iage] = deaths$X3[i, iage] + P$mu[iage]*S$X3[i, iage]
-        deaths$X4[i+1, iage] = deaths$X4[i, iage] + P$mu_4*S$X4[i, iage]
-        deaths$X5[i+1, iage] = deaths$X5[i, iage] + P$mu_5*S$X5[i, iage]
-        deaths$X6[i+1, iage] = deaths$X6[i, iage] + P$mu_6*S$X6[i, iage]
-        
-        S$t[i+1] <- S$t[i] + 1
-        deaths$t[i+1] <- deaths$t[i] + 1
-      } # end iage_gp for-loop
-    } # end day for-loop
-    
-    # process for every month
-    # treatment schedule - treat those in stages 1-3
-    # percentages within groups:
-    ntreated[month] = 0
-    for (iage in 1:num_age){
-      tx = 0
-      cures = 0
-      temp = S$D1[i+1, iage]*intervention$pD; tx = tx + temp; cures = cures + temp*parameters$theta_1; S$D1[i+1, iage] = S$D1[i+1, iage] - temp + (temp*(1-parameters$theta_1))
-      temp = S$D2[i+1, iage]*intervention$pD; tx = tx + temp; cures = cures + temp*parameters$theta_1; S$D2[i+1, iage] = S$D2[i+1, iage] - temp + (temp*(1-parameters$theta_1))
-      temp = S$D3[i+1, iage]*intervention$pD; tx = tx + temp; cures = cures + temp*parameters$theta_2; S$D3[i+1, iage] = S$D3[i+1, iage] - temp + (temp*(1-parameters$theta_2))
-      S$Du[i+1, iage] = S$Du[i+1, iage] + cures
-      
-      cures = 0
-      temp = S$J1[i+1, iage]*intervention$pJ1; tx = tx + temp; cures = cures + temp*parameters$theta_1; S$J1[i+1, iage] = S$J1[i+1, iage] - temp + (temp*(1-parameters$theta_1))
-      temp = S$J2[i+1, iage]*intervention$pJ2; tx = tx + temp; cures = cures + temp*parameters$theta_1; S$J2[i+1, iage] = S$J2[i+1, iage] - temp + (temp*(1-parameters$theta_1))
-      temp = S$J3[i+1, iage]*intervention$pJ3; tx = tx + temp; cures = cures + temp*parameters$theta_2; S$J3[i+1, iage] = S$J3[i+1, iage] - temp + (temp*(1-parameters$theta_2))
-      S$Ju[i+1, iage] = S$Ju[i+1, iage] + cures
-      
-      cures = 0
-      temp = S$X1[i+1, iage]*intervention$pX; tx = tx + temp; cures = cures + temp*parameters$theta_1; S$X1[i+1, iage] = S$X1[i+1, iage] - temp + (temp*(1-parameters$theta_1))
-      temp = S$X2[i+1, iage]*intervention$pX; tx = tx + temp; cures = cures + temp*parameters$theta_1; S$X2[i+1, iage] = S$X2[i+1, iage] - temp + (temp*(1-parameters$theta_1))
-      temp = S$X3[i+1, iage]*intervention$pX; tx = tx + temp; cures = cures + temp*parameters$theta_2; S$X3[i+1, iage] = S$X3[i+1, iage] - temp + (temp*(1-parameters$theta_2))
-      S$Xu[i+1, iage] = S$Xu[i+1, iage] + cures 
-      
-      ntreated[month] = ntreated[month] +tx
-    } # end iage_gp for-loop for every month
-    
-    if (TRUE){
-      # ageing process
-      if ((month%%12)==0){
-        S$Du[i+1,] = fun_ageing(S$Du[i+1,])
-        S$D0[i+1,] = fun_ageing(S$D0[i+1,])
-        S$D1[i+1,] = fun_ageing(S$D1[i+1,])
-        S$D2[i+1,] = fun_ageing(S$D2[i+1,])
-        S$D3[i+1,] = fun_ageing(S$D3[i+1,])
-        S$D4[i+1,] = fun_ageing(S$D4[i+1,])
-        S$D5[i+1,] = fun_ageing(S$D5[i+1,])
-        S$D6[i+1,] = fun_ageing(S$D6[i+1,])
-        S$Ju[i+1,] = fun_ageing(S$Ju[i+1,])
-        S$J0[i+1,] = fun_ageing(S$J0[i+1,])
-        S$J1[i+1,] = fun_ageing(S$J1[i+1,])
-        S$J2[i+1,] = fun_ageing(S$J2[i+1,])
-        S$J3[i+1,] = fun_ageing(S$J3[i+1,])
-        S$J4[i+1,] = fun_ageing(S$J4[i+1,])
-        S$J5[i+1,] = fun_ageing(S$J5[i+1,])
-        S$J6[i+1,] = fun_ageing(S$J6[i+1,])
-        S$Xu[i+1,] = fun_ageing(S$Xu[i+1,])
-        S$X0[i+1,] = fun_ageing(S$X0[i+1,])
-        S$X1[i+1,] = fun_ageing(S$X1[i+1,])
-        S$X2[i+1,] = fun_ageing(S$X2[i+1,])
-        S$X3[i+1,] = fun_ageing(S$X3[i+1,])
-        S$X4[i+1,] = fun_ageing(S$X4[i+1,])
-        S$X5[i+1,] = fun_ageing(S$X5[i+1,])
-        S$X6[i+1,] = fun_ageing(S$X6[i+1,])
-      } # end ageing process
-      
-    } #if false
-    
-  } # end month for-loop
-  S$D=list(S$Du,S$D0,S$D1,S$D2,S$D3,S$D4,S$D5,S$D6) # list of matrix of (ntime, num_age)
-  S$J=list(S$Ju,S$J0,S$J1,S$J2,S$J3,S$J4,S$J5,S$J6)
-  S$X=list(S$Xu,S$X0,S$X1,S$X2,S$X3,S$X4,S$X5,S$X6)
-  
-  deaths$D = list(deaths$Du,deaths$D0,deaths$D1,deaths$D2,deaths$D3,deaths$D4,deaths$D5,deaths$D6)
-  deaths$J = list(deaths$Ju,deaths$J0,deaths$J1,deaths$J2,deaths$J3,deaths$J4,deaths$J5,deaths$J6)
-  deaths$X = list(deaths$Xu,deaths$X0,deaths$X1,deaths$X2,deaths$X3,deaths$X4,deaths$X5,deaths$X6)
-  
-  return(list(states=S,treats = ntreated,deaths=deaths))
-}
 
 epimodel_fast <- function(initialstates, parameters, configuration, 
                           intervention, adjContactMatrix)
@@ -255,11 +33,12 @@ epimodel_fast <- function(initialstates, parameters, configuration,
   })
   ntreated = rep(0,configuration$nmonths)
   contactMat = P$contactMat
-
   alpha = P$alpha
+
+  if(missing(alpha)){alpha = P$alpha}
   if (!missing(adjContactMatrix)){
     if (length(adjContactMatrix) == nrow(contactMat)){
-      #adjContactMatrix = exp(adjContactMatrix) # make sure all elements are non-negative
+      adjContactMatrix = exp(adjContactMatrix) # make sure all elements are non-negative
       contactMat = t(sapply(seq(length(adjContactMatrix)), function(x) adjContactMatrix[x]*contactMat[x,]))
     } 
     else{
@@ -620,33 +399,17 @@ rdstabulator = function(X,intervention)
   return(output_f)
 }
 
-compare = function(X,Y){
-  #=========================================#
-  # Test if epimodel_fast works the same as epimodel
-  # (only do this once)
-  result <- all.equal(X, Y)
-  
-  # Check the result
-  if (isTRUE(result)) {
-    print("The lists are exactly the same.")
-  } else {
-    print("The lists are different:")
-    print(result)
-  }
-  #=========================================#
-}
-
 #================================= MCMC ======================================#
 fun_final_prev = function(xparam){
   X = epimodel_fast(initialstates,parameters,configuration,intervention, 
-                    adjContactMat=xparam[1:9])
+                    adjContactMat=xparam)
   return( final_prevalence(X) )
 }
 
 fun_loglikelihood = function(xparam, obs_data = obs_data){
   # assign parameters (xparam)
   X = epimodel_fast(initialstates,parameters,configuration,intervention, 
-                    adjContactMat=xparam[1:9])
+                    adjContactMat=xparam)
   final_prev = final_prevalence(X)
   final_prev_byage = final_prev$prevalence_byage
   
