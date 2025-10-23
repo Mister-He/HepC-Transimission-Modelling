@@ -124,7 +124,7 @@ legend = function(column)
   popViewport()
 }
 
-png('output/Figure_2.png',height=11,width=15,units='cm',res=900,pointsize=8)
+png('output/fig/Figure_2.png',height=11,width=15,units='cm',res=900,pointsize=8)
 pushViewport(plotViewport(c(3,5,2,0)))
 pushViewport(viewport(layout=grid.layout(nrow=3,ncol=4)))
 

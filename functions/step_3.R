@@ -138,36 +138,27 @@ for (iter in 1:100) {
 saveRDS(revise,'output/revise_matrix.rds')
 
 # Appendix
-# # Figure S1
-# library(ggplot2)
-# data = data.frame(age = c('15-19','20-24','25-29','30-34','35-39','40-44',
-#                           '45-49','50-54','55+'),
-#                   prevalence = 100*c(0.1791531,0.1819322, 0.2207479, 0.2590837, 0.3545151, 0.4657321,
-#                                   0.4615385, 0.4328018, 0.3633880))
-# # A one-panel plot with x-axis for age groups and y-axis for HCV prevalence (%). 
-# # Remove grid lines, center the title
-# ggplot(data, aes(x=age, y=prevalence)) + 
-#   geom_bar(stat='identity', fill='steelblue') + 
-#   theme_minimal() + 
-#   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size=12),  # Increase axis text size
-#         axis.text.y = element_text(size=12),                        # Increase y-axis text size
-#         axis.title = element_text(size=14),                         # Increase axis title size
-#         plot.title = element_text(hjust = 0.5, size=16),
-#         panel.grid.major = element_blank(),   # Remove major grid lines
-#         panel.grid.minor = element_blank()) +          # Increase plot title size
-#   labs(title='HCV Prevalence by Age Group', x='Age Group', y='HCV Prevalence (%)')
-
-
+# Figure S2
 # Load the grid package
 library(grid)
 
+# Load posterior samples
+pred_prev <- readRDS('output/mcmc/mcmc_bci.rds')
+pred_prev_median <- apply(pred_prev, 2, median)
+pred_prev_lower <- apply(pred_prev, 2, quantile, probs = 0.025)
+pred_prev_upper <- apply(pred_prev, 2, quantile, probs = 0.975)
+
 # Hard-coded observations
-obs_data = list(pos=c(55, 145, 183, 164, 212, 299, 222, 190, 133),
-                tot=c(307, 797, 829, 633, 598, 642, 481, 439, 366))
+obs_data <- list(
+  pos = c(55, 145, 183, 164, 212, 299, 222, 190, 133),
+  tot = c(307, 797, 829, 633, 598, 642, 481, 439, 366)
+)
 age_grp <- c("15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55+")
-percentages <- 100*c(0.1791531,0.1819322, 0.2207479, 0.2590837, 0.3545151, 0.4657321,
-                     0.4615385, 0.4328018, 0.3633880)
-errors <- 100*sqrt(obs_data$pos / obs_data$tot * (1 - obs_data$pos / obs_data$tot) / obs_data$tot)
+percentages <- 100 * c(
+  0.1791531, 0.1819322, 0.2207479, 0.2590837, 0.3545151, 0.4657321,
+  0.4615385, 0.4328018, 0.3633880
+)
+errors <- 100 * sqrt(obs_data$pos / obs_data$tot * (1 - obs_data$pos / obs_data$tot) / obs_data$tot)
 
 # Fitted prevalence and errors from model
 fitted_percentages <- 100 * pred_prev_median
@@ -175,111 +166,137 @@ fitted_upper_errors <- 100 * (pred_prev_upper - pred_prev_median)
 fitted_lower_errors <- 100 * (pred_prev_median - pred_prev_lower)
 
 # Original colors
-colors <- rev(c("#7d4e73","#9b5c72","#bc6972","#dc7772","#ff8773","#ff9a7a","#ffae81","#ffc38a","#ffd892"))
+colors <- c(
+  "#FFCB47", # Light Yellow-Orange
+  "#FFB65C", # Soft Orange
+  "#FF9A1F", # Vivid Orange
+  "#FB804B", # Coral Orange
+  "#FB6423", # Deep Orange
+  "#FF4747", # Bright Red
+  "#FF1F1F", # Vivid Red
+  "#D0253C", # Dark Red
+  "#B8282B" # Deep Brick Red
+)
 grey_colors <- rev(c("#D3D3D3", "#C0C0C0", "#B0B0B0", "#A9A9A9", "#A0A0A0", "#989898", "#909090", "#888888", "#808080"))
 
 # Fitted colors
-fitted_colors <- rev(c(
-  "#03045E", # Deep Navy Blue
-  "#023E8A", # Dark Royal Blue
-  "#0077B6", # Bright Medium Blue
-  "#0096C7", # Vivid Cyan-Blue
-  "#00B4D8", # Sky Blue
-  "#48CAE4", # Light Aqua Blue
-  "#90E0EF", # Soft Cyan
-  "#ADE8F4", # Pale Aqua
-  "#CAF0F8" # Very Light Cyan
-))
+fitted_colors <- c(
+  "#00D4FF", # Bright Cyan
+  "#01BCEA", # Sky Blue
+  "#02A5D5", # Medium Cyan-Blue
+  "#038DC0", # Deep Aqua Blue
+  "#0575AB", # Steel Blue
+  "#065D95", # Dark Blue
+  "#074680", # Navy Blue
+  "#082E6B", # Indigo Blue
+  "#091656" # Deep Navy
+)
 
 # Create a viewport for the entire plot area
 grid.newpage()
 pushViewport(viewport(width = 1.0, height = 1.0))
 
 # Y-axis label
-grid.text("HCV Prevalence (%)", x = unit(0.03, "npc"), y = unit(0.5, "npc"), rot = 90, gp = gpar(fontsize = 14))
+grid.text("HCV Prevalence (%)", x = unit(0.03, "npc"), y = unit(0.5, "npc"), rot = 90, gp = gpar(fontsize = 21))
 
 # X-axis label
-grid.text("Age Group", x = unit(0.5, "npc"), y = unit(0.1, "npc"), gp = gpar(fontsize = 14))
-
-# Y-axis ticks and labels
-for (i in seq(0, 60, by = 10)) {
-  grid.text(i, x = unit(0.09, "npc"), y = unit(0.2 + i/100, "npc"), just = "right", gp = gpar(fontsize = 13))
-  grid.lines(x = unit(c(0.1, 0.11), "npc"), y = unit(c(0.2 + i/100, 0.2 + i/100), "npc"))
-}
+grid.text("Age Group", x = unit(0.5, "npc"), y = unit(0.1, "npc"), gp = gpar(fontsize = 21))
 
 # Draw the bars with error bars
-bar_width <- 0.05  # Width of bars
-error_bar_width <- bar_width / 3  # Width of error bars
+bar_width <- 0.07 # Width of bars
+error_bar_width <- bar_width / 3 # Width of error bars
+scale <- 1.8 # Scale factor for y-axis
 
-for (i in 1:length(age_grp)) {
-  # # Draw bars
-  # grid.rect(x = unit(0.09 + i * 0.09, "npc"), 
-  #           y = unit(0.2 + percentages[i]/100, "npc"), 
-  #           width = unit(bar_width, "npc"), 
-  #           height = unit(percentages[i]/100, "npc"), 
-  #           just = "top", 
-  #           gp = gpar(fill = colors[i], col = NA))
-  
-  # Draw upper error bars
-  grid.rect(x = unit(0.09 - error_bar_width + i * 0.09, "npc"),
-            y = unit(0.2 + (percentages[i] + errors[i])/100, "npc"),
-            width = unit(error_bar_width, "npc"),
-            height = unit(errors[i]/100, "npc"),
-            just = "top",
-            gp = gpar(fill = colors[i], col = NA))
-  
-  # Draw lower error bars
-  grid.rect(x = unit(0.09 - error_bar_width + i * 0.09, "npc"),
-            y = unit(0.2 + percentages[i]/100, "npc"),
-            width = unit(error_bar_width, "npc"),
-            height = unit(errors[i]/100, "npc"),
-            just = "top",
-            gp = gpar(fill = colors[i], col = NA))
-
-  # Draw line segments for observations
-  grid.lines(
-    x = unit(c(0.09 - 3/2*error_bar_width + i * 0.09, 0.09- 1/2*error_bar_width + i * 0.09), "npc"),
-    y = unit(0.2 + (percentages[i]) / 100, "npc"),
-    gp = gpar(col = "black", lwd = 5)
-  )
-
-  # For fitted prevalence
-  # Draw upper error bars
-  grid.rect(x = unit(0.09 + error_bar_width + i * 0.09, "npc"),
-            y = unit(0.2 + (fitted_percentages[i] + fitted_upper_errors[i] / 2)/100, "npc"),
-            width = unit(error_bar_width, "npc"),
-            height = unit(fitted_upper_errors[i]/100, "npc"),
-            just = "top",
-            gp = gpar(fill = fitted_colors[i], col = NA))
-  
-  # Draw lower error bars
-  grid.rect(x = unit(0.09 + error_bar_width + i * 0.09, "npc"),
-            y = unit(0.2 + (fitted_percentages[i])/100, "npc"),
-            width = unit(error_bar_width, "npc"),
-            height = unit(fitted_lower_errors[i]/100, "npc"),
-            just = "top",
-            gp = gpar(fill = fitted_colors[i], col = NA))
-
-  # Draw line segments for observations
-  grid.lines(
-    x = unit(c(0.09 + 1/2*error_bar_width + i * 0.09, 0.09 + 3/2*error_bar_width + i * 0.09), "npc"),
-    y = unit(0.2 + (100 * out_final_prev$prevalence_byage[i]) / 100, "npc"),
-    gp = gpar(col = "black", lwd = 5)
-  
-  )
-  
-  # X-axis ticks
-  grid.lines(x = unit(0.09 + i * 0.09, "npc"), y = unit(c(0.19, 0.2), "npc"))
-  
-  # X-axis labels
-  grid.text(age_grp[i], x = unit(0.09 + i * 0.09, "npc"), y = unit(0.16, "npc"), just = "center", gp = gpar(fontsize = 13))
+# Y-axis ticks and labels
+for (i in seq(10, 50, by = 10)) {
+  grid.text(i, x = unit(0.09, "npc"), y = unit(0.2 - 0.1 * scale + i / 100 * scale, "npc"), just = "right", gp = gpar(fontsize = 19))
+  grid.lines(x = unit(c(0.1, 0.11), "npc"), y = unit(0.2 - 0.1 * scale + i / 100 * scale, "npc"))
 }
 
 # Add axis line
 # X-axis
-grid.lines(x = unit(c(0.11, 0.95), "npc"), y = unit(0.2, "npc"))
+grid.lines(x = unit(c(0.11, 0.97), "npc"), y = unit(0.2, "npc"))
 # Y-axis
-grid.lines(x = unit(0.11, "npc"), y = unit(c(0.2, 0.85), "npc"))
+grid.lines(x = unit(0.11, "npc"), y = unit(c(0.2, 0.95), "npc"))
+
+for (i in 1:length(age_grp)) {
+  x_center <- 0.111 - 2 * error_bar_width + i * 4 * error_bar_width
+
+  # Coordinates
+  y_obs <- 0.2 - 0.1 * scale + scale * (percentages[i]) / 100
+  y_fit <- 0.2 - 0.1 * scale + scale * (fitted_percentages[i]) / 100
+  y_obs_lo <- 0.2 - 0.1 * scale + scale * (percentages[i] - errors[i]) / 100
+  y_obs_hi <- 0.2 - 0.1 * scale + scale * (percentages[i] + errors[i]) / 100
+  y_fit_lo <- 0.2 - 0.1 * scale + scale * (fitted_percentages[i] - fitted_lower_errors[i]) / 100
+  y_fit_hi <- 0.2 - 0.1 * scale + scale * (fitted_percentages[i] + fitted_upper_errors[i]) / 100
+
+  # ----- Draw vertical error bars -----
+  grid.segments(
+    x0 = unit(x_center - 0.015, "npc"), x1 = unit(x_center - 0.015, "npc"),
+    y0 = unit(y_obs_lo, "npc"), y1 = unit(y_obs_hi, "npc"),
+    gp = gpar(col = colors[4], lwd = 5)
+  )
+  grid.segments(
+    x0 = unit(x_center + 0.015, "npc"), x1 = unit(x_center + 0.015, "npc"),
+    y0 = unit(y_fit_lo, "npc"), y1 = unit(y_fit_hi, "npc"),
+    gp = gpar(col = fitted_colors[4], lwd = 5)
+  )
+
+  # ----- Draw dots for means -----
+  # Observed
+  grid.points(
+    x = unit(x_center - 0.015, "npc"),
+    y = unit(y_obs, "npc"),
+    pch = 21, # solid circle
+    size = unit(8, "pt"),
+    gp = gpar(fill = colors[4], col = "black")
+  )
+
+  # Fitted (shifted slightly to the right)
+  grid.points(
+    x = unit(x_center + 0.015, "npc"),
+    y = unit(y_fit, "npc"),
+    pch = 21, # filled circle with border
+    size = unit(8, "pt"),
+    gp = gpar(fill = fitted_colors[4], col = "black")
+  )
+
+  # X-axis tick
+  grid.lines(x = unit(x_center + 2 * error_bar_width, "npc"), y = unit(c(0.19, 0.2), "npc"))
+
+  # Label
+  grid.text(age_grp[i],
+    x = unit(x_center, "npc"),
+    y = unit(0.16, "npc"),
+    just = "center", gp = gpar(fontsize = 19)
+  )
+}
+
+# X-axis tick
+grid.lines(x = unit(0.11, "npc"), y = unit(c(0.19, 0.2), "npc"))
+
+obs_legend_x <- 0.315
+obs_legend_y <- 0.88
+
+fitted_legend_x <- 0.28
+fitted_legend_y <- 0.78
+
+grid.text("Observed", x = unit(obs_legend_x + 0.015, "npc"), y = unit(obs_legend_y, "npc"), just = "right", gp = gpar(fontsize = 19))
+grid.text("Fitted", x = unit(fitted_legend_x, "npc"), y = unit(fitted_legend_y, "npc"), just = "right", gp = gpar(fontsize = 19))
+
+grid.rect(
+  x = unit(0.15, "npc"), y = unit(obs_legend_y, "npc"),
+  width = unit(2 * error_bar_width, "npc"), height = unit(error_bar_width, "npc"),
+  just = "left",
+  gp = gpar(fill = colors[4], col = NA) # no border
+)
+
+grid.rect(
+  x = unit(0.15, "npc"), y = unit(fitted_legend_y, "npc"),
+  width = unit(2 * error_bar_width, "npc"), height = unit(error_bar_width, "npc"),
+  just = "left",
+  gp = gpar(fill = fitted_colors[4], col = NA) # no border
+)
 
 
 # Update Table 3 and Table S1
