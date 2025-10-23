@@ -235,6 +235,8 @@ for (str in 1:dim(strategies)[1]) {
 }
 
 # 5.3 Interventions with Bayesian Credible Intervals
+out_dir <- "output/BI_normal_SVR"
+if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 for (iteration in 1:100) {
     # Sample once from the posterior distribution
     pos_sample <- apply(scaling_params, 2, function(x) sample(x, 1))
@@ -252,11 +254,11 @@ for (iteration in 1:100) {
             configuration, intervention,
             adjContactMat = pos_sample
         )
-        print(final_prevalence(X))
+        # print(final_prevalence(X))
         result[[str]] <- rdstabulator(X, intervention)
     }
     sim_data <- do.call(cbind, result)
-    colnames(simdata) <- c("Strategy,t,
+    colnames(sim_data) <- c("Strategy,t,
     Du1,Du2,Du3,Du4,Du5,Du6,Du7,Du8,Du9,
     D01,D02,D03,D04,D05,D06,D07,D08,D09,
     D11,D12,D13,D14,D15,D16,D17,D18,D19,
@@ -284,7 +286,7 @@ for (iteration in 1:100) {
     C41,C42,C43,C44,C45,C46,C47,C48,C49,
     C51,C52,C53,C54,C55,C56,C57,C58,C59,
     C61,C62,C63,C64,C65,C66,C67,C68,C69")
-    saveRDS(paste0("output/BI_normal_SVR/sim_data_normal_SVR_", iteration, ".rds"))
+    saveRDS(sim_data, paste0("output/BI_normal_SVR/sim_data_normal_SVR_", iteration, ".rds"))
 }
 
 # 5.4 Posterior predictive prevalence
@@ -308,6 +310,5 @@ saveRDS(pred_prev, "output/mcmc/mcmc_bci.rds")
 # =========================================#
 # 6. Plotting
 # =========================================#
-Bo <- F
-source("functions/step_1.R")
-source("functions/step_2.R")
+# source("functions/step_1.R")
+# source("functions/step_2.R")
