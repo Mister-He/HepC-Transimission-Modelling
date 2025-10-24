@@ -289,17 +289,18 @@ for (iteration in 1:100) {
 
 # 5.4 Posterior predictive prevalence
 # Generate bayesian credible intervals
-param_matrix <- do.call(rbind, lapply(scaling_params, as.matrix))
+param_matrix <- scaling_params
 sample_indices <- 1:nrow(param_matrix)
 
 set.seed(114514)
 sample_size <- nrow(param_matrix)
 selected_indices <- sample(sample_indices, size = sample_size)
 samples_matrix <- param_matrix[selected_indices, 1:9]
-pred_prev <- matrix(NA, nrow = sample_size, ncol = 9)
+pred_prev <- matrix(NA, nrow = sample_size, ncol = 1)
 
 for (i in 1:sample_size) {
-    pred_prev[i, ] <- fun_final_prev(samples_matrix[i, ])$prevalence_byage
+    pred_prev[i, ] <- fun_final_prev(samples_matrix[i, ])$prevalence_overall#$prevalence_byage
+    print(pred_prev[i, ])
     cat("Done for sample", i, "of", sample_size, "\n")
 }
 
