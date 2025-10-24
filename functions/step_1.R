@@ -6,6 +6,9 @@
 ####################################################################################
 library(grid)
 
+# Boolean flag for different table versions
+Bo <- F
+
 if (Bo){
   TAB = read.csv('settings/tableHIGH_1_wFINALstrategies_bo.csv')
 } else {
