@@ -12,7 +12,7 @@ The study provides a detailed analysis of the infection trends among different p
 
 ## Papers
 
-To be updated soon
+[[Preprint]](https://doi.org/10.1101/2025.10.24.25338708)
 
 ## Example usage
 
