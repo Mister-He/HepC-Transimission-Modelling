@@ -71,7 +71,7 @@ data {
 }
 
 parameters {
-  real l_mu;
+  // real l_mu;
   real<lower=0> l_sigma;
   vector[n_age] log_lambda;
 }
@@ -139,10 +139,12 @@ data {
   array[N] int event_c; // 1 = re-arrested at end of segment
   
   //uncensored part
-  /*int<lower=1> N1; //number of segments for uncensored part
-  vector<lower=0>[N1] t1; //duration (years)
-  array[N1] int age1;  // age group during segment
-  array[N1] int event_o;*/      // 1 = re-arrested at end of segment
+  /*
+    int<lower=1> N1; //number of segments for uncensored part
+    vector<lower=0>[N1] t1; //duration (years)
+    array[N1] int age1;  // age group during segment
+    array[N1] int event_o; // 1 = re-arrested at end of segment
+  */      
   
   //equilibrium calibration
   array[n_age] int J; // observed number of ppl in Jail in 2015
@@ -208,9 +210,11 @@ model {
   event_c ~ binomial(1, p_arrest);
   
   //uncensored part
-  /*for (j in 1:N1) {
-      target += log(lambda[age1[j]]) * event_o[j]  - lambda[age1[j]] * t1[j];
-  }*/
+  /*
+    for (j in 1:N1) {
+        target += log(lambda[age1[j]]) * event_o[j]  - lambda[age1[j]] * t1[j];
+    }
+  */
   
   //equilibrium part
   sum(J) ~ poisson(sum(j_pop));

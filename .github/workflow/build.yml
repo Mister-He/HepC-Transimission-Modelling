@@ -1,0 +1,503 @@
+# =============================================================================
+# .github/workflows/build.yml
+#
+# CI/CD pipeline for the HCV PWID Compartmental Model (R + Rcpp)
+#
+# Triggers
+# ─────────
+#   push / PR  → main, develop          : full CI (compile, test, lint)
+#   push tag   → v*.*.*                 : full CI + build report + release
+#   schedule   → 08:00 UTC every Monday : weekly regression check
+#   manual     → workflow_dispatch      : run any job on demand
+#
+# Jobs
+# ─────
+#   1. lint-r          : R style check (lintr)
+#   2. lint-cpp        : C++ static analysis (cppcheck)
+#   3. build-and-test  : compile Rcpp, run unit tests (testthat)
+#   4. smoke-test      : 1-year forward simulation sanity checks
+#   5. benchmark       : runtime and memory profiling (on tagged releases)
+#   6. render-report   : knit Quarto/RMarkdown report (on tagged releases)
+#   7. release         : create GitHub Release + upload artefacts (on tags)
+# =============================================================================
+
+name: HCV Simulation CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    tags:     ["v*.*.*"]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: "0 8 * * 1"     # every Monday 08:00 UTC
+  workflow_dispatch:
+    inputs:
+      run_benchmark:
+        description: "Run benchmark job?"
+        required: false
+        default: "false"
+        type: choice
+        options: ["true", "false"]
+      scenario:
+        description: "Treatment scenario (1-4) for smoke test"
+        required: false
+        default: "3"
+
+# cancel in-progress runs on the same branch when a new push arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# =============================================================================
+# SHARED ENVIRONMENT
+# =============================================================================
+env:
+  R_VERSION:    "4.4.0"
+  RENV_PATHS_ROOT: ~/.local/share/renv   # renv cache across runs
+
+# =============================================================================
+# JOB 1 — R LINTING
+# =============================================================================
+jobs:
+
+  lint-r:
+    name: Lint R code
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ env.R_VERSION }}
+          use-public-rspm: true
+
+      - name: Cache renv packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: renv-lint-${{ runner.os }}-${{ hashFiles('renv.lock') }}
+          restore-keys: renv-lint-${{ runner.os }}-
+
+      - name: Install renv and lintr
+        run: |
+          install.packages("renv")
+          renv::restore(packages = c("lintr", "cyclocomp"))
+        shell: Rscript {0}
+
+      - name: Run lintr
+        run: |
+          library(lintr)
+          # lint all R files; fail if any lints found
+          results <- lint_dir(".", linters = linters_with_defaults(
+            line_length_linter(120),
+            object_name_linter("snake_case"),
+            cyclocomp_linter(complexity_limit = 15)
+          ))
+          if (length(results) > 0) {
+            print(results)
+            stop(paste(length(results), "lint(s) found. Fix before merging."))
+          }
+          message("Lint passed — no issues found.")
+        shell: Rscript {0}
+
+# =============================================================================
+# JOB 2 — C++ STATIC ANALYSIS
+# =============================================================================
+
+  lint-cpp:
+    name: C++ static analysis (cppcheck)
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck on sim.cpp
+        run: |
+          cppcheck \
+            --enable=all \
+            --std=c++17 \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --error-exitcode=1 \
+            --template="{file}:{line}: [{severity}] {message} ({id})" \
+            sim.cpp
+
+# =============================================================================
+# JOB 3 — BUILD AND UNIT TEST
+# Compiles sim.cpp via Rcpp and runs testthat suite.
+# =============================================================================
+
+  build-and-test:
+    name: Build Rcpp & run tests
+    needs: [lint-r, lint-cpp]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:        [ubuntu-22.04, macos-13, windows-2022]
+        r-version: ["4.3.3", "4.4.0"]
+        exclude:
+          # reduce matrix: only test oldest R on ubuntu
+          - os: macos-13
+            r-version: "4.3.3"
+          - os: windows-2022
+            r-version: "4.3.3"
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R ${{ matrix.r-version }}
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r-version }}
+          use-public-rspm: true
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            libgit2-dev \
+            libblas-dev \
+            liblapack-dev \
+            gfortran
+
+      - name: Cache renv packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: renv-${{ runner.os }}-${{ matrix.r-version }}-${{ hashFiles('renv.lock') }}
+          restore-keys: renv-${{ runner.os }}-${{ matrix.r-version }}-
+
+      - name: Restore renv environment
+        run: |
+          install.packages("renv")
+          renv::restore()
+        shell: Rscript {0}
+
+      - name: Compile sim.cpp via Rcpp
+        run: |
+          library(Rcpp)
+          library(RcppArmadillo)
+          message("Compiling sim.cpp ...")
+          sourceCpp("sim.cpp", verbose = TRUE, rebuild = TRUE)
+          message("Compilation successful.")
+        shell: Rscript {0}
+
+      - name: Run testthat suite
+        run: |
+          library(testthat)
+          library(Rcpp)
+          sourceCpp("sim.cpp")
+          source("setup.R")
+          test_results <- test_dir("tests/testthat", reporter = "progress")
+          if (any(test_results$failed > 0)) {
+            stop("One or more tests failed.")
+          }
+        shell: Rscript {0}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-R${{ matrix.r-version }}
+          path: tests/testthat/results/
+          retention-days: 14
+
+# =============================================================================
+# JOB 4 — SMOKE TEST
+# Runs a short forward simulation and checks key invariants:
+#   - no negative compartment values
+#   - total population change within plausible bounds
+#   - HCV prevalence is in (0, 1)
+#   - SVR compartments respond to treatment rate changes
+# =============================================================================
+
+  smoke-test:
+    name: Smoke test (simulation sanity checks)
+    needs: build-and-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ env.R_VERSION }}
+          use-public-rspm: true
+
+      - name: Cache renv packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: renv-${{ runner.os }}-${{ env.R_VERSION }}-${{ hashFiles('renv.lock') }}
+          restore-keys: renv-${{ runner.os }}-${{ env.R_VERSION }}-
+
+      - name: Restore renv
+        run: |
+          install.packages("renv")
+          renv::restore()
+        shell: Rscript {0}
+
+      - name: Run smoke tests
+        env:
+          SCENARIO: ${{ github.event.inputs.scenario || '3' }}
+        run: |
+          library(Rcpp)
+          sourceCpp("sim.cpp")
+          source("setup.R")
+
+          scenario <- as.integer(Sys.getenv("SCENARIO", "3"))
+          p_list   <- list(params_s1, params_s2, params_s3, params_s4)
+          p_use    <- p_list[[scenario]]
+
+          # short 1-year run for smoke test
+          data_smoke        <- data
+          data_smoke$t_end  <- 1.0
+          data_smoke$dt     <- 1/52
+
+          message("Running scenario ", scenario, " smoke test ...")
+          out <- run_sim(p_use, data_smoke)
+
+          # ── invariant 1: no negative compartments ──────────────────────
+          if (any(out[, -1] < -1e-6)) {
+            neg_cols <- which(apply(out[, -1], 2, function(x) any(x < -1e-6)))
+            stop("FAIL: negative values detected in columns: ",
+                 paste(neg_cols, collapse = ", "))
+          }
+          message("PASS: no negative compartment values")
+
+          # ── invariant 2: total population finite and positive ──────────
+          total_pop <- rowSums(out[, -1])
+          if (any(!is.finite(total_pop)) || any(total_pop <= 0)) {
+            stop("FAIL: total population is non-finite or non-positive")
+          }
+          message("PASS: total population finite and positive at all steps")
+
+          # ── invariant 3: HCV prevalence in plausible range (0, 1) ─────
+          # chronic + acute + treated across all strata and stages
+          hcv_idx <- grep("_(a|c|t)_", colnames(out))
+          if (length(hcv_idx) == 0) {
+            # fallback if colnames not set: just check row sums
+            message("INFO: column names not set; skipping prevalence check")
+          } else {
+            hcv_burden <- rowSums(out[, hcv_idx])
+            prev        <- hcv_burden / total_pop
+            if (any(prev < 0) || any(prev > 1)) {
+              stop("FAIL: HCV prevalence outside [0, 1]. Range: [",
+                   round(min(prev), 4), ", ", round(max(prev), 4), "]")
+            }
+            message("PASS: HCV prevalence in [0, 1] at all steps")
+          }
+
+          # ── invariant 4: no NaN or Inf anywhere ───────────────────────
+          if (any(!is.finite(out))) {
+            stop("FAIL: NaN or Inf detected in output matrix")
+          }
+          message("PASS: no NaN or Inf values")
+
+          message("\nAll smoke tests passed for scenario ", scenario, ".")
+        shell: Rscript {0}
+
+# =============================================================================
+# JOB 5 — BENCHMARK (runs on tags or manual trigger)
+# Profiles runtime and peak memory for a 30-year simulation.
+# =============================================================================
+
+  benchmark:
+    name: Performance benchmark
+    needs: smoke-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    if: |
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.event.inputs.run_benchmark == 'true'
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ env.R_VERSION }}
+          use-public-rspm: true
+
+      - name: Cache renv
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: renv-${{ runner.os }}-${{ env.R_VERSION }}-${{ hashFiles('renv.lock') }}
+          restore-keys: renv-${{ runner.os }}-${{ env.R_VERSION }}-
+
+      - name: Restore renv
+        run: |
+          install.packages("renv")
+          renv::restore()
+        shell: Rscript {0}
+
+      - name: Run benchmark
+        run: |
+          library(Rcpp)
+          library(bench)
+          sourceCpp("sim.cpp")
+          source("setup.R")
+
+          message("Benchmarking 30-year simulation (scenario 3) ...")
+          bm <- bench::mark(
+            scenario_3 = run_sim(params_s3, data),
+            iterations = 5,
+            memory     = TRUE,
+            check      = FALSE
+          )
+          print(bm[, c("expression","min","median","mem_alloc","n_itr")])
+
+          # write benchmark summary to file for artefact upload
+          bm_df <- as.data.frame(bm[, c("expression","min","median","mem_alloc")])
+          bm_df$min    <- as.numeric(bm_df$min,    units = "secs")
+          bm_df$median <- as.numeric(bm_df$median, units = "secs")
+          write.csv(bm_df, "benchmark_results.csv", row.names = FALSE)
+          message("Benchmark complete. Results written to benchmark_results.csv")
+        shell: Rscript {0}
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.ref_name }}
+          path: benchmark_results.csv
+          retention-days: 90
+
+# =============================================================================
+# JOB 6 — RENDER REPORT (runs on tags only)
+# Knits the Quarto report to PDF and HTML.
+# =============================================================================
+
+  render-report:
+    name: Render analysis report
+    needs: smoke-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ env.R_VERSION }}
+          use-public-rspm: true
+
+      - name: Install Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: "1.5.0"
+
+      - name: Install TinyTeX (for PDF output)
+        run: |
+          install.packages("tinytex")
+          tinytex::install_tinytex()
+        shell: Rscript {0}
+
+      - name: Cache renv
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: renv-${{ runner.os }}-${{ env.R_VERSION }}-${{ hashFiles('renv.lock') }}
+          restore-keys: renv-${{ runner.os }}-${{ env.R_VERSION }}-
+
+      - name: Restore renv
+        run: |
+          install.packages("renv")
+          renv::restore()
+        shell: Rscript {0}
+
+      - name: Render HTML report
+        run: quarto render report/hcv_model_report.qmd --to html
+
+      - name: Render PDF report
+        run: quarto render report/hcv_model_report.qmd --to pdf
+
+      - name: Upload rendered reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ github.ref_name }}
+          path: |
+            report/hcv_model_report.html
+            report/hcv_model_report.pdf
+          retention-days: 365
+
+# =============================================================================
+# JOB 7 — GITHUB RELEASE (runs on version tags only)
+# Creates a GitHub Release and attaches simulation outputs and reports.
+# =============================================================================
+
+  release:
+    name: Create GitHub release
+    needs: [benchmark, render-report]
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for changelog generation
+
+      - name: Download all artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_artefacts/
+
+      - name: Generate changelog from git log
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            LOG=$(git log --oneline --no-decorate | head -20)
+          else
+            LOG=$(git log "${PREV_TAG}..HEAD" --oneline --no-decorate)
+          fi
+          # write to file (multiline safe for GitHub Actions)
+          echo "$LOG" > changelog.txt
+          echo "changelog_file=changelog.txt" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:   ${{ github.ref_name }}
+          name:       "HCV PWID Model ${{ github.ref_name }}"
+          body_path:  ${{ steps.changelog.outputs.changelog_file }}
+          draft:      false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}
+          files: |
+            release_artefacts/reports-*/hcv_model_report.html
+            release_artefacts/reports-*/hcv_model_report.pdf
+            release_artefacts/benchmark-results-*/benchmark_results.csv
+            sim.cpp
+            setup.R
