@@ -101,7 +101,7 @@ struct Params {
 
     // --- Needle-sharing contact rate ---------------------------------------
     // GUESS: scalar homogeneous mixing; replace with 9×9 matrix if needed
-    double c_contact; // per-capita needle-sharing contact rate (GUESS)
+    arma::mat C_contact; // 9×9 age-structured contact matrix, C_contact(i,j)
 
     // --- Population entry (age-varying, time-constant approximation) -------
     // GUESS: constant over time; ideally beta_i(t) from calibration
@@ -116,26 +116,34 @@ struct Params {
 // =============================================================================
 double forceOfInfection(int i, const std::vector<double>& y, const Params& p) {
 
-    // total infectious (acute, active strata D and F) for age group i
-    double infectious = y[idx(0,1,1,i)]  // D_a,1,i
-                      + y[idx(0,2,1,i)]  // D_a,2,i
-                      + y[idx(0,3,1,i)]  // D_a,3,i
-                      + y[idx(0,4,1,i)]  // D_a,4,i
-                      + y[idx(2,1,1,i)]  // F_a,1,i
-                      + y[idx(2,2,1,i)]  // F_a,2,i
-                      + y[idx(2,3,1,i)]  // F_a,3,i
-                      + y[idx(2,4,1,i)]; // F_a,4,i
+    double lambda_i = 0.0;
 
-    // total active PWID for age group i (strata D and F, all stages/states)
-    double active = 0.0;
-    for (int k = 1; k <= 4; ++k)
-        for (int h = 0; h <= 3; ++h) {
-            active += y[idx(0,k,h,i)]; // D stratum
-            active += y[idx(2,k,h,i)]; // F stratum
-        }
+    for (int j = 0; j < 9; ++j) {
 
-    if (active <= 0.0) return 0.0;
-    return p.q * p.c_contact * (infectious / active);
+        // infectious (acute) in strata D and F for age group j
+        double infectious_j = y[idx(0,1,1,j)]
+                            + y[idx(0,2,1,j)]
+                            + y[idx(0,3,1,j)]
+                            + y[idx(0,4,1,j)]
+                            + y[idx(2,1,1,j)]
+                            + y[idx(2,2,1,j)]
+                            + y[idx(2,3,1,j)]
+                            + y[idx(2,4,1,j)];
+
+        // active PWID in strata D and F for age group j
+        double active_j = 0.0;
+        for (int k = 1; k <= 4; ++k)
+            for (int h = 0; h <= 3; ++h) {
+                active_j += y[idx(0,k,h,j)];
+                active_j += y[idx(2,k,h,j)];
+            }
+
+        if (active_j <= 0.0) continue;
+
+        lambda_i += p.C_contact(i, j) * (infectious_j / active_j);
+    }
+
+    return p.q * lambda_i;
 }
 
 // =============================================================================
@@ -658,7 +666,8 @@ NumericMatrix run_sim(List params_r, List data_r) {
     p.pi_recid = as<double>(params_r["pi_recid"]);
 
     // contact rate and entry
-    p.c_contact = as<double>(params_r["c_contact"]);
+    NumericMatrix C_r = as<NumericMatrix>(params_r["C_contact"]);
+    p.C_contact = arma::mat(C_r.begin(), 9, 9, false); // no copy, column-major
     NumericVector beta_r = as<NumericVector>(params_r["beta"]);
     p.beta.assign(beta_r.begin(), beta_r.end());
 

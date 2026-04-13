@@ -6,7 +6,7 @@
 # =============================================================================
 
 library(Rcpp)
-# sourceCpp("sim.cpp")   # uncomment once sim.cpp is in your working directory
+sourceCpp("sim.cpp")   # uncomment once sim.cpp is in your working directory
 
 # =============================================================================
 # HELPER: flat compartment index (mirrors C++ idx())
@@ -65,10 +65,10 @@ params <- list(
   # ── Treatment initiation rates (per year, per stage) ──────────────────────
   # GUESS: set to 0 (no treatment) as base scenario; override in scenarios
   tau = c(
-    0.0,   # tau_1: NC   — SCENARIO-DEFINED; 0 = no treatment
-    0.0,   # tau_2: CC   — SCENARIO-DEFINED
-    0.0,   # tau_3: DC   — SCENARIO-DEFINED
-    0.0    # tau_4: HCC  — SCENARIO-DEFINED
+    1.0,   # tau_1: NC   — SCENARIO-DEFINED; 0 = no treatment
+    1.0,   # tau_2: CC   — SCENARIO-DEFINED
+    1.0,   # tau_3: DC   — SCENARIO-DEFINED
+    1.0    # tau_4: HCC  — SCENARIO-DEFINED
   ),
 
   # ── Baseline progression rates (per year, other genotype) ─────────────────
@@ -93,16 +93,16 @@ params <- list(
   # Age groups (example boundaries): 15-19, 20-24, 25-29, 30-34,
   #                                   35-39, 40-44, 45-49, 50-54, 55+
   mu = c(
-    0.00060,  # age group 1 (15-19)  — GUESS from SingStat
-    0.00075,  # age group 2 (20-24)  — GUESS
-    0.00090,  # age group 3 (25-29)  — GUESS
-    0.00110,  # age group 4 (30-34)  — GUESS
-    0.00150,  # age group 5 (35-39)  — GUESS
-    0.00220,  # age group 6 (40-44)  — GUESS
-    0.00360,  # age group 7 (45-49)  — GUESS
-    0.00600,  # age group 8 (50-54)  — GUESS
-    0.01200   # age group 9 (55+)    — GUESS
-  ),
+    0.001267,  # age group 1 (15-19)  — GUESS 
+    0.000300,  # age group 2 (20-24)  — GUESS
+    0.000300,  # age group 3 (25-29)  — GUESS
+    0.000400,  # age group 4 (30-34)  — GUESS
+    0.000500,  # age group 5 (35-39)  — GUESS
+    0.000700,  # age group 6 (40-44)  — GUESS
+    0.001400,  # age group 7 (45-49)  — GUESS
+    0.002300,  # age group 8 (50-54)  — GUESS
+    0.016100   # age group 9 (55+)    — GUESS
+  ) / 30,
 
   # ── Disease-specific excess mortality ─────────────────────────────────────
   mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
@@ -121,7 +121,15 @@ params <- list(
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 9×9 matrix post-calib.
-  c_contact = 20.0,   # average annual needle-sharing contacts — GUESS
+  C_contact = rbind(c(7, 4, 1, 1, 0, 1, 1, 0, 0),#4.74
+                    c(11, 34, 21, 11, 6, 2, 1, 1, 0.1*1),
+                    c(7, 30, 80, 62, 30, 10, 2, 3, 0.1*3), 
+                    c(2, 10, 60, 121, 65, 38, 15, 4, 0.1*4), 
+                    c(1, 11, 22, 67, 107, 41, 18, 5, 0.1*5),
+                    c(0, 4, 6, 22, 32, 31, 10, 4, 0.1*4),
+                    c(0, 1, 1, 8, 10, 15, 11, 1, 0.1*1),
+                    c(0, 10, 10, 11, 13, 13, 7, 6, 0.1*6),
+                    c(0, 10, 10, 11, 13, 13, 7, 6, 0.1*6))/(3 * 30),
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
   # CALIBRATED: constant-in-time placeholder — replace with beta_i(t) from calib.
@@ -165,7 +173,7 @@ for (i in 0:8) {
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
   t_end   = 30.0,   # simulate 30 years
-  dt      = 1/52,   # weekly time steps (1/52 of a year)
+  dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-576 vector)
 )
 
@@ -203,8 +211,11 @@ col_names <- c("time",
 # =============================================================================
 # EXAMPLE RUN
 # =============================================================================
-# out <- run_sim(params_s3, data)
-# colnames(out) <- col_names
-# plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
-#      type = "l", xlab = "Year", ylab = "Total chronic HCV",
-#      main = "Scenario 3 — all-stage treatment")
+start <- Sys.time()
+out <- run_sim(params_s3, data)
+end <- Sys.time()
+print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "seconds"))
+colnames(out) <- col_names
+plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total chronic HCV",
+     main = "Scenario 3 — all-stage treatment")
