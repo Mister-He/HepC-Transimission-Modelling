@@ -6,7 +6,8 @@
 # =============================================================================
 
 library(Rcpp)
-sourceCpp("sim.cpp")   # uncomment once sim.cpp is in your working directory
+library(dplyr)
+sourceCpp("sim.cpp")
 
 # =============================================================================
 # HELPER: flat compartment index (mirrors C++ idx())
@@ -65,10 +66,10 @@ params <- list(
   # ── Treatment initiation rates (per year, per stage) ──────────────────────
   # GUESS: set to 0 (no treatment) as base scenario; override in scenarios
   tau = c(
-    1.0,   # tau_1: NC   — SCENARIO-DEFINED; 0 = no treatment
-    1.0,   # tau_2: CC   — SCENARIO-DEFINED
-    1.0,   # tau_3: DC   — SCENARIO-DEFINED
-    1.0    # tau_4: HCC  — SCENARIO-DEFINED
+    0.0,   # tau_1: NC   — SCENARIO-DEFINED; 0 = no treatment
+    0.0,   # tau_2: CC   — SCENARIO-DEFINED
+    0.0,   # tau_3: DC   — SCENARIO-DEFINED
+    0.0    # tau_4: HCC  — SCENARIO-DEFINED
   ),
 
   # ── Baseline progression rates (per year, other genotype) ─────────────────
@@ -93,16 +94,16 @@ params <- list(
   # Age groups (example boundaries): 15-19, 20-24, 25-29, 30-34,
   #                                   35-39, 40-44, 45-49, 50-54, 55+
   mu = c(
-    0.001267,  # age group 1 (15-19)  — GUESS 
-    0.000300,  # age group 2 (20-24)  — GUESS
-    0.000300,  # age group 3 (25-29)  — GUESS
-    0.000400,  # age group 4 (30-34)  — GUESS
-    0.000500,  # age group 5 (35-39)  — GUESS
-    0.000700,  # age group 6 (40-44)  — GUESS
-    0.001400,  # age group 7 (45-49)  — GUESS
-    0.002300,  # age group 8 (50-54)  — GUESS
-    0.016100   # age group 9 (55+)    — GUESS
-  ) / 30,
+    0.001267,  # age group 1 (15-19)  
+    0.000300,  # age group 2 (20-24) 
+    0.000300,  # age group 3 (25-29) 
+    0.000400,  # age group 4 (30-34) 
+    0.000500,  # age group 5 (35-39) 
+    0.000700,  # age group 6 (40-44) 
+    0.001400,  # age group 7 (45-49) 
+    0.002300,  # age group 8 (50-54) 
+    0.016100   # age group 9 (55+)   
+  ),
 
   # ── Disease-specific excess mortality ─────────────────────────────────────
   mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
@@ -114,36 +115,42 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = rep(0.05, 9),  # first-arrest rate   lambda_i^(1) — GUESS
-  lambda2 = rep(2.00, 9),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = rep(0.15, 9),  # re-arrest rate      lambda_i^(3) — GUESS
+  lambda1 = c(0.3985248, 0.5686156, 0.5485466,
+              0.6830963, 0.6971583, 1.1823825,
+              1.6449108, 1.2289346, 0.6400324),  # first-arrest rate   lambda_i^(1) — GUESS
+  lambda2 = c(0.489, 0.620, 0.663,
+              0.628, 0.533, 0.475, 
+              0.472, 0.441, 0.451),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.3985248, 0.5686156, 0.5485466,
+              0.6830963, 0.6971583, 1.1823825,
+              1.6449108, 1.2289346, 0.6400324),  # re-arrest rate      lambda_i^(3) — GUESS
   pi_recid = 0.65,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 9×9 matrix post-calib.
-  C_contact = rbind(c(7, 4, 1, 1, 0, 1, 1, 0, 0),#4.74
-                    c(11, 34, 21, 11, 6, 2, 1, 1, 0.1*1),
-                    c(7, 30, 80, 62, 30, 10, 2, 3, 0.1*3), 
-                    c(2, 10, 60, 121, 65, 38, 15, 4, 0.1*4), 
-                    c(1, 11, 22, 67, 107, 41, 18, 5, 0.1*5),
-                    c(0, 4, 6, 22, 32, 31, 10, 4, 0.1*4),
-                    c(0, 1, 1, 8, 10, 15, 11, 1, 0.1*1),
-                    c(0, 10, 10, 11, 13, 13, 7, 6, 0.1*6),
-                    c(0, 10, 10, 11, 13, 13, 7, 6, 0.1*6))/(3 * 30),
+  C_contact = rbind(c(7, 4, 1, 1, 0, 1, 1, 0, 0),
+                    c(11, 34, 21, 11, 6, 2, 1, 0.5, 0.5),
+                    c(7, 30, 80, 62, 30, 10, 2, 1.5, 1.5), 
+                    c(2, 10, 60, 121, 65, 38, 15, 2, 2), 
+                    c(1, 11, 22, 67, 107, 41, 18, 2.5, 2.5),
+                    c(0, 4, 6, 22, 32, 31, 10, 2, 2),
+                    c(0, 1, 1, 8, 10, 15, 11, 0.5, 0.5),
+                    c(0, 5, 5, 5.5, 6.5, 6.5, 3.5, 1.5, 1.5),
+                    c(0, 5, 5, 5.5, 6.5, 6.5, 3.5, 1.5, 1.5)) * 4,
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
   # CALIBRATED: constant-in-time placeholder — replace with beta_i(t) from calib.
   beta = c(
-    50,   # age group 1 — GUESS (new PWID entrants per year)
-    80,   # age group 2 — GUESS
-    70,   # age group 3 — GUESS
-    50,   # age group 4 — GUESS
-    30,   # age group 5 — GUESS
-    15,   # age group 6 — GUESS
-     8,   # age group 7 — GUESS
-     4,   # age group 8 — GUESS
-     2    # age group 9 — GUESS
-  )
+    235,        # age group 1
+    565/2,      # age group 2 
+    565/2,      # age group 3 
+    301/2,      # age group 4 
+    301/2,      # age group 5 
+    111/2,      # age group 6 
+    111/2,      # age group 7 
+    33/2,       # age group 8 
+    33/2 + 4    # age group 9 
+  ) * 0.5
 )
 
 # =============================================================================
@@ -156,15 +163,12 @@ params <- list(
 y0 <- rep(0.0, 576)
 
 # Susceptible population: put most of PWID in D_u,1,i
-# GUESS: 500 susceptible PWID per age group at baseline
-for (i in 0:8) {
-  y0[idx(s=0, k=1, h=0, i=i)] <- 500   # D_{u,1,i} — GUESS
-}
-
 # Seed chronic infection: 20 chronic per age group in D_c,1,i
-# GUESS: adjust after calibration to HCV prevalence data
+pos = c(55, 145, 183, 164, 212, 299, 222, 190, 133)
+tot = c(307, 797, 829, 633, 598, 642, 481, 439, 366)
 for (i in 0:8) {
-  y0[idx(s=0, k=1, h=2, i=i)] <- 20    # D_{c,1,i} — GUESS
+  y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
+  y0[idx(s=0, k=1, h=2, i=i)] <- pos[i+1]             # D_{c,1,i} 
 }
 
 # =============================================================================
@@ -172,7 +176,7 @@ for (i in 0:8) {
 # =============================================================================
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 30.0,   # simulate 30 years
+  t_end   = 50.0,   # simulate 30 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-576 vector)
 )
@@ -193,6 +197,9 @@ params_s3 <- modifyList(params, list(tau = c(0.5, 0.5, 0.3, 0.2)))
 # Scenario 4: aggressive elimination target
 params_s4 <- modifyList(params, list(tau = c(0.8, 0.8, 0.6, 0.4)))
 
+# Scenario 5: sensitivity analysis with reduced DC SVR efficacy
+params_s5 <- modifyList(params, list(tau = c(1.0, 1.0, 1.0, 1.0)))
+
 # =============================================================================
 # COLUMN NAME HELPER (for labelling the output matrix)
 # =============================================================================
@@ -201,21 +208,28 @@ stage_names  <- c("NC", "CC", "DC", "HCC")
 state_names  <- c("u", "a", "c", "t")
 age_names    <- paste0("age", 1:9)
 
-col_names <- c("time",
-  as.vector(outer(
-    outer(
-      outer(strata_names, stage_names, paste, sep="_"),
-      state_names, paste, sep="_"),
-    age_names, paste, sep="_")))
+expand.grid(age_names, state_names, stage_names, strata_names) %>%
+  mutate(col_name = paste(Var4, Var3, Var2, Var1, sep = "_")) %>%
+  pull(col_name) %>%
+  c("time", .) -> col_names
 
 # =============================================================================
 # EXAMPLE RUN
 # =============================================================================
 start <- Sys.time()
-out <- run_sim(params_s3, data)
+out <- run_sim(params_s1, data)
 end <- Sys.time()
 print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "seconds"))
 colnames(out) <- col_names
 plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
      type = "l", xlab = "Year", ylab = "Total chronic HCV",
-     main = "Scenario 3 — all-stage treatment")
+     main = "Status quo — no treatment")
+plot(out[,"time"], rowSums(out[, grep("_a_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total acute HCV",
+     main = "Status quo — no treatment")
+plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total treated",
+     main = "Status quo — no treatment")
+plot(out[,"time"], rowSums(out[, grep("_u_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total susceptible",
+     main = "Status quo — no treatment")

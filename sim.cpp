@@ -17,6 +17,8 @@
 
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
+#include <cmath>
+#include <stdexcept>
 using namespace Rcpp;
 
 // ─── helper: flat compartment index ─────────────────────────────────────────
@@ -112,7 +114,7 @@ struct Params {
 // HELPER: compute force of infection gamma_{i,j}(t)
 // Assumes proportionate (homogeneous) mixing across strata and age groups.
 // gamma_i(t) = q * c_contact * (total infectious / total active PWID)
-// Infectious = D_a + F_a (acute, active strata only; J treated as no sharing)
+// Infectious = D_a + F_a + D_c + F_c (acute, active strata only; J treated as no sharing)
 // =============================================================================
 double forceOfInfection(int i, const std::vector<double>& y, const Params& p) {
 
@@ -121,14 +123,14 @@ double forceOfInfection(int i, const std::vector<double>& y, const Params& p) {
     for (int j = 0; j < 9; ++j) {
 
         // infectious (acute) in strata D and F for age group j
-        double infectious_j = y[idx(0,1,1,j)]
-                            + y[idx(0,2,1,j)]
-                            + y[idx(0,3,1,j)]
-                            + y[idx(0,4,1,j)]
-                            + y[idx(2,1,1,j)]
-                            + y[idx(2,2,1,j)]
-                            + y[idx(2,3,1,j)]
-                            + y[idx(2,4,1,j)];
+        double infectious_j = y[idx(0,1,1,j)] + y[idx(0,1,2,j)]
+                            + y[idx(0,2,1,j)] + y[idx(0,2,2,j)]
+                            + y[idx(0,3,1,j)] + y[idx(0,3,2,j)]
+                            + y[idx(0,4,1,j)] + y[idx(0,4,2,j)]
+                            + y[idx(2,1,1,j)] + y[idx(2,1,2,j)]
+                            + y[idx(2,2,1,j)] + y[idx(2,2,2,j)]
+                            + y[idx(2,3,1,j)] + y[idx(2,3,2,j)]
+                            + y[idx(2,4,1,j)] + y[idx(2,4,2,j)];
 
         // active PWID in strata D and F for age group j
         double active_j = 0.0;
@@ -199,7 +201,7 @@ std::vector<double> rhs(double t,
     // =========================================================================
     //  LOOP OVER AGE GROUPS
     // =========================================================================
-    for (int i = 0; i < 9; ++i) {
+    for (int i = 0; i < 1; ++i) {
 
         double gam  = forceOfInfection(i, y, p);  // gamma_{i,j}(t)
         double mu_i = p.mu[i];
@@ -240,8 +242,8 @@ std::vector<double> rhs(double t,
 
             // D_{t,1,i}
             dydt[idx(0,1,3,i)] +=
-                  p.tau[0] * Dc1
-                - (1.0/p.iota2 + l1 + mu_eff(1,3,i)) * Dt1;
+            p.tau[0] * Dc1
+            - (1.0/p.iota2 + l1 + mu_eff(1,3,i)) * Dt1;
         }
 
         // --- Stage 2: Compensated cirrhosis ----------------------------------
@@ -694,6 +696,31 @@ NumericMatrix run_sim(List params_r, List data_r) {
         for (int c = 0; c < 576; ++c) if (y[c] < 0.0) y[c] = 0.0;
         out(step, 0) = t;
         for (int c = 0; c < 576; ++c) out(step, c+1) = y[c];
+
+        // Ageing process
+        // For each age grp: y[i] loses y[i]/5 to y[i+1], last age receives inflow only.
+        if (std::fabs(t - std::round(t)) < 1e-9) {
+            std::vector<double> y_new = y;
+
+            for (int s = 0; s < 4; ++s) {
+                for (int k = 1; k <= 4; ++k) {
+                    for (int h = 0; h < 4; ++h) {
+                        int base = idx(s, k, h, 0);
+
+                        for (int i = 0; i < 8; ++i) {
+                            double y_change = y[base + i] / 5.0;
+                            y_new[base + i]     -= y_change;
+                            y_new[base + i + 1] += y_change;
+                        }
+                    }
+                }
+            }
+
+            y.swap(y_new);
+
+            // Update output after ageing step
+            for (int c = 0; c < 576; ++c) out(step, c+1) = y[c];
+        }
     }
 
     return out;
