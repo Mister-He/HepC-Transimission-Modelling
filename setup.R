@@ -90,7 +90,7 @@ params <- list(
   phi_DC_HCC  = 1.00,  # assumed no reduction DC→HCC after SVR
 
   # ── Background mortality (per year, age-varying) ──────────────────────────
-  # CALIBRATED: placeholder values from SingStat life table (guesses)
+  # CALIBRATED: placeholder values from SingStat life table
   # Age groups (example boundaries): 15-19, 20-24, 25-29, 30-34,
   #                                   35-39, 40-44, 45-49, 50-54, 55+
   mu = c(
@@ -105,7 +105,10 @@ params <- list(
     0.016100   # age group 9 (55+)   
   ),
 
-  # ── Disease-specific excess mortality ─────────────────────────────────────
+  # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
+  omega = 14.68,  # SMR for ever-PWIDs (Degenhardt et al. 2011)
+
+  # ── Disease-specific excess mortality ──────────────────────────────────────
   mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
   mu_HCC  = 0.430,  # additional mortality in HCC                     (Lim 2018)
 
@@ -176,7 +179,7 @@ for (i in 0:8) {
 # =============================================================================
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 50.0,   # simulate 30 years
+  t_end   = 60.0,   # simulate 30 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-576 vector)
 )
@@ -221,15 +224,23 @@ out <- run_sim(params_s1, data)
 end <- Sys.time()
 print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "seconds"))
 colnames(out) <- col_names
-plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total chronic HCV",
-     main = "Status quo — no treatment")
+print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
+
+
+plot(out[, "time"], rowSums(out[, grep("_u_", colnames(out))]),
+  type = "l", xlab = "Year", ylab = "Total susceptible",
+  main = "Status quo — no treatment")
 plot(out[,"time"], rowSums(out[, grep("_a_", colnames(out))]),
      type = "l", xlab = "Year", ylab = "Total acute HCV",
+     main = "Status quo — no treatment")
+plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total chronic HCV",
      main = "Status quo — no treatment")
 plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
      type = "l", xlab = "Year", ylab = "Total treated",
      main = "Status quo — no treatment")
-plot(out[,"time"], rowSums(out[, grep("_u_", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total susceptible",
-     main = "Status quo — no treatment")
+    
+# =============================================================================
+# MODEL CALIBRATION
+# =============================================================================
+# TODO: implement calibration procedure to fit beta_i and C_contact to SPS data

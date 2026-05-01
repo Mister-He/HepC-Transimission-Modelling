@@ -87,6 +87,9 @@ struct Params {
     // --- Background mortality (age-varying, length 9) ----------------------
     std::vector<double> mu;   // mu[i] for age group i
 
+    // --- Standardized mortality ratio for ever-PWIDs -----------------------
+    double omega;  // SMR for ever-PWIDs (Degenhardt et al. 2011)
+
     // --- Disease-specific excess mortality ---------------------------------
     double mu_DC;   // additional mortality in decompensated cirrhosis
     double mu_HCC;  // additional mortality in HCC
@@ -169,14 +172,14 @@ std::vector<double> rhs(double t,
     // Effective mortality at stage k for state h
     // h=3 (treated): apply SVR mortality modifier for stages 3,4
     auto mu_eff = [&](int k, int h, int i) -> double {
-        double base = p.mu[i];
+        double base = p.mu[i] * p.omega; 
         if (k == 3) {
-            double excess = (h == 3) ? p.psi_DC * p.mu_DC : p.mu_DC;
-            return base + excess;
+            double adjusted = (h == 3) ? p.psi_DC * (p.mu_DC + base) : (p.mu_DC + base);
+            return adjusted;
         }
         if (k == 4) {
-            double excess = (h == 3) ? p.psi_HCC * p.mu_HCC : p.mu_HCC;
-            return base + excess;
+            double adjusted = (h == 3) ? p.psi_HCC * (p.mu_HCC + base) : (p.mu_HCC + base);
+            return adjusted;
         }
         return base;
     };
@@ -201,10 +204,10 @@ std::vector<double> rhs(double t,
     // =========================================================================
     //  LOOP OVER AGE GROUPS
     // =========================================================================
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 9; ++i) {
 
         double gam  = forceOfInfection(i, y, p);  // gamma_{i,j}(t)
-        double mu_i = p.mu[i];
+        double mu_i = p.mu[i] * p.omega;          // mortality for PWIDs in age group i
         double l1   = p.lambda1[i];
         double l2   = p.lambda2[i];
         double l3   = p.lambda3[i];
@@ -653,6 +656,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
     // mortality
     NumericVector mu_r = as<NumericVector>(params_r["mu"]);
     p.mu.assign(mu_r.begin(), mu_r.end());
+    p.omega   = as<double>(params_r["omega"]);
     p.mu_DC   = as<double>(params_r["mu_DC"]);
     p.mu_HCC  = as<double>(params_r["mu_HCC"]);
     p.psi_DC  = as<double>(params_r["psi_DC"]);
