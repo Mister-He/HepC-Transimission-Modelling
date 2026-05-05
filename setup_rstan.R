@@ -4,8 +4,8 @@
 # Uses cmdstanr instead of rstan to avoid arm64/llvm/sink() issues.
 #
 # One-time setup (run once, then never again):
-#   install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/",
-#                                           getOption("repos")))
+  # install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/",
+  #                                         getOption("repos")))
 #   cmdstanr::install_cmdstan()   # installs standalone Stan binary (~200 MB)
 # =============================================================================
 
@@ -110,8 +110,8 @@ for (i in 0:8) {
 stan_data <- list(
   obs_J_total    = obs_J_total,
   obs_J_susc     = obs_J_susc,
-  n_years        = 30L,
-  steps_per_year = 12L,
+  n_years        = 100L,
+  steps_per_year = 365L,
   y0_base        = y0_base,
   q              = params$q,
   kappa          = params$kappa,
