@@ -153,7 +153,7 @@ params <- list(
     111/2,      # age group 7 
     33/2,       # age group 8 
     33/2 + 4    # age group 9 
-  ) * 0.5
+  )
 )
 
 # =============================================================================
@@ -171,7 +171,7 @@ pos = c(55, 145, 183, 164, 212, 299, 222, 190, 133)
 tot = c(307, 797, 829, 633, 598, 642, 481, 439, 366)
 for (i in 0:8) {
   y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
-  y0[idx(s=0, k=1, h=2, i=i)] <- pos[i+1]             # D_{c,1,i} 
+  y0[idx(s=0, k=1, h=1, i=i)] <- pos[i+1]             # D_{a,1,i}
 }
 
 # =============================================================================
@@ -179,7 +179,7 @@ for (i in 0:8) {
 # =============================================================================
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 60.0,   # simulate 30 years
+  t_end   = 100.0,   # simulate 100 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-576 vector)
 )
@@ -244,3 +244,10 @@ plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
 # MODEL CALIBRATION
 # =============================================================================
 # TODO: implement calibration procedure to fit beta_i and C_contact to SPS data
+# Firstly, we need to ensure the model has reached equalibrum
+# scaling factor of inflow beta
+# initial population scaling factor
+
+
+# Secondly, simulation results should be compared to observed data in 2017 with CIs
+

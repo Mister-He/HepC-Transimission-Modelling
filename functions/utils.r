@@ -297,7 +297,7 @@ make_initial_states=function(configuration,equilibrium=FALSE,parameters)
     output$Xu[1,] = c(900,7200,12000,11000,11000,13000,10000,10000,10000) #90000#136943
   }
   
-  if(equilibrium)#haven't done this yet
+  if(equilibrium) #haven't done this yet
   {
     load('output/equilibrium_240807.rdata')
     output$Du[1,] = equilibrium$Du; output$Ju[1,] = equilibrium$Ju; output$Xu[1,] = equilibrium$Xu

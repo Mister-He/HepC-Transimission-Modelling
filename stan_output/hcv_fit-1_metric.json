@@ -1,0 +1,6 @@
+
+{
+  "stepsize" : 0.3868674,
+  "metric_type" : "diag_e",
+  "inv_metric" : [ 0.00023714737, 0.013768796 ]
+}
