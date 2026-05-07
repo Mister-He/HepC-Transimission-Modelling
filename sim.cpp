@@ -125,7 +125,7 @@ double forceOfInfection(int i, const std::vector<double>& y, const Params& p) {
 
     for (int j = 0; j < 9; ++j) {
 
-        // infectious (acute) in strata D and F for age group j
+        // infectious (acute and chronic) in strata D and F for age group j
         double infectious_j = y[idx(0,1,1,j)] + y[idx(0,1,2,j)]
                             + y[idx(0,2,1,j)] + y[idx(0,2,2,j)]
                             + y[idx(0,3,1,j)] + y[idx(0,3,2,j)]
@@ -703,7 +703,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
 
         // Ageing process
         // For each age grp: y[i] loses y[i]/5 to y[i+1], last age receives inflow only.
-        if (std::fabs(t - std::round(t)) < 1e-9) {
+        // if (std::fabs(t - std::round(t)) < 1e-9) {
             std::vector<double> y_new = y;
 
             for (int s = 0; s < 4; ++s) {
@@ -712,7 +712,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
                         int base = idx(s, k, h, 0);
 
                         for (int i = 0; i < 8; ++i) {
-                            double y_change = y[base + i] / 5.0;
+                            double y_change = y[base + i] / 5.0 * dt;
                             y_new[base + i]     -= y_change;
                             y_new[base + i + 1] += y_change;
                         }
@@ -724,7 +724,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
 
             // Update output after ageing step
             for (int c = 0; c < 576; ++c) out(step, c+1) = y[c];
-        }
+        // }
     }
 
     return out;

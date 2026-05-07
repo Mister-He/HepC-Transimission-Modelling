@@ -179,7 +179,7 @@ for (i in 0:8) {
 # =============================================================================
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 100.0,   # simulate 100 years
+  t_end   = 300.0,   # simulate 100 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-576 vector)
 )
@@ -230,9 +230,11 @@ print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
 plot(out[, "time"], rowSums(out[, grep("_u_", colnames(out))]),
   type = "l", xlab = "Year", ylab = "Total susceptible",
   main = "Status quo — no treatment")
-plot(out[,"time"], rowSums(out[, grep("_a_", colnames(out))]),
+
+plot(out[,"time"], rowSums(out[, grep("_a_age9", colnames(out))]),
      type = "l", xlab = "Year", ylab = "Total acute HCV",
      main = "Status quo — no treatment")
+
 plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
      type = "l", xlab = "Year", ylab = "Total chronic HCV",
      main = "Status quo — no treatment")
@@ -251,3 +253,30 @@ plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
 
 # Secondly, simulation results should be compared to observed data in 2017 with CIs
 
+i = 0
+
+lambda_i = rep(0, nrow(out))
+
+for (j in 0:8) {
+  infectious_j = out[, 1 + idx(s = 0, k = 1, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 1, h = 2, i = j)] + 
+                 out[, 1 + idx(s = 0, k = 2, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 2, h = 2, i = j)] + 
+                 out[, 1 + idx(s = 0, k = 3, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 3, h = 2, i = j)] + 
+                 out[, 1 + idx(s = 0, k = 4, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 4, h = 2, i = j)] + 
+                 out[, 1 + idx(s = 2, k = 1, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 1, h = 2, i = j)] +
+                 out[, 1 + idx(s = 2, k = 2, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 2, h = 2, i = j)] +
+                 out[, 1 + idx(s = 2, k = 3, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 3, h = 2, i = j)] +
+                 out[, 1 + idx(s = 2, k = 4, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 4, h = 2, i = j)]
+
+  active_j = rep(0, nrow(out))
+  for (k in 1:4) {
+    for (h in 0:3) {
+      active_j = active_j + out[, 1 + idx(s = 0, k = k, h = h, i = j)] + out[, 1 + idx(s = 2, k = k, h = h, i = j)]
+    }
+  }
+
+  # if (active_j <= 0) next
+
+  lambda_i = lambda_i + params$C_contact[i + 1, j + 1] * infectious_j / active_j
+}
+
+output = params$q * lambda_i
