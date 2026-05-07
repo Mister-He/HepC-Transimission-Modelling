@@ -179,7 +179,7 @@ for (i in 0:8) {
 # =============================================================================
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 300.0,   # simulate 100 years
+  t_end   = 100.0,   # simulate 100 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-576 vector)
 )
@@ -191,17 +191,17 @@ data <- list(
 # Scenario 1: no treatment (baseline counterfactual)
 params_s1 <- modifyList(params, list(tau = c(0, 0, 0, 0)))
 
-# Scenario 2: treat NC and CC only (limited access)
-params_s2 <- modifyList(params, list(tau = c(0.5, 0.5, 0, 0)))
+# # Scenario 2: treat NC and CC only (limited access)
+# params_s2 <- modifyList(params, list(tau = c(0.5, 0.5, 0, 0)))
 
-# Scenario 3: treat all stages
-params_s3 <- modifyList(params, list(tau = c(0.5, 0.5, 0.3, 0.2)))
+# # Scenario 3: treat all stages
+# params_s3 <- modifyList(params, list(tau = c(0.5, 0.5, 0.3, 0.2)))
 
-# Scenario 4: aggressive elimination target
-params_s4 <- modifyList(params, list(tau = c(0.8, 0.8, 0.6, 0.4)))
+# # Scenario 4: aggressive elimination target
+# params_s4 <- modifyList(params, list(tau = c(0.8, 0.8, 0.6, 0.4)))
 
-# Scenario 5: sensitivity analysis with reduced DC SVR efficacy
-params_s5 <- modifyList(params, list(tau = c(1.0, 1.0, 1.0, 1.0)))
+# # Scenario 5: sensitivity analysis with reduced DC SVR efficacy
+# params_s5 <- modifyList(params, list(tau = c(1.0, 1.0, 1.0, 1.0)))
 
 # =============================================================================
 # COLUMN NAME HELPER (for labelling the output matrix)

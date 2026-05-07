@@ -99,9 +99,11 @@ obs_J_susc <- c(55L, 145L, 183L, 164L, 212L, 299L, 222L, 190L, 133L)
 # BASE INITIAL CONDITIONS
 # =============================================================================
 y0_base <- rep(0.0, 576)
-age_wt <- params$beta / sum(params$beta) * 1000.0
+pos <- c(55, 145, 183, 164, 212, 299, 222, 190, 133)
+tot <- c(307, 797, 829, 633, 598, 642, 481, 439, 366)
 for (i in 0:8) {
-  y0_base[idx(0, 1, 0, i)] <- age_wt[i + 1]
+  y0_base[idx(s = 0, k = 1, h = 0, i = i)] <- tot[i + 1] - pos[i + 1] # D_{u,1,i}
+  y0_base[idx(s = 0, k = 1, h = 1, i = i)] <- pos[i + 1] # D_{a,1,i}
 }
 
 # =============================================================================
@@ -110,7 +112,7 @@ for (i in 0:8) {
 stan_data <- list(
   obs_J_total    = obs_J_total,
   obs_J_susc     = obs_J_susc,
-  n_years        = 100L,
+  n_years        = 50L,
   steps_per_year = 365L,
   y0_base        = y0_base,
   q              = params$q,
@@ -172,7 +174,7 @@ mod <- cmdstan_model(
 init_list <- lapply(seq_len(4), function(chain_id) {
   list(
     beta_scale = runif(1, 0, 1),
-    y0_scale   = runif(1, 0, 10)
+    C_contact_scale   = runif(9, 0, 10)
   )
 })
 
@@ -182,6 +184,22 @@ init_list <- lapply(seq_len(4), function(chain_id) {
 message("Running HMC sampler...")
 t0 <- proc.time()
 
+# ADVI
+fit_vb_fr <- mod$variational(
+  data           = stan_data,
+  algorithm      = "fullrank",
+  iter           = 5e4,
+  tol_rel_obj    = 1e-6,
+  elbo_samples   = 100,
+  grad_samples   = 10,
+  adapt_engaged  = TRUE,
+  adapt_iter     = 1000,
+  eta            = 0.05,
+  output_samples = 20000,
+  seed           = 114514
+)
+
+# NUTS sampling with ADVI initialization
 fit <- mod$sample(
   data = stan_data,
   init = init_list,
@@ -211,7 +229,7 @@ message(sprintf("Sampling completed in %.1f minutes.", elapsed / 60))
 # =============================================================================
 
 cat("\n=== POSTERIOR SUMMARY ===\n")
-print(fit$summary(variables = c("beta_scale", "y0_scale")))
+print(fit$summary(variables = c("beta_scale", "C_contact_scale")))
 
 diag <- fit$diagnostic_summary()
 cat(sprintf(
@@ -226,15 +244,15 @@ if (sum(diag$num_divergent) > 0) {
 # EXTRACT POSTERIOR DRAWS
 # =============================================================================
 post_beta <- as_draws_matrix(fit$draws("beta_scale"))[, 1]
-post_y0 <- as_draws_matrix(fit$draws("y0_scale"))[, 1]
+post_C_contact_scale <- as_draws_matrix(fit$draws("C_contact_scale"))[, 1]
 
 cat(sprintf(
   "\nbeta_scale: median = %.4f  95%% CI [%.4f, %.4f]\n",
   median(post_beta), quantile(post_beta, 0.025), quantile(post_beta, 0.975)
 ))
 cat(sprintf(
-  "y0_scale:   median = %.4f  95%% CI [%.4f, %.4f]\n",
-  median(post_y0), quantile(post_y0, 0.025), quantile(post_y0, 0.975)
+  "C_contact_scale:   median = %.4f  95%% CI [%.4f, %.4f]\n",
+  median(post_C_contact_scale), quantile(post_C_contact_scale, 0.025), quantile(post_C_contact_scale, 0.975)
 ))
 
 # =============================================================================
@@ -243,14 +261,14 @@ cat(sprintf(
 age_labels <- paste0("age", 1:9)
 
 # ── Trace plots ──────────────────────────────────────────────────────────────
-p_trace <- mcmc_trace(fit$draws(c("beta_scale", "y0_scale"))) +
+p_trace <- mcmc_trace(fit$draws(c("beta_scale", "C_contact_scale"))) +
   theme_minimal(base_size = 13)
 print(p_trace)
 
 # ── Joint posterior ──────────────────────────────────────────────────────────
 p_joint <- ggplot(
-  data.frame(beta_scale = post_beta, y0_scale = post_y0),
-  aes(x = beta_scale, y = y0_scale)
+  data.frame(beta_scale = post_beta, C_contact_scale = post_C_contact_scale),
+  aes(x = beta_scale, y = C_contact_scale)
 ) +
   geom_point(alpha = 0.12, colour = "steelblue", size = 0.7) +
   geom_density_2d(colour = "navy", linewidth = 0.5) +

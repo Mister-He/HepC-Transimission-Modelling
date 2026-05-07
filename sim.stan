@@ -3,7 +3,7 @@
 // =============================================================================
 // Calibrates two parameters against observed prison population data:
 //   beta_scale : multiplicative scaling on inflow rate beta[i] (all age groups)
-//   y0_scale   : multiplicative scaling on initial susceptible D_{u,1,i} (all age groups)
+//   C_contact_scale : age group specific multiplicative scaling on contact matrix C_contact[i,j]
 //
 // Compartment index convention (matches sim.cpp exactly):
 //   Stratum  s ∈ {D=0, J=1, F=2, X=3}
@@ -557,13 +557,13 @@ functions {
 
   // ── Annual aging step (mirrors C++ discrete aging block exactly) ───────────
   // For each (s,k,h) compartment block, shift 1/5 of each age group forward.
-  vector aging_step_f(vector y) {
+  vector aging_step_f(vector y, real dt) {
     vector[576] y_new = y;
     for (s in 0:3)
       for (k in 1:4)
         for (h in 0:3)
           for (i in 0:7) {
-            real delta = y[idx_f(s,k,h,i)] / 5.0;
+            real delta = y[idx_f(s,k,h,i)] / 5.0 * dt;
             y_new[idx_f(s,k,h,i)]     -= delta;
             y_new[idx_f(s,k,h,i + 1)] += delta;
           }
@@ -574,7 +574,7 @@ functions {
   // Returns the final state vector (length 576).
   vector simulate_model(
       real beta_scale,          // calibrated: scales all beta[i]
-      real y0_scale,            // calibrated: scales initial D_{u,1,i} compartments
+      vector C_contact_scale,   // calibrated: scales all C_contact[i,j]
       vector y0_base,           // base initial conditions (length 576)
       array[] real beta_base,   // base inflow rates (length 9, 1-indexed)
       int   n_years,            // number of years to simulate
@@ -592,11 +592,13 @@ functions {
       array[,] real C_contact) {
 
     real dt = 1.0 / steps_per_year;
-
-    // ── Apply y0_scale to initial susceptible D_{u,1,i} compartments ────────
     vector[576] y = y0_base;
-    for (i in 0:8)
-      y[idx_f(0, 1, 0, i)] = y0_scale * y0_base[idx_f(0, 1, 0, i)];
+
+    // ── Apply C_contact_scale to contact rates ────────────────────────────────
+    array[9,9] real C_contact_scaled;
+    for (i in 1:9)
+      for (j in 1:9)
+        C_contact_scaled[i,j] = C_contact_scale[i] * C_contact[i,j];
 
     // ── Apply beta_scale to inflow rates ─────────────────────────────────────
     array[9] real beta_scaled;
@@ -616,13 +618,12 @@ functions {
                        mu, omega, mu_DC, mu_HCC, psi_DC, psi_HCC,
                        lambda1, lambda2, lambda3, pi_recid,
                        C_contact, beta_scaled);
+        y = aging_step_f(y, dt);
         // clamp negatives (numerical safety — non-differentiable but rare)
         for (c in 1:576)
           if (y[c] < 0.0) y[c] = 0.0;
         t += dt;
       }
-      // Annual discrete aging
-      y = aging_step_f(y);
     }
 
     return y;
@@ -724,7 +725,7 @@ parameters {
   // Uninformative (weakly informative) priors on positive scale factors.
   // Both are multiplicative scalars: value = 1 means no adjustment.
   real<lower=0> beta_scale;   // scales beta[i] for all age groups
-  real<lower=0> y0_scale;     // scales initial D_{u,1,i} for all age groups
+  vector<lower=0>[9] C_contact_scale; // scales C_contact[i,j] for all i,j
 }
 
 
@@ -735,7 +736,7 @@ transformed parameters {
 
   // ── Run full simulation ───────────────────────────────────────────────────
   vector[576] y_final = simulate_model(
-      beta_scale, y0_scale,
+      beta_scale, C_contact_scale,
       y0_base, beta_base,
       n_years, steps_per_year,
       q, kappa, iota1, iota2,
@@ -757,8 +758,9 @@ transformed parameters {
     real total = 0.0;
     real susc  = 0.0;
     for (k in 1:4) {
-      for (h in 0:3)
+      for (h in 0:3) {
         total += y_final[idx_f(1, k, h, i)];
+      }
       susc += y_final[idx_f(1, k, 0, i)];   // h=0: susceptible/post-SVR
     }
     pred_J_total[i + 1] = fmax(total, 1e-9); // guard against log(0) in Poisson
@@ -777,7 +779,8 @@ model {
   // Adjust scale if you have domain knowledge (e.g. scale ~ Normal(1, 0.5) if
   // you expect the base values to be approximately correct).
   beta_scale ~ normal(0, 10);
-  y0_scale   ~ normal(0, 10);
+  for (i in 1:9)
+    C_contact_scale[i] ~ normal(0, 10);
 
   // ── Likelihood: Poisson on each of the 9 + 9 age-group counts ────────────
   // Each entry contributes: log p(obs | pred) = obs*log(pred) - pred - log(obs!)
