@@ -118,16 +118,16 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.3985248, 0.5686156, 0.5485466,
-              0.6830963, 0.6971583, 1.1823825,
-              1.6449108, 1.2289346, 0.6400324),  # first-arrest rate   lambda_i^(1) — GUESS
+  lambda1 = c(0.9769631, 0.7962602, 0.7842585, 
+              0.8721055, 0.8675996, 0.9522804, 
+              1.0377386, 0.9348018, 0.9021672),  # first-arrest rate   lambda_i^(1) — GUESS
   lambda2 = c(0.489, 0.620, 0.663,
               0.628, 0.533, 0.475, 
               0.472, 0.441, 0.451),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.3985248, 0.5686156, 0.5485466,
-              0.6830963, 0.6971583, 1.1823825,
-              1.6449108, 1.2289346, 0.6400324),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.65,          # recidivism probability (fitted to SPS; Assumption)
+  lambda3 = c(0.9769631, 0.7962602, 0.7842585, 
+              0.8721055, 0.8675996, 0.9522804, 
+              1.0377386, 0.9348018, 0.9021672),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.61610608,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 9×9 matrix post-calib.
@@ -231,16 +231,16 @@ plot(out[, "time"], rowSums(out[, grep("_u_", colnames(out))]),
   type = "l", xlab = "Year", ylab = "Total susceptible",
   main = "Status quo — no treatment")
 
-plot(out[,"time"], rowSums(out[, grep("_a_age9", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total acute HCV",
-     main = "Status quo — no treatment")
+# plot(out[,"time"], rowSums(out[, grep("_a_age9", colnames(out))]),
+#      type = "l", xlab = "Year", ylab = "Total acute HCV",
+#      main = "Status quo — no treatment")
 
-plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total chronic HCV",
-     main = "Status quo — no treatment")
-plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total treated",
-     main = "Status quo — no treatment")
+# plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
+#      type = "l", xlab = "Year", ylab = "Total chronic HCV",
+#      main = "Status quo — no treatment")
+# plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
+#      type = "l", xlab = "Year", ylab = "Total treated",
+#      main = "Status quo — no treatment")
     
 # =============================================================================
 # MODEL CALIBRATION
@@ -252,31 +252,3 @@ plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
 
 
 # Secondly, simulation results should be compared to observed data in 2017 with CIs
-
-i = 0
-
-lambda_i = rep(0, nrow(out))
-
-for (j in 0:8) {
-  infectious_j = out[, 1 + idx(s = 0, k = 1, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 1, h = 2, i = j)] + 
-                 out[, 1 + idx(s = 0, k = 2, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 2, h = 2, i = j)] + 
-                 out[, 1 + idx(s = 0, k = 3, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 3, h = 2, i = j)] + 
-                 out[, 1 + idx(s = 0, k = 4, h = 1, i = j)] + out[, 1 + idx(s = 0, k = 4, h = 2, i = j)] + 
-                 out[, 1 + idx(s = 2, k = 1, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 1, h = 2, i = j)] +
-                 out[, 1 + idx(s = 2, k = 2, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 2, h = 2, i = j)] +
-                 out[, 1 + idx(s = 2, k = 3, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 3, h = 2, i = j)] +
-                 out[, 1 + idx(s = 2, k = 4, h = 1, i = j)] + out[, 1 + idx(s = 2, k = 4, h = 2, i = j)]
-
-  active_j = rep(0, nrow(out))
-  for (k in 1:4) {
-    for (h in 0:3) {
-      active_j = active_j + out[, 1 + idx(s = 0, k = k, h = h, i = j)] + out[, 1 + idx(s = 2, k = k, h = h, i = j)]
-    }
-  }
-
-  # if (active_j <= 0) next
-
-  lambda_i = lambda_i + params$C_contact[i + 1, j + 1] * infectious_j / active_j
-}
-
-output = params$q * lambda_i

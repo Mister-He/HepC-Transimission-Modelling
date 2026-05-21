@@ -231,46 +231,36 @@ start <- Sys.time()
 out <- run_sim(params_s1, data)
 end <- Sys.time()
 
-
 # =============================================================================
 # hmc_calibration.R  —  HMC Calibration for the HCV PWID Compartmental Model
 #
 # Append this file after setup.R (which sources sim.cpp and defines params,
 # data, idx(), y0, etc.).
 #
-# Parameters estimated (12 total, all in log-space for positivity):
-#   theta[1]       = log(beta_scale)        scalar multiplier on beta[1:9]
-#   theta[2]       = log(delta)             shift parameter for shifted Gamma prior
-#   theta[3]       = log(alpha)             shape parameter for Gamma hyperprior
-#   theta[4]       = log(beta_rate)         rate parameter for Gamma hyperprior
-#   theta[5:12]    = log(C_contact_scale[1:8])  8 age-specific row scalings
+# Parameters estimated (2 total, all in log-space for positivity):
+#   theta[1]      = log(beta_scale)        scalar multiplier on beta[1:9]
+#   theta[2]      = log(C_contact_scale)   single global multiplier on the full contact matrix
 #
-# Scaling factors generated:
-#   C_contact_scale[1:8] = delta + Gamma(alpha, beta_rate)
-#   C_contact_scale[9]    = 1  (reference row, fixed for identifiability)
+# Scaling factors generated (1 total):
+#   C_contact_scale = exp(theta[2])
 #
 # Likelihood (Poisson, J-stratum only, per age group i = 1..9):
 #   obs_pos[i] ~ Poisson( sum_{k=1..4} sum_{h in {0,2}} y[T, idx(s=1,k,h,i-1)] )
 #   obs_tot[i] ~ Poisson( sum_{k=1..4} sum_{h=0..3}    y[T, idx(s=1,k,h,i-1)] )
 #
-# Prior: LogNormal hyperpriors on (beta_scale, delta, alpha, beta_rate)
-#   beta_scale ~ LogNormal(0, 1)
-#   delta      ~ LogNormal(log(0.25), 0.5)   [shift/floor for row scalings]
-#   alpha      ~ LogNormal(log(2.5), 0.3)    [Gamma shape hyperparameter]
-#   beta_rate  ~ LogNormal(log(1.0), 0.3)    [Gamma rate hyperparameter]
-#
-# The 8 free row scalings follow a shifted Gamma hierarchy, with the 9th row
-# fixed to 1 as the reference row for identifiability.
+# Prior: LogNormal priors on positive scaling factors
+#   beta_scale       ~ LogNormal(0, 1)
+#   C_contact_scale  ~ LogNormal(0, 0.5)   [median 1, proper weakly informative prior]
 #
 # Gradient: central finite differences through the C++ ODE solver
 #   Cost per HMC step: (L+1) gradient evals × 2 × N_PARAMS ODE runs
-#                    = (L+1) × 24 ODE runs  [plus 1 for current lp]
+#                    = (L+1) × 4 ODE runs  [plus 1 for current lp]
 #   Tip: keep L small (5-10) and use parallel chains.
 #
 # Outputs:
 #   hmc_chains        — raw chain list (all iterations, all chains)
 #   post_warmup_list  — post-warmup samples per chain
-#   all_samples       — pooled post-warmup matrix (n_samp × 12)
+#   all_samples       — pooled post-warmup matrix (n_samp × 2)
 #   diag_table        — R-hat and ESS summary data.frame
 #   ppc_out           — posterior predictive replicates
 #   plots             — trace, PPC histogram, PPC interval
@@ -284,20 +274,14 @@ library(tidyr)
 # 0.  OBSERVATIONS
 # =============================================================================
 
-obs_pos <- c(3, 8, 6, 5, 13, 31, 32, 36, 37)
-obs_tot <- c(50, 85, 69, 38, 42, 91, 71, 78, 100)
+obs_pos <- c( 3,  8,  6,  5,  13,  31,  32,  36,  37)
+obs_tot <- c(50, 85, 69, 38,  42,  91,  71,  78, 100)
 
 stopifnot(length(obs_pos) == 9L, length(obs_tot) == 9L)
 
-N_PARAMS         <- 12L
-param_names_log  <- c(
-  "log_beta_scale", "log_delta", "log_alpha", "log_beta_rate",
-  paste0("log_C_contact_scale_", 1:8)
-)
-param_names_orig <- c(
-  "beta_scale", "delta", "alpha", "beta_rate",
-  paste0("C_contact_scale_", 1:8)
-)
+N_PARAMS         <- 2L
+param_names_log  <- c("log_beta_scale", "log_C_contact_scale")
+param_names_orig <- c("beta_scale",     "C_contact_scale")
 
 
 # =============================================================================
@@ -305,31 +289,21 @@ param_names_orig <- c(
 # =============================================================================
 
 #' Unconstrained theta (log-space) -> constrained named list
-#' 
-#' Generates 8 free contact scaling factors from a shifted Gamma hierarchy.
-#' The 9th row is held at 1 as a reference for identifiability.
+#'
+#' The contact matrix gets one global multiplicative scale factor.
 constrain_theta <- function(theta) {
   beta_scale <- exp(theta[1L])
-  delta      <- exp(theta[2L])
-  alpha      <- exp(theta[3L])
-  beta_rate  <- exp(theta[4L])
-
-  # 8 estimated row scalings; row 9 remains the reference row (scale = 1)
-  c_scales <- c(delta + exp(theta[5:12]), 1.0)
+  C_contact_scale <- exp(theta[2L])
   
   list(
     beta_scale      = beta_scale,
-    C_contact_scale = c_scales,
-    delta           = delta,
-    alpha           = alpha,
-    beta_rate       = beta_rate
+    C_contact_scale = C_contact_scale
   )
 }
 
 #' Build a full parameter list from unconstrained theta
 #'
-#' The 8 free row scaling factors are hierarchical draws on the log scale,
-#' while the 9th row remains fixed at 1.
+#' The contact matrix is scaled uniformly by one positive factor.
 build_params_from_theta <- function(theta, base_params) {
   p  <- constrain_theta(theta)
   pm <- base_params
@@ -337,10 +311,8 @@ build_params_from_theta <- function(theta, base_params) {
   # Scale beta uniformly across all age groups
   pm$beta <- base_params$beta * p$beta_scale
 
-  # Scale rows 1:8; row 9 is the reference row and stays unchanged.
-  for (j in 1:8) {
-    pm$C_contact[j, ] <- base_params$C_contact[j, ] * p$C_contact_scale[j]
-  }
+  # Scale the full contact matrix uniformly
+  pm$C_contact <- base_params$C_contact * p$C_contact_scale
   pm
 }
 
@@ -390,50 +362,30 @@ compute_poisson_means <- function(y_final) {
 # ── 3a. Log-prior ────────────────────────────────────────────────────────────
 #
 # Prior specification on original scale:
-#   beta_scale ~ LogNormal(0, 1)                 [median 1]
-#   delta      ~ LogNormal(log(0.25), 0.5)       [positive shift/floor]
-#   alpha      ~ LogNormal(log(2.5), 0.3)        [Gamma shape hyperparameter]
-#   beta_rate  ~ LogNormal(log(1.0), 0.3)        [Gamma rate hyperparameter]
-#
-# The 8 free row scalings are modeled as delta + Gamma(alpha, beta_rate),
-# which places the prior mass for the resulting scales around 1–2.
+#   beta_scale      ~ LogNormal(0, 1)       [median 1]
+#   C_contact_scale ~ LogNormal(0, 0.5)     [median 1, proper weakly informative prior]
 #
 # Change-of-variables: theta_j = log(X_j), X_j = exp(theta_j)
 #   log p(theta_j) = log p_X(exp(theta_j)) + theta_j
 #
 log_prior <- function(theta) {
   beta_scale <- exp(theta[1L])
-  delta      <- exp(theta[2L])
-  alpha      <- exp(theta[3L])
-  beta_rate  <- exp(theta[4L])
-  excess     <- exp(theta[5:12])
-  
+  C_contact_scale <- exp(theta[2L])
+
   # LogNormal priors on each parameter (using dnorm on log scale + Jacobian)
   lp_beta_scale <- dnorm(theta[1L], mean =  0.0, sd = 1.0, log = TRUE)
-  lp_delta      <- dnorm(theta[2L], mean = log(0.25), sd = 0.5, log = TRUE)
-  lp_alpha      <- dnorm(theta[3L], mean = log(2.5), sd = 0.3, log = TRUE)
-  lp_beta_rate  <- dnorm(theta[4L], mean = log(1.0), sd = 0.3, log = TRUE)
-  lp_contact    <- sum(dgamma(excess, shape = alpha, rate = beta_rate, log = TRUE) + theta[5:12])
+  lp_contact    <- dnorm(theta[2L], mean =  0.0, sd = 0.5, log = TRUE)
   
   # Sum across all parameters
-  lp_beta_scale + lp_delta + lp_alpha + lp_beta_rate + lp_contact
+  lp_beta_scale + lp_contact
 }
 
 # ── 3b. Analytical gradient of log-prior ─────────────────────────────────────
 #
-# With shifted Gamma priors on the row scalings:
-#   d/d theta_j [dgamma(exp(theta_j), shape, rate, log=TRUE) + theta_j]
-#     = alpha - beta_rate * exp(theta_j)
-#
 grad_log_prior_analytical <- function(theta) {
-  grad <- numeric(12L)
+  grad <- numeric(2L)
   grad[1L] <- -(theta[1L] - 0.0) / 1.0^2
-  grad[2L] <- -(theta[2L] - log(0.25)) / 0.5^2
-  grad[3L] <- -(theta[3L] - log(2.5)) / 0.3^2
-  grad[4L] <- -(theta[4L] - log(1.0)) / 0.3^2
-  alpha     <- exp(theta[3L])
-  beta_rate <- exp(theta[4L])
-  grad[5:12] <- alpha - beta_rate * exp(theta[5:12])
+  grad[2L] <- -(theta[2L] - 0.0) / 0.5^2
   grad
 }
 
@@ -473,8 +425,8 @@ log_posterior <- function(theta, base_params, data) {
 #   ∂ log π / ∂ theta_j  ≈
 #       [log π(theta + eps·e_j) - log π(theta - eps·e_j)] / (2·eps)
 #
-# This requires 2 × N_PARAMS = 20 ODE runs per gradient evaluation.
-# With L leapfrog steps, each HMC proposal costs ≈ (L + 1) × 20 ODE runs.
+# This requires 2 × N_PARAMS = 4 ODE runs per gradient evaluation.
+# With L leapfrog steps, each HMC proposal costs ≈ (L + 1) × 4 ODE runs.
 #
 # Fallback: if either perturbed evaluation is -Inf, the component is set to 0
 # (safe — the chain will reject or stay put, not diverge).
@@ -1041,9 +993,9 @@ plot_posterior_densities <- function(post_warmup_list) {
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
-N_CORES     <- 10L      # cores for parallel gradient batches (set to 1 for debugging)
-N_WARMUP    <- 200L    # adaptation (discarded)
-N_ITER      <- 1000L    # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
+N_CORES     <- 10L     # cores for parallel gradient batches (set to 1 for debugging)
+N_WARMUP    <- 500L    # adaptation (discarded)
+N_ITER      <- 2000L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
 L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
@@ -1052,11 +1004,8 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    log(runif(1L, 0.01, 1.0)),      # log(beta_scale):    mean=0 prior, start in (0,1)
-    log(runif(1L, 0.05, 0.5)),      # log(delta):         shift/floor, start small and positive
-    log(runif(1L, 1.5, 4.0)),       # log(alpha):         Gamma shape hyperparameter
-    log(runif(1L, 0.5, 2.0)),       # log(beta_rate):     Gamma rate hyperparameter
-    log(runif(8L, 0.5, 3.0))        # log(C_contact_scale[1:8]): free row scalings
+    log(runif(1L, 0.01, 1.0)),      # log(beta_scale):      prior mean 0, start in (0,1)
+    log(runif(1L, 0.25, 2.0))       # log(C_contact_scale):  prior median 1, start positive
   )
 })
 
