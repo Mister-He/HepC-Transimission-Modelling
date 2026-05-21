@@ -185,6 +185,11 @@ for (i in 0:8) {
 # =============================================================================
 # DATA / SIMULATION SETTINGS
 # =============================================================================
+# Observation-model dispersion settings.
+# These can be tuned or moved into `data` if you want to estimate them.
+sigma_N <- 0.10
+phi_overdisp <- 50.0
+
 data <- list(
   t_start = 0.0, # start year (0 = model year 0; map to calendar year in R)
   t_end   = 100.0, # simulate 100 years
@@ -287,14 +292,9 @@ library(tidyr)
 # 0.  OBSERVATIONS
 # =============================================================================
 
-obs_pos <- c(3, 8, 6, 5, 13, 31, 32, 36, 37) * 10
-obs_tot <- c(50, 85, 69, 38, 42, 91, 71, 78, 100) * 10
+obs_pos <- c(3, 8, 6, 5, 13, 31, 32, 36, 37) * 5
+obs_tot <- c(50, 85, 69, 38, 42, 91, 71, 78, 100) * 5
 N_total_obs <- sum(obs_tot)
-
-# Observation-model dispersion settings.
-# These can be tuned or moved into `data` if you want to estimate them.
-sigma_N <- 0.10
-phi_overdisp <- 50.0
 
 stopifnot(length(obs_pos) == 9L, length(obs_tot) == 9L)
 
