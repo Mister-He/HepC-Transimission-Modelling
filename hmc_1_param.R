@@ -189,7 +189,9 @@ data <- list(
   t_start = 0.0, # start year (0 = model year 0; map to calendar year in R)
   t_end   = 100.0, # simulate 100 years
   dt      = 1 / 365, # daily time steps (1/365 of a year)
-  y0      = y0 # initial conditions (length-576 vector)
+  y0      = y0, # initial conditions (length-576 vector)
+  sigma_N = sigma_N,
+  phi_overdisp = phi_overdisp
 )
 
 # =============================================================================
@@ -244,9 +246,10 @@ end <- Sys.time()
 # Scaling factors generated (1 total):
 #   C_contact_scale = exp(theta[2])
 #
-# Likelihood (Poisson, J-stratum only, per age group i = 1..9):
-#   obs_pos[i] ~ Poisson( sum_{k=1..4} sum_{h in {0,2}} y[T, idx(s=1,k,h,i-1)] )
-#   obs_tot[i] ~ Poisson( sum_{k=1..4} sum_{h=0..3}    y[T, idx(s=1,k,h,i-1)] )
+# Likelihood (three-step observation model, J-stratum only, per age group i = 1..9):
+#   N_total_obs            ~ LogNormal(log(N_total_model), sigma_N)
+#   obs_tot[1:9] | N_total ~ Multinomial(N_total_obs, p_1:9(theta))
+#   obs_pos[a] | obs_tot[a] ~ BetaBinomial(obs_tot[a], q_a(theta), phi)
 #
 # Prior: LogNormal priors on positive scaling factors
 #   beta_scale       ~ LogNormal(0, 1)
@@ -274,8 +277,14 @@ library(tidyr)
 # 0.  OBSERVATIONS
 # =============================================================================
 
-obs_pos <- c( 3,  8,  6,  5,  13,  31,  32,  36,  37)
-obs_tot <- c(50, 85, 69, 38,  42,  91,  71,  78, 100)
+obs_pos <- c(3, 8, 6, 5, 13, 31, 32, 36, 37) * 10
+obs_tot <- c(50, 85, 69, 38, 42, 91, 71, 78, 100) * 10
+N_total_obs <- sum(obs_tot)
+
+# Observation-model dispersion settings.
+# These can be tuned or moved into `data` if you want to estimate them.
+sigma_N <- 0.10
+phi_overdisp <- 50.0
 
 stopifnot(length(obs_pos) == 9L, length(obs_tot) == 9L)
 
@@ -321,37 +330,57 @@ build_params_from_theta <- function(theta, base_params) {
 # 2.  POISSON MEANS FROM FINAL ODE STATE
 # =============================================================================
 
-#' Compute Poisson rate parameters from the final ODE state vector.
-#'
-#' Both rates are for the J-stratum (s = 1) only:
-#'
-#'   lambda_pos[i] = sum_{k=1..4} sum_{h in {0, 2}} y[ idx(s=1, k, h, i-1) ]
-#'     (h=0: susceptible; h=2: chronic — as specified in the likelihood)
-#'
-#'   lambda_tot[i] = sum_{k=1..4} sum_{h=0..3}      y[ idx(s=1, k, h, i-1) ]
-#'     (all health states in J-stratum)
-#'
-#' Both are floored at 1e-10 to prevent log(0) in the Poisson log-pmf.
-compute_poisson_means <- function(y_final) {
-  lambda_pos <- numeric(9L)
-  lambda_tot <- numeric(9L)
+log_beta_binomial <- function(x, size, prob, phi) {
+  if (length(x) != length(size) || length(x) != length(prob)) {
+    stop("x, size, and prob must have the same length")
+  }
+  if (!is.finite(phi) || phi <= 0) return(-Inf)
+  if (any(!is.finite(x)) || any(!is.finite(size)) || any(!is.finite(prob))) return(-Inf)
+  if (any(x < 0) || any(size < 0) || any(x > size)) return(-Inf)
+
+  prob <- pmin(pmax(prob, 1e-12), 1 - 1e-12)
+  a <- prob * phi
+  b <- (1 - prob) * phi
+
+  sum(lchoose(size, x) + lbeta(x + a, size - x + b) - lbeta(a, b))
+}
+
+#' Compute model-implied age-group totals and HCV-positive counts from the
+#' J-stratum (s = 1) at the final ODE state.
+compute_age_quantities <- function(y_final) {
+  age_total <- numeric(9L)
+  age_pos <- numeric(9L)
 
   for (i in 0:8) {
-    lp <- 0.0; lt <- 0.0
+    total_i <- 0.0
+    pos_i <- 0.0
     for (k in 1:4) {
-      # Positive: h in {0, 2}
-      lp <- lp + y_final[idx(s = 1L, k = k, h = 0L, i = i)]
-      lp <- lp + y_final[idx(s = 1L, k = k, h = 2L, i = i)]
-      # Total: h in {0, 1, 2, 3}
-      lt <- lt + y_final[idx(s = 1L, k = k, h = 0L, i = i)]
-      lt <- lt + y_final[idx(s = 1L, k = k, h = 1L, i = i)]
-      lt <- lt + y_final[idx(s = 1L, k = k, h = 2L, i = i)]
-      lt <- lt + y_final[idx(s = 1L, k = k, h = 3L, i = i)]
+      total_i <- total_i + y_final[idx(s = 1L, k = k, h = 0L, i = i)]
+      total_i <- total_i + y_final[idx(s = 1L, k = k, h = 1L, i = i)]
+      total_i <- total_i + y_final[idx(s = 1L, k = k, h = 2L, i = i)]
+      total_i <- total_i + y_final[idx(s = 1L, k = k, h = 3L, i = i)]
+
+      # Preserve the current positive-state definition used in the model.
+      pos_i <- pos_i + y_final[idx(s = 1L, k = k, h = 0L, i = i)]
+      pos_i <- pos_i + y_final[idx(s = 1L, k = k, h = 2L, i = i)]
     }
-    lambda_pos[i + 1L] <- max(lp, 1e-10)
-    lambda_tot[i + 1L] <- max(lt, 1e-10)
+    age_total[i + 1L] <- total_i
+    age_pos[i + 1L] <- pos_i
   }
-  list(pos = lambda_pos, tot = lambda_tot)
+
+  n_model_total <- sum(age_total)
+  if (!is.finite(n_model_total) || n_model_total <= 0) return(NULL)
+  if (any(!is.finite(age_total)) || any(!is.finite(age_pos))) return(NULL)
+  if (any(age_total <= 0)) return(NULL)
+  if (any(age_pos < 0) || any(age_pos > age_total)) return(NULL)
+
+  list(
+    total_by_age = age_total,
+    pos_by_age   = age_pos,
+    n_model_total = n_model_total,
+    p_age = age_total / n_model_total,
+    q_age = pmin(pmax(age_pos / age_total, 1e-12), 1 - 1e-12)
+  )
 }
 
 
@@ -398,10 +427,17 @@ log_likelihood <- function(theta, base_params, data) {
   if (any(!is.finite(out)))               return(-Inf)
 
   y_final <- as.numeric(out[nrow(out), -1L])   # drop time column
-  lam     <- compute_poisson_means(y_final)
+  obs     <- compute_age_quantities(y_final)
+  if (is.null(obs)) return(-Inf)
 
-  sum(dpois(obs_pos, lambda = lam$pos, log = TRUE)) +
-  sum(dpois(obs_tot, lambda = lam$tot, log = TRUE))
+  sigma_N <- if (!is.null(data$sigma_N)) data$sigma_N else 0.10
+  phi     <- if (!is.null(data$phi_overdisp)) data$phi_overdisp else 50.0
+
+  ll_total <- dlnorm(N_total_obs, meanlog = log(obs$n_model_total), sdlog = sigma_N, log = TRUE)
+  ll_age   <- dmultinom(obs_tot, prob = obs$p_age, log = TRUE)
+  ll_case  <- log_beta_binomial(obs_pos, size = obs_tot, prob = obs$q_age, phi = phi)
+
+  ll_total + ll_age + ll_case
 }
 
 # ── 3d. Log-posterior ────────────────────────────────────────────────────────
@@ -763,15 +799,16 @@ generate_ppc_samples <- function(post_samples, base_params, data,
       pm      <- build_params_from_theta(theta, base_params)
       out     <- run_sim(pm, data)
       y_fin   <- as.numeric(out[nrow(out), -1L])
-      lam     <- compute_poisson_means(y_fin)
-      lam
+      compute_age_quantities(y_fin)
     }, error = function(e) NULL)
 
     if (!is.null(result)) {
-      lam_pos[ii, ] <- result$pos
-      lam_tot[ii, ] <- result$tot
-      ppc_pos[ii, ] <- rpois(9L, result$pos)
-      ppc_tot[ii, ] <- rpois(9L, result$tot)
+      lam_tot[ii, ] <- N_total_obs * result$p_age
+      lam_pos[ii, ] <- lam_tot[ii, ] * result$q_age
+
+      ppc_tot[ii, ] <- as.integer(rmultinom(1L, size = N_total_obs, prob = result$p_age))
+      p_draw <- rbeta(9L, shape1 = result$q_age * phi_overdisp, shape2 = (1 - result$q_age) * phi_overdisp)
+      ppc_pos[ii, ] <- rbinom(9L, size = ppc_tot[ii, ], prob = p_draw)
     }
 
     if (ii %% 50L == 0L)
