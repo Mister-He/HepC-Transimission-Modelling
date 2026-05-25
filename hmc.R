@@ -292,8 +292,8 @@ library(tidyr)
 # 0.  OBSERVATIONS
 # =============================================================================
 
-obs_pos <- c(3, 8, 6, 5, 13, 31, 32, 36, 37) * 5
-obs_tot <- c(50, 85, 69, 38, 42, 91, 71, 78, 100) * 5
+obs_pos <- c(55, 145, 183, 164, 212, 299, 222, 190, 133)
+obs_tot <- c(307, 797, 829, 633, 598, 642, 481, 439, 366)
 N_total_obs <- sum(obs_tot)
 
 stopifnot(length(obs_pos) == 9L, length(obs_tot) == 9L)
@@ -389,8 +389,9 @@ compute_age_quantities <- function(y_final) {
       total_i <- total_i + y_final[idx(s = 1L, k = k, h = 3L, i = i)]
 
       # Preserve the current positive-state definition used in the model.
-      pos_i <- pos_i + y_final[idx(s = 1L, k = k, h = 0L, i = i)]
+      pos_i <- pos_i + y_final[idx(s = 1L, k = k, h = 1L, i = i)]
       pos_i <- pos_i + y_final[idx(s = 1L, k = k, h = 2L, i = i)]
+      pos_i <- pos_i + y_final[idx(s = 1L, k = k, h = 3L, i = i)]
     }
     age_total[i + 1L] <- total_i
     age_pos[i + 1L] <- pos_i
@@ -946,18 +947,66 @@ plot_ppc_histograms <- function(ppc, type = c("pos", "tot")) {
 #
 plot_ppc_intervals <- function(ppc) {
   age_lbl <- paste0("Age ", 1:9)
+  z_crit <- stats::qnorm(0.975)
 
   summarise_ppc_mat <- function(ppc_mat, obs, type_label) {
     mat <- ppc_mat[complete.cases(ppc_mat), , drop = FALSE]
     data.frame(
-      Age    = factor(age_lbl, levels = age_lbl),
-      obs    = obs,
-      med    = apply(mat, 2, median),
-      lo50   = apply(mat, 2, quantile, 0.25),
-      hi50   = apply(mat, 2, quantile, 0.75),
-      lo90   = apply(mat, 2, quantile, 0.05),
-      hi90   = apply(mat, 2, quantile, 0.95),
-      type   = type_label,
+      Age = factor(age_lbl, levels = age_lbl),
+      obs = obs,
+      med = apply(mat, 2, median),
+      lo50 = apply(mat, 2, quantile, 0.25),
+      hi50 = apply(mat, 2, quantile, 0.75),
+      lo90 = apply(mat, 2, quantile, 0.05),
+      hi90 = apply(mat, 2, quantile, 0.95),
+      type = type_label,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  summarise_obs_ci <- function(ppc_mat, obs, type_label) {
+    keep <- complete.cases(ppc_mat)
+
+    if (!any(keep)) {
+      return(data.frame(
+        Age = factor(age_lbl, levels = age_lbl),
+        obs_lo = rep(NA_real_, length(obs)),
+        obs_hi = rep(NA_real_, length(obs)),
+        type = type_label,
+        stringsAsFactors = FALSE
+      ))
+    }
+
+    if (type_label == "HCV-positive") {
+      q_mat <- ppc$lam_pos[keep, , drop = FALSE] / ppc$lam_tot[keep, , drop = FALSE]
+      sd_vals <- vapply(seq_len(ncol(q_mat)), function(j) {
+        q_draws <- q_mat[, j]
+        q_draws <- q_draws[is.finite(q_draws)]
+        if (!length(q_draws)) {
+          return(NA_real_)
+        }
+        stats::median(
+          sqrt(obs[j] * q_draws * (1 - q_draws) * (obs[j] + phi_overdisp) / (1 + phi_overdisp)),
+          na.rm = TRUE
+        )
+      }, numeric(1L))
+    } else {
+      p_mat <- ppc$lam_tot[keep, , drop = FALSE] / N_total_obs
+      sd_vals <- vapply(seq_len(ncol(p_mat)), function(j) {
+        p_draws <- p_mat[, j]
+        p_draws <- p_draws[is.finite(p_draws)]
+        if (!length(p_draws)) {
+          return(NA_real_)
+        }
+        stats::median(sqrt(N_total_obs * p_draws * (1 - p_draws)), na.rm = TRUE)
+      }, numeric(1L))
+    }
+
+    data.frame(
+      Age = factor(age_lbl, levels = age_lbl),
+      obs_lo = pmax(0, obs - z_crit * sd_vals),
+      obs_hi = obs + z_crit * sd_vals,
+      type = type_label,
       stringsAsFactors = FALSE
     )
   }
@@ -965,22 +1014,36 @@ plot_ppc_intervals <- function(ppc) {
   plot_df <- bind_rows(
     summarise_ppc_mat(ppc$ppc_pos, obs_pos, "HCV-positive"),
     summarise_ppc_mat(ppc$ppc_tot, obs_tot, "Total PWID")
-  )
+  ) %>%
+    left_join(
+      bind_rows(
+        summarise_obs_ci(ppc$ppc_pos, obs_pos, "HCV-positive"),
+        summarise_obs_ci(ppc$ppc_tot, obs_tot, "Total PWID")
+      ),
+      by = c("Age", "type")
+    )
 
   ggplot(plot_df, aes(x = Age)) +
     geom_linerange(aes(ymin = lo90, ymax = hi90),
-                   linewidth = 1.0, colour = "#4292C6", alpha = 0.45) +
+      linewidth = 1.0, colour = "#4292C6", alpha = 0.45
+    ) +
     geom_linerange(aes(ymin = lo50, ymax = hi50),
-                   linewidth = 3.0, colour = "#08519C", alpha = 0.75) +
+      linewidth = 3.0, colour = "#08519C", alpha = 0.75
+    ) +
+    geom_linerange(aes(ymin = obs_lo, ymax = obs_hi),
+      linewidth = 0.9, colour = "#D7191C", alpha = 0.75
+    ) +
     geom_point(aes(y = med),
-               shape = 18, size = 3.5, colour = "#08306B") +
+      shape = 18, size = 3.5, colour = "#08306B"
+    ) +
     geom_point(aes(y = obs),
-               shape = 21, size = 3.5,
-               fill = "#D7191C", colour = "black", stroke = 1.2) +
-    facet_wrap(~ type, scales = "free_y", ncol = 1) +
+      shape = 21, size = 3.5,
+      fill = "#D7191C", colour = "black", stroke = 1.2
+    ) +
+    facet_wrap(~type, scales = "free_y", ncol = 1) +
     labs(
       title    = "PPC: Posterior Predictive Intervals vs Observed",
-      subtitle = "Diamond: predictive median  |  Thick bar: 50% PI  |  Thin bar: 90% PI  |  Red dot: observed",
+      subtitle = "Diamond: predictive median  |  Thick bar: 50% PI  |  Thin bar: 90% PI  |  Red whisker: likelihood-based 95% CI  |  Red dot: observed",
       x        = "Age group",
       y        = "Count"
     ) +
@@ -1078,7 +1141,7 @@ plot_posterior_densities <- function(post_warmup_list) {
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
-N_CORES     <- 10L      # cores for parallel gradient batches (set to 1 for debugging)
+N_CORES     <- 4L      # cores for parallel gradient batches (set to 1 for debugging)
 N_WARMUP    <- 200L    # adaptation (discarded)
 N_ITER      <- 1000L    # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
@@ -1086,14 +1149,14 @@ L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
 
 # ── Initial points ────────────────────────────────────────────────────────────
-set.seed(114514)
+set.seed(1)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
     log(runif(1L, 0.01, 1.0)),      # log(beta_scale):    mean=0 prior, start in (0,1)
     log(runif(1L, 0.05, 0.5)),      # log(delta):         shift/floor, start small and positive
     log(runif(1L, 1.5, 4.0)),       # log(alpha):         Gamma shape hyperparameter
     log(runif(1L, 0.5, 2.0)),       # log(beta_rate):     Gamma rate hyperparameter
-    log(runif(8L, 0.5, 3.0))        # log(C_contact_scale[1:8]): free row scalings
+    log(runif(8L, 0.01, 3.0))        # log(C_contact_scale[1:8]): free row scalings
   )
 })
 
@@ -1116,7 +1179,7 @@ hmc_chains <- parallel::mclapply(seq_len(N_CHAINS), function(ch) {
     seed        = ch * 314L,
     chain_id    = ch
   )
-}, mc.cores = N_CORES)
+}, mc.cores = N_CHAINS)
 
 # ── Pool post-warmup samples ──────────────────────────────────────────────────
 post_warmup_list <- lapply(hmc_chains, function(ch) ch$samples)
@@ -1185,6 +1248,6 @@ saveRDS(
     post_summary     = post_summary,
     ppc_out          = ppc_out
   ),
-  file = "hmc_output.rds"
+  file = "hmc_output_full.rds"
 )
-cat("\nAll results saved to hmc_output.rds\n")
+cat("\nAll results saved to hmc_output_full.rds\n")

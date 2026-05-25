@@ -227,7 +227,7 @@ colnames(out) <- col_names
 print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
 
 
-plot(out[, "time"], rowSums(out[, grep("_u_", colnames(out))]),
+plot(out[, "time"], rowSums(out[, grep("J_u_", colnames(out))]),
   type = "l", xlab = "Year", ylab = "Total susceptible",
   main = "Status quo — no treatment")
 
