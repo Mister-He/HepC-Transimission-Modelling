@@ -118,22 +118,16 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(
-    0.9769631, 0.7962602, 0.7842585,
-    0.8721055, 0.8675996, 0.9522804,
-    1.0377386, 0.9348018, 0.9021672
-  ), # first-arrest rate   lambda_i^(1) — GUESS
-  lambda2 = c(
-    0.489, 0.620, 0.663,
-    0.628, 0.533, 0.475,
-    0.472, 0.441, 0.451
-  ), # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(
-    0.9769631, 0.7962602, 0.7842585,
-    0.8721055, 0.8675996, 0.9522804,
-    1.0377386, 0.9348018, 0.9021672
-  ), # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.61610608, # recidivism probability (fitted to SPS; Assumption)
+  lambda1 = c(0.8109721, 0.7653195, 0.7311966, 
+              0.7599597, 0.7019922, 0.7589772, 
+              0.8192297, 0.6922072, 0.5052612) * 0.2677606,  # first-arrest rate   lambda_i^(1) — GUESS
+  lambda2 = c(0.4943377, 0.6701434, 0.7144931, 
+              0.6563689, 0.5706163, 0.5220102, 
+              0.5245269, 0.4858457, 0.5201888),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.8109721, 0.7653195, 0.7311966, 
+              0.7599597, 0.7019922, 0.7589772, 
+              0.8192297, 0.6922072, 0.5052612),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.929917,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 9×9 matrix post-calib.
@@ -187,8 +181,8 @@ for (i in 0:8) {
 # =============================================================================
 # Observation-model dispersion settings.
 # These can be tuned or moved into `data` if you want to estimate them.
-sigma_N <- 0.10
-phi_overdisp <- 50.0
+sigma_N <- 0.50
+phi_overdisp <- 10.0
 
 data <- list(
   t_start = 0.0, # start year (0 = model year 0; map to calendar year in R)
@@ -828,7 +822,7 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
 # plus posterior predictive p-values (ppp) per age group.
 #
 generate_ppc_samples <- function(post_samples, base_params, data,
-                                  n_ppc = 200L) {
+                                  n_ppc = 600L) {
   n_avail  <- nrow(post_samples)
   draw_idx <- sort(sample(n_avail, min(n_ppc, n_avail)))
   n_draws  <- length(draw_idx)
@@ -852,10 +846,21 @@ generate_ppc_samples <- function(post_samples, base_params, data,
     }, error = function(e) NULL)
 
     if (!is.null(result)) {
-      lam_tot[ii, ] <- N_total_obs * result$p_age
+      sigma_N <- if (!is.null(data$sigma_N)) data$sigma_N else 0.10
+      phi_overdisp <- if (!is.null(data$phi_overdisp)) data$phi_overdisp else 50.0
+
+      # Draw a replicated total count from the LogNormal observation model
+      N_rep <- as.integer(round(stats::rlnorm(1L, meanlog = log(result$n_model_total), sdlog = sigma_N)))
+      if (!is.finite(N_rep) || N_rep < 1L) N_rep <- 1L
+
+      # Poisson means (expected counts) under this replicate total
+      lam_tot[ii, ] <- N_rep * result$p_age
       lam_pos[ii, ] <- lam_tot[ii, ] * result$q_age
 
-      ppc_tot[ii, ] <- as.integer(rmultinom(1L, size = N_total_obs, prob = result$p_age))
+      # Draw multinomial totals conditional on the replicated total
+      ppc_tot[ii, ] <- as.integer(rmultinom(1L, size = N_rep, prob = result$p_age))
+
+      # For positives, incorporate Beta-Binomial overdispersion via a beta draw
       p_draw <- rbeta(9L, shape1 = result$q_age * phi_overdisp, shape2 = (1 - result$q_age) * phi_overdisp)
       ppc_pos[ii, ] <- rbinom(9L, size = ppc_tot[ii, ], prob = p_draw)
     }
@@ -957,8 +962,8 @@ plot_ppc_intervals <- function(ppc) {
       med = apply(mat, 2, median),
       lo50 = apply(mat, 2, quantile, 0.25),
       hi50 = apply(mat, 2, quantile, 0.75),
-      lo90 = apply(mat, 2, quantile, 0.05),
-      hi90 = apply(mat, 2, quantile, 0.95),
+      lo95 = apply(mat, 2, quantile, 0.025),
+      hi95 = apply(mat, 2, quantile, 0.975),
       type = type_label,
       stringsAsFactors = FALSE
     )
@@ -1024,7 +1029,7 @@ plot_ppc_intervals <- function(ppc) {
     )
 
   ggplot(plot_df, aes(x = Age)) +
-    geom_linerange(aes(ymin = lo90, ymax = hi90),
+    geom_linerange(aes(ymin = lo95, ymax = hi95),
       linewidth = 1.0, colour = "#4292C6", alpha = 0.45
     ) +
     geom_linerange(aes(ymin = lo50, ymax = hi50),
@@ -1050,6 +1055,75 @@ plot_ppc_intervals <- function(ppc) {
     theme_bw(base_size = 11) +
     theme(
       axis.text.x       = element_text(angle = 35, hjust = 1),
+      strip.background  = element_rect(fill = "grey92", colour = "grey70"),
+      panel.grid.minor  = element_blank(),
+      plot.subtitle     = element_text(size = 9, colour = "grey40")
+    )
+}
+
+# ── 7d. HCV prevalence interval plot ────────────────────────────────────────
+#
+# Age-group prevalence = HCV-positive / total PWID in the J-stratum.
+# Blue interval: posterior predictive prevalence draws (BCI).
+# Red interval: observed binomial confidence interval.
+#
+plot_ppc_prevalence_intervals <- function(ppc) {
+  age_lbl <- paste0("Age ", 1:9)
+
+  keep <- complete.cases(ppc$ppc_pos, ppc$ppc_tot)
+  if (!any(keep)) {
+    stop("No complete PPC draws available for prevalence plotting")
+  }
+
+  prev_mat <- ppc$ppc_pos[keep, , drop = FALSE] / ppc$ppc_tot[keep, , drop = FALSE]
+
+  sample_df <- data.frame(
+    Age = factor(age_lbl, levels = age_lbl),
+    obs = obs_pos / obs_tot,
+    med = apply(prev_mat, 2, median, na.rm = TRUE),
+    lo95 = apply(prev_mat, 2, quantile, 0.025, na.rm = TRUE),
+    hi95 = apply(prev_mat, 2, quantile, 0.975, na.rm = TRUE),
+    type = "HCV prevalence",
+    stringsAsFactors = FALSE
+  )
+
+  obs_ci <- vapply(seq_along(obs_pos), function(i) {
+    stats::binom.test(obs_pos[i], obs_tot[i])$conf.int
+  }, numeric(2L))
+
+  obs_df <- data.frame(
+    Age = factor(age_lbl, levels = age_lbl),
+    obs_lo = obs_ci[1L, ],
+    obs_hi = obs_ci[2L, ],
+    type = "HCV prevalence",
+    stringsAsFactors = FALSE
+  )
+
+  plot_df <- left_join(sample_df, obs_df, by = c("Age", "type"))
+
+  ggplot(plot_df, aes(x = Age)) +
+    geom_linerange(aes(ymin = lo95, ymax = hi95),
+      linewidth = 1.1, colour = "#08519C", alpha = 0.55
+    ) +
+    geom_point(aes(y = med),
+      shape = 18, size = 3.5, colour = "#08306B"
+    ) +
+    geom_linerange(aes(ymin = obs_lo, ymax = obs_hi),
+      linewidth = 0.9, colour = "#D7191C", alpha = 0.75
+    ) +
+    geom_point(aes(y = obs),
+      shape = 21, size = 3.5,
+      fill = "#D7191C", colour = "black", stroke = 1.2
+    ) +
+    labs(
+      title    = "PPC: Age-group HCV prevalence",
+      subtitle = "Blue interval: posterior predictive 95% BCI  |  Red whisker: observed exact 95% CI  |  Diamond: sample median  |  Red dot: observed prevalence",
+      x        = "Age group",
+      y        = "Prevalence"
+    ) +
+    scale_y_continuous(labels = function(x) sprintf("%.1f%%", 100 * x)) +
+    theme_bw(base_size = 11) +
+    theme(
       strip.background  = element_rect(fill = "grey92", colour = "grey70"),
       panel.grid.minor  = element_blank(),
       plot.subtitle     = element_text(size = 9, colour = "grey40")
@@ -1149,7 +1223,7 @@ L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
 
 # ── Initial points ────────────────────────────────────────────────────────────
-set.seed(1)
+set.seed(42)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
     log(runif(1L, 0.01, 1.0)),      # log(beta_scale):    mean=0 prior, start in (0,1)
@@ -1214,8 +1288,9 @@ cat("\n=== Posterior Summary (original scale) ===\n")
 print(post_summary, row.names = FALSE)
 
 # ── PPC ───────────────────────────────────────────────────────────────────────
+set.seed(114514)
 cat("\n=== Generating Posterior Predictive Samples ===\n")
-ppc_out <- generate_ppc_samples(all_samples, params, data, n_ppc = 200L)
+ppc_out <- generate_ppc_samples(all_samples, params, data, n_ppc = 600L)
 
 cat("\nPosterior predictive p-values (near 0.5 = good fit):\n")
 ppp_df <- data.frame(
@@ -1231,12 +1306,15 @@ p_density  <- plot_posterior_densities(post_warmup_list)
 p_hist_pos <- plot_ppc_histograms(ppc_out, type = "pos")
 p_hist_tot <- plot_ppc_histograms(ppc_out, type = "tot")
 p_interval <- plot_ppc_intervals(ppc_out)
+p_prev_int <- plot_ppc_prevalence_intervals(ppc_out)
 
 print(p_trace)
 print(p_density)
 print(p_hist_pos)
 print(p_hist_tot)
 print(p_interval)
+print(p_prev_int)
+
 
 # ── Save ─────────────────────────────────────────────────────────────────────
 saveRDS(

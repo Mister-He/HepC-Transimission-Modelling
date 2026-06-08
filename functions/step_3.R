@@ -16,15 +16,9 @@ sum(obs_data$pos[1:2]) / sum(obs_data$tot[1:2]) + c(-1,1) * sqrt(sum(obs_data$po
 ## For mean years of survival, I don't know
 # Recidivism Probability
 rho <- c(
-  0.5472816,
-  0.6104789,
-  0.5816654,
-  0.5151572,
-  0.4358284,
-  0.4178032,
-  0.4031776,
-  0.4029714,
-  0.4315638
+  0.3985248, 0.5686156, 0.5485466,
+  0.6830963, 0.6971583, 1.1823825,
+  1.6449108, 1.2289346, 0.6400324
 )
 rearrest = cbind(t=seq(0,10,0.1),as.data.frame(do.call(cbind,lapply(rho,function(x) exp(-x*seq(0,10,0.1))))))
 colnames(rearrest) = c('t','15-19','20-24','25-29','30-34','35-39','40-44','45-49','50-54','55+')

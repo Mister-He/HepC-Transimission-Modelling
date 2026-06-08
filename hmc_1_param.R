@@ -187,8 +187,8 @@ for (i in 0:8) {
 # =============================================================================
 # Observation-model dispersion settings.
 # These can be tuned or moved into `data` if you want to estimate them.
-sigma_N <- 0.10
-phi_overdisp <- 50.0
+sigma_N <- 0.20
+phi_overdisp <- 20.0
 
 data <- list(
   t_start = 0.0, # start year (0 = model year 0; map to calendar year in R)
