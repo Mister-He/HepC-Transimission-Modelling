@@ -226,11 +226,10 @@ print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "s
 colnames(out) <- col_names
 print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
 
-
-plot(out[, "time"], rowSums(out[, grep("J_u_", colnames(out))]),
-  type = "l", xlab = "Year", ylab = "Total susceptible",
-  main = "Status quo — no treatment")
-
+# plot(out[, "time"], rowSums(out[, grep("J_u_", colnames(out))]),
+#   type = "l", xlab = "Year", ylab = "Total susceptible",
+#   main = "Status quo — no treatment")
+#
 # plot(out[,"time"], rowSums(out[, grep("_a_age9", colnames(out))]),
 #      type = "l", xlab = "Year", ylab = "Total acute HCV",
 #      main = "Status quo — no treatment")
