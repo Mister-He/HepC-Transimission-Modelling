@@ -19,11 +19,11 @@ obs_tot <- c(223, 572, 790, 765, 747, 810, 770, 658, 803)
 N_total_obs <- sum(obs_tot)
 
 param_names_log <- c(
-  "log_beta_scale", "log_delta", "log_alpha", "log_beta_rate",
-  paste0("log_C_contact_scale_", 1:8)
+  "log_beta_scale", "mu_hier", "log_sigma_hier",
+  paste0("eta_", 1:8)
 )
 param_names_orig <- c(
-  "beta_scale", "delta", "alpha", "beta_rate",
+  "beta_scale", "mu_hier", "sigma_hier",
   paste0("C_contact_scale_", 1:8)
 )
 
@@ -36,7 +36,7 @@ N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
 N_CORES     <- 4L      # cores for parallel gradient batches (set to 1 for debugging)
 N_WARMUP    <- 200L    # adaptation (discarded)
 N_ITER      <- 1000L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
-N_PARAMS    <- 12L     # number of parameters being sampled (log scale)
+N_PARAMS    <- 11L     # number of parameters being sampled (log scale)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
 L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
@@ -45,11 +45,10 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(42)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    log(runif(1L, 0.01, 1.0)),      # log(beta_scale):    mean=0 prior, start in (0,1)
-    log(runif(1L, 0.05, 0.5)),      # log(delta):         shift/floor, start small and positive
-    log(runif(1L, 1.5, 4.0)),       # log(alpha):         Gamma shape hyperparameter
-    log(runif(1L, 0.5, 2.0)),       # log(beta_rate):     Gamma rate hyperparameter
-    log(runif(8L, 0.01, 3.0))        # log(C_contact_scale[1:8]): free row scalings
+    log(runif(1L, 0.01, 1.0)),    # log(beta_scale):  start in (0,1)
+    rnorm(1L, 0.0, 0.5),          # mu_hier:          log-scale mean near 0
+    rnorm(1L, log(0.5), 0.3),     # log(sigma_hier):  start near prior center
+    rnorm(8L, 0.0, 0.5)           # eta[1:8]:         standardised deviates near 0
   )
 })
 
@@ -94,7 +93,7 @@ acc_df <- data.frame(
 print(acc_df, row.names = FALSE)
 
 # ── Posterior summary (original scale) ───────────────────────────────────────
-orig_samples <- exp(all_samples)
+orig_samples <- theta_to_orig(all_samples)
 post_summary <- data.frame(
   Parameter  = param_names_orig,
   Mean       = round(colMeans(orig_samples), 4),

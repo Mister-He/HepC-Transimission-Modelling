@@ -99,7 +99,7 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
     rhat_vals <- compute_rhat(post_warmup_list)
     ess_vals <- compute_ess(post_warmup_list)
     all_samps <- do.call(rbind, post_warmup_list)
-    orig_samps <- exp(all_samps)
+    orig_samps <- theta_to_orig(all_samps)
 
     diag_df <- data.frame(
         Parameter = param_names_log,
@@ -520,7 +520,7 @@ plot_traces <- function(chains_raw, param_idx = 1:min(5L, N_PARAMS)) {
 # ── 7e. Posterior density plot (original scale) ────────────────────────────
 plot_posterior_densities <- function(post_warmup_list) {
     all_samps <- do.call(rbind, lapply(seq_along(post_warmup_list), function(ch) {
-        df <- as.data.frame(exp(post_warmup_list[[ch]]))
+        df <- as.data.frame(theta_to_orig(post_warmup_list[[ch]]))
         colnames(df) <- param_names_orig
         df$chain <- factor(ch)
         df

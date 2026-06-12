@@ -4,68 +4,66 @@
 # Append this file after setup.R (which sources sim.cpp and defines params,
 # data, idx(), y0, etc.).
 #
-# Parameters estimated (12 total, all in log-space for positivity):
-#   theta[1]       = log(beta_scale)        scalar multiplier on beta[1:9]
-#   theta[2]       = log(delta)             shift parameter for shifted Gamma prior
-#   theta[3]       = log(alpha)             shape parameter for Gamma hyperprior
-#   theta[4]       = log(beta_rate)         rate parameter for Gamma hyperprior
-#   theta[5:12]    = log(C_contact_scale[1:8])  8 age-specific row scalings
+# Parameters estimated (11 total):
+#   theta[1]       = log(beta_scale)   scalar multiplier on beta[1:9]
+#   theta[2]       = mu_hier           log-scale mean of contact row scalings
+#   theta[3]       = log(sigma_hier)   log-scale std dev of contact row scalings
+#   theta[4:11]    = eta[1:8]          standardised deviates (non-centred)
 #
-# Scaling factors generated:
-#   C_contact_scale[1:8] = delta + Gamma(alpha, beta_rate)
-#   C_contact_scale[9]    = 1  (reference row, fixed for identifiability)
+# Scaling factors generated (non-centred log-normal hierarchy):
+#   C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j])   j = 1..8
+#   C_contact_scale[9] = 1  (reference row, fixed for identifiability)
 #
 # Likelihood (three-step observation model, J-stratum only, per age group i = 1..9):
 #   N_total_obs            ~ LogNormal(log(N_total_model), sigma_N)
 #   obs_tot[1:9] | N_total ~ Multinomial(N_total_obs, p_1:9(theta))
 #   obs_pos[a] | obs_tot[a] ~ BetaBinomial(obs_tot[a], q_a(theta), phi)
 #
-# Prior: LogNormal hyperpriors on (beta_scale, delta, alpha, beta_rate)
-#   beta_scale ~ LogNormal(0, 1)
-#   delta      ~ LogNormal(log(0.25), 0.5)   [shift/floor for row scalings]
-#   alpha      ~ LogNormal(log(2.5), 0.3)    [Gamma shape hyperparameter]
-#   beta_rate  ~ LogNormal(log(1.0), 0.3)    [Gamma rate hyperparameter]
+# Prior:
+#   beta_scale  ~ LogNormal(0, 1)           [theta[1] ~ N(0, 1)]
+#   mu_hier     ~ Normal(0, 1)              [log-scale mean; exp(0)=1 reference]
+#   sigma_hier  ~ LogNormal(log(0.5), 0.5)  [theta[3] ~ N(log(0.5), 0.5)]
+#   eta[j]      ~ Normal(0, 1)  j = 1..8   [non-centred deviates]
 #
-# The 8 free row scalings follow a shifted Gamma hierarchy, with the 9th row
-# fixed to 1 as the reference row for identifiability.
+# Non-centred reparameterisation removes the delta+excess ridge and decouples
+# the hierarchy hyperparameters from the unit-level contact row scalings.
 #
 # Gradient: central finite differences through the C++ ODE solver
 #   Cost per HMC step: (L+1) gradient evals × 2 × N_PARAMS ODE runs
-#                    = (L+1) × 24 ODE runs  [plus 1 for current lp]
+#                    = (L+1) × 22 ODE runs  [plus 1 for current lp]
 #   Tip: keep L small (5-10) and use parallel chains.
 #
 # Outputs:
 #   hmc_chains        — raw chain list (all iterations, all chains)
 #   post_warmup_list  — post-warmup samples per chain
-#   all_samples       — pooled post-warmup matrix (n_samp × 12)
+#   all_samples       — pooled post-warmup matrix (n_samp × 11)
 #   diag_table        — R-hat and ESS summary data.frame
 #   ppc_out           — posterior predictive replicates
 #   plots             — trace, PPC histogram, PPC interval
 # =============================================================================
 
- =============================================================================
+# =============================================================================
 # 1.  PARAMETER TRANSFORMS
 # =============================================================================
 
-#' Unconstrained theta (log-space) -> constrained named list
-#' 
-#' Generates 8 free contact scaling factors from a shifted Gamma hierarchy.
-#' The 9th row is held at 1 as a reference for identifiability.
+#' Unconstrained theta -> constrained named list (non-centred log-normal hierarchy)
+#'
+#' C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j]) for j = 1..8.
+#' Row 9 is held at 1 as the reference for identifiability.
 constrain_theta <- function(theta) {
   beta_scale <- exp(theta[1L])
-  delta      <- exp(theta[2L])
-  alpha      <- exp(theta[3L])
-  beta_rate  <- exp(theta[4L])
+  mu_hier    <- theta[2L]
+  sigma_hier <- exp(theta[3L])
+  eta        <- theta[4:11]
 
-  # 8 estimated row scalings; row 9 remains the reference row (scale = 1)
-  c_scales <- c(delta + exp(theta[5:12]), 1.0)
-  
+  c_scales <- c(exp(mu_hier + sigma_hier * eta), 1.0)
+
   list(
     beta_scale      = beta_scale,
     C_contact_scale = c_scales,
-    delta           = delta,
-    alpha           = alpha,
-    beta_rate       = beta_rate
+    mu_hier         = mu_hier,
+    sigma_hier      = sigma_hier,
+    eta             = eta
   )
 }
 
@@ -85,6 +83,23 @@ build_params_from_theta <- function(theta, base_params) {
     pm$C_contact[j, ] <- base_params$C_contact[j, ] * p$C_contact_scale[j]
   }
   pm
+}
+
+#' Vectorised back-transform: theta matrix (N × 11) -> interpretable parameter matrix
+#'
+#' theta[,1]   log(beta_scale)   -> exp()           = beta_scale
+#' theta[,2]   mu_hier           -> identity         = mu_hier (log-scale mean)
+#' theta[,3]   log(sigma_hier)   -> exp()           = sigma_hier
+#' theta[,4:11] eta[1:8]         -> exp(mu + sig*eta) = C_contact_scale[1:8]
+theta_to_orig <- function(samps) {
+  mu    <- samps[, 2L]
+  sigma <- exp(samps[, 3L])
+  c_cols <- sapply(seq_len(8L), function(j) exp(mu + sigma * samps[, 3L + j]))
+  colnames(c_cols) <- paste0("C_contact_scale_", 1:8)
+  cbind(beta_scale = exp(samps[, 1L]),
+        mu_hier    = samps[, 2L],
+        sigma_hier = sigma,
+        c_cols)
 }
 
 
@@ -153,51 +168,38 @@ compute_age_quantities <- function(y_final) {
 
 # ── 3a. Log-prior ────────────────────────────────────────────────────────────
 #
-# Prior specification on original scale:
-#   beta_scale ~ LogNormal(0, 1)                 [median 1]
-#   delta      ~ LogNormal(log(0.25), 0.5)       [positive shift/floor]
-#   alpha      ~ LogNormal(log(2.5), 0.3)        [Gamma shape hyperparameter]
-#   beta_rate  ~ LogNormal(log(1.0), 0.3)        [Gamma rate hyperparameter]
-#
-# The 8 free row scalings are modeled as delta + Gamma(alpha, beta_rate),
-# which places the prior mass for the resulting scales around 1–2.
-#
-# Change-of-variables: theta_j = log(X_j), X_j = exp(theta_j)
-#   log p(theta_j) = log p_X(exp(theta_j)) + theta_j
+# Non-centred log-normal hierarchy (all theta are unconstrained or log-transformed):
+#   beta_scale  ~ LogNormal(0, 1)           → theta[1] ~ N(0, 1)
+#   mu_hier     ~ Normal(0, 1)              → theta[2] ~ N(0, 1)
+#   sigma_hier  ~ LogNormal(log(0.5), 0.5)  → theta[3] ~ N(log(0.5), 0.5)
+#   eta[j]      ~ Normal(0, 1)              → theta[4:11] ~ N(0, 1)
 #
 log_prior <- function(theta) {
-  beta_scale <- exp(theta[1L])
-  delta      <- exp(theta[2L])
-  alpha      <- exp(theta[3L])
-  beta_rate  <- exp(theta[4L])
-  excess     <- exp(theta[5:12])
-  
-  # LogNormal priors on each parameter (using dnorm on log scale + Jacobian)
-  lp_beta_scale <- dnorm(theta[1L], mean =  0.0, sd = 1.0, log = TRUE)
-  lp_delta      <- dnorm(theta[2L], mean = log(0.25), sd = 0.5, log = TRUE)
-  lp_alpha      <- dnorm(theta[3L], mean = log(2.5), sd = 0.3, log = TRUE)
-  lp_beta_rate  <- dnorm(theta[4L], mean = log(1.0), sd = 0.3, log = TRUE)
-  lp_contact    <- sum(dgamma(excess, shape = alpha, rate = beta_rate, log = TRUE) + theta[5:12])
-  
-  # Sum across all parameters
-  lp_beta_scale + lp_delta + lp_alpha + lp_beta_rate + lp_contact
+  lp_beta_scale <- dnorm(theta[1L],    mean = 0.0,      sd = 1.0, log = TRUE)
+  lp_mu_hier    <- dnorm(theta[2L],    mean = 0.0,      sd = 1.0, log = TRUE)
+  lp_log_sigma  <- dnorm(theta[3L],    mean = log(0.5), sd = 0.5, log = TRUE)
+  lp_eta        <- sum(dnorm(theta[4:11], mean = 0.0,   sd = 1.0, log = TRUE))
+
+  lp_beta_scale + lp_mu_hier + lp_log_sigma + lp_eta
 }
 
 # ── 3b. Analytical gradient of log-prior ─────────────────────────────────────
 #
-# With shifted Gamma priors on the row scalings:
-#   d/d theta_j [dgamma(exp(theta_j), shape, rate, log=TRUE) + theta_j]
-#     = alpha - beta_rate * exp(theta_j)
+# Gradients of the non-centred log-normal hierarchy:
+#   d/d theta[1]    = -(theta[1] - 0) / 1^2
+#   d/d theta[2]    = -(theta[2] - 0) / 1^2
+#   d/d theta[3]    = -(theta[3] - log(0.5)) / 0.5^2
+#   d/d theta[j]    = -theta[j]   for j = 4..11  (eta ~ N(0,1))
+#
+# Note: not called during sampling (numerical gradients are used); kept for
+# reference and unit-testing against finite differences.
 #
 grad_log_prior_analytical <- function(theta) {
-  grad <- numeric(12L)
-  grad[1L] <- -(theta[1L] - 0.0) / 1.0^2
-  grad[2L] <- -(theta[2L] - log(0.25)) / 0.5^2
-  grad[3L] <- -(theta[3L] - log(2.5)) / 0.3^2
-  grad[4L] <- -(theta[4L] - log(1.0)) / 0.3^2
-  alpha     <- exp(theta[3L])
-  beta_rate <- exp(theta[4L])
-  grad[5:12] <- alpha - beta_rate * exp(theta[5:12])
+  grad <- numeric(11L)
+  grad[1L]   <- -(theta[1L] - 0.0) / 1.0^2
+  grad[2L]   <- -(theta[2L] - 0.0) / 1.0^2
+  grad[3L]   <- -(theta[3L] - log(0.5)) / 0.5^2
+  grad[4:11] <- -theta[4:11]
   grad
 }
 
