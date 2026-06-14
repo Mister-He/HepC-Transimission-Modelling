@@ -1,12 +1,4 @@
 # =============================================================================
-# DATA / SIMULATION SETTINGS
-# =============================================================================
-# Observation-model dispersion settings.
-# These can be tuned or moved into `data` if you want to estimate them.
-sigma_N <- 1.0
-phi_overdisp <- 50.0
-
-# =============================================================================
 # MAIN: RUN HMC
 # =============================================================================
 library(ggplot2)
@@ -16,27 +8,27 @@ library(tidyr)
 # Observations
 obs_pos <- c(11, 51, 99, 141, 209, 339, 437, 367, 351)
 obs_tot <- c(223, 572, 790, 765, 747, 810, 770, 658, 803)
-N_total_obs <- sum(obs_tot)
 
 param_names_log <- c(
-  "log_beta_scale", "mu_hier", "log_sigma_hier",
+  "mu_hier", "log_sigma_hier",
   paste0("eta_", 1:8)
 )
 param_names_orig <- c(
-  "beta_scale", "mu_hier", "sigma_hier",
+  "mu_hier", "sigma_hier",
   paste0("C_contact_scale_", 1:8)
 )
 
 source("setup.R")  
 source("HMC_core.R") 
 source("HMC_conv.R")  
+data$phi_overdisp <- 50.0
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
 N_CORES     <- 4L      # cores for parallel gradient batches (set to 1 for debugging)
 N_WARMUP    <- 200L    # adaptation (discarded)
 N_ITER      <- 1000L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
-N_PARAMS    <- 11L     # number of parameters being sampled (log scale)
+N_PARAMS    <- 10L     # number of parameters being sampled (log scale)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
 L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
@@ -45,7 +37,6 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(42)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    log(runif(1L, 0.01, 1.0)),    # log(beta_scale):  start in (0,1)
     rnorm(1L, 0.0, 0.5),          # mu_hier:          log-scale mean near 0
     rnorm(1L, log(0.5), 0.3),     # log(sigma_hier):  start near prior center
     rnorm(8L, 0.0, 0.5)           # eta[1:8]:         standardised deviates near 0

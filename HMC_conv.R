@@ -137,10 +137,10 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
 # ── 7a. Generate PPC replicates ──────────────────────────────────────────────
 #
 # For each sampled theta_s, run the ODE model and draw:
-#   y_rep_pos[i] ~ Poisson(lambda_pos[i] | theta_s)
-#   y_rep_tot[i] ~ Poisson(lambda_tot[i] | theta_s)
+#   y_rep_tot[i] ~ Multinomial(N_age_obs, p_i(theta_s))
+#   y_rep_pos[i] ~ BetaBinomial(y_rep_tot[i], q_i(theta_s), phi)
 #
-# Returns replicated counts (integer) and the Poisson means (real),
+# Returns replicated counts (integer) and the corresponding means (real),
 # plus posterior predictive p-values (ppp) per age group.
 #
 generate_ppc_samples <- function(post_samples, base_params, data,
@@ -173,20 +173,15 @@ generate_ppc_samples <- function(post_samples, base_params, data,
         )
 
         if (!is.null(result)) {
-            sigma_N <- if (!is.null(data$sigma_N)) data$sigma_N else 0.10
             phi_overdisp <- if (!is.null(data$phi_overdisp)) data$phi_overdisp else 50.0
+            n_age_obs <- sum(obs_tot)
 
-            # Draw a replicated total count from the LogNormal observation model
-            N_rep <- as.integer(round(stats::rlnorm(1L, meanlog = log(result$n_model_total), sdlog = sigma_N)))
-            if (!is.finite(N_rep) || N_rep < 1L) N_rep <- 1L
-
-            # Poisson means (expected counts) under this replicate total
-            lam_tot[ii, ] <- N_rep * result$p_age
+            # Expected counts under the age-total multinomial layer.
+            lam_tot[ii, ] <- n_age_obs * result$p_age
             lam_pos[ii, ] <- lam_tot[ii, ] * result$q_age
 
-            # Draw multinomial totals conditional on the replicated total
-            ppc_tot[ii, ] <- as.integer(rmultinom(1L, size = N_rep, prob = result$p_age))
-
+            # Draw multinomial totals conditional on the observed age-total size.
+            ppc_tot[ii, ] <- as.integer(rmultinom(1L, size = n_age_obs, prob = result$p_age))
             # For positives, incorporate Beta-Binomial overdispersion via a beta draw
             p_draw <- rbeta(9L, shape1 = result$q_age * phi_overdisp, shape2 = (1 - result$q_age) * phi_overdisp)
             ppc_pos[ii, ] <- rbinom(9L, size = ppc_tot[ii, ], prob = p_draw)
@@ -335,14 +330,15 @@ plot_ppc_intervals <- function(ppc) {
                 )
             }, numeric(1L))
         } else {
-            p_mat <- ppc$lam_tot[keep, , drop = FALSE] / N_total_obs
+            n_age_obs <- sum(obs)
+            p_mat <- ppc$lam_tot[keep, , drop = FALSE] / n_age_obs
             sd_vals <- vapply(seq_len(ncol(p_mat)), function(j) {
                 p_draws <- p_mat[, j]
                 p_draws <- p_draws[is.finite(p_draws)]
                 if (!length(p_draws)) {
                     return(NA_real_)
                 }
-                stats::median(sqrt(N_total_obs * p_draws * (1 - p_draws)), na.rm = TRUE)
+                stats::median(sqrt(n_age_obs * p_draws * (1 - p_draws)), na.rm = TRUE)
             }, numeric(1L))
         }
 
@@ -357,12 +353,12 @@ plot_ppc_intervals <- function(ppc) {
 
     plot_df <- bind_rows(
         summarise_ppc_mat(ppc$ppc_pos, obs_pos, "HCV-positive"),
-        summarise_ppc_mat(ppc$ppc_tot, obs_tot, "Total PWID")
+        summarise_ppc_mat(ppc$ppc_tot, obs_tot, "Age totals")
     ) %>%
         left_join(
             bind_rows(
                 summarise_obs_ci(ppc$ppc_pos, obs_pos, "HCV-positive"),
-                summarise_obs_ci(ppc$ppc_tot, obs_tot, "Total PWID")
+                summarise_obs_ci(ppc$ppc_tot, obs_tot, "Age totals")
             ),
             by = c("Age", "type")
         )
