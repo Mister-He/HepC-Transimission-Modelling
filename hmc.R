@@ -21,7 +21,7 @@ param_names_orig <- c(
 source("setup.R")  
 source("HMC_core.R") 
 source("HMC_conv.R")  
-data$phi_overdisp <- 50.0
+data$phi_overdisp <- 40.0
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
@@ -34,12 +34,12 @@ L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
 
 # ── Initial points ────────────────────────────────────────────────────────────
-set.seed(42)
+set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    rnorm(1L, 0.0, 0.5),          # mu_hier:          log-scale mean near 0
-    rnorm(1L, log(0.5), 0.3),     # log(sigma_hier):  start near prior center
-    rnorm(8L, 0.0, 0.5)           # eta[1:8]:         standardised deviates near 0
+    rnorm(1L, 0.0, 1),          # mu_hier:          log-scale mean near 0
+    rnorm(1L, log(0.5), 1),     # log(sigma_hier):  start near prior center
+    rnorm(8L, 0.0, 1)           # eta[1:8]:         standardised deviates near 0
   )
 })
 
