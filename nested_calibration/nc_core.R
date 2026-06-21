@@ -31,7 +31,7 @@ obs_prop <- obs_tot / sum(obs_tot)        # target age distribution
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 PHI_OVERDISP     <- 50.0   # BetaBinomial overdispersion (fixed; tunable)
-SIGMA_BETA_PRIOR <- 1.5    # prior SD on log_beta_delta (covers ±4.5 log-units)
+SIGMA_BETA_PRIOR <- 0.75   # prior SD on log_beta_delta (covers ±2.25 log-units around Stage-1 beta)
 
 N_CONTACT <- 10L           # contact-rate parameters (Stage 1)
 N_BETA    <-  9L           # beta log-deviation parameters (Stage 2)
@@ -45,26 +45,32 @@ JOINT_PARAM_NAMES   <- c(CONTACT_PARAM_NAMES, BETA_PARAM_NAMES)
 # 1.  PARAMETER TRANSFORMS
 # =============================================================================
 
-# Non-centred log-normal hierarchy for contact row scalings (same as HMC_core.r).
-# C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j])  for j = 1..8
-# C_contact_scale[9] = 1  (reference row — identifiability anchor)
+# Non-centred log-normal hierarchy for contact row scalings.
+# Reference: row 1 fixed at scale 1.0 (base row-sum ≈ 60 contacts — smallest row).
+# Fixing the row with the smallest base allows rows 7-9 to achieve scales > 1,
+# which is needed to reproduce the high observed HCV prevalences for those groups.
+# Previously row 9 was the reference, but rows 8 and 9 have identical base matrices,
+# and fixing row 9 at 1.0 forced rows 7-8 to very low scales (0.17-0.23), preventing
+# the model from reaching the 57% prevalence observed in age groups 7-8.
+# C_contact_scale[1] = 1  (reference — identifiability anchor)
+# C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j-1])  for j = 2..9
 constrain_contact <- function(theta_c) {
   mu    <- theta_c[1L]
   sigma <- exp(theta_c[2L])
   eta   <- theta_c[3:10]
   list(
-    C_contact_scale = c(exp(mu + sigma * eta), 1.0),
+    C_contact_scale = c(1.0, exp(mu + sigma * eta)),
     mu_hier         = mu,
     sigma_hier      = sigma,
     eta             = eta
   )
 }
 
-# Build a full params list with scaled contact matrix rows 1:8.
+# Build a full params list with scaled contact matrix rows 2:9 (row 1 is the reference).
 build_contact_params <- function(theta_c, base_params) {
   p  <- constrain_contact(theta_c)
   pm <- base_params
-  for (j in 1:8) {
+  for (j in 2:9) {
     pm$C_contact[j, ] <- base_params$C_contact[j, ] * p$C_contact_scale[j]
   }
   pm
@@ -80,8 +86,8 @@ contact_to_orig <- function(samps) {
   mu    <- samps[, 1L]
   sigma <- exp(samps[, 2L])
   c_cols <- sapply(1:8, function(j) exp(mu + sigma * samps[, 2L + j]))
-  colnames(c_cols) <- paste0("C_contact_scale_", 1:8)
-  cbind(mu_hier = mu, sigma_hier = sigma, c_cols, C_contact_scale_9 = 1.0)
+  colnames(c_cols) <- paste0("C_contact_scale_", 2:9)
+  cbind(mu_hier = mu, sigma_hier = sigma, C_contact_scale_1 = 1.0, c_cols)
 }
 
 # =============================================================================
@@ -172,23 +178,37 @@ log_posterior_nested <- function(theta_c, base_params, data) {
 }
 
 # ── Stage 2: beta params, contact rates fixed externally ─────────────────────
-# Likelihood: Multinomial (age proportions) + BetaBinomial (prevalences).
-# pm_contact must already have C_contact scaled (built from Stage 1 posterior mean).
-log_posterior_stage2 <- function(theta_b, pm_contact, base_params, data) {
+# Likelihood: BetaBinomial on prevalences ONLY.
+# Age proportions are enforced structurally via nested_beta_adjust (same design
+# as Stage 1), so no Multinomial term is needed.
+#
+# Why we dropped the Multinomial + free-ODE design:
+#   At equilibrium, prevalence ≈ force-of-infection / outflow, which depends on
+#   contact rates, NOT on beta.  So the BetaBinomial barely constrains beta, and
+#   the Multinomial alone (with 9 free betas vs 8 independent proportion contrasts)
+#   leaves a near-null space that produces catastrophic multimodality (R-hat > 10
+#   for age groups 7-9, chains swapping modes).  Running the nested adjustment
+#   inside Stage 2 breaks this degeneracy: each theta_b produces a UNIQUE final
+#   beta (the one that exactly satisfies obs_prop), and the BetaBinomial then
+#   identifies which direction in starting-beta space gives better prevalence fit.
+#
+# pm_contact: contact matrix fixed at Stage 1 posterior mean (C_contact scaled).
+# beta_nested: the nested-adjusted beta from Stage 1 (NOT params$beta).
+#   theta_b = 0 → no perturbation; nested adjustment gives back beta_nested.
+log_posterior_stage2 <- function(theta_b, pm_contact, beta_nested, data) {
   lp <- log_prior_beta_delta(theta_b)
   if (!is.finite(lp)) return(-Inf)
 
   pm      <- pm_contact
-  pm$beta <- apply_beta_delta(theta_b, base_params)
+  pm$beta <- beta_nested * exp(theta_b)   # perturbed starting beta
 
-  out <- tryCatch(run_sim(pm, data), error = function(e) NULL)
-  if (is.null(out) || !is.matrix(out) || nrow(out) == 0L || any(!is.finite(out))) return(-Inf)
-  q <- compute_age_quantities(as.numeric(out[nrow(out), -1L]))
-  if (is.null(q)) return(-Inf)
+  # Enforce proportions exactly — same nested adjustment as Stage 1
+  result <- nested_beta_adjust(pm, data, obs_prop)
+  if (is.null(result)) return(-Inf)
 
-  ll_prop <- dmultinom(obs_tot, prob = q$p_age, log = TRUE)
-  ll_prev <- log_beta_binomial_nc(obs_pos, obs_tot, q$q_age, PHI_OVERDISP)
-  lp + ll_prop + ll_prev
+  # Only BetaBinomial: proportions are satisfied structurally
+  ll_prev <- log_beta_binomial_nc(obs_pos, obs_tot, result$model_q$q_age, PHI_OVERDISP)
+  lp + ll_prev
 }
 
 # ── Joint reference: all 19 params simultaneously (for comparison / sanity) ───
