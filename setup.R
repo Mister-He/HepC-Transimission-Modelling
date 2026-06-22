@@ -11,9 +11,9 @@ sourceCpp("sim.cpp")
 
 # =============================================================================
 # HELPER: flat compartment index (mirrors C++ idx())
-# s in {0=D,1=J,2=F,3=X}, k in {1,2,3,4}, h in {0=u,1=a,2=c,3=t}, i in {0..8}
+# s in {0=D,1=J,2=F,3=X}, k in {1,2,3,4}, h in {0=u,1=a,2=c,3=t}, i in {0..9}
 # =============================================================================
-idx <- function(s, k, h, i) s * 4 * 4 * 9 + (k - 1) * 4 * 9 + h * 9 + i + 1L
+idx <- function(s, k, h, i) s * 4 * 4 * 10 + (k - 1) * 4 * 10 + h * 10 + i + 1L
 
 # =============================================================================
 # PARAMETERS
@@ -102,7 +102,8 @@ params <- list(
     0.000700,  # age group 6 (40-44) 
     0.001400,  # age group 7 (45-49) 
     0.002300,  # age group 8 (50-54) 
-    0.016100   # age group 9 (55+)   
+    0.016100,  # age group 9 (55-59)   
+    0.016100   # age group 10 (60+)
   ),
 
   # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
@@ -118,28 +119,33 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.8109721, 0.7653195, 0.7311966, 
-              0.7599597, 0.7019922, 0.7589772, 
-              0.8192297, 0.6922072, 0.5052612) * 0.2677606,  # first-arrest rate   lambda_i^(1) — GUESS
-  lambda2 = c(0.4943377, 0.6701434, 0.7144931, 
-              0.6563689, 0.5706163, 0.5220102, 
-              0.5245269, 0.4858457, 0.5201888),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.8109721, 0.7653195, 0.7311966, 
-              0.7599597, 0.7019922, 0.7589772, 
-              0.8192297, 0.6922072, 0.5052612),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.929917,          # recidivism probability (fitted to SPS; Assumption)
+  lambda1 = c(0.3664099, 0.6411927, 0.5835333, 
+              0.6103044, 0.6056308, 0.7468978, 
+              0.7911705, 0.7523195, 0.6751074, 
+              0.5130726) * 0.4541715,  # first-arrest rate   lambda_i^(1) — GUESS
+  lambda2 = c(0.4166549, 0.6371684, 0.6524925, 
+              0.6296543, 0.5621057, 0.5395308, 
+              0.5799137, 0.5003022, 0.5269006, 
+              0.5072655),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.3664099, 0.6411927, 0.5835333, 
+              0.6103044, 0.6056308, 0.7468978, 
+              0.7911705, 0.7523195, 0.6751074, 
+              0.5130726),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.8256526,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
-  # CALIBRATED: scalar homogeneous mixing — replace with 9×9 matrix post-calib.
-  C_contact = rbind(c(7, 4, 1, 1, 0, 1, 1, 0, 0),
-                    c(11, 34, 21, 11, 6, 2, 1, 0.5, 0.5),
-                    c(7, 30, 80, 62, 30, 10, 2, 1.5, 1.5), 
-                    c(2, 10, 60, 121, 65, 38, 15, 2, 2), 
-                    c(1, 11, 22, 67, 107, 41, 18, 2.5, 2.5),
-                    c(0, 4, 6, 22, 32, 31, 10, 2, 2),
-                    c(0, 1, 1, 8, 10, 15, 11, 0.5, 0.5),
-                    c(0, 5, 5, 5.5, 6.5, 6.5, 3.5, 1.5, 1.5),
-                    c(0, 5, 5, 5.5, 6.5, 6.5, 3.5, 1.5, 1.5)) * 4,
+  # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
+  C_contact = rbind(c(7, 4, 1, 1, 0, 1, 1, 0, 0, 0),
+                    c(11, 34, 21, 11, 6, 2, 1, 1/3, 1/3, 1/3),
+                    c(7, 30, 80, 62, 30, 10, 2, 1, 1, 1), 
+                    c(2, 10, 60, 121, 65, 38, 15, 4/3, 4/3, 4/3), 
+                    c(1, 11, 22, 67, 107, 41, 18, 5/3, 5/3, 5/3),
+                    c(0, 4, 6, 22, 32, 31, 10, 4/3, 4/3, 4/3),
+                    c(0, 1, 1, 8, 10, 15, 11, 1/3, 1/3, 1/3),
+                    c(0, 10/3, 10/3, 11/3, 13/3, 13/3, 7/3, 1, 0.5, 0.5),
+                    c(0, 10/3, 10/3, 11/3, 13/3, 13/3, 7/3, 1, 0.5, 0.5),
+                    c(0, 10/3, 10/3, 11/3, 13/3, 13/3, 7/3, 1, 0.5, 0.5)
+                    ) * 4,
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
   # CALIBRATED: constant-in-time placeholder — replace with beta_i(t) from calib.
@@ -151,8 +157,9 @@ params <- list(
     301/2,      # age group 5 
     111/2,      # age group 6 
     111/2,      # age group 7 
-    33/2,       # age group 8 
-    33/2 + 4    # age group 9 
+    33/3,       # age group 8 
+    33/3,       # age group 9 
+    33/3        # age group 10
   )
 )
 
@@ -163,13 +170,13 @@ params <- list(
 # non-cirrhosis, chronic, all age groups) to start the epidemic.
 # CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
 # =============================================================================
-y0 <- rep(0.0, 576)
+y0 <- rep(0.0, 640)
 
 # Susceptible population: put most of PWID in D_u,1,i
 # Seed chronic infection: 20 chronic per age group in D_c,1,i
-pos = c(55, 145, 183, 164, 212, 299, 222, 190, 133)
-tot = c(307, 797, 829, 633, 598, 642, 481, 439, 366)
-for (i in 0:8) {
+pos = c(26, 95, 164, 169, 183, 241, 223, 189, 124, 48)
+tot = c(145, 607, 759, 649, 564, 544, 483, 392, 293, 152)
+for (i in 0:9) {
   y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
   y0[idx(s=0, k=1, h=1, i=i)] <- pos[i+1]             # D_{a,1,i}
 }
@@ -181,7 +188,7 @@ data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
   t_end   = 100.0,   # simulate 100 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
-  y0      = y0      # initial conditions (length-576 vector)
+  y0      = y0      # initial conditions (length-640 vector)
 )
 
 # =============================================================================
@@ -209,7 +216,7 @@ params_s1 <- modifyList(params, list(tau = c(0, 0, 0, 0)))
 strata_names <- c("D", "J", "F", "X")
 stage_names  <- c("NC", "CC", "DC", "HCC")
 state_names  <- c("u", "a", "c", "t")
-age_names    <- paste0("age", 1:9)
+age_names    <- paste0("age", 1:10)
 
 expand.grid(age_names, state_names, stage_names, strata_names) %>%
   mutate(col_name = paste(Var4, Var3, Var2, Var1, sep = "_")) %>%
@@ -226,20 +233,20 @@ print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "s
 colnames(out) <- col_names
 print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
 
-# plot(out[, "time"], rowSums(out[, grep("J_u_", colnames(out))]),
-#   type = "l", xlab = "Year", ylab = "Total susceptible",
-#   main = "Status quo — no treatment")
-#
-# plot(out[,"time"], rowSums(out[, grep("_a_age9", colnames(out))]),
-#      type = "l", xlab = "Year", ylab = "Total acute HCV",
-#      main = "Status quo — no treatment")
+plot(out[, "time"], rowSums(out[, grep("J_(NC|CC|DC|HCC)_u", colnames(out))]),
+  type = "l", xlab = "Year", ylab = "Total susceptible",
+  main = "Status quo — no treatment")
 
-# plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
-#      type = "l", xlab = "Year", ylab = "Total chronic HCV",
-#      main = "Status quo — no treatment")
-# plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
-#      type = "l", xlab = "Year", ylab = "Total treated",
-#      main = "Status quo — no treatment")
+plot(out[,"time"], rowSums(out[, grep("_a_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total acute HCV",
+     main = "Status quo — no treatment")
+
+plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total chronic HCV",
+     main = "Status quo — no treatment")
+plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
+     type = "l", xlab = "Year", ylab = "Total treated",
+     main = "Status quo — no treatment")
     
 # =============================================================================
 # MODEL CALIBRATION
