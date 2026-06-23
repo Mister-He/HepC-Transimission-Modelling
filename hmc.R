@@ -6,16 +6,20 @@ library(dplyr)
 library(tidyr)
 
 # Observations
+# obs_pos <- c(26, 95, 164, 169, 183, 241, 223, 189, 124, 48)
+# obs_tot <- c(145, 607, 759, 649, 564, 544, 483, 392, 293, 152)
 obs_pos <- c(11, 51, 99, 141, 209, 339, 437, 367, 351)
 obs_tot <- c(223, 572, 790, 765, 747, 810, 770, 658, 803)
+N_AGE <- length(obs_tot)
+N_FREE_SCALES <- N_AGE - 1L
 
 param_names_log <- c(
   "mu_hier", "log_sigma_hier",
-  paste0("eta_", 1:8)
+  paste0("eta_", seq_len(N_FREE_SCALES))
 )
 param_names_orig <- c(
   "mu_hier", "sigma_hier",
-  paste0("C_contact_scale_", 1:8)
+  paste0("C_contact_scale_", seq_len(N_FREE_SCALES))
 )
 
 source("setup.R")  
@@ -28,7 +32,7 @@ N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
 N_CORES     <- 4L      # cores for parallel gradient batches (set to 1 for debugging)
 N_WARMUP    <- 200L    # adaptation (discarded)
 N_ITER      <- 1000L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
-N_PARAMS    <- 10L     # number of parameters being sampled (log scale)
+N_PARAMS    <- 2L + N_FREE_SCALES # number of parameters being sampled (log scale)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
 L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
@@ -39,7 +43,7 @@ inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
     rnorm(1L, 0.0, 1),          # mu_hier:          log-scale mean near 0
     rnorm(1L, log(0.5), 1),     # log(sigma_hier):  start near prior center
-    rnorm(8L, 0.0, 1)           # eta[1:8]:         standardised deviates near 0
+    rnorm(N_FREE_SCALES, 0.0, 1) # eta:              standardised deviates near 0
   )
 })
 
@@ -103,7 +107,7 @@ ppc_out <- generate_ppc_samples(all_samples, params, data, n_ppc = 600L)
 
 cat("\nPosterior predictive p-values (near 0.5 = good fit):\n")
 ppp_df <- data.frame(
-  Age     = paste0("Age ", 1:9),
+  Age     = paste0("Age ", seq_len(N_AGE)),
   ppp_pos = round(ppc_out$ppp_pos, 3),
   ppp_tot = round(ppc_out$ppp_tot, 3)
 )
@@ -138,3 +142,10 @@ saveRDS(
   file = "hmc_output_full.rds"
 )
 cat("\nAll results saved to hmc_output_full.rds\n")
+result = readRDS("hmc_output_full.rds")
+hmc_chains = result$hmc_chains
+post_warmup_list = result$post_warmup_list
+all_samples = result$all_samples
+diag_table = result$diag_table
+post_summary = result$post_summary
+ppc_out = result$ppc_out

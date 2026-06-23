@@ -148,11 +148,12 @@ generate_ppc_samples <- function(post_samples, base_params, data,
     n_avail <- nrow(post_samples)
     draw_idx <- sort(sample(n_avail, min(n_ppc, n_avail)))
     n_draws <- length(draw_idx)
+    n_age <- length(obs_tot)
 
-    ppc_pos <- matrix(NA_integer_, n_draws, 9L)
-    ppc_tot <- matrix(NA_integer_, n_draws, 9L)
-    lam_pos <- matrix(NA_real_, n_draws, 9L)
-    lam_tot <- matrix(NA_real_, n_draws, 9L)
+    ppc_pos <- matrix(NA_integer_, n_draws, n_age)
+    ppc_tot <- matrix(NA_integer_, n_draws, n_age)
+    lam_pos <- matrix(NA_real_, n_draws, n_age)
+    lam_tot <- matrix(NA_real_, n_draws, n_age)
 
     cat(sprintf(
         "Generating %d PPC draws from %d posterior samples...\n",
@@ -183,8 +184,8 @@ generate_ppc_samples <- function(post_samples, base_params, data,
             # Draw multinomial totals conditional on the observed age-total size.
             ppc_tot[ii, ] <- as.integer(rmultinom(1L, size = n_age_obs, prob = result$p_age))
             # For positives, incorporate Beta-Binomial overdispersion via a beta draw
-            p_draw <- rbeta(9L, shape1 = result$q_age * phi_overdisp, shape2 = (1 - result$q_age) * phi_overdisp)
-            ppc_pos[ii, ] <- rbinom(9L, size = ppc_tot[ii, ], prob = p_draw)
+            p_draw <- rbeta(n_age, shape1 = result$q_age * phi_overdisp, shape2 = (1 - result$q_age) * phi_overdisp)
+            ppc_pos[ii, ] <- rbinom(n_age, size = ppc_tot[ii, ], prob = p_draw)
         }
 
         if (ii %% 50L == 0L) {
@@ -194,23 +195,24 @@ generate_ppc_samples <- function(post_samples, base_params, data,
 
     # Posterior predictive p-values: Pr(y_rep >= y_obs | y_obs)
     # Calibrated model: ppp near 0.5; poor fit: near 0 or 1.
-    ppp_pos <- vapply(1:9, function(i) {
+    ppp_pos <- vapply(seq_len(n_age), function(i) {
         mean(ppc_pos[, i] >= obs_pos[i], na.rm = TRUE)
     }, numeric(1L))
-    ppp_tot <- vapply(1:9, function(i) {
+    ppp_tot <- vapply(seq_len(n_age), function(i) {
         mean(ppc_tot[, i] >= obs_tot[i], na.rm = TRUE)
     }, numeric(1L))
 
     list(
         ppc_pos = ppc_pos, ppc_tot = ppc_tot,
         lam_pos = lam_pos, lam_tot = lam_tot,
-        ppp_pos = ppp_pos, ppp_tot = ppp_tot
+        ppp_pos = ppp_pos, ppp_tot = ppp_tot,
+        phi_overdisp = if (!is.null(data$phi_overdisp)) data$phi_overdisp else 50.0
     )
 }
 
 # ── 7b. PPC histogram plot ───────────────────────────────────────────────────
 #
-# One panel per age group: histogram of y_rep (9 × n_ppc), vertical line at
+# One panel per age group: histogram of y_rep, vertical line at
 # observed count, and posterior predictive p-value annotated per panel.
 #
 plot_ppc_histograms <- function(ppc, type = c("pos", "tot")) {
@@ -227,7 +229,7 @@ plot_ppc_histograms <- function(ppc, type = c("pos", "tot")) {
         "PPC: Total PWID Counts (J-stratum)"
     }
 
-    age_lbl <- paste0("Age group ", 1:9)
+    age_lbl <- paste0("Age group ", seq_len(length(obs_tot)))
 
     # Drop failed draws
     ppc_mat <- ppc_mat[complete.cases(ppc_mat), , drop = FALSE]
@@ -285,8 +287,10 @@ plot_ppc_histograms <- function(ppc, type = c("pos", "tot")) {
 # group, with observed count overlaid as a red point.
 #
 plot_ppc_intervals <- function(ppc) {
-    age_lbl <- paste0("Age ", 1:9)
+    phi_overdisp <- 40.0
+    age_lbl <- paste0("Age ", seq_len(length(obs_tot)))
     z_crit <- stats::qnorm(0.975)
+    phi_overdisp <- if (!is.null(ppc$phi_overdisp)) ppc$phi_overdisp else 50.0
 
     summarise_ppc_mat <- function(ppc_mat, obs, type_label) {
         mat <- ppc_mat[complete.cases(ppc_mat), , drop = FALSE]
@@ -403,7 +407,7 @@ plot_ppc_intervals <- function(ppc) {
 # Red interval: observed binomial confidence interval.
 #
 plot_ppc_prevalence_intervals <- function(ppc) {
-    age_lbl <- paste0("Age ", 1:9)
+    age_lbl <- paste0("Age ", seq_len(length(obs_tot)))
 
     keep <- complete.cases(ppc$ppc_pos, ppc$ppc_tot)
     if (!any(keep)) {

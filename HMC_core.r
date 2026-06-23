@@ -4,23 +4,23 @@
 # Append this file after setup.R (which sources sim.cpp and defines params,
 # data, idx(), y0, etc.).
 #
-# Parameters estimated (10 total):
+# Parameters estimated (11 total with 10 age groups):
 #   theta[1]       = mu_hier           log-scale mean of contact row scalings
 #   theta[2]       = log(sigma_hier)   log-scale std dev of contact row scalings
-#   theta[3:10]    = eta[1:8]          standardised deviates (non-centred)
+#   theta[3:11]    = eta[1:9]          standardised deviates (non-centred)
 #
 # Scaling factors generated (non-centred log-normal hierarchy):
-#   C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j])   j = 1..8
-#   C_contact_scale[9] = 1  (reference row, fixed for identifiability)
+#   C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j])   j = 1..9
+#   C_contact_scale[10] = 1  (reference row, fixed for identifiability)
 #
-# Likelihood (two-step observation model, J-stratum only, per age group i = 1..9):
-#   obs_tot[1:9]           ~ Multinomial(N_age_obs, p_1:9(theta))
+# Likelihood (two-step observation model, J-stratum only, per age group i = 1..10):
+#   obs_tot[1:10]          ~ Multinomial(N_age_obs, p_1:10(theta))
 #   obs_pos[a] | obs_tot[a] ~ BetaBinomial(obs_tot[a], q_a(theta), phi)
 #
 # Prior:
 #   mu_hier     ~ Normal(0, 1)              [log-scale mean; exp(0)=1 reference]
 #   sigma_hier  ~ LogNormal(log(0.5), 0.5)  [theta[2] ~ N(log(0.5), 0.5)]
-#   eta[j]      ~ Normal(0, 1)  j = 1..8   [non-centred deviates]
+#   eta[j]      ~ Normal(0, 1)  j = 1..9   [non-centred deviates]
 #
 # Non-centred reparameterisation removes the delta+excess ridge and decouples
 # the hierarchy hyperparameters from the unit-level contact row scalings.
@@ -45,12 +45,12 @@
 
 #' Unconstrained theta -> constrained named list (non-centred log-normal hierarchy)
 #'
-#' C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j]) for j = 1..8.
-#' Row 9 is held at 1 as the reference for identifiability.
+#' C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j]) for all free rows.
+#' The final row is held at 1 as the reference for identifiability.
 constrain_theta <- function(theta) {
   mu_hier    <- theta[1L]
   sigma_hier <- exp(theta[2L])
-  eta        <- theta[3:10]
+  eta        <- theta[-c(1L, 2L)]
 
   c_scales <- c(exp(mu_hier + sigma_hier * eta), 1.0)
 
@@ -64,29 +64,32 @@ constrain_theta <- function(theta) {
 
 #' Build a full parameter list from unconstrained theta
 #'
-#' The 8 free row scaling factors are hierarchical draws on the log scale,
-#' while the 9th row remains fixed at 1.
+#' The free row scaling factors are hierarchical draws on the log scale,
+#' while the final row remains fixed at 1.
 build_params_from_theta <- function(theta, base_params) {
   p  <- constrain_theta(theta)
   pm <- base_params
 
-  # Scale rows 1:8; row 9 is the reference row and stays unchanged.
-  for (j in 1:8) {
+  # Scale all but the final row; the final row is the reference row.
+  for (j in seq_along(p$eta)) {
     pm$C_contact[j, ] <- base_params$C_contact[j, ] * p$C_contact_scale[j]
   }
   pm
 }
 
-#' Vectorised back-transform: theta matrix (N × 11) -> interpretable parameter matrix
+#' Vectorised back-transform: theta matrix -> interpretable parameter matrix
 #'
 #' theta[,1]   mu_hier           -> identity         = mu_hier (log-scale mean)
 #' theta[,2]   log(sigma_hier)   -> exp()           = sigma_hier
-#' theta[,3:10] eta[1:8]         -> exp(mu + sig*eta) = C_contact_scale[1:8]
+#' theta[,3:n] eta               -> exp(mu + sig*eta) = C_contact_scale
 theta_to_orig <- function(samps) {
   mu    <- samps[, 1L]
   sigma <- exp(samps[, 2L])
-  c_cols <- sapply(seq_len(8L), function(j) exp(mu + sigma * samps[, 2L + j]))
-  colnames(c_cols) <- paste0("C_contact_scale_", 1:8)
+  n_free <- ncol(samps) - 2L
+  c_cols <- do.call(cbind, lapply(seq_len(n_free), function(j) {
+    exp(mu + sigma * samps[, 2L + j])
+  }))
+  colnames(c_cols) <- paste0("C_contact_scale_", seq_len(n_free))
   cbind(mu_hier    = samps[, 1L],
         sigma_hier = sigma,
         c_cols)
@@ -115,10 +118,11 @@ log_beta_binomial <- function(x, size, prob, phi) {
 #' Compute model-implied age-group totals and HCV-positive counts from the
 #' J-stratum (s = 1) at the final ODE state.
 compute_age_quantities <- function(y_final) {
-  age_total <- numeric(9L)
-  age_pos <- numeric(9L)
+  n_age <- length(obs_tot)
+  age_total <- numeric(n_age)
+  age_pos <- numeric(n_age)
 
-  for (i in 0:8) {
+  for (i in seq_len(n_age) - 1L) {
     total_i <- 0.0
     pos_i <- 0.0
     for (k in 1:4) {
@@ -161,12 +165,12 @@ compute_age_quantities <- function(y_final) {
 # Non-centred log-normal hierarchy (all theta are unconstrained or log-transformed):
 #   mu_hier     ~ Normal(0, 1)              → theta[1] ~ N(0, 1)
 #   sigma_hier  ~ LogNormal(log(0.5), 0.5)  → theta[2] ~ N(log(0.5), 0.5)
-#   eta[j]      ~ Normal(0, 1)              → theta[3:10] ~ N(0, 1)
+#   eta[j]      ~ Normal(0, 1)              → theta[3:n] ~ N(0, 1)
 #
 log_prior <- function(theta) {
   lp_mu_hier    <- dnorm(theta[1L],    mean = 0.0,      sd = 1.0, log = TRUE)
   lp_log_sigma  <- dnorm(theta[2L],    mean = log(0.5), sd = 0.5, log = TRUE)
-  lp_eta        <- sum(dnorm(theta[3:10], mean = 0.0,   sd = 1.0, log = TRUE))
+  lp_eta        <- sum(dnorm(theta[-c(1L, 2L)], mean = 0.0, sd = 1.0, log = TRUE))
 
   lp_mu_hier + lp_log_sigma + lp_eta
 }
@@ -176,16 +180,16 @@ log_prior <- function(theta) {
 # Gradients of the non-centred log-normal hierarchy:
 #   d/d theta[1]    = -(theta[1] - 0) / 1^2
 #   d/d theta[2]    = -(theta[2] - log(0.5)) / 0.5^2
-#   d/d theta[j]    = -theta[j]   for j = 3..10  (eta ~ N(0,1))
+#   d/d theta[j]    = -theta[j]   for j = 3..n  (eta ~ N(0,1))
 #
 # Note: not called during sampling (numerical gradients are used); kept for
 # reference and unit-testing against finite differences.
 #
 grad_log_prior_analytical <- function(theta) {
-  grad <- numeric(10L)
+  grad <- numeric(length(theta))
   grad[1L]   <- -(theta[1L] - 0.0) / 1.0^2
   grad[2L]   <- -(theta[2L] - log(0.5)) / 0.5^2
-  grad[3:10] <- -theta[3:10]
+  grad[-c(1L, 2L)] <- -theta[-c(1L, 2L)]
   grad
 }
 
@@ -230,8 +234,8 @@ log_posterior <- function(theta, base_params, data) {
 #   ∂ log π / ∂ theta_j  ≈
 #       [log π(theta + eps·e_j) - log π(theta - eps·e_j)] / (2·eps)
 #
-# This requires 2 × N_PARAMS = 20 ODE runs per gradient evaluation.
-# With L leapfrog steps, each HMC proposal costs ≈ (L + 1) × 20 ODE runs.
+# This requires 2 × N_PARAMS ODE runs per gradient evaluation.
+# With L leapfrog steps, each HMC proposal costs ≈ (L + 1) × 2 × N_PARAMS ODE runs.
 #
 # Fallback: if either perturbed evaluation is -Inf, the component is set to 0
 # (safe — the chain will reject or stay put, not diverge).

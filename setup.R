@@ -165,7 +165,7 @@ params <- list(
 
 # =============================================================================
 # INITIAL CONDITIONS
-# 576 compartments initialised to near-zero.
+# 640 compartments initialised to near-zero.
 # A small seed of chronic infection is placed in D_c,1,i (never-incarcerated,
 # non-cirrhosis, chronic, all age groups) to start the epidemic.
 # CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
@@ -186,7 +186,7 @@ for (i in 0:9) {
 # =============================================================================
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 100.0,   # simulate 100 years
+  t_end   = 60.0,   # simulate 60 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-640 vector)
 )
@@ -233,20 +233,20 @@ print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "s
 colnames(out) <- col_names
 print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
 
-plot(out[, "time"], rowSums(out[, grep("J_(NC|CC|DC|HCC)_u", colnames(out))]),
-  type = "l", xlab = "Year", ylab = "Total susceptible",
-  main = "Status quo — no treatment")
+# plot(out[, "time"], rowSums(out[, grep("J_(NC|CC|DC|HCC)_u", colnames(out))]),
+#   type = "l", xlab = "Year", ylab = "Total susceptible",
+#   main = "Status quo — no treatment")
 
-plot(out[,"time"], rowSums(out[, grep("_a_", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total acute HCV",
-     main = "Status quo — no treatment")
+# plot(out[,"time"], rowSums(out[, grep("_a_", colnames(out))]),
+#      type = "l", xlab = "Year", ylab = "Total acute HCV",
+#      main = "Status quo — no treatment")
 
-plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total chronic HCV",
-     main = "Status quo — no treatment")
-plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
-     type = "l", xlab = "Year", ylab = "Total treated",
-     main = "Status quo — no treatment")
+# plot(out[,"time"], rowSums(out[, grep("_c_", colnames(out))]),
+#      type = "l", xlab = "Year", ylab = "Total chronic HCV",
+#      main = "Status quo — no treatment")
+# plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
+#      type = "l", xlab = "Year", ylab = "Total treated",
+#      main = "Status quo — no treatment")
     
 # =============================================================================
 # MODEL CALIBRATION
