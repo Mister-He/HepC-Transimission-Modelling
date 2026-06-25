@@ -93,18 +93,7 @@ params <- list(
   # CALIBRATED: placeholder values from SingStat life table
   # Age groups (example boundaries): 15-19, 20-24, 25-29, 30-34,
   #                                   35-39, 40-44, 45-49, 50-54, 55+
-  mu = c(
-    0.001267,  # age group 1 (15-19)  
-    0.000300,  # age group 2 (20-24) 
-    0.000300,  # age group 3 (25-29) 
-    0.000400,  # age group 4 (30-34) 
-    0.000500,  # age group 5 (35-39) 
-    0.000700,  # age group 6 (40-44) 
-    0.001400,  # age group 7 (45-49) 
-    0.002300,  # age group 8 (50-54) 
-    0.016100,  # age group 9 (55-59)   
-    0.016100   # age group 10 (60+)
-  ),
+  mu = c(0.2, 0.2, 0.3, 0.4, 0.5, 0.9, 1.5, 2.5, 4.2, 38.7) / 1000,
 
   # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
   omega = 14.68,  # SMR for ever-PWIDs (Degenhardt et al. 2011)
@@ -119,19 +108,19 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.6532567, 0.8248265, 0.7254757, 
-              0.7193614, 0.6628427, 0.7427873, 
-              0.7410489, 0.6947282, 0.5971971, 
-              0.3222320) * 0.7929402,  # first-arrest rate   lambda_i^(1) — GUESS
+  lambda1 = c(0.1692958, 0.4512908, 0.4669668, 
+              0.5209528, 0.5068528, 0.5994204, 
+              0.6201693, 0.5871352, 0.4942877, 
+              0.2338647) * 6.6477440,  # first-arrest rate   lambda_i^(1) — GUESS
   lambda2 = c(0.4933407, 0.6069313, 0.6161935, 
               0.5399142, 0.4665885, 0.4318747, 
               0.4187965, 0.4178995, 0.4387515, 
               0.4944718),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.6532567, 0.8248265, 0.7254757, 
-              0.7193614, 0.6628427, 0.7427873, 
-              0.7410489, 0.6947282, 0.5971971, 
-              0.3222320),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.6740623,          # recidivism probability (fitted to SPS; Assumption)
+  lambda3 = c(0.1692958, 0.4512908, 0.4669668, 
+              0.5209528, 0.5068528, 0.5994204, 
+              0.6201693, 0.5871352, 0.4942877, 
+              0.2338647),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.6286840,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
@@ -150,16 +139,16 @@ params <- list(
   # ── Population entry rates (per year, age-varying) ────────────────────────
   # CALIBRATED: constant-in-time placeholder — replace with beta_i(t) from calib.
   beta = c(
-    235,        # age group 1
-    565/2,      # age group 2 
-    565/2,      # age group 3 
-    301/2,      # age group 4 
-    301/2,      # age group 5 
-    111/2,      # age group 6 
-    111/2,      # age group 7 
-    33/3,       # age group 8 
-    33/3,       # age group 9 
-    33/3        # age group 10
+    257, # age group 1
+    644 / 2, # age group 2
+    644 / 2, # age group 3
+    292 / 2, # age group 4
+    292 / 2, # age group 5
+    94 / 2, # age group 6
+    94 / 2, # age group 7
+    21 / 2, # age group 8
+    21 / 2, # age group 9
+    4
   )
 )
 
