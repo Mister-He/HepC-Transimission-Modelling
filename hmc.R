@@ -6,33 +6,32 @@ library(dplyr)
 library(tidyr)
 
 # Observations
-# obs_pos <- c(26, 95, 164, 169, 183, 241, 223, 189, 124, 48)
-# obs_tot <- c(145, 607, 759, 649, 564, 544, 483, 392, 293, 152)
-obs_pos <- c(11, 51, 99, 141, 209, 339, 437, 367, 351)
-obs_tot <- c(223, 572, 790, 765, 747, 810, 770, 658, 803)
+obs_prev <- c(0.1793103, 0.1565074, 0.2160738, 0.2604006, 0.3244681, 0.4430147, 0.4616977, 0.4821429, 0.4232082, 0.3157895)
+obs_tot <- c(99, 552, 692, 763, 704, 847, 994, 847, 781, 409)
 N_AGE <- length(obs_tot)
-N_FREE_SCALES <- N_AGE - 1L
+N_CONTACT <- N_AGE
 
 param_names_log <- c(
-  "mu_hier", "log_sigma_hier",
-  paste0("eta_", seq_len(N_FREE_SCALES))
+  "log_beta_scale",
+  paste0("log_C_contact_scale_", seq_len(N_CONTACT))
 )
 param_names_orig <- c(
-  "mu_hier", "sigma_hier",
-  paste0("C_contact_scale_", seq_len(N_FREE_SCALES))
+  "beta_scale",
+  paste0("C_contact_scale_", seq_len(N_CONTACT))
 )
 
 source("setup.R")  
-source("HMC_core.R") 
+source("HMC_core.r")
 source("HMC_conv.R")  
-data$phi_overdisp <- 40.0
+data$count_log_sd <- 0.35
+data$prev_logit_sd <- 0.25
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
 N_CORES     <- 4L      # cores for parallel gradient batches (set to 1 for debugging)
 N_WARMUP    <- 200L    # adaptation (discarded)
 N_ITER      <- 1000L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
-N_PARAMS    <- 2L + N_FREE_SCALES # number of parameters being sampled (log scale)
+N_PARAMS    <- length(param_names_log) # number of parameters being sampled (log scale)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
 L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
@@ -41,9 +40,8 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    rnorm(1L, 0.0, 1),          # mu_hier:          log-scale mean near 0
-    rnorm(1L, log(0.5), 1),     # log(sigma_hier):  start near prior center
-    rnorm(N_FREE_SCALES, 0.0, 1) # eta:              standardised deviates near 0
+    rnorm(1L, 0.0, 0.25),       # log_beta_scale:        shared inflow multiplier
+    rnorm(N_CONTACT, 0.0, 0.25) # log_C_contact_scale_i: row-specific contact scales
   )
 })
 
@@ -108,7 +106,7 @@ ppc_out <- generate_ppc_samples(all_samples, params, data, n_ppc = 600L)
 cat("\nPosterior predictive p-values (near 0.5 = good fit):\n")
 ppp_df <- data.frame(
   Age     = paste0("Age ", seq_len(N_AGE)),
-  ppp_pos = round(ppc_out$ppp_pos, 3),
+  ppp_prev = round(ppc_out$ppp_prev, 3),
   ppp_tot = round(ppc_out$ppp_tot, 3)
 )
 print(ppp_df, row.names = FALSE)
@@ -116,14 +114,14 @@ print(ppp_df, row.names = FALSE)
 # ── Plots ─────────────────────────────────────────────────────────────────────
 p_trace    <- plot_traces(hmc_chains, param_idx = 1:N_PARAMS)
 p_density  <- plot_posterior_densities(post_warmup_list)
-p_hist_pos <- plot_ppc_histograms(ppc_out, type = "pos")
+p_hist_prev <- plot_ppc_histograms(ppc_out, type = "prev")
 p_hist_tot <- plot_ppc_histograms(ppc_out, type = "tot")
 p_interval <- plot_ppc_intervals(ppc_out)
 p_prev_int <- plot_ppc_prevalence_intervals(ppc_out)
 
 print(p_trace)
 print(p_density)
-print(p_hist_pos)
+print(p_hist_prev)
 print(p_hist_tot)
 print(p_interval)
 print(p_prev_int)

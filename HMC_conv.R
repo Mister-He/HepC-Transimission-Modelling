@@ -137,8 +137,8 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
 # ── 7a. Generate PPC replicates ──────────────────────────────────────────────
 #
 # For each sampled theta_s, run the ODE model and draw:
-#   y_rep_tot[i] ~ Multinomial(N_age_obs, p_i(theta_s))
-#   y_rep_pos[i] ~ BetaBinomial(y_rep_tot[i], q_i(theta_s), phi)
+#   y_rep_tot[i] ~ LogNormal(log(total_by_age_i(theta_s)), count_log_sd)
+#   prev_rep[i]  ~ LogitNormal(logit(q_i(theta_s)), se_logit[i])
 #
 # Returns replicated counts (integer) and the corresponding means (real),
 # plus posterior predictive p-values (ppp) per age group.
@@ -150,9 +150,9 @@ generate_ppc_samples <- function(post_samples, base_params, data,
     n_draws <- length(draw_idx)
     n_age <- length(obs_tot)
 
-    ppc_pos <- matrix(NA_integer_, n_draws, n_age)
+    ppc_prev <- matrix(NA_real_, n_draws, n_age)
     ppc_tot <- matrix(NA_integer_, n_draws, n_age)
-    lam_pos <- matrix(NA_real_, n_draws, n_age)
+    mean_prev <- matrix(NA_real_, n_draws, n_age)
     lam_tot <- matrix(NA_real_, n_draws, n_age)
 
     cat(sprintf(
@@ -174,18 +174,16 @@ generate_ppc_samples <- function(post_samples, base_params, data,
         )
 
         if (!is.null(result)) {
-            phi_overdisp <- if (!is.null(data$phi_overdisp)) data$phi_overdisp else 50.0
-            n_age_obs <- sum(obs_tot)
+            prev_extra_sd <- if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
+            prev_sd <- prevalence_logit_sd(obs_prev, obs_tot, prev_extra_sd)
+            count_log_sd <- get_count_log_sd(data)
 
-            # Expected counts under the age-total multinomial layer.
-            lam_tot[ii, ] <- n_age_obs * result$p_age
-            lam_pos[ii, ] <- lam_tot[ii, ] * result$q_age
+            # Expected counts under the age-specific count layer.
+            lam_tot[ii, ] <- result$total_by_age
+            mean_prev[ii, ] <- result$q_age
 
-            # Draw multinomial totals conditional on the observed age-total size.
-            ppc_tot[ii, ] <- as.integer(rmultinom(1L, size = n_age_obs, prob = result$p_age))
-            # For positives, incorporate Beta-Binomial overdispersion via a beta draw
-            p_draw <- rbeta(n_age, shape1 = result$q_age * phi_overdisp, shape2 = (1 - result$q_age) * phi_overdisp)
-            ppc_pos[ii, ] <- rbinom(n_age, size = ppc_tot[ii, ], prob = p_draw)
+            ppc_tot[ii, ] <- as.integer(round(rlnorm(n_age, meanlog = log(result$total_by_age), sdlog = count_log_sd)))
+            ppc_prev[ii, ] <- inv_logit(rnorm(n_age, mean = logit(result$q_age), sd = prev_sd))
         }
 
         if (ii %% 50L == 0L) {
@@ -195,18 +193,19 @@ generate_ppc_samples <- function(post_samples, base_params, data,
 
     # Posterior predictive p-values: Pr(y_rep >= y_obs | y_obs)
     # Calibrated model: ppp near 0.5; poor fit: near 0 or 1.
-    ppp_pos <- vapply(seq_len(n_age), function(i) {
-        mean(ppc_pos[, i] >= obs_pos[i], na.rm = TRUE)
+    ppp_prev <- vapply(seq_len(n_age), function(i) {
+        mean(ppc_prev[, i] >= obs_prev[i], na.rm = TRUE)
     }, numeric(1L))
     ppp_tot <- vapply(seq_len(n_age), function(i) {
         mean(ppc_tot[, i] >= obs_tot[i], na.rm = TRUE)
     }, numeric(1L))
 
     list(
-        ppc_pos = ppc_pos, ppc_tot = ppc_tot,
-        lam_pos = lam_pos, lam_tot = lam_tot,
-        ppp_pos = ppp_pos, ppp_tot = ppp_tot,
-        phi_overdisp = if (!is.null(data$phi_overdisp)) data$phi_overdisp else 50.0
+        ppc_prev = ppc_prev, ppc_tot = ppc_tot,
+        mean_prev = mean_prev, lam_tot = lam_tot,
+        ppp_prev = ppp_prev, ppp_tot = ppp_tot,
+        count_log_sd = if (!is.null(data$count_log_sd)) data$count_log_sd else 0.35,
+        prev_logit_sd = if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
     )
 }
 
@@ -215,16 +214,16 @@ generate_ppc_samples <- function(post_samples, base_params, data,
 # One panel per age group: histogram of y_rep, vertical line at
 # observed count, and posterior predictive p-value annotated per panel.
 #
-plot_ppc_histograms <- function(ppc, type = c("pos", "tot")) {
+plot_ppc_histograms <- function(ppc, type = c("prev", "tot")) {
     type <- match.arg(type)
 
-    ppc_mat <- if (type == "pos") ppc$ppc_pos else ppc$ppc_tot
-    obs_vals <- if (type == "pos") obs_pos else obs_tot
-    ppp_vals <- if (type == "pos") ppc$ppp_pos else ppc$ppp_tot
+    ppc_mat <- if (type == "prev") ppc$ppc_prev else ppc$ppc_tot
+    obs_vals <- if (type == "prev") obs_prev else obs_tot
+    ppp_vals <- if (type == "prev") ppc$ppp_prev else ppc$ppp_tot
 
-    fill_col <- if (type == "pos") "#2166AC" else "#D6604D"
-    main_ttl <- if (type == "pos") {
-        "PPC: HCV-Positive Counts (J-stratum)"
+    fill_col <- if (type == "prev") "#2166AC" else "#D6604D"
+    main_ttl <- if (type == "prev") {
+        "PPC: Age-group HCV Prevalence (J-stratum)"
     } else {
         "PPC: Total PWID Counts (J-stratum)"
     }
@@ -270,7 +269,7 @@ plot_ppc_histograms <- function(ppc, type = c("pos", "tot")) {
         labs(
             title    = main_ttl,
             subtitle = "Histogram: posterior predictive  |  Vertical line: observed  |  ppp near 0.5 = good fit",
-            x        = "Count",
+            x        = if (type == "prev") "Prevalence" else "Count",
             y        = "Density"
         ) +
         theme_bw(base_size = 11) +
@@ -283,14 +282,13 @@ plot_ppc_histograms <- function(ppc, type = c("pos", "tot")) {
 
 # ── 7c. PPC interval plot ─────────────────────────────────────────────────────
 #
-# Dot-and-whisker: posterior predictive median ± 50% and 90% intervals per age
-# group, with observed count overlaid as a red point.
+# Dot-and-whisker: posterior predictive median ± 50% and 95% intervals per age
+# group, with observed target overlaid as a red point.
 #
 plot_ppc_intervals <- function(ppc) {
-    phi_overdisp <- 40.0
     age_lbl <- paste0("Age ", seq_len(length(obs_tot)))
     z_crit <- stats::qnorm(0.975)
-    phi_overdisp <- if (!is.null(ppc$phi_overdisp)) ppc$phi_overdisp else 50.0
+    prev_extra_sd <- if (!is.null(ppc$prev_logit_sd)) ppc$prev_logit_sd else 0.25
 
     summarise_ppc_mat <- function(ppc_mat, obs, type_label) {
         mat <- ppc_mat[complete.cases(ppc_mat), , drop = FALSE]
@@ -320,30 +318,28 @@ plot_ppc_intervals <- function(ppc) {
             ))
         }
 
-        if (type_label == "HCV-positive") {
-            q_mat <- ppc$lam_pos[keep, , drop = FALSE] / ppc$lam_tot[keep, , drop = FALSE]
-            sd_vals <- vapply(seq_len(ncol(q_mat)), function(j) {
-                q_draws <- q_mat[, j]
-                q_draws <- q_draws[is.finite(q_draws)]
-                if (!length(q_draws)) {
-                    return(NA_real_)
-                }
-                stats::median(
-                    sqrt(obs[j] * q_draws * (1 - q_draws) * (obs[j] + phi_overdisp) / (1 + phi_overdisp)),
-                    na.rm = TRUE
-                )
-            }, numeric(1L))
+        if (type_label == "HCV prevalence") {
+            prev_sd <- prevalence_logit_sd(obs, obs_tot, prev_extra_sd)
+            obs_lo <- inv_logit(logit(obs) - z_crit * prev_sd)
+            obs_hi <- inv_logit(logit(obs) + z_crit * prev_sd)
+            return(data.frame(
+                Age = factor(age_lbl, levels = age_lbl),
+                obs_lo = obs_lo,
+                obs_hi = obs_hi,
+                type = type_label,
+                stringsAsFactors = FALSE
+            ))
         } else {
-            n_age_obs <- sum(obs)
-            p_mat <- ppc$lam_tot[keep, , drop = FALSE] / n_age_obs
-            sd_vals <- vapply(seq_len(ncol(p_mat)), function(j) {
-                p_draws <- p_mat[, j]
-                p_draws <- p_draws[is.finite(p_draws)]
-                if (!length(p_draws)) {
-                    return(NA_real_)
-                }
-                stats::median(sqrt(n_age_obs * p_draws * (1 - p_draws)), na.rm = TRUE)
-            }, numeric(1L))
+            count_log_sd <- if (!is.null(ppc$count_log_sd)) ppc$count_log_sd else 0.35
+            obs_lo <- obs / exp(z_crit * count_log_sd)
+            obs_hi <- obs * exp(z_crit * count_log_sd)
+            return(data.frame(
+                Age = factor(age_lbl, levels = age_lbl),
+                obs_lo = obs_lo,
+                obs_hi = obs_hi,
+                type = type_label,
+                stringsAsFactors = FALSE
+            ))
         }
 
         data.frame(
@@ -356,12 +352,12 @@ plot_ppc_intervals <- function(ppc) {
     }
 
     plot_df <- bind_rows(
-        summarise_ppc_mat(ppc$ppc_pos, obs_pos, "HCV-positive"),
+        summarise_ppc_mat(ppc$ppc_prev, obs_prev, "HCV prevalence"),
         summarise_ppc_mat(ppc$ppc_tot, obs_tot, "Age totals")
     ) %>%
         left_join(
             bind_rows(
-                summarise_obs_ci(ppc$ppc_pos, obs_pos, "HCV-positive"),
+                summarise_obs_ci(ppc$ppc_prev, obs_prev, "HCV prevalence"),
                 summarise_obs_ci(ppc$ppc_tot, obs_tot, "Age totals")
             ),
             by = c("Age", "type")
@@ -387,9 +383,9 @@ plot_ppc_intervals <- function(ppc) {
         facet_wrap(~type, scales = "free_y", ncol = 1) +
         labs(
             title    = "PPC: Posterior Predictive Intervals vs Observed",
-            subtitle = "Diamond: predictive median  |  Thick bar: 50% PI  |  Thin bar: 90% PI  |  Red whisker: likelihood-based 95% CI  |  Red dot: observed",
+            subtitle = "Diamond: predictive median  |  Thick bar: 50% PI  |  Thin bar: 95% PI  |  Red whisker: likelihood-based 95% CI  |  Red dot: observed",
             x        = "Age group",
-            y        = "Count"
+            y        = "Calibration target"
         ) +
         theme_bw(base_size = 11) +
         theme(
@@ -402,23 +398,23 @@ plot_ppc_intervals <- function(ppc) {
 
 # ── 7d. HCV prevalence interval plot ────────────────────────────────────────
 #
-# Age-group prevalence = HCV-positive / total PWID in the J-stratum.
+# Age-group prevalence = infected HCV states / total PWID in the J-stratum.
 # Blue interval: posterior predictive prevalence draws (BCI).
-# Red interval: observed binomial confidence interval.
+# Red interval: observed logit-normal confidence interval.
 #
 plot_ppc_prevalence_intervals <- function(ppc) {
     age_lbl <- paste0("Age ", seq_len(length(obs_tot)))
 
-    keep <- complete.cases(ppc$ppc_pos, ppc$ppc_tot)
+    keep <- complete.cases(ppc$ppc_prev)
     if (!any(keep)) {
         stop("No complete PPC draws available for prevalence plotting")
     }
 
-    prev_mat <- ppc$ppc_pos[keep, , drop = FALSE] / ppc$ppc_tot[keep, , drop = FALSE]
+    prev_mat <- ppc$ppc_prev[keep, , drop = FALSE]
 
     sample_df <- data.frame(
         Age = factor(age_lbl, levels = age_lbl),
-        obs = obs_pos / obs_tot,
+        obs = obs_prev,
         med = apply(prev_mat, 2, median, na.rm = TRUE),
         lo95 = apply(prev_mat, 2, quantile, 0.025, na.rm = TRUE),
         hi95 = apply(prev_mat, 2, quantile, 0.975, na.rm = TRUE),
@@ -426,14 +422,13 @@ plot_ppc_prevalence_intervals <- function(ppc) {
         stringsAsFactors = FALSE
     )
 
-    obs_ci <- vapply(seq_along(obs_pos), function(i) {
-        stats::binom.test(obs_pos[i], obs_tot[i])$conf.int
-    }, numeric(2L))
+    prev_extra_sd <- if (!is.null(ppc$prev_logit_sd)) ppc$prev_logit_sd else 0.25
+    prev_sd <- prevalence_logit_sd(obs_prev, obs_tot, prev_extra_sd)
 
     obs_df <- data.frame(
         Age = factor(age_lbl, levels = age_lbl),
-        obs_lo = obs_ci[1L, ],
-        obs_hi = obs_ci[2L, ],
+        obs_lo = inv_logit(logit(obs_prev) - stats::qnorm(0.975) * prev_sd),
+        obs_hi = inv_logit(logit(obs_prev) + stats::qnorm(0.975) * prev_sd),
         type = "HCV prevalence",
         stringsAsFactors = FALSE
     )
@@ -456,7 +451,7 @@ plot_ppc_prevalence_intervals <- function(ppc) {
         ) +
         labs(
             title    = "PPC: Age-group HCV prevalence",
-            subtitle = "Blue interval: posterior predictive 95% BCI  |  Red whisker: observed exact 95% CI  |  Diamond: sample median  |  Red dot: observed prevalence",
+            subtitle = "Blue interval: posterior predictive 95% BCI  |  Red whisker: observed logit-normal 95% CI  |  Diamond: sample median  |  Red dot: observed prevalence",
             x        = "Age group",
             y        = "Prevalence"
         ) +

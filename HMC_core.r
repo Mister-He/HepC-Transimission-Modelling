@@ -5,25 +5,22 @@
 # data, idx(), y0, etc.).
 #
 # Parameters estimated (11 total with 10 age groups):
-#   theta[1]       = mu_hier           log-scale mean of contact row scalings
-#   theta[2]       = log(sigma_hier)   log-scale std dev of contact row scalings
-#   theta[3:11]    = eta[1:9]          standardised deviates (non-centred)
+#   theta[1]       = log_beta_scale       shared multiplier for all beta inflows
+#   theta[2:11]    = log_C_contact_scale  row-specific contact scalings
 #
-# Scaling factors generated (non-centred log-normal hierarchy):
-#   C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j])   j = 1..9
-#   C_contact_scale[10] = 1  (reference row, fixed for identifiability)
+# Scaling factors:
+#   beta_scale         = exp(theta[1])
+#   C_contact_scale[j] = exp(theta[1 + j])   j = 1..10
 #
-# Likelihood (two-step observation model, J-stratum only, per age group i = 1..10):
-#   obs_tot[1:10]          ~ Multinomial(N_age_obs, p_1:10(theta))
-#   obs_pos[a] | obs_tot[a] ~ BetaBinomial(obs_tot[a], q_a(theta), phi)
+# Likelihood (two-part observation model, J-stratum only, per age group i = 1..10):
+#   log(obs_tot[1:10])     ~ Normal(log(total_by_age(theta)), count_log_sd)
+#   logit(obs_prev[a])      ~ Normal(logit(q_a(theta)), se_logit[a])
+#   se_logit[a]^2           = 1 / (obs_tot[a] * obs_prev[a] * (1 - obs_prev[a]))
+#                              + prev_logit_sd^2
 #
 # Prior:
-#   mu_hier     ~ Normal(0, 1)              [log-scale mean; exp(0)=1 reference]
-#   sigma_hier  ~ LogNormal(log(0.5), 0.5)  [theta[2] ~ N(log(0.5), 0.5)]
-#   eta[j]      ~ Normal(0, 1)  j = 1..9   [non-centred deviates]
-#
-# Non-centred reparameterisation removes the delta+excess ridge and decouples
-# the hierarchy hyperparameters from the unit-level contact row scalings.
+#   beta_scale       ~ LogNormal(0, 2)      [theta[1] ~ N(0, 2)]
+#   C_contact_scale  ~ LogNormal(0, 1)      [theta[2:11] ~ N(0, 1)]
 #
 # Gradient: central finite differences through the C++ ODE solver
 #   Cost per HMC step: (L+1) gradient evals × 2 × N_PARAMS ODE runs
@@ -43,79 +40,81 @@
 # 1.  PARAMETER TRANSFORMS
 # =============================================================================
 
-#' Unconstrained theta -> constrained named list (non-centred log-normal hierarchy)
-#'
-#' C_contact_scale[j] = exp(mu_hier + sigma_hier * eta[j]) for all free rows.
-#' The final row is held at 1 as the reference for identifiability.
+#' Unconstrained theta -> constrained named list.
 constrain_theta <- function(theta) {
-  mu_hier    <- theta[1L]
-  sigma_hier <- exp(theta[2L])
-  eta        <- theta[-c(1L, 2L)]
-
-  c_scales <- c(exp(mu_hier + sigma_hier * eta), 1.0)
+  n_contact  <- if (exists("N_CONTACT", inherits = TRUE)) {
+    get("N_CONTACT", inherits = TRUE)
+  } else {
+    length(theta) - 1L
+  }
+  beta_scale <- exp(theta[1L])
+  c_scales   <- exp(theta[1L + seq_len(n_contact)])
 
   list(
     C_contact_scale = c_scales,
-    mu_hier         = mu_hier,
-    sigma_hier      = sigma_hier,
-    eta             = eta
+    beta_scale      = beta_scale,
+    log_C_contact_scale = theta[1L + seq_len(n_contact)]
   )
 }
 
 #' Build a full parameter list from unconstrained theta
 #'
-#' The free row scaling factors are hierarchical draws on the log scale,
-#' while the final row remains fixed at 1.
+#' All contact rows are scaled directly on the log scale.
 build_params_from_theta <- function(theta, base_params) {
   p  <- constrain_theta(theta)
   pm <- base_params
 
-  # Scale all but the final row; the final row is the reference row.
-  for (j in seq_along(p$eta)) {
+  for (j in seq_along(p$C_contact_scale)) {
     pm$C_contact[j, ] <- base_params$C_contact[j, ] * p$C_contact_scale[j]
   }
+  pm$beta <- base_params$beta * p$beta_scale
   pm
 }
 
 #' Vectorised back-transform: theta matrix -> interpretable parameter matrix
 #'
-#' theta[,1]   mu_hier           -> identity         = mu_hier (log-scale mean)
-#' theta[,2]   log(sigma_hier)   -> exp()           = sigma_hier
-#' theta[,3:n] eta               -> exp(mu + sig*eta) = C_contact_scale
+#' theta[,1]   log_beta_scale       -> exp() = beta_scale
+#' theta[,2:n] log_C_contact_scale  -> exp() = C_contact_scale
 theta_to_orig <- function(samps) {
-  mu    <- samps[, 1L]
-  sigma <- exp(samps[, 2L])
-  n_free <- ncol(samps) - 2L
-  c_cols <- do.call(cbind, lapply(seq_len(n_free), function(j) {
-    exp(mu + sigma * samps[, 2L + j])
-  }))
-  colnames(c_cols) <- paste0("C_contact_scale_", seq_len(n_free))
-  cbind(mu_hier    = samps[, 1L],
-        sigma_hier = sigma,
-        c_cols)
-}
-
-
-# =============================================================================
-# 2.  POISSON MEANS FROM FINAL ODE STATE
-# =============================================================================
-
-log_beta_binomial <- function(x, size, prob, phi) {
-  if (length(x) != length(size) || length(x) != length(prob)) {
-    stop("x, size, and prob must have the same length")
+  if (is.null(dim(samps))) {
+    samps <- matrix(samps, nrow = 1L)
   }
-  if (!is.finite(phi) || phi <= 0) return(-Inf)
-  if (any(!is.finite(x)) || any(!is.finite(size)) || any(!is.finite(prob))) return(-Inf)
-  if (any(x < 0) || any(size < 0) || any(x > size)) return(-Inf)
-
-  prob <- pmin(pmax(prob, 1e-12), 1 - 1e-12)
-  a <- prob * phi
-  b <- (1 - prob) * phi
-
-  sum(lchoose(size, x) + lbeta(x + a, size - x + b) - lbeta(a, b))
+  n_contact <- if (exists("N_CONTACT", inherits = TRUE)) {
+    get("N_CONTACT", inherits = TRUE)
+  } else {
+    ncol(samps) - 1L
+  }
+  c_cols <- do.call(cbind, lapply(seq_len(n_contact), function(j) {
+    exp(samps[, 1L + j])
+  }))
+  colnames(c_cols) <- paste0("C_contact_scale_", seq_len(n_contact))
+  cbind(beta_scale = exp(samps[, 1L]), c_cols)
 }
 
-#' Compute model-implied age-group totals and HCV-positive counts from the
+
+# =============================================================================
+# 2.  AGE-STRUCTURED MODEL SUMMARIES FROM FINAL ODE STATE
+# =============================================================================
+
+logit <- function(p) {
+  p <- pmin(pmax(p, 1e-12), 1 - 1e-12)
+  log(p / (1 - p))
+}
+
+inv_logit <- function(x) {
+  1 / (1 + exp(-x))
+}
+
+prevalence_logit_sd <- function(obs_prev, obs_tot, extra_sd = 0.25) {
+  p <- pmin(pmax(obs_prev, 1e-6), 1 - 1e-6)
+  sqrt(1 / pmax(obs_tot * p * (1 - p), 1e-12) + extra_sd^2)
+}
+
+get_count_log_sd <- function(data) {
+  if (!is.null(data$count_log_sd)) data$count_log_sd else 0.35
+}
+
+#' Compute model-implied age-group totals and HCV prevalence from the
 #' J-stratum (s = 1) at the final ODE state.
 compute_age_quantities <- function(y_final) {
   n_age <- length(obs_tot)
@@ -162,34 +161,26 @@ compute_age_quantities <- function(y_final) {
 
 # ── 3a. Log-prior ────────────────────────────────────────────────────────────
 #
-# Non-centred log-normal hierarchy (all theta are unconstrained or log-transformed):
-#   mu_hier     ~ Normal(0, 1)              → theta[1] ~ N(0, 1)
-#   sigma_hier  ~ LogNormal(log(0.5), 0.5)  → theta[2] ~ N(log(0.5), 0.5)
-#   eta[j]      ~ Normal(0, 1)              → theta[3:n] ~ N(0, 1)
+# Direct log-scale priors:
+#   log_beta_scale        ~ Normal(0, 2)
+#   log_C_contact_scale_j ~ Normal(0, 1)
 #
 log_prior <- function(theta) {
-  lp_mu_hier    <- dnorm(theta[1L],    mean = 0.0,      sd = 1.0, log = TRUE)
-  lp_log_sigma  <- dnorm(theta[2L],    mean = log(0.5), sd = 0.5, log = TRUE)
-  lp_eta        <- sum(dnorm(theta[-c(1L, 2L)], mean = 0.0, sd = 1.0, log = TRUE))
-
-  lp_mu_hier + lp_log_sigma + lp_eta
+  dnorm(theta[1L], mean = 0.0, sd = 2.0, log = TRUE) +
+    sum(dnorm(theta[-1L], mean = 0.0, sd = 1.0, log = TRUE))
 }
 
 # ── 3b. Analytical gradient of log-prior ─────────────────────────────────────
 #
-# Gradients of the non-centred log-normal hierarchy:
-#   d/d theta[1]    = -(theta[1] - 0) / 1^2
-#   d/d theta[2]    = -(theta[2] - log(0.5)) / 0.5^2
-#   d/d theta[j]    = -theta[j]   for j = 3..n  (eta ~ N(0,1))
+# Gradients of direct log-scale priors.
 #
 # Note: not called during sampling (numerical gradients are used); kept for
 # reference and unit-testing against finite differences.
 #
 grad_log_prior_analytical <- function(theta) {
   grad <- numeric(length(theta))
-  grad[1L]   <- -(theta[1L] - 0.0) / 1.0^2
-  grad[2L]   <- -(theta[2L] - log(0.5)) / 0.5^2
-  grad[-c(1L, 2L)] <- -theta[-c(1L, 2L)]
+  grad[1L] <- -theta[1L] / 2.0^2
+  grad[-1L] <- -theta[-1L]
   grad
 }
 
@@ -205,12 +196,14 @@ log_likelihood <- function(theta, base_params, data) {
   obs     <- compute_age_quantities(y_final)
   if (is.null(obs)) return(-Inf)
 
-  phi     <- if (!is.null(data$phi_overdisp)) data$phi_overdisp else 50.0
+  prev_extra_sd <- if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
+  prev_sd       <- prevalence_logit_sd(obs_prev, obs_tot, prev_extra_sd)
 
-  ll_age   <- dmultinom(obs_tot, prob = obs$p_age, log = TRUE)
-  ll_case  <- log_beta_binomial(obs_pos, size = obs_tot, prob = obs$q_age, phi = phi)
+  ll_count <- sum(dnorm(log(obs_tot), mean = log(obs$total_by_age),
+                        sd = get_count_log_sd(data), log = TRUE))
+  ll_prev <- sum(dnorm(logit(obs_prev), mean = logit(obs$q_age), sd = prev_sd, log = TRUE))
 
-  ll_age + ll_case
+  ll_count + ll_prev
 }
 
 # ── 3d. Log-posterior ────────────────────────────────────────────────────────

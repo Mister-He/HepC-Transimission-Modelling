@@ -119,19 +119,19 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.3664099, 0.6411927, 0.5835333, 
-              0.6103044, 0.6056308, 0.7468978, 
-              0.7911705, 0.7523195, 0.6751074, 
-              0.5130726) * 0.4541715,  # first-arrest rate   lambda_i^(1) — GUESS
-  lambda2 = c(0.4166549, 0.6371684, 0.6524925, 
-              0.6296543, 0.5621057, 0.5395308, 
-              0.5799137, 0.5003022, 0.5269006, 
-              0.5072655),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.3664099, 0.6411927, 0.5835333, 
-              0.6103044, 0.6056308, 0.7468978, 
-              0.7911705, 0.7523195, 0.6751074, 
-              0.5130726),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.8256526,          # recidivism probability (fitted to SPS; Assumption)
+  lambda1 = c(0.6532567, 0.8248265, 0.7254757, 
+              0.7193614, 0.6628427, 0.7427873, 
+              0.7410489, 0.6947282, 0.5971971, 
+              0.3222320) * 0.7929402,  # first-arrest rate   lambda_i^(1) — GUESS
+  lambda2 = c(0.4933407, 0.6069313, 0.6161935, 
+              0.5399142, 0.4665885, 0.4318747, 
+              0.4187965, 0.4178995, 0.4387515, 
+              0.4944718),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.6532567, 0.8248265, 0.7254757, 
+              0.7193614, 0.6628427, 0.7427873, 
+              0.7410489, 0.6947282, 0.5971971, 
+              0.3222320),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.6740623,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
