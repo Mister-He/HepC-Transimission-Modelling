@@ -7,6 +7,7 @@ library(tidyr)
 
 # Observations
 obs_prev <- c(0.1118421, 0.1470588, 0.1933842, 0.2507599, 0.2899083, 0.3596059, 0.5025295, 0.5061728, 0.4534314, 0.3544304)
+obs_prev_se <- c(0.09940967, 0.12867003, 0.16065544, 0.18991135, 0.21719265, 0.23775531, 0.24736428, 0.24839586, 0.24995891, 0.24000000)
 obs_tot <- c(99, 552, 692, 763, 704, 847, 994, 847, 781, 409)
 N_AGE <- length(obs_tot)
 N_CONTACT <- N_AGE
@@ -24,8 +25,10 @@ param_names_orig <- c(
 source("setup.R")  
 source("HMC_core.r")
 source("HMC_conv.R")  
-data$count_log_sd <- 0.25
-data$prev_logit_sd <- 0.25
+data$prev_logit_sd <- 0.25          # tau_prev: extra logit-scale discrepancy
+data$sigma_pop     <- rep(0.05, N_AGE)  # ALR uncertainty for age composition
+data$sigma_shape   <- 0.3           # Student-t scale for second-difference prior
+data$nu_shape      <- 4L            # Student-t df (fixed)
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
@@ -70,9 +73,13 @@ hmc_chains <- parallel::mclapply(seq_len(N_CHAINS), function(ch) {
 # ── Pool post-warmup samples ──────────────────────────────────────────────────
 post_warmup_list <- lapply(hmc_chains, function(ch) ch$samples)
 all_samples      <- do.call(rbind, post_warmup_list)
+param_corr_log   <- cor(all_samples)
 
 cat(sprintf("\nTotal post-warmup samples: %d (%d × %d chains)\n",
             nrow(all_samples), nrow(post_warmup_list[[1L]]), N_CHAINS))
+
+cat("\n=== Parameter Correlation Matrix (log scale / fitted theta) ===\n")
+print(round(param_corr_log, 3))
 
 # ── Diagnostics ───────────────────────────────────────────────────────────────
 diag_table <- print_diagnostics(post_warmup_list, chains_raw = hmc_chains)
@@ -127,6 +134,8 @@ print(p_hist_tot)
 print(p_interval)
 print(p_prev_int)
 
+ggsave()
+
 
 # ── Save ─────────────────────────────────────────────────────────────────────
 saveRDS(
@@ -134,6 +143,7 @@ saveRDS(
     hmc_chains       = hmc_chains,
     post_warmup_list = post_warmup_list,
     all_samples      = all_samples,
+    param_corr_log   = param_corr_log,
     diag_table       = diag_table,
     post_summary     = post_summary,
     ppc_out          = ppc_out
@@ -145,6 +155,7 @@ result = readRDS("hmc_output_full.rds")
 hmc_chains = result$hmc_chains
 post_warmup_list = result$post_warmup_list
 all_samples = result$all_samples
+param_corr_log = result$param_corr_log
 diag_table = result$diag_table
 post_summary = result$post_summary
 ppc_out = result$ppc_out

@@ -14,11 +14,11 @@
 #                      where c_composite = base_params$c
 #   C_contact_scale[j] = exp(theta[1 + j])   j = 1..10
 #
-# Likelihood (two-part observation model, J-stratum only, per age group i = 1..10):
-#   log(obs_tot[1:10])     ~ Normal(log(total_by_age(theta)), count_log_sd)
-#   logit(obs_prev[a])      ~ Normal(logit(q_a(theta)), se_logit[a])
-#   se_logit[a]^2           = 1 / (obs_tot[a] * obs_prev[a] * (1 - obs_prev[a]))
-#                              + prev_logit_sd^2
+# Likelihood (joint observation model, J-stratum only, per age group i = 1..10):
+#   ALR(q_obs)[a]  ~ Normal(ALR(pi_model)[a], sigma_pop[a])   population composition
+#   d2_ell[t, a]   ~ StudentT(nu_shape, 0, sigma_shape)        shape regularization
+#   logit(obs_prev[a]) ~ Normal(logit(q_a(theta)), se_logit[a])  prevalence
+#   se_logit[a]    = obs_prev_se[a] / (obs_prev[a] * (1 - obs_prev[a]))  + tau_prev
 #
 # Prior:
 #   beta_scaling_fct - 1 ~ LogNormal(0, 2)  [theta[1] ~ N(0, 2)]
@@ -122,14 +122,16 @@ inv_logit <- function(x) {
   1 / (1 + exp(-x))
 }
 
-prevalence_logit_sd <- function(obs_prev, obs_tot, extra_sd = 0.25) {
+prevalence_logit_sd <- function(obs_prev, obs_tot = NULL, extra_sd = 0.25, obs_se = NULL) {
   p <- pmin(pmax(obs_prev, 1e-6), 1 - 1e-6)
-  sqrt(1 / pmax(obs_tot * p * (1 - p), 1e-12) + extra_sd^2)
+  if (!is.null(obs_se)) {
+    se_logit <- pmax(obs_se, 1e-9) / (p * (1 - p))
+  } else {
+    se_logit <- sqrt(1 / pmax(obs_tot * p * (1 - p), 1e-12))
+  }
+  sqrt(se_logit^2 + extra_sd^2)
 }
 
-get_count_log_sd <- function(data) {
-  if (!is.null(data$count_log_sd)) data$count_log_sd else 0.35
-}
 
 #' Compute model-implied age-group totals and HCV prevalence from the
 #' J-stratum (s = 1) at the final ODE state.
@@ -187,7 +189,74 @@ log_prior <- function(theta) {
     sum(dnorm(theta[-1L], mean = 0.0, sd = 1.0, log = TRUE))
 }
 
-# ── 3b. Analytical gradient of log-prior ─────────────────────────────────────
+# ── 3b. Population composition log-likelihood (ALR-normal) ───────────────────
+#
+# Compares observed age composition q_obs[a] = Y_pop_obs[a] / sum(Y_pop_obs)
+# with model-implied composition pi_model[a] = N_model[a] / sum(N_model)
+# via an additive log-ratio (ALR) normal likelihood, reference group = A.
+#
+# For a = 1, ..., A-1:
+#   z_obs[a]   = log(q_obs[a]  / q_obs[A])
+#   z_model[a] = log(pi[a]     / pi[A])
+#   z_obs[a]  ~ Normal(z_model[a], sigma_pop[a])
+#
+compute_population_composition_loglik <- function(pi_model, q_obs, sigma_pop) {
+  # Choose last age group as reference
+  n_age <- length(pi_model)
+  eps   <- 1e-12
+
+  pi_safe <- pmax(pi_model, eps); pi_safe <- pi_safe / sum(pi_safe)
+  q_safe  <- pmax(q_obs,    eps); q_safe  <- q_safe  / sum(q_safe)
+
+  if (length(sigma_pop) == 1L) sigma_pop <- rep(sigma_pop, n_age)
+
+  ref <- n_age
+  ll  <- 0.0
+  for (a in seq_len(n_age - 1L)) {
+    z_obs   <- log(q_safe[a]  / q_safe[ref])
+    z_model <- log(pi_safe[a] / pi_safe[ref])
+    ll <- ll + dnorm(z_obs, mean = z_model, sd = sigma_pop[a], log = TRUE)
+  }
+  ll
+}
+
+# ── 3c. Age-shape log-prior (Student-t on second differences of centered log π)
+#
+# Regularizes curvature of the log age-composition profile without forcing
+# smoothness. For each internal age group a = 2, ..., A-1:
+#   ell[a] = log(pi[a]) - mean(log(pi))
+#   d2[a]  = ell[a+1] - 2*ell[a] + ell[a-1]
+#   d2[a] ~ StudentT(nu_shape, 0, sigma_shape)
+#
+compute_age_shape_logprior <- function(pi_model, nu_shape = 4L, sigma_shape = 0.3) {
+  n_age <- length(pi_model)
+  if (n_age < 3L) return(0.0)
+
+  eps     <- 1e-12
+  pi_safe <- pmax(pi_model, eps); pi_safe <- pi_safe / sum(pi_safe)
+
+  log_pi <- log(pi_safe)
+  ell    <- log_pi - mean(log_pi)
+
+  lp <- 0.0
+  for (a in 2L:(n_age - 1L)) {
+    d2 <- ell[a + 1L] - 2.0 * ell[a] + ell[a - 1L]
+    lp <- lp + dt(d2 / sigma_shape, df = nu_shape, log = TRUE) - log(sigma_shape)
+  }
+  lp
+}
+
+# ── 3d. Prevalence log-likelihood (logit-normal with delta-method SE) ─────────
+#
+# logit(prev_obs[a]) ~ Normal(logit(p_model[a]), sqrt(se_logit[a]^2 + tau^2))
+# se_logit computed from obs_prev_se via delta method: se / (p * (1-p))
+#
+compute_prevalence_loglik <- function(q_age, obs_prev, obs_prev_se, prev_extra_sd = 0.25) {
+  prev_sd <- prevalence_logit_sd(obs_prev, obs_se = obs_prev_se, extra_sd = prev_extra_sd)
+  sum(dnorm(logit(obs_prev), mean = logit(q_age), sd = prev_sd, log = TRUE))
+}
+
+# ── 3e. Analytical gradient of log-prior ─────────────────────────────────────
 #
 # Gradients of direct log-scale priors.
 #
@@ -201,7 +270,7 @@ grad_log_prior_analytical <- function(theta) {
   grad
 }
 
-# ── 3c. Log-likelihood ───────────────────────────────────────────────────────
+# ── 3f. Log-likelihood ───────────────────────────────────────────────────────
 log_likelihood <- function(theta, base_params, data) {
   pm  <- build_params_from_theta(theta, base_params)
   out <- run_sim(pm, data)
@@ -209,18 +278,25 @@ log_likelihood <- function(theta, base_params, data) {
   if (!is.matrix(out) || nrow(out) == 0L) return(-Inf)
   if (any(!is.finite(out)))               return(-Inf)
 
-  y_final <- as.numeric(out[nrow(out), -1L])   # drop time column
+  y_final <- as.numeric(out[nrow(out), -1L])
   obs     <- compute_age_quantities(y_final)
   if (is.null(obs)) return(-Inf)
 
+  q_obs    <- obs_tot / sum(obs_tot)
+  pi_model <- obs$total_by_age / sum(obs$total_by_age)
+
+  sigma_pop   <- if (!is.null(data$sigma_pop))   data$sigma_pop   else rep(0.05, length(obs_tot))
+  sigma_shape <- if (!is.null(data$sigma_shape)) data$sigma_shape else 0.3
+  nu_shape    <- if (!is.null(data$nu_shape))    data$nu_shape    else 4L
   prev_extra_sd <- if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
-  prev_sd       <- prevalence_logit_sd(obs_prev, obs_tot, prev_extra_sd)
 
-  ll_count <- sum(dnorm(log(obs_tot), mean = log(obs$total_by_age),
-                        sd = get_count_log_sd(data), log = TRUE))
-  ll_prev <- sum(dnorm(logit(obs_prev), mean = logit(obs$q_age), sd = prev_sd, log = TRUE))
+  ll_pop   <- compute_population_composition_loglik(pi_model, q_obs, sigma_pop)
+  lp_shape <- compute_age_shape_logprior(pi_model, nu_shape, sigma_shape)
+  ll_prev  <- compute_prevalence_loglik(obs$q_age, obs_prev, obs_prev_se, prev_extra_sd)
 
-  ll_count + ll_prev
+  if (!is.finite(ll_pop) || !is.finite(lp_shape) || !is.finite(ll_prev)) return(-Inf)
+
+  ll_pop + ll_prev + lp_shape
 }
 
 # ── 3d. Log-posterior ────────────────────────────────────────────────────────

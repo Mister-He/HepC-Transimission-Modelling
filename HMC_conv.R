@@ -140,7 +140,7 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
 # ── 7a. Generate PPC replicates ──────────────────────────────────────────────
 #
 # For each sampled theta_s, run the ODE model and draw:
-#   y_rep_tot[i] ~ LogNormal(log(total_by_age_i(theta_s)), count_log_sd)
+#   y_rep_tot[i] ~ ALR-Normal composition draw scaled to N_total_obs
 #   prev_rep[i]  ~ LogitNormal(logit(q_i(theta_s)), se_logit[i])
 #
 # Returns replicated counts (integer) and the corresponding means (real),
@@ -178,14 +178,23 @@ generate_ppc_samples <- function(post_samples, base_params, data,
 
         if (!is.null(result)) {
             prev_extra_sd <- if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
-            prev_sd <- prevalence_logit_sd(obs_prev, obs_tot, prev_extra_sd)
-            count_log_sd <- get_count_log_sd(data)
+            prev_sd <- prevalence_logit_sd(obs_prev, obs_se = obs_prev_se, extra_sd = prev_extra_sd)
 
-            # Expected counts under the age-specific count layer.
-            lam_tot[ii, ] <- result$total_by_age
+            sigma_pop_ppc <- if (!is.null(data$sigma_pop)) data$sigma_pop else rep(0.05, n_age)
+            if (length(sigma_pop_ppc) == 1L) sigma_pop_ppc <- rep(sigma_pop_ppc, n_age)
+
+            # ALR-based replicated age composition (reference = last age group)
+            N_total_obs <- sum(obs_tot)
+            pi_model_ii <- result$total_by_age / sum(result$total_by_age)
+            z_model_ii  <- log(pi_model_ii[-n_age] / pi_model_ii[n_age])
+            z_rep_ii    <- rnorm(n_age - 1L, mean = z_model_ii, sd = sigma_pop_ppc[-n_age])
+            alr_full_ii <- c(z_rep_ii, 0.0)
+            pi_rep_ii   <- exp(alr_full_ii) / sum(exp(alr_full_ii))
+
+            lam_tot[ii, ]   <- pi_rep_ii * N_total_obs
             mean_prev[ii, ] <- result$q_age
 
-            ppc_tot[ii, ] <- as.integer(round(rlnorm(n_age, meanlog = log(result$total_by_age), sdlog = count_log_sd)))
+            ppc_tot[ii, ]  <- as.integer(round(pi_rep_ii * N_total_obs))
             ppc_prev[ii, ] <- inv_logit(rnorm(n_age, mean = logit(result$q_age), sd = prev_sd))
         }
 
@@ -207,7 +216,7 @@ generate_ppc_samples <- function(post_samples, base_params, data,
         ppc_prev = ppc_prev, ppc_tot = ppc_tot,
         mean_prev = mean_prev, lam_tot = lam_tot,
         ppp_prev = ppp_prev, ppp_tot = ppp_tot,
-        count_log_sd = if (!is.null(data$count_log_sd)) data$count_log_sd else 0.35,
+        sigma_pop = if (!is.null(data$sigma_pop)) data$sigma_pop else rep(0.05, n_age),
         prev_logit_sd = if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
     )
 }
@@ -322,7 +331,7 @@ plot_ppc_intervals <- function(ppc) {
         }
 
         if (type_label == "HCV prevalence") {
-            prev_sd <- prevalence_logit_sd(obs, obs_tot, prev_extra_sd)
+            prev_sd <- prevalence_logit_sd(obs, obs_se = obs_prev_se, extra_sd = prev_extra_sd)
             obs_lo <- inv_logit(logit(obs) - z_crit * prev_sd)
             obs_hi <- inv_logit(logit(obs) + z_crit * prev_sd)
             return(data.frame(
@@ -333,9 +342,9 @@ plot_ppc_intervals <- function(ppc) {
                 stringsAsFactors = FALSE
             ))
         } else {
-            count_log_sd <- if (!is.null(ppc$count_log_sd)) ppc$count_log_sd else 0.35
-            obs_lo <- obs / exp(z_crit * count_log_sd)
-            obs_hi <- obs * exp(z_crit * count_log_sd)
+            sigma_pop_mean <- if (!is.null(ppc$sigma_pop)) mean(ppc$sigma_pop) else 0.05
+            obs_lo <- obs * exp(-z_crit * sigma_pop_mean)
+            obs_hi <- obs * exp( z_crit * sigma_pop_mean)
             return(data.frame(
                 Age = factor(age_lbl, levels = age_lbl),
                 obs_lo = obs_lo,
@@ -426,7 +435,7 @@ plot_ppc_prevalence_intervals <- function(ppc) {
     )
 
     prev_extra_sd <- if (!is.null(ppc$prev_logit_sd)) ppc$prev_logit_sd else 0.25
-    prev_sd <- prevalence_logit_sd(obs_prev, obs_tot, prev_extra_sd)
+    prev_sd <- prevalence_logit_sd(obs_prev, obs_se = obs_prev_se, extra_sd = prev_extra_sd)
 
     obs_df <- data.frame(
         Age = factor(age_lbl, levels = age_lbl),
