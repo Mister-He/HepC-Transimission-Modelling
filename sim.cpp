@@ -100,6 +100,7 @@ struct Params {
 
     // --- Incarceration rates (age-varying, length 10 each) ------------------
     std::vector<double> lambda1; // first-arrest rate   lambda_i^(1)
+    double c;                    // multiplier for the first-arrest rate
     std::vector<double> lambda2; // release rate        lambda_i^(2)
     std::vector<double> lambda3; // re-arrest rate      lambda_i^(3)
     double pi_recid;             // recidivism probability pi
@@ -208,7 +209,7 @@ std::vector<double> rhs(double t,
 
         double gam  = forceOfInfection(i, y, p);  // gamma_{i,j}(t)
         double mu_i = p.mu[i] * p.omega;          // mortality for PWIDs in age group i
-        double l1   = p.lambda1[i];
+        double l1   = p.lambda1[i] * p.c;
         double l2   = p.lambda2[i];
         double l3   = p.lambda3[i];
         double pi   = p.pi_recid;
@@ -667,6 +668,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
     NumericVector l2_r = as<NumericVector>(params_r["lambda2"]);
     NumericVector l3_r = as<NumericVector>(params_r["lambda3"]);
     p.lambda1.assign(l1_r.begin(), l1_r.end());
+    p.c = as<double>(params_r["c"]);
     p.lambda2.assign(l2_r.begin(), l2_r.end());
     p.lambda3.assign(l3_r.begin(), l3_r.end());
     p.pi_recid = as<double>(params_r["pi_recid"]);

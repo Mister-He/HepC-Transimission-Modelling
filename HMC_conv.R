@@ -100,14 +100,17 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
     ess_vals <- compute_ess(post_warmup_list)
     all_samps <- do.call(rbind, post_warmup_list)
     orig_samps <- theta_to_orig(all_samps)
+    # c_true is derived from beta_scaling_fct, so it has no separate HMC
+    # dimension. Exclude it when aligning original-scale values with theta.
+    orig_sampled <- orig_samps[, colnames(orig_samps) != "c_true", drop = FALSE]
 
     diag_df <- data.frame(
         Parameter = param_names_log,
         Mean_log = round(colMeans(all_samps), 4),
         SD_log = round(apply(all_samps, 2, sd), 4),
-        Mean_orig = round(colMeans(orig_samps), 4),
-        Q2.5_orig = round(apply(orig_samps, 2, quantile, 0.025), 4),
-        Q97.5_orig = round(apply(orig_samps, 2, quantile, 0.975), 4),
+        Mean_orig = round(colMeans(orig_sampled), 4),
+        Q2.5_orig = round(apply(orig_sampled, 2, quantile, 0.025), 4),
+        Q97.5_orig = round(apply(orig_sampled, 2, quantile, 0.975), 4),
         Rhat = round(rhat_vals, 4),
         ESS = round(ess_vals, 1),
         Conv_OK = ifelse(rhat_vals < 1.05 & ess_vals > 100, "YES", "NO"),

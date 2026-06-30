@@ -12,18 +12,19 @@ N_AGE <- length(obs_tot)
 N_CONTACT <- N_AGE
 
 param_names_log <- c(
-  "log_beta_scale",
+  "log_beta_scaling_fct_minus_one",
   paste0("log_C_contact_scale_", seq_len(N_CONTACT))
 )
 param_names_orig <- c(
-  "beta_scale",
+  "beta_scaling_fct",
+  "c_true",
   paste0("C_contact_scale_", seq_len(N_CONTACT))
 )
 
 source("setup.R")  
 source("HMC_core.r")
 source("HMC_conv.R")  
-data$count_log_sd <- 0.35
+data$count_log_sd <- 0.25
 data$prev_logit_sd <- 0.25
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    rnorm(1L, 0.0, 0.25),       # log_beta_scale:        shared inflow multiplier
+    rnorm(1L, 0.0, 0.25),       # log(beta_scaling_fct - 1): beta scaling is > 1
     rnorm(N_CONTACT, 0.0, 0.25) # log_C_contact_scale_i: row-specific contact scales
   )
 })
