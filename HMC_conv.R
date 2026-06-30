@@ -100,9 +100,7 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
     ess_vals <- compute_ess(post_warmup_list)
     all_samps <- do.call(rbind, post_warmup_list)
     orig_samps <- theta_to_orig(all_samps)
-    # c_true is derived from beta_scaling_fct, so it has no separate HMC
-    # dimension. Exclude it when aligning original-scale values with theta.
-    orig_sampled <- orig_samps[, colnames(orig_samps) != "c_true", drop = FALSE]
+    orig_sampled <- orig_samps
 
     diag_df <- data.frame(
         Parameter = param_names_log,

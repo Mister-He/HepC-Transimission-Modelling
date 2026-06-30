@@ -18,8 +18,7 @@ param_names_log <- c(
 )
 param_names_orig <- c(
   "beta_scaling_fct",
-  "c_true",
-  paste0("C_contact_scale_", seq_len(N_CONTACT))
+  paste0("tot_in_scaling_fct_", seq_len(N_CONTACT))
 )
 
 source("setup.R")  
@@ -44,8 +43,8 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    rnorm(1L, 0.0, 0.25),       # log(beta_scaling_fct - 1): beta scaling is > 1
-    rnorm(N_CONTACT, 0.0, 0.25) # log_C_contact_scale_i: row-specific contact scales
+    rnorm(1L, 0.0, 0.25),                        # log(beta_scaling_fct - 1)
+    rnorm(N_CONTACT, CONTACT_PRIOR_MEANS, 0.25)  # log(tot_in_scaling_fct[k])
   )
 })
 

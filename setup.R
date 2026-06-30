@@ -108,20 +108,23 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.2646518, 0.4748395, 0.4567038, 
-              0.5042944, 0.5039167, 0.5907578, 
-              0.6082854, 0.5643685, 0.4569618, 
-              0.2822847),  # baseline first-arrest rate lambda_i^(1) — GUESS
-  c = 2.9633815,           # composite multiplier for the first-arrest rate
-  lambda2 = c(0.4933407, 0.6069313, 0.6161935, 
-              0.5399142, 0.4665885, 0.4318747, 
-              0.4187965, 0.4178995, 0.4387515, 
-              0.4944718),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.2646518, 0.4748395, 0.4567038, 
-              0.5042944, 0.5039167, 0.5907578, 
-              0.6082854, 0.5643685, 0.4569618, 
-              0.2822847),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.6343065,          # recidivism probability (fitted to SPS; Assumption)
+  lambda1 = c(0.5582834, 0.5269933, 0.4918624, 
+              0.4995045, 0.4869220, 0.5236286, 
+              0.5293563, 0.5047838, 0.3782928, 
+              0.1638444),  # baseline first-arrest rate lambda_i^(1) — GUESS
+  c_composite = c(0.5911735, 1.6996298, 1.4714660,
+                  2.3824881, 1.7157632, 4.6604280,
+                  3.8479352, 4.4226596, 3.8667446,
+                  3.7223948),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
+  lambda2 = c(0.4700683, 0.6444493, 0.6305744, 
+              0.5130281, 0.4056551, 0.3459537, 
+              0.3281469, 0.3202205, 0.3339544, 
+              0.3926353),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.5582834, 0.5269933, 0.4918624, 
+              0.4995045, 0.4869220, 0.5236286, 
+              0.5293563, 0.5047838, 0.3782928, 
+              0.1638444),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.7912675,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
@@ -212,6 +215,14 @@ expand.grid(age_names, state_names, stage_names, strata_names) %>%
   mutate(col_name = paste(Var4, Var3, Var2, Var1, sep = "_")) %>%
   pull(col_name) %>%
   c("time", .) -> col_names
+
+# =============================================================================
+# BASELINE LAMBDA1 PRE-COMPUTATION
+# lambda1[k] = lambda3[k] * c_true[k], where c_true[k] = c_composite[k] / 1
+# (tot_in_scaling_fct = 1 at baseline; HMC updates this via C_contact_scale)
+# =============================================================================
+params$lambda1 <- params$lambda3 * params$c_composite
+params_s1 <- modifyList(params_s1, list(lambda1 = params$lambda1))
 
 # =============================================================================
 # EXAMPLE RUN
