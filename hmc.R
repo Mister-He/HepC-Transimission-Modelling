@@ -13,18 +13,18 @@ N_AGE <- length(obs_tot)
 N_CONTACT <- N_AGE
 
 param_names_log <- c(
-  "log_beta_scaling_fct_minus_one",
-  paste0("log_C_contact_scale_", seq_len(N_CONTACT))
+  paste0("log_C_contact_scale_", seq_len(N_CONTACT)),
+  paste0("log_tot_in_scaling_fct_", seq_len(N_CONTACT))
 )
 param_names_orig <- c(
-  "beta_scaling_fct",
+  paste0("C_contact_scale_", seq_len(N_CONTACT)),
   paste0("tot_in_scaling_fct_", seq_len(N_CONTACT))
 )
 
 source("setup.R")  
 source("HMC_core.r")
 source("HMC_conv.R")  
-data$prev_logit_sd <- 0.25          # tau_prev: extra logit-scale discrepancy
+data$prev_logit_sd <- 0.1          # tau_prev: extra logit-scale discrepancy
 data$sigma_pop     <- rep(0.05, N_AGE)  # ALR uncertainty for age composition
 data$sigma_shape   <- 0.3           # Student-t scale for second-difference prior
 data$nu_shape      <- 4L            # Student-t df (fixed)
@@ -32,8 +32,8 @@ data$nu_shape      <- 4L            # Student-t df (fixed)
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
 N_CORES     <- 4L      # cores for parallel gradient batches (set to 1 for debugging)
-N_WARMUP    <- 200L    # adaptation (discarded)
-N_ITER      <- 1000L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
+N_WARMUP    <- 500L    # adaptation (discarded)
+N_ITER      <- 600L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
 N_PARAMS    <- length(param_names_log) # number of parameters being sampled (log scale)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
 L_STEPS     <- 10L     # leapfrog steps per proposal
@@ -43,8 +43,8 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    rnorm(1L, 0.0, 0.25),                        # log(beta_scaling_fct - 1)
-    rnorm(N_CONTACT, CONTACT_PRIOR_MEANS, 0.25)  # log(tot_in_scaling_fct[k])
+    rnorm(N_AGE, CONTACT_PRIOR_MEANS, 0.25)  # log(C_contact_scale[k])
+    rnorm(N_AGE, TOT_IN_PRIOR_MEANS, 0.25)  # log(tot_in_scaling_fct[k]
   )
 })
 
@@ -133,8 +133,13 @@ print(p_hist_tot)
 print(p_interval)
 print(p_prev_int)
 
-ggsave()
-
+dir.create('hmc_plots/', showWarnings = FALSE)
+ggsave('hmc_plots/trace_plot.png', plot = p_trace)
+ggsave('hmc_plots/density_plot.png', plot = p_density)
+ggsave('hmc_plots/hist_prev_plot.png', plot = p_hist_prev)
+ggsave('hmc_plots/hist_tot_plot.png', plot = p_hist_tot)
+ggsave('hmc_plots/interval_plot.png', plot = p_interval)
+ggsave('hmc_plots/prev_int_plot.png', plot = p_prev_int)
 
 # ── Save ─────────────────────────────────────────────────────────────────────
 saveRDS(
