@@ -11,7 +11,7 @@
 # Scaling factors:
 #   c_true[k]          = c_composite[k] / tot_in_scaling_fct[k]
 #   C_contact_scale[j] = exp(theta[j])   j = 1..10
-#   tot_in_scaling_fct[k] = 1 + exp(theta[10 + k])   k = 1..10
+#   tot_in_scaling_fct[k] = exp(theta[10 + k])   k = 1..10
 #
 # Likelihood (joint observation model, J-stratum only, per age group i = 1..10):
 #   ALR(q_obs)[a]  ~ Normal(ALR(pi_model)[a], sigma_pop[a])   population composition
@@ -23,12 +23,12 @@
 # Parameter relationships (new c_composite design):
 #   c_composite[k]    = tot_in_scaling_fct[k] * c_true[k]   (k = 1..10)
 #   C_contact_scale[k] = exp(theta[k])   k = 1..10
-#   tot_in_scaling_fct[k] = 1 + exp(theta[10 + k])   k = 1..10
+#   tot_in_scaling_fct[k] = exp(theta[10 + k])   k = 1..10
 #   lambda1[k]        = lambda3[k] * c_true[k]   (pre-computed before each sim call)
 #
 # Prior:
 #   C_contact_scale  ~ LogNormal(0, 1)      [theta[1:10] ~ N(0, 0.25)]
-#   (tot_in_scaling_fct - 1) ~ LogNormal(0, 1)     [theta[11:20] ~ N(0, 0.25)]
+#   tot_in_scaling_fct ~ LogNormal(0, 1)     [theta[11:20] ~ N(0, 0.25)]
 #   Note: tot_in_scaling_fct[k] > 1 ensures that c_true[k] < c_composite[k], which is consistent with the model design.
 #
 # Gradient: central finite differences through the C++ ODE solver
@@ -55,7 +55,7 @@ constrain_theta <- function(theta) {
     stop(sprintf("theta must contain %d finite values", 2L * N_AGE))
   }
   c_scales   <- exp(theta[1:N_AGE])
-  tot_in_scaling_fct <- 1.0 + exp(theta[(N_AGE + 1):(2 * N_AGE)])
+  tot_in_scaling_fct <- exp(theta[(N_AGE + 1):(2 * N_AGE)])
 
   list(
     C_contact_scale = c_scales,
@@ -97,8 +97,8 @@ build_params_from_theta <- function(theta, base_params) {
 #' Vectorised back-transform: theta matrix -> interpretable parameter matrix.
 #'
 #' theta[,1:N_AGE] log(C_contact_scale) -> exp() = C_contact_scale
-#' theta[,N_AGE + (1:N_AGE)] log(tot_in_scaling_fct - 1)
-#'   -> 1 + exp() = tot_in_scaling_fct
+#' theta[,N_AGE + (1:N_AGE)] log(tot_in_scaling_fct)
+#'   -> exp() = tot_in_scaling_fct
 theta_to_orig <- function(samps) {
   if (is.null(dim(samps))) {
     samps <- matrix(samps, nrow = 1L)
@@ -108,7 +108,7 @@ theta_to_orig <- function(samps) {
   }))
   colnames(contact_cols) <- paste0("C_contact_scale_", seq_len(N_AGE))
   tot_in_cols <- do.call(cbind, lapply(seq_len(N_AGE), function(j) {
-    1.0 + exp(samps[, N_AGE + j])
+    exp(samps[, N_AGE + j])
   }))
   colnames(tot_in_cols) <- paste0("tot_in_scaling_fct_", seq_len(N_AGE))
 
@@ -192,8 +192,8 @@ compute_age_quantities <- function(y_final) {
 #
 # theta[1:10]  = log(C_contact_scale[k]) ~ Normal(0, 1)
 # theta[11:20] = log(tot_in_scaling_fct[k] - 1) ~ Normal(0, 1)
-CONTACT_PRIOR_MEANS <- c(log(0.5), rep(0.05, 4), rep(0.75, 5))
-TOT_IN_PRIOR_MEANS  <- rep(0.0, N_AGE)
+CONTACT_PRIOR_MEANS <- log(c(0.2506, 0.8799, 0.49105, 0.6041, 0.2651, 2.2305, 3.1248, 6.2280, 12.9459, 102.0037))
+TOT_IN_PRIOR_MEANS <- log(c(0.96, 0.23, 0.07, 0.06, 0.03, 0.33, 1.9, 1.4, 1.2, 2.0))
 
 log_prior <- function(theta) {
     sum(dnorm(theta[1:N_AGE], mean = CONTACT_PRIOR_MEANS, sd = 0.25, log = TRUE)) +

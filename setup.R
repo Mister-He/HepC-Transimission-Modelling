@@ -221,7 +221,10 @@ expand.grid(age_names, state_names, stage_names, strata_names) %>%
 # During HMC, build_params_from_theta() replaces lambda1 with
 # lambda3 * c_composite / tot_in_scaling_fct before every simulation.
 # =============================================================================
-params_s1 <- modifyList(params_s1, list(lambda1 = params$lambda1))
+params_s1 <- modifyList(params_s1, 
+                        list(
+                          lambda1 = params$lambda3 * params$c_composite
+                        ))
 
 # =============================================================================
 # EXAMPLE RUN
