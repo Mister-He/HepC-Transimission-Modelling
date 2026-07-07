@@ -139,7 +139,7 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
 #
 # For each sampled theta_s, run the ODE model and draw:
 #   y_rep_tot[i] ~ ALR-Normal composition draw scaled to N_total_obs
-#   prev_rep[i]  ~ LogitNormal(logit(q_i(theta_s)), se_logit[i])
+#   case_rep[i]  ~ Binomial(obs_tot[i], q_i(theta_s)),  prev_rep = case_rep / obs_tot
 #
 # Returns replicated counts (integer) and the corresponding means (real),
 # plus posterior predictive p-values (ppp) per age group.
@@ -175,9 +175,6 @@ generate_ppc_samples <- function(post_samples, base_params, data,
         )
 
         if (!is.null(result)) {
-            prev_extra_sd <- if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
-            prev_sd <- prevalence_logit_sd(obs_prev, obs_se = obs_prev_se, extra_sd = prev_extra_sd)
-
             sigma_pop_ppc <- if (!is.null(data$sigma_pop)) data$sigma_pop else rep(0.05, n_age)
             if (length(sigma_pop_ppc) == 1L) sigma_pop_ppc <- rep(sigma_pop_ppc, n_age)
 
@@ -193,7 +190,8 @@ generate_ppc_samples <- function(post_samples, base_params, data,
             mean_prev[ii, ] <- result$q_age
 
             ppc_tot[ii, ]  <- as.integer(round(pi_rep_ii * N_total_obs))
-            ppc_prev[ii, ] <- inv_logit(rnorm(n_age, mean = logit(result$q_age), sd = prev_sd))
+            # Binomial replicate: case_a ~ Binomial(N_a = obs_tot, prev_a = q_age)
+            ppc_prev[ii, ] <- rbinom(n_age, size = obs_tot, prob = result$q_age) / obs_tot
         }
 
         if (ii %% 50L == 0L) {

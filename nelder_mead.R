@@ -21,6 +21,7 @@ obs_prev_se <- 0.5 * sqrt(c(
   0.23775531, 0.24736428, 0.24839586, 0.24995891, 0.24000000
 ))
 obs_tot <- c(99, 552, 692, 763, 704, 847, 994, 847, 781, 409)
+obs_pos <- round(obs_prev * obs_tot)  # HCV positives per age group (binomial numerator)
 N_AGE <- length(obs_tot)
 
 param_names_log <- c(
@@ -189,9 +190,9 @@ plot_nm_fit <- function(fit) {
 
 plot_nm_residuals <- function(fit) {
   pred <- fit$prediction
-  prev_sd <- prevalence_logit_sd(
-    obs_prev, obs_se = obs_prev_se, extra_sd = fit$sim_data$prev_logit_sd
-  )
+  # Binomial Pearson residual: (obs_pos - N * q) / sqrt(N * q * (1 - q))
+  q_prev <- pmin(pmax(pred$q_age, 1e-12), 1 - 1e-12)
+  prev_resid <- (obs_pos - obs_tot * q_prev) / sqrt(obs_tot * q_prev * (1 - q_prev))
   pop_sd <- if (length(fit$sim_data$sigma_pop) == 1L) {
     rep(fit$sim_data$sigma_pop, N_AGE)
   } else fit$sim_data$sigma_pop
@@ -203,7 +204,7 @@ plot_nm_residuals <- function(fit) {
   ) / pop_sd[-ref]
   dat <- rbind(
     data.frame(age = seq_len(N_AGE), component = "Prevalence",
-               residual = (logit(obs_prev) - logit(pred$q_age)) / prev_sd),
+               residual = prev_resid),
     data.frame(age = seq_len(N_AGE), component = "Population ALR",
                residual = pop_resid)
   )

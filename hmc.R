@@ -7,8 +7,9 @@ library(tidyr)
 
 # Observations
 obs_prev <- c(0.1118421, 0.1470588, 0.1933842, 0.2507599, 0.2899083, 0.3596059, 0.5025295, 0.5061728, 0.4534314, 0.3544304)
-obs_prev_se <- 0.5 * sqrt(c(0.09940967, 0.12867003, 0.16065544, 0.18991135, 0.21719265, 0.23775531, 0.24736428, 0.24839586, 0.24995891, 0.24000000))
+obs_prev_se <- c(0.09940967, 0.12867003, 0.16065544, 0.18991135, 0.21719265, 0.23775531, 0.24736428, 0.24839586, 0.24995891, 0.24000000)
 obs_tot <- c(99, 552, 692, 763, 704, 847, 994, 847, 781, 409)
+obs_pos <- round(obs_prev * obs_tot)  # HCV positives per age group (binomial numerator)
 N_AGE <- length(obs_tot)
 N_CONTACT <- N_AGE
 
@@ -24,27 +25,27 @@ param_names_orig <- c(
 source("setup.R")  
 source("HMC_core.r")
 source("HMC_conv.R")  
-data$prev_logit_sd <- 0.01          # tau_prev: extra logit-scale discrepancy
-data$sigma_pop     <- rep(0.2, N_AGE)  # ALR uncertainty for age composition
-data$sigma_shape   <- 0.35           # Student-t scale for second-difference prior
-data$nu_shape      <- 5L            # Student-t df (fixed)
+data$prev_logit_sd <- 0.1          # tau_prev: extra logit-scale discrepancy
+data$sigma_pop     <- rep(0.05, N_AGE)  # ALR uncertainty for age composition
+data$sigma_shape   <- 0.3           # Student-t scale for second-difference prior
+data$nu_shape      <- 4L            # Student-t df (fixed)
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
 N_CORES     <- 4L      # cores for parallel gradient batches (set to 1 for debugging)
-N_WARMUP    <- 400L    # adaptation (discarded)
-N_ITER      <- 500L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
+N_WARMUP    <- 500L    # adaptation (discarded)
+N_ITER      <- 600L   # total iterations per chain  (post-warmup = N_ITER - N_WARMUP)
 N_PARAMS    <- length(param_names_log) # number of parameters being sampled (log scale)
 EPS_INIT    <- 0.01    # initial step size (dual averaging will adapt)
 L_STEPS     <- 10L     # leapfrog steps per proposal
 ADAPT_DELTA <- 0.65    # target acceptance rate
 
 # ── Initial points ────────────────────────────────────────────────────────────
-set.seed(42)
+set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
     rnorm(N_AGE, CONTACT_PRIOR_MEANS, 0.25),  # log(C_contact_scale[k])
-    rnorm(N_AGE, TOT_IN_PRIOR_MEANS, 0.25)  # log(tot_in_scaling_fct[k])
+    rnorm(N_AGE, TOT_IN_PRIOR_MEANS, 0.25)  # log(tot_in_scaling_fct[k]
   )
 })
 
@@ -54,7 +55,6 @@ cat(sprintf("Chains: %d | Warmup: %d | Sampling: %d | L: %d\n",
             N_CHAINS, N_WARMUP, N_ITER - N_WARMUP, L_STEPS))
 cat(sprintf("Approx ODE runs per HMC step: %d\n", (L_STEPS + 1L) * 2L * N_PARAMS))
 
-start = Sys.time()
 hmc_chains <- parallel::mclapply(seq_len(N_CHAINS), function(ch) {
   run_hmc_chain(
     theta_init  = inits[[ch]],
@@ -69,9 +69,6 @@ hmc_chains <- parallel::mclapply(seq_len(N_CHAINS), function(ch) {
     chain_id    = ch
   )
 }, mc.cores = N_CHAINS)
-
-end = Sys.time()
-cat(sprintf("\nTotal HMC time: %.2f seconds\n", as.numeric(difftime(end, start, units = "secs"))))
 
 # ── Pool post-warmup samples ──────────────────────────────────────────────────
 post_warmup_list <- lapply(hmc_chains, function(ch) ch$samples)
