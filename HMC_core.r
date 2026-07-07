@@ -4,14 +4,16 @@
 # Append this file after setup.R (which sources sim.cpp and defines params,
 # data, idx(), y0, etc.).
 #
-# Parameters estimated (20 total with 10 age groups):
-#   theta[1:10]    = log_C_contact_scale  row-specific contact scalings
-#   theta[11:20]   = log_tot_in_scaling_fct  row-specific total-in scalings
+# Parameters estimated (2*SPLINE_K total; SPLINE_K = 5 with 10 age groups):
+#   theta[1:K]       = alpha  B-spline coefficients for log_C_contact_scale
+#   theta[K+1:2K]    = gamma  B-spline coefficients for log_tot_in_scaling_fct
+#   The N_AGE age values are reconstructed via a fixed basis (dimension
+#   reduction): log_C_contact_scale = SPLINE_B %*% alpha, etc.
 #
 # Scaling factors:
 #   c_true[k]          = c_composite[k] / tot_in_scaling_fct[k]
-#   C_contact_scale[j] = exp(theta[j])   j = 1..10
-#   tot_in_scaling_fct[k] = exp(theta[10 + k])   k = 1..10
+#   C_contact_scale    = exp(SPLINE_B %*% alpha)   (length N_AGE)
+#   tot_in_scaling_fct = exp(SPLINE_B %*% gamma)   (length N_AGE)
 #
 # Likelihood (joint observation model, J-stratum only, per age group i = 1..10):
 #   ALR(q_obs)[a]  ~ Normal(ALR(pi_model)[a], sigma_pop[a])   population composition
@@ -21,14 +23,13 @@
 #
 # Parameter relationships (new c_composite design):
 #   c_composite[k]    = tot_in_scaling_fct[k] * c_true[k]   (k = 1..10)
-#   C_contact_scale[k] = exp(theta[k])   k = 1..10
-#   tot_in_scaling_fct[k] = exp(theta[10 + k])   k = 1..10
 #   lambda1[k]        = lambda3[k] * c_true[k]   (pre-computed before each sim call)
 #
-# Prior:
-#   C_contact_scale  ~ LogNormal(0, 1)      [theta[1:10] ~ N(0, 0.25)]
-#   tot_in_scaling_fct ~ LogNormal(0, 1)     [theta[11:20] ~ N(0, 0.25)]
-#   Note: tot_in_scaling_fct[k] > 1 ensures that c_true[k] < c_composite[k], which is consistent with the model design.
+# Prior (P-spline smoothing on the coefficients):
+#   first two coefficients ~ Normal(projected prior mean, SPLINE_ANCHOR_SD)
+#   coef[k] ~ Normal(2*coef[k-1] - coef[k-2], SPLINE_RW_SD)  for k >= 3
+#   Projected prior means come from least-squares fitting the original per-age
+#   prior medians (CONTACT/TOT_IN_PRIOR_MEANS) onto SPLINE_B.
 #
 # Gradient: central finite differences through the C++ ODE solver
 #   Cost per HMC step: (L+1) gradient evals × 2 × N_PARAMS ODE runs
@@ -48,19 +49,25 @@
 # 1.  PARAMETER TRANSFORMS
 # =============================================================================
 
-#' Unconstrained theta -> constrained named list.
+#' Unconstrained theta (spline coefficients) -> constrained named list.
+#'
+#' theta = c(alpha, gamma) with SPLINE_K coefficients each. The N_AGE age values
+#' are reconstructed via the fixed B-spline basis: log_vec = SPLINE_B %*% coef.
 constrain_theta <- function(theta) {
-  if (length(theta) != 2L * N_AGE || any(!is.finite(theta))) {
-    stop(sprintf("theta must contain %d finite values", 2L * N_AGE))
+  if (length(theta) != 2L * SPLINE_K || any(!is.finite(theta))) {
+    stop(sprintf("theta must contain %d finite values", 2L * SPLINE_K))
   }
-  c_scales   <- exp(theta[1:N_AGE])
-  tot_in_scaling_fct <- exp(theta[(N_AGE + 1):(2 * N_AGE)])
+  alpha <- theta[1:SPLINE_K]
+  gamma <- theta[(SPLINE_K + 1):(2 * SPLINE_K)]
+
+  log_C_contact_scale    <- as.numeric(SPLINE_B %*% alpha)
+  log_tot_in_scaling_fct <- as.numeric(SPLINE_B %*% gamma)
 
   list(
-    C_contact_scale = c_scales,
-    tot_in_scaling_fct = tot_in_scaling_fct,
-    log_C_contact_scale = theta[1:N_AGE],
-    log_tot_in_scaling_fct = theta[(N_AGE + 1):(2 * N_AGE)]
+    C_contact_scale = exp(log_C_contact_scale),
+    tot_in_scaling_fct = exp(log_tot_in_scaling_fct),
+    log_C_contact_scale = log_C_contact_scale,
+    log_tot_in_scaling_fct = log_tot_in_scaling_fct
   )
 }
 
@@ -93,23 +100,23 @@ build_params_from_theta <- function(theta, base_params) {
   pm
 }
 
-#' Vectorised back-transform: theta matrix -> interpretable parameter matrix.
+#' Vectorised back-transform: spline-coefficient matrix -> age-level parameters.
 #'
-#' theta[,1:N_AGE] log(C_contact_scale) -> exp() = C_contact_scale
-#' theta[,N_AGE + (1:N_AGE)] log(tot_in_scaling_fct)
-#'   -> exp() = tot_in_scaling_fct
+#' Each row of samps is c(alpha, gamma) (2*SPLINE_K coefficients). The N_AGE
+#' age values are reconstructed via the basis and exponentiated:
+#'   C_contact_scale    = exp(alpha %*% t(SPLINE_B))
+#'   tot_in_scaling_fct = exp(gamma %*% t(SPLINE_B))
 theta_to_orig <- function(samps) {
   if (is.null(dim(samps))) {
     samps <- matrix(samps, nrow = 1L)
   }
-  contact_cols <- do.call(cbind, lapply(seq_len(N_AGE), function(j) {
-    exp(samps[, j])
-  }))
+  alpha <- samps[, 1:SPLINE_K, drop = FALSE]
+  gamma <- samps[, (SPLINE_K + 1):(2 * SPLINE_K), drop = FALSE]
+
+  contact_cols <- exp(alpha %*% t(SPLINE_B))
+  tot_in_cols  <- exp(gamma %*% t(SPLINE_B))
   colnames(contact_cols) <- paste0("C_contact_scale_", seq_len(N_AGE))
-  tot_in_cols <- do.call(cbind, lapply(seq_len(N_AGE), function(j) {
-    exp(samps[, N_AGE + j])
-  }))
-  colnames(tot_in_cols) <- paste0("tot_in_scaling_fct_", seq_len(N_AGE))
+  colnames(tot_in_cols)  <- paste0("tot_in_scaling_fct_", seq_len(N_AGE))
 
   cbind(
     contact_cols,
@@ -187,16 +194,57 @@ compute_age_quantities <- function(y_final) {
 # 3.  LOG-POSTERIOR AND GRADIENT
 # =============================================================================
 
-# ── 3a. Log-prior ────────────────────────────────────────────────────────────
+# ── 3a. Spline basis (dimension reduction) and log-prior ─────────────────────
 #
-# theta[1:10]  = log(C_contact_scale[k]) ~ Normal(0, 1)
-# theta[11:20] = log(tot_in_scaling_fct[k] - 1) ~ Normal(0, 1)
+# Instead of estimating N_AGE free values for each age-varying log vector, each
+# vector is represented by SPLINE_K B-spline coefficients:
+#   log_C_contact_scale    = SPLINE_B %*% alpha   (alpha = theta[1:K])
+#   log_tot_in_scaling_fct = SPLINE_B %*% gamma   (gamma = theta[K + 1:K])
+# so theta has length 2*SPLINE_K instead of 2*N_AGE.
+#
+# Per-age prior medians (unchanged targets, used to centre the coefficients).
 CONTACT_PRIOR_MEANS <- log(c(0.2506, 0.8799, 0.49105, 0.6041, 0.2651, 2.2305, 3.1248, 6.2280, 12.9459, 102.0037))
 TOT_IN_PRIOR_MEANS <- log(c(0.96, 0.23, 0.07, 0.06, 0.03, 0.33, 1.9, 1.4, 1.2, 2.0))
 
+SPLINE_K         <- 5L     # B-spline coefficients per vector (10 age values -> 5)
+SPLINE_RW_SD     <- 0.3    # tau: 2nd-order random-walk (P-spline) curvature scale
+SPLINE_ANCHOR_SD <- 0.5    # sd on the first two (level/slope) coefficients
+
+# Cubic B-spline basis over the age index, N_AGE x SPLINE_K.
+SPLINE_B <- matrix(
+  as.numeric(splines::bs(seq_len(N_AGE), df = SPLINE_K, intercept = TRUE)),
+  nrow = N_AGE, ncol = SPLINE_K
+)
+
+# Least-squares projection of the per-age prior means onto the basis, giving the
+# coefficient prior means used to anchor the random-walk prior and inits.
+project_to_spline <- function(y) {
+  as.numeric(solve(crossprod(SPLINE_B), crossprod(SPLINE_B, y)))
+}
+CONTACT_COEF_PRIOR_MEANS <- project_to_spline(CONTACT_PRIOR_MEANS)
+TOT_IN_COEF_PRIOR_MEANS  <- project_to_spline(TOT_IN_PRIOR_MEANS)
+
+# P-spline log-prior for one coefficient vector: the first two coefficients are
+# anchored (level + slope) at their projected means; the remaining coefficients
+# follow a 2nd-order random walk that penalises curvature (smoothing).
+rw2_log_prior <- function(coef, mean0) {
+  K  <- length(coef)
+  lp <- dnorm(coef[1], mean = mean0[1], sd = SPLINE_ANCHOR_SD, log = TRUE) +
+        dnorm(coef[2], mean = mean0[2], sd = SPLINE_ANCHOR_SD, log = TRUE)
+  if (K >= 3L) {
+    for (k in 3:K) {
+      lp <- lp + dnorm(coef[k], mean = 2 * coef[k - 1L] - coef[k - 2L],
+                       sd = SPLINE_RW_SD, log = TRUE)
+    }
+  }
+  lp
+}
+
 log_prior <- function(theta) {
-    sum(dnorm(theta[1:N_AGE], mean = CONTACT_PRIOR_MEANS, sd = 0.25, log = TRUE)) +
-    sum(dnorm(theta[(N_AGE + 1):(2 * N_AGE)], mean = TOT_IN_PRIOR_MEANS, sd = 0.25, log = TRUE))
+  alpha <- theta[1:SPLINE_K]
+  gamma <- theta[(SPLINE_K + 1):(2 * SPLINE_K)]
+  rw2_log_prior(alpha, CONTACT_COEF_PRIOR_MEANS) +
+  rw2_log_prior(gamma, TOT_IN_COEF_PRIOR_MEANS)
 }
 
 # ── 3b. Population composition log-likelihood (ALR-normal) ───────────────────
@@ -276,10 +324,25 @@ compute_prevalence_loglik <- function(q_age, obs_pos, obs_tot) {
 # reference and unit-testing against finite differences.
 #
 grad_log_prior_analytical <- function(theta) {
-  grad <- numeric(length(theta))
-  grad[1:N_AGE] <- -(theta[1:N_AGE] - CONTACT_PRIOR_MEANS)
-  grad[(N_AGE + 1):(2 * N_AGE)] <- -(theta[(N_AGE + 1):(2 * N_AGE)] - TOT_IN_PRIOR_MEANS)
-  grad
+  grad_coef <- function(coef, mean0) {
+    K <- length(coef)
+    g <- numeric(K)
+    g[1] <- -(coef[1] - mean0[1]) / SPLINE_ANCHOR_SD^2
+    g[2] <- -(coef[2] - mean0[2]) / SPLINE_ANCHOR_SD^2
+    if (K >= 3L) {
+      for (k in 3:K) {
+        d <- (coef[k] - 2 * coef[k - 1L] + coef[k - 2L]) / SPLINE_RW_SD^2
+        g[k]      <- g[k]      - d
+        g[k - 1L] <- g[k - 1L] + 2 * d
+        g[k - 2L] <- g[k - 2L] - d
+      }
+    }
+    g
+  }
+  c(
+    grad_coef(theta[1:SPLINE_K], CONTACT_COEF_PRIOR_MEANS),
+    grad_coef(theta[(SPLINE_K + 1):(2 * SPLINE_K)], TOT_IN_COEF_PRIOR_MEANS)
+  )
 }
 
 # ── 3f. Log-likelihood ───────────────────────────────────────────────────────

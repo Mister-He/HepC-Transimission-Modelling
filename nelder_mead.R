@@ -24,14 +24,20 @@ obs_tot <- c(99, 552, 692, 763, 704, 847, 994, 847, 781, 409)
 obs_pos <- round(obs_prev * obs_tot)  # HCV positives per age group (binomial numerator)
 N_AGE <- length(obs_tot)
 
-param_names_log <- c(
-  paste0("log_C_contact_scale_", seq_len(N_AGE)),
-  paste0("log_tot_in_scaling_fct_", seq_len(N_AGE))
+# Interpretable (age-level) parameter names, used for theta_to_orig() output.
+param_names_orig <- c(
+  paste0("C_contact_scale_", seq_len(N_AGE)),
+  paste0("tot_in_scaling_fct_", seq_len(N_AGE))
 )
-param_names_orig <- sub("^log_", "", param_names_log)
 
 source("setup.R")
 source("HMC_core.r")
+
+# Fitted parameters are the spline coefficients (2*SPLINE_K), not age values.
+param_names_log <- c(
+  paste0("alpha_contact_", seq_len(SPLINE_K)),
+  paste0("gamma_tot_in_", seq_len(SPLINE_K))
+)
 
 # Match the observation-model settings used in hmc.R.
 data$prev_logit_sd <- 0.01
@@ -53,7 +59,7 @@ predict_at_theta <- function(theta, base_params = params, sim_data = data) {
 
 # Fit one or more Nelder-Mead starts and retain every objective evaluation.
 fit_nelder_mead <- function(
-    theta_init = c(CONTACT_PRIOR_MEANS, TOT_IN_PRIOR_MEANS),
+    theta_init = c(CONTACT_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_MEANS),
     base_params = params,
     sim_data = data,
     n_starts = 3L,
@@ -63,7 +69,7 @@ fit_nelder_mead <- function(
     seed = 42L,
     report_every = 100L) {
 
-  stopifnot(length(theta_init) == 2L * N_AGE, n_starts >= 1L)
+  stopifnot(length(theta_init) == 2L * SPLINE_K, n_starts >= 1L)
   set.seed(seed)
   starts <- vector("list", n_starts)
   starts[[1L]] <- theta_init
@@ -106,7 +112,8 @@ fit_nelder_mead <- function(
 
   result <- list(
     theta_hat = theta_hat,
-    par_hat = setNames(exp(theta_hat), param_names_orig),
+    # Reconstruct interpretable age-level scales from the spline coefficients.
+    par_hat = setNames(as.numeric(theta_to_orig(theta_hat)), param_names_orig),
     log_posterior = -best$optim$value,
     log_likelihood = log_likelihood(theta_hat, base_params, sim_data),
     log_prior = log_prior(theta_hat),

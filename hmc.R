@@ -13,18 +13,21 @@ obs_pos <- round(obs_prev * obs_tot)  # HCV positives per age group (binomial nu
 N_AGE <- length(obs_tot)
 N_CONTACT <- N_AGE
 
-param_names_log <- c(
-  paste0("log_C_contact_scale_", seq_len(N_CONTACT)),
-  paste0("log_tot_in_scaling_fct_", seq_len(N_CONTACT))
-)
+# Interpretable (age-level) parameter names, used for theta_to_orig() output.
 param_names_orig <- c(
   paste0("C_contact_scale_", seq_len(N_CONTACT)),
   paste0("tot_in_scaling_fct_", seq_len(N_CONTACT))
 )
 
-source("setup.R")  
+source("setup.R")
 source("HMC_core.r")
-source("HMC_conv.R")  
+source("HMC_conv.R")
+
+# Sampled parameters are the spline coefficients (2*SPLINE_K), not age values.
+param_names_log <- c(
+  paste0("alpha_contact_", seq_len(SPLINE_K)),
+  paste0("gamma_tot_in_", seq_len(SPLINE_K))
+)
 data$prev_logit_sd <- 0.1          # tau_prev: extra logit-scale discrepancy
 data$sigma_pop     <- rep(0.05, N_AGE)  # ALR uncertainty for age composition
 data$sigma_shape   <- 0.3           # Student-t scale for second-difference prior
@@ -44,8 +47,8 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 set.seed(114514)
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
   c(
-    rnorm(N_AGE, CONTACT_PRIOR_MEANS, 0.25),  # log(C_contact_scale[k])
-    rnorm(N_AGE, TOT_IN_PRIOR_MEANS, 0.25)  # log(tot_in_scaling_fct[k]
+    rnorm(SPLINE_K, CONTACT_COEF_PRIOR_MEANS, 0.25),  # alpha (contact spline coefs)
+    rnorm(SPLINE_K, TOT_IN_COEF_PRIOR_MEANS, 0.25)    # gamma (tot_in spline coefs)
   )
 })
 
