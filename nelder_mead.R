@@ -35,8 +35,8 @@ source("HMC_core.r")
 
 # Match the observation-model settings used in hmc.R.
 data$prev_logit_sd <- 0.01
-data$sigma_pop <- rep(0.2, N_AGE)
-data$sigma_shape <- 0.35
+data$sigma_pop <- rep(0.15, N_AGE)
+data$sigma_shape <- 0.25
 data$nu_shape <- 5L
 
 # Return all model quantities used in fitting at one theta value.
@@ -56,10 +56,10 @@ fit_nelder_mead <- function(
     theta_init = c(CONTACT_PRIOR_MEANS, TOT_IN_PRIOR_MEANS),
     base_params = params,
     sim_data = data,
-    n_starts = 3L,
+    n_starts = 4L,
     start_sd = 0.10,
     maxit = 10000L,
-    reltol = 1e-8,
+    reltol = 1e-10,
     seed = 42L,
     report_every = 100L) {
 
