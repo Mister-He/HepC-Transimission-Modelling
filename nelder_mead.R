@@ -62,12 +62,12 @@ fit_nelder_mead <- function(
     theta_init = c(CONTACT_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_MEANS),
     base_params = params,
     sim_data = data,
-    n_starts = 3L,
+    n_starts = 4L,
     start_sd = 0.10,
-    maxit = 10000L,
-    reltol = 1e-8,
+    maxit = 1e+05,
+    reltol = 1e-6,
     seed = 42L,
-    report_every = 100L) {
+    report_every = 500L) {
 
   stopifnot(length(theta_init) == 2L * SPLINE_K, n_starts >= 1L)
   set.seed(seed)
