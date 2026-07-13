@@ -4,7 +4,8 @@
 # Append this file after setup.R (which sources sim.cpp and defines params,
 # data, idx(), y0, etc.).
 #
-# Parameters estimated (2*SPLINE_K total; SPLINE_K = 5 with 10 age groups):
+# Parameters estimated (2*SPLINE_K total; the B-spline basis uses 5 internal
+# knots with 10 age groups):
 #   theta[1:K]       = alpha  B-spline coefficients for log_C_contact_scale
 #   theta[K+1:2K]    = gamma  B-spline coefficients for log_tot_in_scaling_fct
 #   The N_AGE age values are reconstructed via a fixed basis (dimension
@@ -206,15 +207,25 @@ compute_age_quantities <- function(y_final) {
 CONTACT_PRIOR_MEANS <- log(c(0.2506, 0.8799, 0.49105, 0.6041, 0.2651, 2.2305, 3.1248, 6.2280, 12.9459, 102.0037))
 TOT_IN_PRIOR_MEANS <- log(c(0.96, 0.23, 0.07, 0.06, 0.03, 0.33, 1.9, 1.4, 1.2, 2.0))
 
-SPLINE_K         <- 5L     # B-spline coefficients per vector (10 age values -> 5)
-SPLINE_RW_SD     <- 0.3    # tau: 2nd-order random-walk (P-spline) curvature scale
-SPLINE_ANCHOR_SD <- 0.5    # sd on the first two (level/slope) coefficients
+SPLINE_N_KNOTS   <- 5L     # internal B-spline knots per input vector
+SPLINE_RW_SD     <- 0.22   # tau: 2nd-order random-walk (P-spline) curvature scale
+SPLINE_ANCHOR_SD <- 0.75   # sd on the first two (level/slope) coefficients
 
-# Cubic B-spline basis over the age index, N_AGE x SPLINE_K.
-SPLINE_B <- matrix(
-  as.numeric(splines::bs(seq_len(N_AGE), df = SPLINE_K, intercept = TRUE)),
-  nrow = N_AGE, ncol = SPLINE_K
+# Cubic B-spline basis over the age index, using exactly five internal knots.
+SPLINE_AGE_GRID <- seq_len(N_AGE)
+SPLINE_INTERNAL_KNOTS <- as.numeric(stats::quantile(
+  SPLINE_AGE_GRID,
+  probs = seq(0, 1, length.out = SPLINE_N_KNOTS + 2L)[-c(1L, SPLINE_N_KNOTS + 2L)],
+  names = FALSE,
+  type = 7
+))
+SPLINE_B <- splines::bs(
+  SPLINE_AGE_GRID,
+  knots = SPLINE_INTERNAL_KNOTS,
+  Boundary.knots = range(SPLINE_AGE_GRID),
+  intercept = TRUE
 )
+SPLINE_K <- ncol(SPLINE_B)
 
 # Least-squares projection of the per-age prior means onto the basis, giving the
 # coefficient prior means used to anchor the random-walk prior and inits.
@@ -223,14 +234,43 @@ project_to_spline <- function(y) {
 }
 CONTACT_COEF_PRIOR_MEANS <- project_to_spline(CONTACT_PRIOR_MEANS)
 TOT_IN_COEF_PRIOR_MEANS  <- project_to_spline(TOT_IN_PRIOR_MEANS)
+CONTACT_COEF_PRIOR_SDS   <- rep(SPLINE_ANCHOR_SD, SPLINE_K)
+TOT_IN_COEF_PRIOR_SDS    <- rep(SPLINE_ANCHOR_SD, SPLINE_K)
+
+# Update spline-coefficient prior centers and scales. HMC uses this to turn the
+# Nelder-Mead MAP coefficients into valid priors without changing constraints:
+# theta remains unconstrained and exp(SPLINE_B %*% theta) enforces positivity.
+configure_spline_priors <- function(contact_mean = CONTACT_COEF_PRIOR_MEANS,
+                                    tot_in_mean = TOT_IN_COEF_PRIOR_MEANS,
+                                    contact_sd = SPLINE_ANCHOR_SD,
+                                    tot_in_sd = SPLINE_ANCHOR_SD,
+                                    rw_sd = SPLINE_RW_SD) {
+  stopifnot(length(contact_mean) == SPLINE_K, length(tot_in_mean) == SPLINE_K)
+  if (length(contact_sd) == 1L) contact_sd <- rep(contact_sd, SPLINE_K)
+  if (length(tot_in_sd) == 1L) tot_in_sd <- rep(tot_in_sd, SPLINE_K)
+  stopifnot(length(contact_sd) == SPLINE_K, length(tot_in_sd) == SPLINE_K)
+  if (any(!is.finite(contact_mean)) || any(!is.finite(tot_in_mean)) ||
+      any(!is.finite(contact_sd)) || any(!is.finite(tot_in_sd)) ||
+      any(contact_sd <= 0) || any(tot_in_sd <= 0) ||
+      !is.finite(rw_sd) || rw_sd <= 0) {
+    stop("Spline prior means and standard deviations must be positive finite values")
+  }
+
+  CONTACT_COEF_PRIOR_MEANS <<- as.numeric(contact_mean)
+  TOT_IN_COEF_PRIOR_MEANS  <<- as.numeric(tot_in_mean)
+  CONTACT_COEF_PRIOR_SDS   <<- as.numeric(contact_sd)
+  TOT_IN_COEF_PRIOR_SDS    <<- as.numeric(tot_in_sd)
+  SPLINE_RW_SD             <<- as.numeric(rw_sd)
+  invisible(TRUE)
+}
 
 # P-spline log-prior for one coefficient vector: the first two coefficients are
 # anchored (level + slope) at their projected means; the remaining coefficients
 # follow a 2nd-order random walk that penalises curvature (smoothing).
-rw2_log_prior <- function(coef, mean0) {
+rw2_log_prior <- function(coef, mean0, sd0) {
   K  <- length(coef)
-  lp <- dnorm(coef[1], mean = mean0[1], sd = SPLINE_ANCHOR_SD, log = TRUE) +
-        dnorm(coef[2], mean = mean0[2], sd = SPLINE_ANCHOR_SD, log = TRUE)
+  lp <- dnorm(coef[1], mean = mean0[1], sd = sd0[1], log = TRUE) +
+        dnorm(coef[2], mean = mean0[2], sd = sd0[2], log = TRUE)
   if (K >= 3L) {
     for (k in 3:K) {
       lp <- lp + dnorm(coef[k], mean = 2 * coef[k - 1L] - coef[k - 2L],
@@ -243,8 +283,8 @@ rw2_log_prior <- function(coef, mean0) {
 log_prior <- function(theta) {
   alpha <- theta[1:SPLINE_K]
   gamma <- theta[(SPLINE_K + 1):(2 * SPLINE_K)]
-  rw2_log_prior(alpha, CONTACT_COEF_PRIOR_MEANS) +
-  rw2_log_prior(gamma, TOT_IN_COEF_PRIOR_MEANS)
+  rw2_log_prior(alpha, CONTACT_COEF_PRIOR_MEANS, CONTACT_COEF_PRIOR_SDS) +
+  rw2_log_prior(gamma, TOT_IN_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_SDS)
 }
 
 # ── 3b. Population composition log-likelihood (ALR-normal) ───────────────────
@@ -324,11 +364,11 @@ compute_prevalence_loglik <- function(q_age, obs_pos, obs_tot) {
 # reference and unit-testing against finite differences.
 #
 grad_log_prior_analytical <- function(theta) {
-  grad_coef <- function(coef, mean0) {
+  grad_coef <- function(coef, mean0, sd0) {
     K <- length(coef)
     g <- numeric(K)
-    g[1] <- -(coef[1] - mean0[1]) / SPLINE_ANCHOR_SD^2
-    g[2] <- -(coef[2] - mean0[2]) / SPLINE_ANCHOR_SD^2
+    g[1] <- -(coef[1] - mean0[1]) / sd0[1]^2
+    g[2] <- -(coef[2] - mean0[2]) / sd0[2]^2
     if (K >= 3L) {
       for (k in 3:K) {
         d <- (coef[k] - 2 * coef[k - 1L] + coef[k - 2L]) / SPLINE_RW_SD^2
@@ -340,8 +380,8 @@ grad_log_prior_analytical <- function(theta) {
     g
   }
   c(
-    grad_coef(theta[1:SPLINE_K], CONTACT_COEF_PRIOR_MEANS),
-    grad_coef(theta[(SPLINE_K + 1):(2 * SPLINE_K)], TOT_IN_COEF_PRIOR_MEANS)
+    grad_coef(theta[1:SPLINE_K], CONTACT_COEF_PRIOR_MEANS, CONTACT_COEF_PRIOR_SDS),
+    grad_coef(theta[(SPLINE_K + 1):(2 * SPLINE_K)], TOT_IN_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_SDS)
   )
 }
 

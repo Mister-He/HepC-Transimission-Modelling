@@ -99,16 +99,10 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
     rhat_vals <- compute_rhat(post_warmup_list)
     ess_vals <- compute_ess(post_warmup_list)
     all_samps <- do.call(rbind, post_warmup_list)
-    orig_samps <- theta_to_orig(all_samps)
-    orig_sampled <- orig_samps
-
     diag_df <- data.frame(
         Parameter = param_names_log,
         Mean_log = round(colMeans(all_samps), 4),
         SD_log = round(apply(all_samps, 2, sd), 4),
-        Mean_orig = round(colMeans(orig_sampled), 4),
-        Q2.5_orig = round(apply(orig_sampled, 2, quantile, 0.025), 4),
-        Q97.5_orig = round(apply(orig_sampled, 2, quantile, 0.975), 4),
         Rhat = round(rhat_vals, 4),
         ESS = round(ess_vals, 1),
         Conv_OK = ifelse(rhat_vals < 1.05 & ess_vals > 100, "YES", "NO"),
@@ -186,7 +180,7 @@ generate_ppc_samples <- function(post_samples, base_params, data,
             alr_full_ii <- c(z_rep_ii, 0.0)
             pi_rep_ii   <- exp(alr_full_ii) / sum(exp(alr_full_ii))
 
-            lam_tot[ii, ]   <- pi_rep_ii * N_total_obs
+            lam_tot[ii, ]   <- pi_model_ii * N_total_obs
             mean_prev[ii, ] <- result$q_age
 
             ppc_tot[ii, ]  <- as.integer(round(pi_rep_ii * N_total_obs))
@@ -215,6 +209,51 @@ generate_ppc_samples <- function(post_samples, base_params, data,
         sigma_pop = if (!is.null(data$sigma_pop)) data$sigma_pop else rep(0.05, n_age),
         prev_logit_sd = if (!is.null(data$prev_logit_sd)) data$prev_logit_sd else 0.25
     )
+}
+
+# ── 7b. Smooth posterior fitted curves ───────────────────────────────────────
+#
+# Uses model means from each posterior draw, not binomial/multinomial
+# replicates, so the final prevalence and population-count curves show the
+# smooth spline-constrained fitted signal.
+plot_posterior_fitted_curves <- function(ppc) {
+    age <- seq_len(length(obs_tot))
+
+    summarise_model <- function(mat, obs, type_label) {
+        mat <- mat[complete.cases(mat), , drop = FALSE]
+        data.frame(
+            age = age,
+            obs = obs,
+            med = apply(mat, 2, median, na.rm = TRUE),
+            lo95 = apply(mat, 2, quantile, 0.025, na.rm = TRUE),
+            hi95 = apply(mat, 2, quantile, 0.975, na.rm = TRUE),
+            type = type_label,
+            stringsAsFactors = FALSE
+        )
+    }
+
+    plot_df <- bind_rows(
+        summarise_model(ppc$mean_prev, obs_prev, "HCV prevalence"),
+        summarise_model(ppc$lam_tot, obs_tot, "Population count")
+    )
+
+    ggplot(plot_df, aes(x = age)) +
+        geom_ribbon(aes(ymin = lo95, ymax = hi95), fill = "#6BAED6", alpha = 0.25) +
+        geom_line(aes(y = med), colour = "#08519C", linewidth = 0.9) +
+        geom_point(aes(y = obs), shape = 21, fill = "#D7191C", colour = "black", size = 2.5) +
+        geom_line(aes(y = obs), colour = "#D7191C", linewidth = 0.45, alpha = 0.7) +
+        facet_wrap(~type, scales = "free_y", ncol = 1) +
+        scale_x_continuous(breaks = age) +
+        labs(
+            title = "Posterior fitted calibration curves",
+            x = "Age group",
+            y = "Calibration target"
+        ) +
+        theme_bw(base_size = 11) +
+        theme(
+            strip.background = element_rect(fill = "grey92", colour = "grey70"),
+            panel.grid.minor = element_blank()
+        )
 }
 
 # ── 7b. PPC histogram plot ───────────────────────────────────────────────────

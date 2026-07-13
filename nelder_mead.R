@@ -11,12 +11,13 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-# Observations and parameter metadata required by HMC_core.r.
+# Observations and parameter metadata required by HMC_core.r. Keep these values
+# identical to hmc.R so both stages use the same binomial prevalence likelihood.
 obs_prev <- c(
   0.1118421, 0.1470588, 0.1933842, 0.2507599, 0.2899083,
   0.3596059, 0.5025295, 0.5061728, 0.4534314, 0.3544304
 )
-obs_prev_se <- 0.5 * sqrt(c(
+obs_prev_se <- sqrt(c(
   0.09940967, 0.12867003, 0.16065544, 0.18991135, 0.21719265,
   0.23775531, 0.24736428, 0.24839586, 0.24995891, 0.24000000
 ))
@@ -39,11 +40,12 @@ param_names_log <- c(
   paste0("gamma_tot_in_", seq_len(SPLINE_K))
 )
 
-# Match the observation-model settings used in hmc.R.
-data$prev_logit_sd <- 0.01
-data$sigma_pop <- rep(0.2, N_AGE)
-data$sigma_shape <- 0.35
-data$nu_shape <- 5L
+# Shared observation-model settings used in hmc.R. Prevalence is binomial;
+# prev_logit_sd only affects plot intervals, not the likelihood.
+data$prev_logit_sd <- 0.10
+data$sigma_pop <- c(0.20, rep(0.12, N_AGE - 1L))
+data$sigma_shape <- 0.20
+data$nu_shape <- 7L
 
 # Return all model quantities used in fitting at one theta value.
 predict_at_theta <- function(theta, base_params = params, sim_data = data) {
@@ -62,8 +64,8 @@ fit_nelder_mead <- function(
     theta_init = c(CONTACT_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_MEANS),
     base_params = params,
     sim_data = data,
-    n_starts = 4L,
-    start_sd = 0.10,
+    n_starts = 6L,
+    start_sd = 0.25,
     maxit = 1e+05,
     reltol = 1e-6,
     seed = 42L,
@@ -75,6 +77,12 @@ fit_nelder_mead <- function(
   starts[[1L]] <- theta_init
   if (n_starts > 1L) {
     for (i in 2:n_starts) starts[[i]] <- theta_init + rnorm(length(theta_init), 0, start_sd)
+  }
+  if (n_starts >= 3L) {
+    # Deterministic early-age prevalence starts. These keep the 5-knot spline
+    # constraints but help avoid the local optimum with a near-zero age-1 curve.
+    starts[[2L]][1L] <- starts[[2L]][1L] + 1.0
+    starts[[3L]][1L] <- starts[[3L]][1L] + 1.8
   }
 
   fits <- vector("list", n_starts)
@@ -122,6 +130,13 @@ fit_nelder_mead <- function(
     counts = best$optim$counts,
     best_start = best_id,
     prediction = pred,
+    spline_prior = list(
+      contact_mean = CONTACT_COEF_PRIOR_MEANS,
+      tot_in_mean = TOT_IN_COEF_PRIOR_MEANS,
+      contact_sd = CONTACT_COEF_PRIOR_SDS,
+      tot_in_sd = TOT_IN_COEF_PRIOR_SDS,
+      rw_sd = SPLINE_RW_SD
+    ),
     fits = fits,
     base_params = base_params,
     sim_data = sim_data
@@ -227,7 +242,7 @@ plot_nm_residuals <- function(fit) {
     theme_bw() + theme(legend.position = "none")
 }
 
-save_nm_plots <- function(fit, directory = "nelder_mead_plots", width = 8, height = 6) {
+save_nm_plots <- function(fit, directory = file.path("two-steps-calibration", "nelder_mead_plots"), width = 8, height = 6) {
   dir.create(directory, recursive = TRUE, showWarnings = FALSE)
   plots <- list(
     convergence = plot_nm_convergence(fit),
@@ -243,9 +258,15 @@ save_nm_plots <- function(fit, directory = "nelder_mead_plots", width = 8, heigh
 }
 
 if (sys.nframe() == 0L) {
+  out_dir <- "two-steps-calibration"
+  args <- commandArgs(trailingOnly = TRUE)
+  out_arg <- grep("^--out-dir=", args, value = TRUE)
+  if (length(out_arg) > 0L) out_dir <- sub("^--out-dir=", "", out_arg[[1L]])
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
   fit <- fit_nelder_mead()
   print(fit)
-  saveRDS(fit, "nelder_mead_fit.rds")
-  save_nm_plots(fit)
-  cat("Saved nelder_mead_fit.rds and plots in nelder_mead_plots/\n")
+  saveRDS(fit, file.path(out_dir, "nelder_mead_fit.rds"))
+  save_nm_plots(fit, file.path(out_dir, "nelder_mead_plots"))
+  cat(sprintf("Saved Nelder-Mead outputs in %s\n", out_dir))
 }
