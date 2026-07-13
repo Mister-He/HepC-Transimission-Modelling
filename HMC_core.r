@@ -26,9 +26,9 @@
 #   lambda1[k]        = lambda3[k] * c_true[k]   (pre-computed before each sim call)
 #
 # Prior:
-#   C_contact_scale  ~ LogNormal(0, 1)      [theta[1:10] ~ N(0, 0.25)]
-#   tot_in_scaling_fct ~ LogNormal(0, 1)     [theta[11:20] ~ N(0, 0.25)]
-#   Note: tot_in_scaling_fct[k] > 1 ensures that c_true[k] < c_composite[k], which is consistent with the model design.
+#   log-parameters use a 5-basis natural-spline Gaussian prior by family.
+#   This preserves positivity through the exp() transform while discouraging
+#   age-to-age overfitting in the contact and total-in scaling vectors.
 #
 # Gradient: central finite differences through the C++ ODE solver
 #   Cost per HMC step: (L+1) gradient evals × 2 × N_PARAMS ODE runs
@@ -189,14 +189,87 @@ compute_age_quantities <- function(y_final) {
 
 # ── 3a. Log-prior ────────────────────────────────────────────────────────────
 #
-# theta[1:10]  = log(C_contact_scale[k]) ~ Normal(0, 1)
-# theta[11:20] = log(tot_in_scaling_fct[k] - 1) ~ Normal(0, 1)
+# theta[1:10]  = log(C_contact_scale[k])
+# theta[11:20] = log(tot_in_scaling_fct[k])
 CONTACT_PRIOR_MEANS <- log(c(0.2506, 0.8799, 0.49105, 0.6041, 0.2651, 2.2305, 3.1248, 6.2280, 12.9459, 102.0037))
 TOT_IN_PRIOR_MEANS <- log(c(0.96, 0.23, 0.07, 0.06, 0.03, 0.33, 1.9, 1.4, 1.2, 2.0))
 
-log_prior <- function(theta) {
-    sum(dnorm(theta[1:N_AGE], mean = CONTACT_PRIOR_MEANS, sd = 0.25, log = TRUE)) +
-    sum(dnorm(theta[(N_AGE + 1):(2 * N_AGE)], mean = TOT_IN_PRIOR_MEANS, sd = 0.25, log = TRUE))
+SPLINE_PRIOR_N_KNOTS <- 5L
+
+make_spline_basis <- function(n_age = N_AGE, n_knots = SPLINE_PRIOR_N_KNOTS) {
+  if (n_knots < 2L || n_knots >= n_age) {
+    stop("n_knots must be at least 2 and smaller than the number of age groups")
+  }
+  age <- seq_len(n_age)
+  scale(as.matrix(splines::ns(age, df = n_knots)), center = FALSE, scale = FALSE)
+}
+
+project_to_spline <- function(x, basis = make_spline_basis(length(x))) {
+  as.numeric(basis %*% qr.coef(qr(basis), x))
+}
+
+make_spline_theta_prior <- function(
+    center = c(CONTACT_PRIOR_MEANS, TOT_IN_PRIOR_MEANS),
+    n_knots = SPLINE_PRIOR_N_KNOTS,
+    coef_sd = 0.55,
+    residual_sd = 0.10,
+    smooth_center = TRUE) {
+  if (length(center) != 2L * N_AGE || any(!is.finite(center))) {
+    stop(sprintf("center must contain %d finite log-scale values", 2L * N_AGE))
+  }
+  if (!is.finite(coef_sd) || coef_sd <= 0 || !is.finite(residual_sd) || residual_sd <= 0) {
+    stop("coef_sd and residual_sd must be positive finite values")
+  }
+
+  basis <- make_spline_basis(N_AGE, n_knots)
+  make_family <- function(mu_raw) {
+    coef_mean <- qr.coef(qr(basis), mu_raw)
+    mu <- as.numeric(basis %*% coef_mean)
+    if (!smooth_center) mu <- as.numeric(mu_raw)
+    sigma <- coef_sd^2 * tcrossprod(basis) + diag(residual_sd^2, N_AGE)
+    chol_sigma <- chol(sigma)
+    list(
+      mean = mu,
+      coef_mean = coef_mean,
+      basis = basis,
+      sigma = sigma,
+      chol_sigma = chol_sigma,
+      coef_sd = coef_sd,
+      residual_sd = residual_sd,
+      n_knots = n_knots
+    )
+  }
+
+  list(
+    contact = make_family(center[seq_len(N_AGE)]),
+    tot_in = make_family(center[N_AGE + seq_len(N_AGE)]),
+    center_raw = setNames(center, param_names_log),
+    center_smooth = setNames(c(
+      project_to_spline(center[seq_len(N_AGE)], basis),
+      project_to_spline(center[N_AGE + seq_len(N_AGE)], basis)
+    ), param_names_log),
+    n_knots = n_knots,
+    coef_sd = coef_sd,
+    residual_sd = residual_sd
+  )
+}
+
+log_mvn_chol <- function(x, mean, chol_sigma) {
+  z <- backsolve(chol_sigma, x - mean, transpose = TRUE)
+  -0.5 * length(x) * log(2 * pi) - sum(log(diag(chol_sigma))) - 0.5 * sum(z^2)
+}
+
+DEFAULT_THETA_PRIOR <- make_spline_theta_prior()
+
+log_prior <- function(theta, theta_prior = DEFAULT_THETA_PRIOR) {
+  if (length(theta) != 2L * N_AGE || any(!is.finite(theta))) return(-Inf)
+  if (any(theta < log(1e-8)) || any(theta > log(1e8))) return(-Inf)
+
+  contact <- theta[seq_len(N_AGE)]
+  tot_in <- theta[N_AGE + seq_len(N_AGE)]
+
+  log_mvn_chol(contact, theta_prior$contact$mean, theta_prior$contact$chol_sigma) +
+    log_mvn_chol(tot_in, theta_prior$tot_in$mean, theta_prior$tot_in$chol_sigma)
 }
 
 # ── 3b. Population composition log-likelihood (ALR-normal) ───────────────────
@@ -276,9 +349,12 @@ compute_prevalence_loglik <- function(q_age, obs_pos, obs_tot) {
 # reference and unit-testing against finite differences.
 #
 grad_log_prior_analytical <- function(theta) {
+  theta_prior <- DEFAULT_THETA_PRIOR
   grad <- numeric(length(theta))
-  grad[1:N_AGE] <- -(theta[1:N_AGE] - CONTACT_PRIOR_MEANS)
-  grad[(N_AGE + 1):(2 * N_AGE)] <- -(theta[(N_AGE + 1):(2 * N_AGE)] - TOT_IN_PRIOR_MEANS)
+  grad[1:N_AGE] <- -drop(chol2inv(theta_prior$contact$chol_sigma) %*%
+    (theta[1:N_AGE] - theta_prior$contact$mean))
+  grad[(N_AGE + 1):(2 * N_AGE)] <- -drop(chol2inv(theta_prior$tot_in$chol_sigma) %*%
+    (theta[(N_AGE + 1):(2 * N_AGE)] - theta_prior$tot_in$mean))
   grad
 }
 
@@ -300,19 +376,23 @@ log_likelihood <- function(theta, base_params, data) {
   sigma_pop   <- if (!is.null(data$sigma_pop))   data$sigma_pop   else rep(0.05, length(obs_tot))
   sigma_shape <- if (!is.null(data$sigma_shape)) data$sigma_shape else 0.3
   nu_shape    <- if (!is.null(data$nu_shape))    data$nu_shape    else 4L
+  sigma_prev_shape <- if (!is.null(data$sigma_prev_shape)) data$sigma_prev_shape else sigma_shape
 
   ll_pop   <- compute_population_composition_loglik(pi_model, q_obs, sigma_pop)
   lp_shape <- compute_age_shape_logprior(pi_model, nu_shape, sigma_shape)
+  lp_prev_shape <- compute_age_shape_logprior(obs$q_age, nu_shape, sigma_prev_shape)
   ll_prev  <- compute_prevalence_loglik(obs$q_age, obs_pos, obs_tot)
 
-  if (!is.finite(ll_pop) || !is.finite(lp_shape) || !is.finite(ll_prev)) return(-Inf)
+  if (!is.finite(ll_pop) || !is.finite(lp_shape) ||
+      !is.finite(lp_prev_shape) || !is.finite(ll_prev)) return(-Inf)
 
-  ll_pop + ll_prev + lp_shape
+  ll_pop + ll_prev + lp_shape + lp_prev_shape
 }
 
 # ── 3d. Log-posterior ────────────────────────────────────────────────────────
 log_posterior <- function(theta, base_params, data) {
-  lp <- log_prior(theta)
+  theta_prior <- if (!is.null(data$theta_prior)) data$theta_prior else DEFAULT_THETA_PRIOR
+  lp <- log_prior(theta, theta_prior)
   if (!is.finite(lp)) return(-Inf)
 
   ll <- tryCatch(

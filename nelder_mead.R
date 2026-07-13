@@ -2,7 +2,7 @@
 # Nelder-Mead MAP calibration for the 20-parameter HCV PWID model
 #
 # Run from this directory with:
-#   Rscript nelder_mead.R
+#   Rscript nelder_mead.R [output_dir]
 #
 # Or source the file and call fit_nelder_mead() with custom settings.
 # =============================================================================
@@ -33,11 +33,19 @@ param_names_orig <- sub("^log_", "", param_names_log)
 source("setup.R")
 source("HMC_core.r")
 
-# Match the observation-model settings used in hmc.R.
-data$prev_logit_sd <- 0.01
-data$sigma_pop <- rep(0.15, N_AGE)
-data$sigma_shape <- 0.25
-data$nu_shape <- 5L
+# Shared two-step calibration settings.  The spline prior has 5 basis
+# functions and regularizes the two age-specific log-parameter families.
+data$theta_prior <- make_spline_theta_prior(
+  center = c(CONTACT_PRIOR_MEANS, TOT_IN_PRIOR_MEANS),
+  n_knots = 5L,
+  coef_sd = 0.55,
+  residual_sd = 0.10
+)
+data$prev_logit_sd <- 0.1
+data$sigma_pop <- rep(0.10, N_AGE)
+data$sigma_shape <- 0.18
+data$sigma_prev_shape <- 0.14
+data$nu_shape <- 6L
 
 # Return all model quantities used in fitting at one theta value.
 predict_at_theta <- function(theta, base_params = params, sim_data = data) {
@@ -106,10 +114,18 @@ fit_nelder_mead <- function(
 
   result <- list(
     theta_hat = theta_hat,
+    theta_hat_spline = setNames(c(
+      project_to_spline(theta_hat[seq_len(N_AGE)]),
+      project_to_spline(theta_hat[N_AGE + seq_len(N_AGE)])
+    ), param_names_log),
     par_hat = setNames(exp(theta_hat), param_names_orig),
+    par_hat_spline = setNames(exp(c(
+      project_to_spline(theta_hat[seq_len(N_AGE)]),
+      project_to_spline(theta_hat[N_AGE + seq_len(N_AGE)])
+    )), param_names_orig),
     log_posterior = -best$optim$value,
     log_likelihood = log_likelihood(theta_hat, base_params, sim_data),
-    log_prior = log_prior(theta_hat),
+    log_prior = log_prior(theta_hat, sim_data$theta_prior),
     convergence = best$optim$convergence,
     message = best$optim$message,
     counts = best$optim$counts,
@@ -149,7 +165,7 @@ plot_nm_convergence <- function(fit) {
 }
 
 plot_nm_parameters <- function(fit) {
-  prior_mean <- exp(c(CONTACT_PRIOR_MEANS, TOT_IN_PRIOR_MEANS))
+  prior_mean <- exp(fit$sim_data$theta_prior$center_smooth)
   dat <- data.frame(
     parameter = factor(param_names_orig, levels = param_names_orig),
     prior_mean = prior_mean,
@@ -236,9 +252,13 @@ save_nm_plots <- function(fit, directory = "nelder_mead_plots", width = 8, heigh
 }
 
 if (sys.nframe() == 0L) {
+  args <- commandArgs(trailingOnly = TRUE)
+  output_dir <- if (length(args) >= 1L && nzchar(args[[1L]])) args[[1L]] else "."
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
   fit <- fit_nelder_mead()
   print(fit)
-  saveRDS(fit, "nelder_mead_fit.rds")
-  save_nm_plots(fit)
-  cat("Saved nelder_mead_fit.rds and plots in nelder_mead_plots/\n")
+  saveRDS(fit, file.path(output_dir, "nelder_mead_fit.rds"))
+  save_nm_plots(fit, file.path(output_dir, "nelder_mead_plots"))
+  cat(sprintf("Saved Nelder-Mead fit and plots in %s\n", output_dir))
 }

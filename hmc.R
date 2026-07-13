@@ -1,5 +1,8 @@
 # =============================================================================
 # MAIN: RUN HMC
+#
+# Run from this directory with:
+#   Rscript hmc.R [output_dir] [nelder_mead_fit_rds]
 # =============================================================================
 library(ggplot2)
 library(dplyr)
@@ -25,10 +28,40 @@ param_names_orig <- c(
 source("setup.R")  
 source("HMC_core.r")
 source("HMC_conv.R")  
-data$prev_logit_sd <- 0.1          # tau_prev: extra logit-scale discrepancy
-data$sigma_pop     <- rep(0.05, N_AGE)  # ALR uncertainty for age composition
-data$sigma_shape   <- 0.3           # Student-t scale for second-difference prior
-data$nu_shape      <- 4L            # Student-t df (fixed)
+
+args <- commandArgs(trailingOnly = TRUE)
+output_dir <- if (length(args) >= 1L && nzchar(args[[1L]])) args[[1L]] else "."
+nm_fit_file <- if (length(args) >= 2L && nzchar(args[[2L]])) {
+  args[[2L]]
+} else {
+  file.path(output_dir, "nelder_mead_fit.rds")
+}
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+nm_fit <- NULL
+if (file.exists(nm_fit_file)) {
+  nm_fit <- readRDS(nm_fit_file)
+  nm_center <- if (!is.null(nm_fit$theta_hat_spline)) nm_fit$theta_hat_spline else nm_fit$theta_hat
+  if (length(nm_center) != 2L * N_AGE || any(!is.finite(nm_center))) {
+    stop("Nelder-Mead fit does not contain a valid finite theta estimate")
+  }
+  cat(sprintf("Using Nelder-Mead estimates from %s to construct HMC priors\n", nm_fit_file))
+} else {
+  nm_center <- c(CONTACT_PRIOR_MEANS, TOT_IN_PRIOR_MEANS)
+  cat(sprintf("Nelder-Mead fit not found at %s; using baseline spline prior center\n", nm_fit_file))
+}
+
+data$theta_prior <- make_spline_theta_prior(
+  center = nm_center,
+  n_knots = 5L,
+  coef_sd = 0.35,
+  residual_sd = 0.08
+)
+data$prev_logit_sd <- 0.1
+data$sigma_pop     <- rep(0.10, N_AGE)
+data$sigma_shape   <- 0.18
+data$sigma_prev_shape <- 0.14
+data$nu_shape      <- 6L
 
 # ── Sampler settings ──────────────────────────────────────────────────────────
 N_CHAINS    <- 4L      # parallel chains for R-hat / ESS
@@ -42,11 +75,9 @@ ADAPT_DELTA <- 0.65    # target acceptance rate
 
 # ── Initial points ────────────────────────────────────────────────────────────
 set.seed(114514)
+init_center <- data$theta_prior$center_smooth
 inits <- lapply(seq_len(N_CHAINS), function(ch) {
-  c(
-    rnorm(N_AGE, CONTACT_PRIOR_MEANS, 0.25),  # log(C_contact_scale[k])
-    rnorm(N_AGE, TOT_IN_PRIOR_MEANS, 0.25)  # log(tot_in_scaling_fct[k]
-  )
+  rnorm(2L * N_AGE, init_center, 0.05)
 })
 
 # ── Run chains (sequential; replace with parallel::mclapply for speed) ────────
@@ -134,13 +165,14 @@ print(p_hist_tot)
 print(p_interval)
 print(p_prev_int)
 
-dir.create('hmc_plots/', showWarnings = FALSE)
-ggsave('hmc_plots/trace_plot.png', plot = p_trace)
-ggsave('hmc_plots/density_plot.png', plot = p_density)
-ggsave('hmc_plots/hist_prev_plot.png', plot = p_hist_prev)
-ggsave('hmc_plots/hist_tot_plot.png', plot = p_hist_tot)
-ggsave('hmc_plots/interval_plot.png', plot = p_interval)
-ggsave('hmc_plots/prev_int_plot.png', plot = p_prev_int)
+plot_dir <- file.path(output_dir, "hmc_plots")
+dir.create(plot_dir, showWarnings = FALSE, recursive = TRUE)
+ggsave(file.path(plot_dir, "trace_plot.png"), plot = p_trace)
+ggsave(file.path(plot_dir, "density_plot.png"), plot = p_density)
+ggsave(file.path(plot_dir, "hist_prev_plot.png"), plot = p_hist_prev)
+ggsave(file.path(plot_dir, "hist_tot_plot.png"), plot = p_hist_tot)
+ggsave(file.path(plot_dir, "interval_plot.png"), plot = p_interval)
+ggsave(file.path(plot_dir, "prev_int_plot.png"), plot = p_prev_int)
 
 # ── Save ─────────────────────────────────────────────────────────────────────
 saveRDS(
@@ -151,12 +183,14 @@ saveRDS(
     param_corr_log   = param_corr_log,
     diag_table       = diag_table,
     post_summary     = post_summary,
-    ppc_out          = ppc_out
+    ppc_out          = ppc_out,
+    theta_prior      = data$theta_prior,
+    nelder_mead_fit_file = nm_fit_file
   ),
-  file = "hmc_output_full.rds"
+  file = file.path(output_dir, "hmc_output_full.rds")
 )
-cat("\nAll results saved to hmc_output_full.rds\n")
-result = readRDS("hmc_output_full.rds")
+cat(sprintf("\nAll results saved to %s\n", file.path(output_dir, "hmc_output_full.rds")))
+result = readRDS(file.path(output_dir, "hmc_output_full.rds"))
 hmc_chains = result$hmc_chains
 post_warmup_list = result$post_warmup_list
 all_samples = result$all_samples
