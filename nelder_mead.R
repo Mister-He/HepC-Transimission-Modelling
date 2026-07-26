@@ -1,5 +1,5 @@
 # =============================================================================
-# Nelder-Mead MAP calibration for the 20-parameter HCV PWID model
+# Nelder-Mead MAP calibration for the 14-parameter HCV PWID spline model
 #
 # Run from this directory with:
 #   Rscript nelder_mead.R
@@ -34,18 +34,10 @@ param_names_orig <- c(
 source("setup.R")
 source("HMC_core.r")
 
-# Fitted parameters are the spline coefficients (2*SPLINE_K), not age values.
-param_names_log <- c(
-  paste0("alpha_contact_", seq_len(SPLINE_K)),
-  paste0("gamma_tot_in_", seq_len(SPLINE_K))
-)
-
 # Shared observation-model settings used in hmc.R. Prevalence is binomial;
 # prev_logit_sd only affects plot intervals, not the likelihood.
 data$prev_logit_sd <- 0.10
 data$sigma_pop <- c(0.20, rep(0.12, N_AGE - 1L))
-data$sigma_shape <- 0.20
-data$nu_shape <- 7L
 
 # Return all model quantities used in fitting at one theta value.
 predict_at_theta <- function(theta, base_params = params, sim_data = data) {
@@ -79,7 +71,7 @@ fit_nelder_mead <- function(
     for (i in 2:n_starts) starts[[i]] <- theta_init + rnorm(length(theta_init), 0, start_sd)
   }
   if (n_starts >= 3L) {
-    # Deterministic early-age prevalence starts. These keep the 5-knot spline
+    # Deterministic early-age prevalence starts. These keep the 3-knot spline
     # constraints but help avoid the local optimum with a near-zero age-1 curve.
     starts[[2L]][1L] <- starts[[2L]][1L] + 1.0
     starts[[3L]][1L] <- starts[[3L]][1L] + 1.8
@@ -131,6 +123,8 @@ fit_nelder_mead <- function(
     best_start = best_id,
     prediction = pred,
     spline_prior = list(
+      n_internal_knots = SPLINE_N_KNOTS,
+      basis_dim = SPLINE_K,
       contact_mean = CONTACT_COEF_PRIOR_MEANS,
       tot_in_mean = TOT_IN_COEF_PRIOR_MEANS,
       contact_sd = CONTACT_COEF_PRIOR_SDS,

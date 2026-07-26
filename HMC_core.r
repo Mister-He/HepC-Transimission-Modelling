@@ -4,43 +4,54 @@
 # Append this file after setup.R (which sources sim.cpp and defines params,
 # data, idx(), y0, etc.).
 #
-# Parameters estimated (2*SPLINE_K total; the B-spline basis uses 5 internal
-# knots with 10 age groups):
-#   theta[1:K]       = alpha  B-spline coefficients for log_C_contact_scale
-#   theta[K+1:2K]    = gamma  B-spline coefficients for log_tot_in_scaling_fct
-#   The N_AGE age values are reconstructed via a fixed basis (dimension
-#   reduction): log_C_contact_scale = SPLINE_B %*% alpha, etc.
+# Model architecture:
+#   1. Two age-varying positive scaling functions modify the C++ ODE model:
+#        C_contact_scale[k]    = exp((SPLINE_B %*% alpha)[k])
+#        tot_in_scaling_fct[k] = exp((SPLINE_B %*% gamma)[k])
+#   2. A cubic B-spline basis with 3 internal knots maps each 7-dimensional
+#      coefficient vector to N_AGE = 10 age-specific values.
+#   3. The final ODE state is compared with observed age composition and
+#      age-specific HCV prevalence. No additional age-shape penalty is used.
+#   4. HMC samples the spline coefficients using finite-difference gradients
+#      through the black-box C++ ODE solver.
 #
-# Scaling factors:
+# Parameters estimated (2*SPLINE_K = 14 total with the current basis):
+#   theta[1:K]       = alpha  coefficients for log_C_contact_scale
+#   theta[K+1:2K]    = gamma  coefficients for log_tot_in_scaling_fct
+#   SPLINE_K = 3 internal knots + cubic degree 3 + intercept 1 = 7.
+#
+# Scaling relationships:
 #   c_true[k]          = c_composite[k] / tot_in_scaling_fct[k]
-#   C_contact_scale    = exp(SPLINE_B %*% alpha)   (length N_AGE)
-#   tot_in_scaling_fct = exp(SPLINE_B %*% gamma)   (length N_AGE)
+#   c_composite[k]     = tot_in_scaling_fct[k] * c_true[k]
+#   lambda1[k]         = lambda3[k] * c_true[k]
+#   Each relationship is updated before every simulation call.
 #
-# Likelihood (joint observation model, J-stratum only, per age group i = 1..10):
-#   ALR(q_obs)[a]  ~ Normal(ALR(pi_model)[a], sigma_pop[a])   population composition
-#   d2_ell[t, a]   ~ StudentT(nu_shape, 0, sigma_shape)        shape regularization
-#   obs_pos[a]     ~ Binomial(obs_tot[a], q_a(theta))          prevalence
-#   obs_pos[a] = round(obs_prev[a] * obs_tot[a]) HCV positives per age group
+# Joint observation model (J-stratum only, per age group i = 1..10):
+#   ALR(q_obs)[a] ~ Normal(ALR(pi_model)[a], sigma_pop[a])  population composition
+#   obs_pos[a]    ~ Binomial(obs_tot[a], q_a(theta))         HCV prevalence
+#   obs_pos[a] = round(obs_prev[a] * obs_tot[a]) HCV positives per age group.
 #
-# Parameter relationships (new c_composite design):
-#   c_composite[k]    = tot_in_scaling_fct[k] * c_true[k]   (k = 1..10)
-#   lambda1[k]        = lambda3[k] * c_true[k]   (pre-computed before each sim call)
-#
-# Prior (P-spline smoothing on the coefficients):
-#   first two coefficients ~ Normal(projected prior mean, SPLINE_ANCHOR_SD)
-#   coef[k] ~ Normal(2*coef[k-1] - coef[k-2], SPLINE_RW_SD)  for k >= 3
-#   Projected prior means come from least-squares fitting the original per-age
-#   prior medians (CONTACT/TOT_IN_PRIOR_MEANS) onto SPLINE_B.
+# Prior (centered P-spline / RW2 on deviations from a reference curve):
+#   mean0 is obtained by projecting the original per-age log prior medians
+#   (CONTACT_PRIOR_MEANS or TOT_IN_PRIOR_MEANS) onto SPLINE_B.
+#   delta = coef - mean0
+#   delta[1] ~ Normal(0, SPLINE_ANCHOR_SD)
+#   delta[2] ~ Normal(0, SPLINE_ANCHOR_SD)
+#   delta[k] ~ Normal(2*delta[k-1] - delta[k-2], SPLINE_RW_SD), k >= 3
+#   Thus the complete projected prior curve is the prior center, while smooth
+#   departures from that curve are allowed.
 #
 # Gradient: central finite differences through the C++ ODE solver
-#   Cost per HMC step: (L+1) gradient evals × 2 × N_PARAMS ODE runs
-#                    = (L+1) × 40 ODE runs  [plus 1 for current lp]
+#   N_PARAMS = 14, so one gradient evaluation normally requires
+#   2 × N_PARAMS = 28 ODE runs.
+#   One HMC proposal with L leapfrog steps costs approximately
+#   (L + 1) × 28 ODE runs, plus one ODE run for the proposed log posterior.
 #   Tip: keep L small (5-10) and use parallel chains.
 #
 # Outputs:
 #   hmc_chains        — raw chain list (all iterations, all chains)
 #   post_warmup_list  — post-warmup samples per chain
-#   all_samples       — pooled post-warmup matrix (n_samp × 20)
+#   all_samples       — pooled post-warmup matrix (n_samp × 14)
 #   diag_table        — R-hat and ESS summary data.frame
 #   ppc_out           — posterior predictive replicates
 #   plots             — trace, PPC histogram, PPC interval
@@ -207,11 +218,11 @@ compute_age_quantities <- function(y_final) {
 CONTACT_PRIOR_MEANS <- log(c(0.2506, 0.8799, 0.49105, 0.6041, 0.2651, 2.2305, 3.1248, 6.2280, 12.9459, 102.0037))
 TOT_IN_PRIOR_MEANS <- log(c(0.96, 0.23, 0.07, 0.06, 0.03, 0.33, 1.9, 1.4, 1.2, 2.0))
 
-SPLINE_N_KNOTS   <- 5L     # internal B-spline knots per input vector
-SPLINE_RW_SD     <- 0.22   # tau: 2nd-order random-walk (P-spline) curvature scale
-SPLINE_ANCHOR_SD <- 0.75   # sd on the first two (level/slope) coefficients
+SPLINE_N_KNOTS   <- 3L     # internal B-spline knots per input vector
+SPLINE_RW_SD     <- 0.22   # tau: RW2 scale for deviations from the prior curve
+SPLINE_ANCHOR_SD <- 0.75   # sd on the first two deviation coefficients
 
-# Cubic B-spline basis over the age index, using exactly five internal knots.
+# Cubic B-spline basis over the age index, using exactly three internal knots.
 SPLINE_AGE_GRID <- seq_len(N_AGE)
 SPLINE_INTERNAL_KNOTS <- as.numeric(stats::quantile(
   SPLINE_AGE_GRID,
@@ -222,13 +233,22 @@ SPLINE_INTERNAL_KNOTS <- as.numeric(stats::quantile(
 SPLINE_B <- splines::bs(
   SPLINE_AGE_GRID,
   knots = SPLINE_INTERNAL_KNOTS,
+  degree = 3L,
   Boundary.knots = range(SPLINE_AGE_GRID),
   intercept = TRUE
 )
 SPLINE_K <- ncol(SPLINE_B)
 
-# Least-squares projection of the per-age prior means onto the basis, giving the
-# coefficient prior means used to anchor the random-walk prior and inits.
+# Parameter names are rebuilt from SPLINE_K so downstream matrices remain
+# consistent when the number of internal knots changes.
+param_names_log <- c(
+  paste0("alpha_", seq_len(SPLINE_K)),
+  paste0("gamma_", seq_len(SPLINE_K))
+)
+
+# Least-squares projection of the per-age prior means onto the basis. The full
+# projected coefficient vector is the reference curve for the centered RW2 prior
+# and can also be used for initialization.
 project_to_spline <- function(y) {
   as.numeric(solve(crossprod(SPLINE_B), crossprod(SPLINE_B, y)))
 }
@@ -253,7 +273,7 @@ configure_spline_priors <- function(contact_mean = CONTACT_COEF_PRIOR_MEANS,
       any(!is.finite(contact_sd)) || any(!is.finite(tot_in_sd)) ||
       any(contact_sd <= 0) || any(tot_in_sd <= 0) ||
       !is.finite(rw_sd) || rw_sd <= 0) {
-    stop("Spline prior means and standard deviations must be positive finite values")
+    stop("Spline prior means must be finite; standard deviations must be positive and finite")
   }
 
   CONTACT_COEF_PRIOR_MEANS <<- as.numeric(contact_mean)
@@ -264,17 +284,33 @@ configure_spline_priors <- function(contact_mean = CONTACT_COEF_PRIOR_MEANS,
   invisible(TRUE)
 }
 
-# P-spline log-prior for one coefficient vector: the first two coefficients are
-# anchored (level + slope) at their projected means; the remaining coefficients
-# follow a 2nd-order random walk that penalises curvature (smoothing).
+# Centered P-spline log-prior for one coefficient vector.
+#
+# Let mean0 denote the complete projected reference coefficient curve and define
+# delta = coef - mean0. The first two deviations anchor the overall level and
+# slope relative to that curve. Subsequent deviations follow an RW2 prior:
+#   delta[k] - 2*delta[k-1] + delta[k-2] ~ Normal(0, SPLINE_RW_SD).
+# This preserves the curvature of the full reference curve in the prior mean,
+# while allowing data-driven departures that vary smoothly across coefficients.
 rw2_log_prior <- function(coef, mean0, sd0) {
-  K  <- length(coef)
-  lp <- dnorm(coef[1], mean = mean0[1], sd = sd0[1], log = TRUE) +
-        dnorm(coef[2], mean = mean0[2], sd = sd0[2], log = TRUE)
+  K <- length(coef)
+  if (length(mean0) != K || length(sd0) != K) {
+    stop("coef, mean0 and sd0 must have the same length")
+  }
+
+  delta <- coef - mean0
+
+  lp <- dnorm(delta[1], mean = 0, sd = sd0[1], log = TRUE) +
+        dnorm(delta[2], mean = 0, sd = sd0[2], log = TRUE)
+
   if (K >= 3L) {
     for (k in 3:K) {
-      lp <- lp + dnorm(coef[k], mean = 2 * coef[k - 1L] - coef[k - 2L],
-                       sd = SPLINE_RW_SD, log = TRUE)
+      lp <- lp + dnorm(
+        delta[k],
+        mean = 2 * delta[k - 1L] - delta[k - 2L],
+        sd = SPLINE_RW_SD,
+        log = TRUE
+      )
     }
   }
   lp
@@ -318,33 +354,7 @@ compute_population_composition_loglik <- function(pi_model, q_obs, sigma_pop) {
   ll
 }
 
-# ── 3c. Age-shape log-prior (Student-t on second differences of centered log π)
-#
-# Regularizes curvature of the log age-composition profile without forcing
-# smoothness. For each internal age group a = 2, ..., A-1:
-#   ell[a] = log(pi[a]) - mean(log(pi))
-#   d2[a]  = ell[a+1] - 2*ell[a] + ell[a-1]
-#   d2[a] ~ StudentT(nu_shape, 0, sigma_shape)
-#
-compute_age_shape_logprior <- function(pi_model, nu_shape = 4L, sigma_shape = 0.3) {
-  n_age <- length(pi_model)
-  if (n_age < 3L) return(0.0)
-
-  eps     <- 1e-12
-  pi_safe <- pmax(pi_model, eps); pi_safe <- pi_safe / sum(pi_safe)
-
-  log_pi <- log(pi_safe)
-  ell    <- log_pi - mean(log_pi)
-
-  lp <- 0.0
-  for (a in 2L:(n_age - 1L)) {
-    d2 <- ell[a + 1L] - 2.0 * ell[a] + ell[a - 1L]
-    lp <- lp + dt(d2 / sigma_shape, df = nu_shape, log = TRUE) - log(sigma_shape)
-  }
-  lp
-}
-
-# ── 3d. Prevalence log-likelihood (binomial) ─────────────────────────────────
+# ── 3c. Prevalence log-likelihood (binomial) ─────────────────────────────────
 #
 # case_a ~ Binomial(N_a, prev_a), a = age group index
 #   case_a  = observed HCV positives in age group a  (obs_pos)
@@ -356,7 +366,7 @@ compute_prevalence_loglik <- function(q_age, obs_pos, obs_tot) {
   sum(dbinom(obs_pos, size = obs_tot, prob = p, log = TRUE))
 }
 
-# ── 3e. Analytical gradient of log-prior ─────────────────────────────────────
+# ── 3d. Analytical gradient of log-prior ─────────────────────────────────────
 #
 # Gradients of direct log-scale priors.
 #
@@ -365,13 +375,17 @@ compute_prevalence_loglik <- function(q_age, obs_pos, obs_tot) {
 #
 grad_log_prior_analytical <- function(theta) {
   grad_coef <- function(coef, mean0, sd0) {
-    K <- length(coef)
-    g <- numeric(K)
-    g[1] <- -(coef[1] - mean0[1]) / sd0[1]^2
-    g[2] <- -(coef[2] - mean0[2]) / sd0[2]^2
+    K     <- length(coef)
+    delta <- coef - mean0
+    g     <- numeric(K)
+
+    g[1] <- -delta[1] / sd0[1]^2
+    g[2] <- -delta[2] / sd0[2]^2
+
     if (K >= 3L) {
       for (k in 3:K) {
-        d <- (coef[k] - 2 * coef[k - 1L] + coef[k - 2L]) / SPLINE_RW_SD^2
+        d <- (delta[k] - 2 * delta[k - 1L] + delta[k - 2L]) /
+             SPLINE_RW_SD^2
         g[k]      <- g[k]      - d
         g[k - 1L] <- g[k - 1L] + 2 * d
         g[k - 2L] <- g[k - 2L] - d
@@ -385,7 +399,7 @@ grad_log_prior_analytical <- function(theta) {
   )
 }
 
-# ── 3f. Log-likelihood ───────────────────────────────────────────────────────
+# ── 3e. Log-likelihood ───────────────────────────────────────────────────────
 log_likelihood <- function(theta, base_params, data) {
   pm  <- build_params_from_theta(theta, base_params)
   out <- run_sim(pm, data)
@@ -400,20 +414,21 @@ log_likelihood <- function(theta, base_params, data) {
   q_obs    <- obs_tot / sum(obs_tot)
   pi_model <- obs$total_by_age / sum(obs$total_by_age)
 
-  sigma_pop   <- if (!is.null(data$sigma_pop))   data$sigma_pop   else rep(0.05, length(obs_tot))
-  sigma_shape <- if (!is.null(data$sigma_shape)) data$sigma_shape else 0.3
-  nu_shape    <- if (!is.null(data$nu_shape))    data$nu_shape    else 4L
+  sigma_pop <- if (!is.null(data$sigma_pop)) {
+    data$sigma_pop
+  } else {
+    rep(0.05, length(obs_tot))
+  }
 
-  ll_pop   <- compute_population_composition_loglik(pi_model, q_obs, sigma_pop)
-  lp_shape <- compute_age_shape_logprior(pi_model, nu_shape, sigma_shape)
-  ll_prev  <- compute_prevalence_loglik(obs$q_age, obs_pos, obs_tot)
+  ll_pop  <- compute_population_composition_loglik(pi_model, q_obs, sigma_pop)
+  ll_prev <- compute_prevalence_loglik(obs$q_age, obs_pos, obs_tot)
 
-  if (!is.finite(ll_pop) || !is.finite(lp_shape) || !is.finite(ll_prev)) return(-Inf)
+  if (!is.finite(ll_pop) || !is.finite(ll_prev)) return(-Inf)
 
-  ll_pop + ll_prev + lp_shape
+  ll_pop + ll_prev
 }
 
-# ── 3d. Log-posterior ────────────────────────────────────────────────────────
+# ── 3f. Log-posterior ────────────────────────────────────────────────────────
 log_posterior <- function(theta, base_params, data) {
   lp <- log_prior(theta)
   if (!is.finite(lp)) return(-Inf)
@@ -426,7 +441,7 @@ log_posterior <- function(theta, base_params, data) {
   lp + ll
 }
 
-# ── 3e. Numerical gradient (central finite differences) ───────────────────────
+# ── 3g. Numerical gradient (central finite differences) ───────────────────────
 #
 # Analytical gradients are not available because the likelihood is computed by
 # a black-box C++ ODE solver. We therefore use central finite differences:
@@ -522,6 +537,10 @@ run_hmc_chain <- function(theta_init,
                            seed        = NULL,
                            chain_id    = 1L) {
   if (!is.null(seed)) set.seed(seed)
+
+  if (length(theta_init) != 2L * SPLINE_K || any(!is.finite(theta_init))) {
+    stop(sprintf("theta_init must contain %d finite values", 2L * SPLINE_K))
+  }
 
   n_p      <- length(theta_init)
   samples  <- matrix(NA_real_, n_iter, n_p,

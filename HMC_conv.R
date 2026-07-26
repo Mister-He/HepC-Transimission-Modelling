@@ -140,6 +140,13 @@ print_diagnostics <- function(post_warmup_list, chains_raw = NULL) {
 #
 generate_ppc_samples <- function(post_samples, base_params, data,
                                  n_ppc = 600L) {
+    post_samples <- as.matrix(post_samples)
+    if (ncol(post_samples) != 2L * SPLINE_K || any(!is.finite(post_samples))) {
+        stop(sprintf(
+            "post_samples must be a finite matrix with %d columns",
+            2L * SPLINE_K
+        ))
+    }
     n_avail <- nrow(post_samples)
     draw_idx <- sort(sample(n_avail, min(n_ppc, n_avail)))
     n_draws <- length(draw_idx)
@@ -516,7 +523,10 @@ plot_ppc_prevalence_intervals <- function(ppc) {
 # Full-chain trace for selected parameters (all iterations, all chains),
 # with a dashed vertical line marking the end of warmup.
 #
-plot_traces <- function(chains_raw, param_idx = 1:min(5L, N_PARAMS)) {
+plot_traces <- function(
+    chains_raw,
+    param_idx = seq_len(min(5L, length(param_names_log)))
+) {
     trace_list <- lapply(seq_along(chains_raw), function(ch) {
         df <- as.data.frame(chains_raw[[ch]]$samples_all)
         colnames(df) <- param_names_log

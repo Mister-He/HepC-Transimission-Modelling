@@ -35,18 +35,11 @@ source("setup.R")
 source("HMC_core.r")
 source("HMC_conv.R")
 
-param_names_log <- c(
-  paste0("alpha_contact_", seq_len(SPLINE_K)),
-  paste0("gamma_tot_in_", seq_len(SPLINE_K))
-)
-
 # Shared observation-model settings used by the NM stage. prev_logit_sd is only
 # used to draw observed uncertainty bands; the fitted prevalence likelihood is
 # binomial in HMC_core.r.
 data$prev_logit_sd <- 0.10
 data$sigma_pop <- c(0.20, rep(0.12, N_AGE - 1L))
-data$sigma_shape <- 0.20
-data$nu_shape <- 7L
 
 parse_cli <- function(args) {
   get_arg <- function(name, default = NULL) {
@@ -72,7 +65,13 @@ configure_hmc_prior_from_nm <- function(nm_fit_path, prior_sd = 0.45, rw_sd = 0.
   nm_fit <- readRDS(nm_fit_path)
   theta_hat <- as.numeric(nm_fit$theta_hat)
   if (length(theta_hat) != 2L * SPLINE_K || any(!is.finite(theta_hat))) {
-    stop("Nelder-Mead theta_hat is not a finite 2*SPLINE_K vector")
+    stop(sprintf(
+      paste0(
+        "Nelder-Mead theta_hat is incompatible with the current %d-parameter ",
+        "(%d coefficients per curve) spline model; refit with nelder_mead.R"
+      ),
+      2L * SPLINE_K, SPLINE_K
+    ))
   }
 
   configure_spline_priors(
@@ -222,6 +221,8 @@ run_hmc_calibration <- function(nm_fit_path = NULL,
     ppc_out = ppc_out,
     ppp_df = ppp_df,
     spline_prior = list(
+      n_internal_knots = SPLINE_N_KNOTS,
+      basis_dim = SPLINE_K,
       contact_mean = CONTACT_COEF_PRIOR_MEANS,
       tot_in_mean = TOT_IN_COEF_PRIOR_MEANS,
       contact_sd = CONTACT_COEF_PRIOR_SDS,
