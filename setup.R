@@ -13,7 +13,7 @@ sourceCpp("sim.cpp")
 # HELPER: flat compartment index (mirrors C++ idx())
 # s in {0=D,1=J,2=F,3=X}, k in {1,2,3,4}, h in {0=u,1=a,2=c,3=t}, i in {0..9}
 # =============================================================================
-idx <- function(s, k, h, i) s * 4 * 4 * 10 + (k - 1) * 4 * 10 + h * 10 + i + 1L
+idx <- function(s, k, h, i) s * 4 * 4 * 6 + (k - 1) * 4 * 6 + h * 6 + i + 1L
 
 # =============================================================================
 # PARAMETERS
@@ -91,12 +91,11 @@ params <- list(
 
   # ── Background mortality (per year, age-varying) ──────────────────────────
   # CALIBRATED: placeholder values from SingStat life table
-  # Age groups (example boundaries): 15-19, 20-24, 25-29, 30-34,
-  #                                   35-39, 40-44, 45-49, 50-54, 55+
-  mu = c(0.2, 0.2, 0.3, 0.4, 0.5, 0.9, 1.5, 2.5, 4.2, 38.7) / 1000,
+  # Age groups (example boundaries): <20, 20-29, 30-39, 40-49, 50-59, 60+
+  mu = c(0.0002, 0.0002506450, 0.0004508829, 0.0011935459, 0.0042205481),
 
   # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
-  omega = 14.68,  # SMR for ever-PWIDs (Degenhardt et al. 2011)
+  omega = 14.47,  # SMR for ever-PWIDs (Degenhardt et al. 2011)
 
   # ── Disease-specific excess mortality ──────────────────────────────────────
   mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
@@ -108,51 +107,34 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.5582834, 0.5269933, 0.4918624, 
-              0.4995045, 0.4869220, 0.5236286, 
-              0.5293563, 0.5047838, 0.3782928, 
-              0.1638444),  # baseline first-arrest rate lambda_i^(1) — GUESS
-  c_composite = c(0.5911735, 1.6996298, 1.4714660,
-                  2.3824881, 1.7157632, 4.6604280,
-                  3.8479352, 4.4226596, 3.8667446,
-                  3.7223948),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
-  lambda2 = c(0.4700683, 0.6444493, 0.6305744, 
-              0.5130281, 0.4056551, 0.3459537, 
-              0.3281469, 0.3202205, 0.3339544, 
-              0.3926353),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.5582834, 0.5269933, 0.4918624, 
-              0.4995045, 0.4869220, 0.5236286, 
-              0.5293563, 0.5047838, 0.3782928, 
-              0.1638444),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.7912675,          # recidivism probability (fitted to SPS; Assumption)
+  lambda1 = c(0.486, 0.614, 0.501, 0.425, 0.438),  # baseline first-arrest rate lambda_i^(1) — GUESS
+  c_composite = c(0.7283665, 2.3690956, 3.0061380, 5.1782792, 5.3255356),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
+  lambda2 = c(0.486, 0.614, 0.501, 0.425, 0.438),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.5911468, 0.5370174, 0.5564998, 0.6214548, 0.4890998),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.597,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
-  C_contact = rbind(c(1.23, 0.94, 0.07, 0.2, 0, 0, 0.15, 0, 0, 0),
-                    c(15.26, 18.6, 9.94, 6.98, 1.74, 0.57, 2.79, 0.49/3, 0.49/3, 0.49/3),
-                    c(8.27, 23.85, 48.83, 67.84, 19.28, 13.67, 3.97, 1.15/3, 1.15/3, 1.15/3), 
-                    c(2.04, 12.32, 33.66, 90.58, 45.29, 31.27, 6.08, 4.2/3, 4.2/3, 4.2/3), 
-                    c(1.32, 3.09, 13.62, 31.34, 73.38, 36.16, 10.4, 2.73/3, 2.73/3, 2.73/3),
-                    c(0, 0.65, 6.51, 11.67, 14.07, 17.93, 3.65, 2.08/3, 2.08/3, 2.08/3),
-                    c(0, 0.5, 0.3, 5.61, 3.23, 8.27, 5.27, 1.11/3, 1.11/3, 1.11/3),
-                    c(0.18/3, 2.11/3, 1.29/3, 1.75/3, 2.73/3, 1.85/3, 0.75/3, 0.42/9, 0.42/9, 0.42/9),
-                    c(0.18/3, 2.11/3, 1.29/3, 1.75/3, 2.73/3, 1.85/3, 0.75/3, 0.42/9, 0.42/9, 0.42/9),
-                    c(0.18/3, 2.11/3, 1.29/3, 1.75/3, 2.73/3, 1.85/3, 0.75/3, 0.42/9, 0.42/9, 0.42/9)
-                    ) * 4 * 0.5,
+  C_contact = matrix(c(
+    1.23, 1.01, 0.2, 0.15, 0, 0,
+    23.53, 101.22, 95.84, 21, 1.64/2, 1.64/2,
+    3.36, 62.69, 240.59, 83.91, 6.93/2, 6.93/2,
+    0, 7.96, 34.58, 35.12, 3.19/2, 3.19/2,
+    0.18/2, 3.40/2, 4.48/2, 2.60/2, 0.42/4, 0.42/4,
+    0.18/2, 3.40/2, 4.48/2, 2.60/2, 0.42/4, 0.42/4
+  ), byrow = T, nrow = 6
+  ) * 4,
+  
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
   # CALIBRATED: constant-in-time placeholder — replace with beta_i(t) from calib.
   beta = c(
     257, # age group 1
-    644 / 2, # age group 2
-    644 / 2, # age group 3
-    292 / 2, # age group 4
-    292 / 2, # age group 5
-    94 / 2, # age group 6
-    94 / 2, # age group 7
-    21 / 2, # age group 8
-    21 / 2, # age group 9
-    4
+    644, # age group 2
+    292, # age group 3
+    94,  # age group 4
+    21,  # age group 5
+    1    # age group 6
   )
 )
 
@@ -163,13 +145,13 @@ params <- list(
 # non-cirrhosis, chronic, all age groups) to start the epidemic.
 # CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
 # =============================================================================
-y0 <- rep(0.0, 640)
+y0 <- rep(0.0, 384)
 
 # Susceptible population: put most of PWID in D_u,1,i
 # Seed chronic infection: 20 chronic per age group in D_c,1,i
-pos = c(26, 95, 164, 169, 183, 241, 223, 189, 124, 48)
-tot = c(145, 607, 759, 649, 564, 544, 483, 392, 293, 152)
-for (i in 0:9) {
+pos = c(26, 95, 164, 169, 183, 241)
+tot = c(145, 607, 759, 649, 564, 544)
+for (i in 0:5) {
   y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
   y0[idx(s=0, k=1, h=1, i=i)] <- pos[i+1]             # D_{a,1,i}
 }
@@ -209,7 +191,7 @@ params_s1 <- modifyList(params, list(tau = c(0, 0, 0, 0)))
 strata_names <- c("D", "J", "F", "X")
 stage_names  <- c("NC", "CC", "DC", "HCC")
 state_names  <- c("u", "a", "c", "t")
-age_names    <- paste0("age", 1:10)
+age_names    <- paste0("age", 1:6)
 
 expand.grid(age_names, state_names, stage_names, strata_names) %>%
   mutate(col_name = paste(Var4, Var3, Var2, Var1, sep = "_")) %>%

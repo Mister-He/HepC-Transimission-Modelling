@@ -572,22 +572,22 @@ plot_traces <- function(
 # ── 7e. Posterior density plot (original scale) ────────────────────────────
 plot_posterior_densities <- function(post_warmup_list) {
     all_samps <- do.call(rbind, lapply(seq_along(post_warmup_list), function(ch) {
-        df <- as.data.frame(theta_to_orig(post_warmup_list[[ch]]))
-        colnames(df) <- param_names_orig
+        df <- as.data.frame(post_warmup_list[[ch]])
+        colnames(df) <- param_names_log
         df$chain <- factor(ch)
         df
     }))
 
     all_samps %>%
         pivot_longer(-chain, names_to = "param", values_to = "value") %>%
-        mutate(param = factor(param, levels = param_names_orig)) %>%
+        mutate(param = factor(param, levels = param_names_log)) %>%
         ggplot(aes(x = value, fill = chain, colour = chain)) +
         geom_density(alpha = 0.30, linewidth = 0.6) +
         facet_wrap(~param, scales = "free", ncol = 2) +
         scale_fill_brewer(palette = "Set1") +
         scale_colour_brewer(palette = "Set1") +
         labs(
-            title    = "Posterior densities (original scale, all chains)",
+            title    = "Posterior densities (parameter scale, all chains)",
             x        = "Parameter value",
             y        = "Density",
             fill     = "Chain",

@@ -218,7 +218,7 @@ compute_age_quantities <- function(y_final) {
 CONTACT_PRIOR_MEANS <- log(c(0.2506, 0.8799, 0.49105, 0.6041, 0.2651, 2.2305, 3.1248, 6.2280, 12.9459, 102.0037))
 TOT_IN_PRIOR_MEANS <- log(c(0.96, 0.23, 0.07, 0.06, 0.03, 0.33, 1.9, 1.4, 1.2, 2.0))
 
-SPLINE_N_KNOTS   <- 3L     # internal B-spline knots per input vector
+SPLINE_N_KNOTS   <- 5L     # internal B-spline knots per input vector
 SPLINE_RW_SD     <- 0.22   # tau: RW2 scale for deviations from the prior curve
 SPLINE_ANCHOR_SD <- 0.75   # sd on the first two deviation coefficients
 

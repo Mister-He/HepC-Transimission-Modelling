@@ -1,0 +1,86 @@
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+[1] "Simulation time: 0.14 seconds"
+[1] "Total population: 33722.15"
+Starting Nelder-Mead run 1/6
+start 1: evaluation 500, best negative log-posterior = 19.160784
+start 1: evaluation 1000, best negative log-posterior = 19.135693
+start 1: evaluation 1500, best negative log-posterior = 19.125687
+start 1: evaluation 2000, best negative log-posterior = 19.121354
+start 1: evaluation 2500, best negative log-posterior = 19.120121
+start 1: evaluation 3000, best negative log-posterior = 19.119095
+Starting Nelder-Mead run 2/6
+start 2: evaluation 500, best negative log-posterior = 62.426659
+start 2: evaluation 1000, best negative log-posterior = 31.138741
+start 2: evaluation 1500, best negative log-posterior = 23.819620
+start 2: evaluation 2000, best negative log-posterior = 22.627855
+start 2: evaluation 2500, best negative log-posterior = 22.041735
+start 2: evaluation 3000, best negative log-posterior = 21.809616
+start 2: evaluation 3500, best negative log-posterior = 21.489134
+Starting Nelder-Mead run 3/6
+start 3: evaluation 500, best negative log-posterior = 119.586262
+start 3: evaluation 1000, best negative log-posterior = 46.468161
+start 3: evaluation 1500, best negative log-posterior = 37.934389
+start 3: evaluation 2000, best negative log-posterior = 32.022207
+start 3: evaluation 2500, best negative log-posterior = 31.772401
+start 3: evaluation 3000, best negative log-posterior = 31.595713
+start 3: evaluation 3500, best negative log-posterior = 31.442118
+start 3: evaluation 4000, best negative log-posterior = 31.220254
+Starting Nelder-Mead run 4/6
+start 4: evaluation 500, best negative log-posterior = 97.122047
+start 4: evaluation 1000, best negative log-posterior = 62.554080
+start 4: evaluation 1500, best negative log-posterior = 51.794815
+start 4: evaluation 2000, best negative log-posterior = 50.518305
+start 4: evaluation 2500, best negative log-posterior = 49.745349
+start 4: evaluation 3000, best negative log-posterior = 48.394658
+start 4: evaluation 3500, best negative log-posterior = 47.265189
+start 4: evaluation 4000, best negative log-posterior = 46.001258
+start 4: evaluation 4500, best negative log-posterior = 44.635578
+Starting Nelder-Mead run 5/6
+start 5: evaluation 500, best negative log-posterior = 64.975687
+start 5: evaluation 1000, best negative log-posterior = 40.956699
+start 5: evaluation 1500, best negative log-posterior = 32.898261
+start 5: evaluation 2000, best negative log-posterior = 27.323571
+start 5: evaluation 2500, best negative log-posterior = 25.353538
+start 5: evaluation 3000, best negative log-posterior = 25.051211
+Starting Nelder-Mead run 6/6
+start 6: evaluation 500, best negative log-posterior = 90.198184
+start 6: evaluation 1000, best negative log-posterior = 79.135092
+start 6: evaluation 1500, best negative log-posterior = 74.362893
+start 6: evaluation 2000, best negative log-posterior = 72.848015
+start 6: evaluation 2500, best negative log-posterior = 72.484626
+Nelder-Mead MAP fit
+  best start: 1
+  convergence code: 0 (0 means successful)
+  log posterior: -19.119007
+  log likelihood: -36.160448
+  log prior: 17.041441
+    C_contact_scale_1     C_contact_scale_2     C_contact_scale_3 
+              8.04281               0.42105               0.18475 
+    C_contact_scale_4     C_contact_scale_5     C_contact_scale_6 
+              0.11559               0.18154               0.77928 
+    C_contact_scale_7     C_contact_scale_8     C_contact_scale_9 
+              3.34030               3.33798               1.32737 
+   C_contact_scale_10  tot_in_scaling_fct_1  tot_in_scaling_fct_2 
+              0.60050               4.60079               3.01219 
+ tot_in_scaling_fct_3  tot_in_scaling_fct_4  tot_in_scaling_fct_5 
+              2.21706               1.70986               5.01556 
+ tot_in_scaling_fct_6  tot_in_scaling_fct_7  tot_in_scaling_fct_8 
+             28.61920             103.23729             103.65986 
+ tot_in_scaling_fct_9 tot_in_scaling_fct_10 
+             33.13533               2.30411 
+Saved Nelder-Mead outputs in /Users/yichenhe/Desktop/Work/HepC-Transimission-Modelling/two-steps-calibration
+Warning messages:
+1: Removed 1 row containing missing values or values outside the scale range
+(`geom_segment()`). 
+2: Removed 1 row containing missing values or values outside the scale range
+(`geom_point()`). 

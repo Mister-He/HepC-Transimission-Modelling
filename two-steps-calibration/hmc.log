@@ -1,0 +1,10 @@
+[1] "Simulation time: 0.15 seconds"
+[1] "Total population: 33722.15"
+=== HMC Calibration: HCV PWID Model ===
+Chains: 4 | Warmup: 500 | Sampling: 100 | L: 10
+Using Nelder-Mead priors from: /Users/yichenhe/Desktop/Work/HepC-Transimission-Modelling/two-steps-calibration/nelder_mead_fit.rds
+Approx ODE runs per HMC step: 396
+[Chain 3] Starting  n_iter=600 | n_warmup=500 | eps0=0.0100 | L=10
+[Chain 2] Starting  n_iter=600 | n_warmup=500 | eps0=0.0100 | L=10
+[Chain 1] Starting  n_iter=600 | n_warmup=500 | eps0=0.0100 | L=10
+[Chain 4] Starting  n_iter=600 | n_warmup=500 | eps0=0.0100 | L=10

@@ -9,10 +9,10 @@
 //   Stratum  s ∈ {D=0, J=1, F=2, X=3}   (D=never, J=current, F=ever, X=former)
 //   Stage    k ∈ {1,2,3,4}               (NC, CC, DC, HCC)
 //   State    h ∈ {u=0, a=1, c=2, t=3}   (susceptible/post-SVR, acute, chronic, treated)
-//   Age grp  i ∈ {0,...,9}              (10 age groups)
+//   Age grp  i ∈ {0,...,5}              (6 age groups)
 //
-// Flat index: idx(s,k,h,i) = s*4*4*10 + (k-1)*4*10 + h*10 + i
-// Total compartments: 4*4*4*10 = 640
+// Flat index: idx(s,k,h,i) = s*4*4*6 + (k-1)*4*6 + h*6 + i
+// Total compartments: 4*4*4*6 = 384
 // =============================================================================
 
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -22,9 +22,9 @@
 using namespace Rcpp;
 
 // ─── helper: flat compartment index ─────────────────────────────────────────
-// s in {0,1,2,3}, k in {1,2,3,4}, h in {0,1,2,3}, i in {0,...,9}
+// s in {0,1,2,3}, k in {1,2,3,4}, h in {0,1,2,3}, i in {0,...,5}
 inline int idx(int s, int k, int h, int i) {
-    return s * 4 * 4 * 10 + (k - 1) * 4 * 10 + h * 10 + i;
+    return s * 4 * 4 * 6 + (k - 1) * 4 * 6 + h * 6 + i;
 }
 
 // =============================================================================
@@ -84,7 +84,7 @@ struct Params {
     double ptu_CC_HCC;  // = phi_CC_HCC * ptc_CC_HCC
     double ptu_DC_HCC;  // = phi_DC_HCC * ptc_DC_HCC
 
-    // --- Background mortality (age-varying, length 10) ----------------------
+    // --- Background mortality (age-varying, length 6) ----------------------
     std::vector<double> mu;   // mu[i] for age group i
 
     // --- Standardized mortality ratio for ever-PWIDs -----------------------
@@ -98,7 +98,7 @@ struct Params {
     double psi_DC;  // relative mortality risk in DC after SVR  = 0.45
     double psi_HCC; // relative mortality risk in HCC after SVR = 0.37
 
-    // --- Incarceration rates (age-varying, length 10 each) ------------------
+    // --- Incarceration rates (age-varying, length 6 each) ------------------
     // lambda1[i] is pre-computed in R as lambda3[i] * c_true[i] before each call
     std::vector<double> lambda1; // effective first-arrest rate lambda_i^(1)
     std::vector<double> lambda2; // release rate        lambda_i^(2)
@@ -106,8 +106,8 @@ struct Params {
     double pi_recid;             // recidivism probability pi
 
     // --- Needle-sharing contact rate ---------------------------------------
-    // GUESS: scalar homogeneous mixing; replace with 10×10 matrix if needed
-    arma::mat C_contact; // 10×10 age-structured contact matrix, C_contact(i,j)
+    // GUESS: scalar homogeneous mixing; replace with 6×6 matrix if needed
+    arma::mat C_contact; // 6×6 age-structured contact matrix, C_contact(i,j)
 
     // --- Population entry (age-varying, time-constant approximation) -------
     // GUESS: constant over time; ideally beta_i(t) from calibration
@@ -124,7 +124,7 @@ double forceOfInfection(int i, const std::vector<double>& y, const Params& p) {
 
     double lambda_i = 0.0;
 
-    for (int j = 0; j < 10; ++j) {
+    for (int j = 0; j < 6; ++j) {
 
         // infectious (acute and chronic) in strata D and F for age group j
         double infectious_j = y[idx(0,1,1,j)] + y[idx(0,1,2,j)]
@@ -154,13 +154,13 @@ double forceOfInfection(int i, const std::vector<double>& y, const Params& p) {
 
 // =============================================================================
 // ODE RIGHT-HAND SIDE
-// dydt has 640 entries matching the flat index convention above.
+// dydt has 384 entries matching the flat index convention above.
 // =============================================================================
 std::vector<double> rhs(double t,
                         const std::vector<double>& y,
                         const Params& p) {
 
-    std::vector<double> dydt(640, 0.0);
+    std::vector<double> dydt(384, 0.0);
 
     // SVR12 rates by stage
     // Stage 1,2: alpha_NC; Stage 3: alpha_DC_pos; Stage 4: alpha_HCC
@@ -205,7 +205,7 @@ std::vector<double> rhs(double t,
     // =========================================================================
     //  LOOP OVER AGE GROUPS
     // =========================================================================
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 6; ++i) {
 
         double gam  = forceOfInfection(i, y, p);  // gamma_{i,j}(t)
         double mu_i = p.mu[i] * p.omega;          // mortality for PWIDs in age group i
@@ -575,8 +575,8 @@ std::vector<double> euler_step(double t, double dt,
                                const std::vector<double>& y,
                                const Params& p) {
     auto dy = rhs(t, y, p);
-    std::vector<double> y_new(640);
-    for (int i = 0; i < 640; ++i)
+    std::vector<double> y_new(384);
+    for (int i = 0; i < 384; ++i)
         y_new[i] = y[i] + dt * dy[i];
     return y_new;
 }
@@ -586,16 +586,16 @@ std::vector<double> rk4_step(double t, double dt,
                               const std::vector<double>& y,
                               const Params& p) {
     auto k1 = rhs(t,        y,                                  p);
-    std::vector<double> y2(640), y3(640), y4(640);
-    for (int i = 0; i < 640; ++i) y2[i] = y[i] + 0.5*dt*k1[i];
+    std::vector<double> y2(384), y3(384), y4(384);
+    for (int i = 0; i < 384; ++i) y2[i] = y[i] + 0.5*dt*k1[i];
     auto k2 = rhs(t+0.5*dt, y2,                                 p);
-    for (int i = 0; i < 640; ++i) y3[i] = y[i] + 0.5*dt*k2[i];
+    for (int i = 0; i < 384; ++i) y3[i] = y[i] + 0.5*dt*k2[i];
     auto k3 = rhs(t+0.5*dt, y3,                                 p);
-    for (int i = 0; i < 640; ++i) y4[i] = y[i] + dt*k3[i];
+    for (int i = 0; i < 384; ++i) y4[i] = y[i] + dt*k3[i];
     auto k4 = rhs(t+dt,     y4,                                 p);
 
-    std::vector<double> y_new(640);
-    for (int i = 0; i < 640; ++i)
+    std::vector<double> y_new(384);
+    for (int i = 0; i < 384; ++i)
         y_new[i] = y[i] + (dt/6.0)*(k1[i]+2*k2[i]+2*k3[i]+k4[i]);
     return y_new;
 }
@@ -674,7 +674,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
 
     // contact rate and entry
     NumericMatrix C_r = as<NumericMatrix>(params_r["C_contact"]);
-    p.C_contact = arma::mat(C_r.begin(), 10, 10, false); // no copy, column-major
+    p.C_contact = arma::mat(C_r.begin(), 6, 6, false); // no copy, column-major
     NumericVector beta_r = as<NumericVector>(params_r["beta"]);
     p.beta.assign(beta_r.begin(), beta_r.end());
 
@@ -687,10 +687,10 @@ NumericMatrix run_sim(List params_r, List data_r) {
     NumericVector y0_r = as<NumericVector>(data_r["y0"]);
     std::vector<double> y(y0_r.begin(), y0_r.end());
 
-    // ─── output matrix: rows = time steps, cols = 640 compartments + time
-    NumericMatrix out(n_steps, 641);
+    // ─── output matrix: rows = time steps, cols = 384 compartments + time
+    NumericMatrix out(n_steps, 385);
     out(0, 0) = t_start;
-    for (int c = 0; c < 640; ++c) out(0, c+1) = y[c];
+    for (int c = 0; c < 384; ++c) out(0, c+1) = y[c];
 
     // ─── integrate ────────────────────────────────────────────────────────
     double t = t_start;
@@ -698,9 +698,9 @@ NumericMatrix run_sim(List params_r, List data_r) {
         y = rk4_step(t, dt, y, p);
         t += dt;
         // clamp negatives (numerical safety)
-        for (int c = 0; c < 640; ++c) if (y[c] < 0.0) y[c] = 0.0;
+        for (int c = 0; c < 384; ++c) if (y[c] < 0.0) y[c] = 0.0;
         out(step, 0) = t;
-        for (int c = 0; c < 640; ++c) out(step, c+1) = y[c];
+        for (int c = 0; c < 384; ++c) out(step, c+1) = y[c];
 
         // Ageing process
         // For each age grp: y[i] loses y[i]/5 to y[i+1], last age receives inflow only.
@@ -724,7 +724,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
             y.swap(y_new);
 
             // Update output after ageing step
-            for (int c = 0; c < 640; ++c) out(step, c+1) = y[c];
+            for (int c = 0; c < 384; ++c) out(step, c+1) = y[c];
         // }
     }
 
