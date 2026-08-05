@@ -92,7 +92,7 @@ params <- list(
   # ── Background mortality (per year, age-varying) ──────────────────────────
   # CALIBRATED: placeholder values from SingStat life table
   # Age groups (example boundaries): <20, 20-29, 30-39, 40-49, 50-59, 60+
-  mu = c(0.0002, 0.0002506450, 0.0004508829, 0.0011935459, 0.0042205481),
+  mu = c(0.0002000000, 0.0002506450, 0.0004508829, 0.0011935459, 0.0033220992, 0.0065000000),
 
   # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
   omega = 14.47,  # SMR for ever-PWIDs (Degenhardt et al. 2011)
@@ -107,11 +107,11 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.486, 0.614, 0.501, 0.425, 0.438),  # baseline first-arrest rate lambda_i^(1) — GUESS
-  c_composite = c(0.7283665, 2.3690956, 3.0061380, 5.1782792, 5.3255356),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
-  lambda2 = c(0.486, 0.614, 0.501, 0.425, 0.438),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.5911468, 0.5370174, 0.5564998, 0.6214548, 0.4890998),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.597,          # recidivism probability (fitted to SPS; Assumption)
+  lambda1 = c(0.487, 0.614, 0.501, 0.425, 0.426, 0.496),  # baseline first-arrest rate lambda_i^(1) — GUESS
+  c_composite = c(0.735, 2.41, 3.17, 5.72, 5.20, 3.37),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
+  lambda2 = c(0.487, 0.614, 0.501, 0.425, 0.426, 0.496),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.606, 0.550, 0.57, 0.641, 0.584, 0.415),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.570,          # recidivism probability (fitted to SPS; Assumption)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
@@ -161,7 +161,7 @@ for (i in 0:5) {
 # =============================================================================
 data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 50.0,   # simulate 50 years
+  t_end   = 150.0,   # simulate 50 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
   y0      = y0      # initial conditions (length-640 vector)
 )
@@ -214,9 +214,9 @@ params_s1 <- modifyList(params_s1,
 start <- Sys.time()
 out <- run_sim(params_s1, data)
 end <- Sys.time()
-print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "seconds"))
-colnames(out) <- col_names
-print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
+# print(paste("Simulation time:", round(difftime(end, start, units="secs"), 2), "seconds"))
+# colnames(out) <- col_names
+# print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
 
 # plot(out[, "time"], rowSums(out[, grep("J_(NC|CC|DC|HCC)_u", colnames(out))]),
 #   type = "l", xlab = "Year", ylab = "Total susceptible",
@@ -243,3 +243,4 @@ print(paste("Total population:", round(tail(rowSums(out[, -1]),1), 2)))
 
 
 # Secondly, simulation results should be compared to observed data in 2017 with CIs
+

@@ -14,14 +14,12 @@ suppressPackageStartupMessages({
 # Observations. Keep identical to nelder_mead.R: prevalence likelihood is
 # obs_pos[a] ~ Binomial(obs_tot[a], q_age[a]).
 obs_prev <- c(
-  0.1118421, 0.1470588, 0.1933842, 0.2507599, 0.2899083,
-  0.3596059, 0.5025295, 0.5061728, 0.4534314, 0.3544304
+  0.1118421, 0.1731044, 0.2684954, 0.4301165, 0.4821029, 0.3544304
 )
 obs_prev_se <- sqrt(c(
-  0.09940967, 0.12867003, 0.16065544, 0.18991135, 0.21719265,
-  0.23775531, 0.24736428, 0.24839586, 0.24995891, 0.24000000
+  0.09933344, 0.14313927, 0.19640562, 0.24511630, 0.24967969, 0.22880949
 ))
-obs_tot <- c(99, 552, 692, 763, 704, 847, 994, 847, 781, 409)
+obs_tot <- c(99, 1244, 1467, 1841, 1628, 409)
 obs_pos <- round(obs_prev * obs_tot)
 N_AGE <- length(obs_tot)
 N_CONTACT <- N_AGE
@@ -39,7 +37,7 @@ source("HMC_conv.R")
 # used to draw observed uncertainty bands; the fitted prevalence likelihood is
 # binomial in HMC_core.r.
 data$prev_logit_sd <- 0.10
-data$sigma_pop <- c(0.20, rep(0.12, N_AGE - 1L))
+data$sigma_pop <- c(0.10, rep(0.06, N_AGE - 1L))
 
 parse_cli <- function(args) {
   get_arg <- function(name, default = NULL) {
