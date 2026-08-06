@@ -26,7 +26,7 @@ N_CONTACT <- N_AGE
 
 param_names_orig <- c(
   paste0("C_contact_scale_", seq_len(N_CONTACT)),
-  paste0("tot_in_scaling_fct_", seq_len(N_CONTACT))
+  paste0("inflow_scale_", seq_len(N_CONTACT))
 )
 
 source("setup.R")
@@ -56,28 +56,29 @@ parse_cli <- function(args) {
   )
 }
 
-configure_hmc_prior_from_nm <- function(nm_fit_path, prior_sd = 0.45, rw_sd = 0.22) {
+configure_hmc_prior_from_nm <- function(nm_fit_path, prior_sd = 0.45) {
   if (is.null(nm_fit_path) || !nzchar(nm_fit_path)) return(NULL)
   if (!file.exists(nm_fit_path)) stop(sprintf("Nelder-Mead fit not found: %s", nm_fit_path))
 
   nm_fit <- readRDS(nm_fit_path)
-  theta_hat <- as.numeric(nm_fit$theta_hat)
-  if (length(theta_hat) != 2L * SPLINE_K || any(!is.finite(theta_hat))) {
+  theta_raw <- nm_fit$theta_hat
+  theta_hat <- as.numeric(theta_raw)
+  names_match <- !is.null(names(theta_raw)) && identical(names(theta_raw), param_names_log)
+  if (length(theta_hat) != 2L * N_AGE || any(!is.finite(theta_hat)) || !names_match) {
     stop(sprintf(
       paste0(
         "Nelder-Mead theta_hat is incompatible with the current %d-parameter ",
-        "(%d coefficients per curve) spline model; refit with nelder_mead.R"
+        "direct age-specific scaling-factor model; refit with nelder_mead.R"
       ),
-      2L * SPLINE_K, SPLINE_K
+      2L * N_AGE
     ))
   }
 
-  configure_spline_priors(
-    contact_mean = theta_hat[seq_len(SPLINE_K)],
-    tot_in_mean = theta_hat[SPLINE_K + seq_len(SPLINE_K)],
+  configure_age_priors(
+    contact_mean = theta_hat[seq_len(N_AGE)],
+    inflow_scale_mean = theta_hat[N_AGE + seq_len(N_AGE)],
     contact_sd = prior_sd,
-    tot_in_sd = prior_sd,
-    rw_sd = rw_sd
+    inflow_scale_sd = prior_sd
   )
   nm_fit
 }
@@ -119,8 +120,8 @@ run_hmc_calibration <- function(nm_fit_path = NULL,
   } else {
     inits <- lapply(seq_len(n_chains), function(ch) {
       c(
-        rnorm(SPLINE_K, CONTACT_COEF_PRIOR_MEANS, 0.25),
-        rnorm(SPLINE_K, TOT_IN_COEF_PRIOR_MEANS, 0.25)
+        rnorm(N_AGE, CONTACT_PRIOR_MEANS, 0.25),
+        rnorm(N_AGE, INFLOW_SCALE_PRIOR_MEANS, 0.25)
       )
     })
   }
@@ -218,14 +219,11 @@ run_hmc_calibration <- function(nm_fit_path = NULL,
     post_summary = post_summary,
     ppc_out = ppc_out,
     ppp_df = ppp_df,
-    spline_prior = list(
-      n_internal_knots = SPLINE_N_KNOTS,
-      basis_dim = SPLINE_K,
-      contact_mean = CONTACT_COEF_PRIOR_MEANS,
-      tot_in_mean = TOT_IN_COEF_PRIOR_MEANS,
-      contact_sd = CONTACT_COEF_PRIOR_SDS,
-      tot_in_sd = TOT_IN_COEF_PRIOR_SDS,
-      rw_sd = SPLINE_RW_SD
+    age_specific_prior = list(
+      contact_mean = CONTACT_PRIOR_MEANS,
+      inflow_scale_mean = INFLOW_SCALE_PRIOR_MEANS,
+      contact_sd = CONTACT_PRIOR_SDS,
+      inflow_scale_sd = INFLOW_SCALE_PRIOR_SDS
     )
   )
   saveRDS(output, file = file.path(out_dir, "hmc_output_full.rds"))

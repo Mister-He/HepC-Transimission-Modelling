@@ -9,3 +9,44 @@ The following objects are masked from ‘package:base’:
 
     intersect, setdiff, setequal, union
 
+Starting Nelder-Mead run 1/6
+start 1: evaluation 500, best negative log-posterior = 259.324787
+start 1: evaluation 1000, best negative log-posterior = 259.197134
+start 1: evaluation 1500, best negative log-posterior = 259.154007
+start 1: evaluation 2000, best negative log-posterior = 259.050799
+Starting Nelder-Mead run 2/6
+start 2: evaluation 500, best negative log-posterior = 263.915170
+start 2: evaluation 1000, best negative log-posterior = 260.752897
+start 2: evaluation 1500, best negative log-posterior = 260.089592
+start 2: evaluation 2000, best negative log-posterior = 259.855802
+Starting Nelder-Mead run 3/6
+start 3: evaluation 500, best negative log-posterior = 259.479629
+Starting Nelder-Mead run 4/6
+start 4: evaluation 500, best negative log-posterior = 259.268853
+start 4: evaluation 1000, best negative log-posterior = 258.890688
+Starting Nelder-Mead run 5/6
+start 5: evaluation 500, best negative log-posterior = 260.781072
+start 5: evaluation 1000, best negative log-posterior = 260.152662
+start 5: evaluation 1500, best negative log-posterior = 260.076833
+start 5: evaluation 2000, best negative log-posterior = 260.024468
+Starting Nelder-Mead run 6/6
+start 6: evaluation 500, best negative log-posterior = 259.408142
+start 6: evaluation 1000, best negative log-posterior = 259.227623
+Nelder-Mead MAP fit
+  best start: 4
+  convergence code: 0 (0 means successful)
+  log posterior: -258.887238
+  log likelihood: -255.961579
+  log prior: -2.925658
+C_contact_scale_1 C_contact_scale_2 C_contact_scale_3 C_contact_scale_4 
+          6.33539           0.05833           0.09716           0.57500 
+C_contact_scale_5 C_contact_scale_6    inflow_scale_1    inflow_scale_2 
+          1.30900           0.67410           0.70039           5.07369 
+   inflow_scale_3    inflow_scale_4    inflow_scale_5    inflow_scale_6 
+          0.05801           0.39721           0.78270           1.35562 
+Saved Nelder-Mead outputs in /Users/yichenhe/Desktop/Work/HepC-Transimission-Modelling/two-steps-calibration
+Warning messages:
+1: Removed 1 row containing missing values or values outside the scale range
+(`geom_segment()`). 
+2: Removed 1 row containing missing values or values outside the scale range
+(`geom_point()`). 

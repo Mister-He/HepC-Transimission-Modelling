@@ -1,10 +1,21 @@
+library(ggplot2)
 # Trial
+fit = readRDS("two-steps-calibration/nelder_mead_fit.rds")
 fit1 = fit
-# contact_scale = c(8.04281, 0.42105, 0.18475, 0.11559, 0.18154, 0.77928, 3.34030, 3.33798, 1.32737, 0.60050)
-# inflow_scale = c(4.60079, 3.01219, 2.21706, 1.70986, 5.01556, 28.61920, 103.23729, 103.65986, 33.13533, 2.30411)
-
+contact_scale <- c(7.68983, 0.06629, 0.08773, 0.61861, 1.74367, -3.24803)
+inflow_scale <- c(0.63544, 6.33889, 10.05326, 0.33554, 1.16247, 1.55939)
 
 source('setup.R')
+obs_prev <- c(
+    0.1118421, 0.1731044, 0.2684954, 0.4301165, 0.4821029, 0.3544304
+)
+obs_prev_se <- sqrt(c(
+    0.09933344, 0.14313927, 0.19640562, 0.24511630, 0.24967969, 0.22880949
+))
+obs_tot <- c(99, 1244, 1467, 1841, 1628, 409)
+obs_pos <- round(obs_prev * obs_tot) # HCV positives per age group (binomial numerator)
+N_AGE <- length(obs_tot)
+sigma_pop <- c(0.10, rep(0.06, N_AGE - 1L))
 pm = params
 for (j in seq_along(contact_scale)) {
     pm$C_contact[j, ] <- params$C_contact[j, ] * contact_scale[j]

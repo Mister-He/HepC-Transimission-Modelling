@@ -1,28 +1,26 @@
 # =============================================================================
-# hmc_calibration.R  —  HMC Calibration for the HCV PWID Compartmental Model
+# HMC_core.r  —  HMC Calibration for the HCV PWID Compartmental Model
 #
 # Append this file after setup.R (which sources sim.cpp and defines params,
 # data, idx(), y0, etc.).
 #
 # Model architecture:
-#   1. Two age-varying positive scaling functions modify the C++ ODE model:
-#        C_contact_scale[k]    = exp((SPLINE_B %*% alpha)[k])
-#        tot_in_scaling_fct[k] = exp((SPLINE_B %*% gamma)[k])
-#   2. A cubic B-spline basis with 3 internal knots maps each 7-dimensional
-#      coefficient vector to N_AGE = 10 age-specific values.
+#   1. Twelve positive age-specific parameters modify the C++ ODE model:
+#        C_contact_scale[k] = exp(theta[k])
+#        inflow_scale[k]    = exp(theta[N_AGE + k])
+#   2. Each contact parameter scales one contact-matrix row and each inflow
+#      parameter scales the baseline total inflow for that age group.
 #   3. The final ODE state is compared with observed age composition and
 #      age-specific HCV prevalence. No additional age-shape penalty is used.
-#   4. HMC samples the spline coefficients using finite-difference gradients
+#   4. HMC samples the direct log parameters using finite-difference gradients
 #      through the black-box C++ ODE solver.
 #
-# Parameters estimated (2*SPLINE_K = 14 total with the current basis):
-#   theta[1:K]       = alpha  coefficients for log_C_contact_scale
-#   theta[K+1:2K]    = gamma  coefficients for log_tot_in_scaling_fct
-#   SPLINE_K = 3 internal knots + cubic degree 3 + intercept 1 = 7.
+# Parameters estimated (2*N_AGE = 12 for six age groups):
+#   theta[1:N_AGE]                 = log contact-row scaling factors
+#   theta[(N_AGE+1):(2*N_AGE)]     = log age-specific inflow scaling factors
 #
 # Scaling relationships:
-#   c_true[k]          = c_composite[k] / tot_in_scaling_fct[k]
-#   c_composite[k]     = tot_in_scaling_fct[k] * c_true[k]
+#   c_true[k]          = c_composite[k] / inflow_scale[k]
 #   lambda1[k]         = lambda3[k] * c_true[k]
 #   Each relationship is updated before every simulation call.
 #
@@ -31,21 +29,13 @@
 #   obs_pos[a]    ~ Binomial(obs_tot[a], q_a(theta))         HCV prevalence
 #   obs_pos[a] = round(obs_prev[a] * obs_tot[a]) HCV positives per age group.
 #
-# Prior (centered P-spline / RW2 on deviations from a reference curve):
-#   mean0 is obtained by projecting the original per-age log prior medians
-#   (CONTACT_PRIOR_MEANS or TOT_IN_PRIOR_MEANS) onto SPLINE_B.
-#   delta = coef - mean0
-#   delta[1] ~ Normal(0, SPLINE_ANCHOR_SD)
-#   delta[2] ~ Normal(0, SPLINE_ANCHOR_SD)
-#   delta[k] ~ Normal(2*delta[k-1] - delta[k-2], SPLINE_RW_SD), k >= 3
-#   Thus the complete projected prior curve is the prior center, while smooth
-#   departures from that curve are allowed.
+# Prior: independent normal priors on each direct log-scale parameter.
 #
 # Gradient: central finite differences through the C++ ODE solver
-#   N_PARAMS = 14, so one gradient evaluation normally requires
-#   2 × N_PARAMS = 28 ODE runs.
+#   N_PARAMS = 12, so one gradient evaluation normally requires
+#   2 × N_PARAMS = 24 ODE runs.
 #   One HMC proposal with L leapfrog steps costs approximately
-#   (L + 1) × 28 ODE runs, plus one ODE run for the proposed log posterior.
+#   (L + 1) × 24 ODE runs, plus one ODE run for the proposed log posterior.
 #   Tip: keep L small (5-10) and use parallel chains.
 #
 # Outputs:
@@ -61,33 +51,27 @@
 # 1.  PARAMETER TRANSFORMS
 # =============================================================================
 
-#' Unconstrained theta (spline coefficients) -> constrained named list.
-#'
-#' theta = c(alpha, gamma) with SPLINE_K coefficients each. The N_AGE age values
-#' are reconstructed via the fixed B-spline basis: log_vec = SPLINE_B %*% coef.
+#' Unconstrained direct log parameters -> constrained named list.
 constrain_theta <- function(theta) {
-  if (length(theta) != 2L * SPLINE_K || any(!is.finite(theta))) {
-    stop(sprintf("theta must contain %d finite values", 2L * SPLINE_K))
+  if (length(theta) != 2L * N_AGE || any(!is.finite(theta))) {
+    stop(sprintf("theta must contain %d finite values", 2L * N_AGE))
   }
-  alpha <- theta[1:SPLINE_K]
-  gamma <- theta[(SPLINE_K + 1):(2 * SPLINE_K)]
-
-  log_C_contact_scale    <- as.numeric(SPLINE_B %*% alpha)
-  log_tot_in_scaling_fct <- as.numeric(SPLINE_B %*% gamma)
+  log_C_contact_scale <- theta[seq_len(N_AGE)]
+  log_inflow_scale <- theta[N_AGE + seq_len(N_AGE)]
 
   list(
     C_contact_scale = exp(log_C_contact_scale),
-    tot_in_scaling_fct = exp(log_tot_in_scaling_fct),
+    inflow_scale = exp(log_inflow_scale),
     log_C_contact_scale = log_C_contact_scale,
-    log_tot_in_scaling_fct = log_tot_in_scaling_fct
+    log_inflow_scale = log_inflow_scale
   )
 }
 
 #' Build a full parameter list from unconstrained theta.
 #'
 #' C_contact_scale[k] scales the contact matrix row k and
-#' tot_in_scaling_fct[k] scales the total inflow beta
-#' where determines c_true[k] = c_composite[k] / tot_in_scaling_fct[k].
+#' inflow_scale[k] multiplies baseline beta[k] and determines
+#' c_true[k] = c_composite[k] / inflow_scale[k].
 #' lambda1 is then updated to lambda3 * c_true before passing to sim.cpp.
 build_params_from_theta <- function(theta, base_params) {
   p  <- constrain_theta(theta)
@@ -104,31 +88,29 @@ build_params_from_theta <- function(theta, base_params) {
     pm$C_contact[j, ] <- base_params$C_contact[j, ] * p$C_contact_scale[j]
   }
 
-  # Scaling total inflow beta
-  pm$beta <- base_params$beta * p$tot_in_scaling_fct
+  if (length(base_params$beta) != N_AGE || any(!is.finite(base_params$beta)) ||
+      any(base_params$beta <= 0)) {
+    stop("base_params$beta must contain one positive finite baseline inflow per age group")
+  }
 
-  c_true    <- base_params$c_composite / p$tot_in_scaling_fct
+  # Scale each baseline age-specific total inflow.
+  pm$beta <- base_params$beta * p$inflow_scale
+
+  c_true    <- base_params$c_composite / p$inflow_scale
   pm$lambda1 <- base_params$lambda3 * c_true
   pm
 }
 
-#' Vectorised back-transform: spline-coefficient matrix -> age-level parameters.
-#'
-#' Each row of samps is c(alpha, gamma) (2*SPLINE_K coefficients). The N_AGE
-#' age values are reconstructed via the basis and exponentiated:
-#'   C_contact_scale    = exp(alpha %*% t(SPLINE_B))
-#'   tot_in_scaling_fct = exp(gamma %*% t(SPLINE_B))
+#' Vectorised back-transform from direct log parameters to age-level values.
 theta_to_orig <- function(samps) {
   if (is.null(dim(samps))) {
     samps <- matrix(samps, nrow = 1L)
   }
-  alpha <- samps[, 1:SPLINE_K, drop = FALSE]
-  gamma <- samps[, (SPLINE_K + 1):(2 * SPLINE_K), drop = FALSE]
-
-  contact_cols <- exp(alpha %*% t(SPLINE_B))
-  tot_in_cols  <- exp(gamma %*% t(SPLINE_B))
+  if (ncol(samps) != 2L * N_AGE) stop(sprintf("samps must have %d columns", 2L * N_AGE))
+  contact_cols <- exp(samps[, seq_len(N_AGE), drop = FALSE])
+  tot_in_cols  <- exp(samps[, N_AGE + seq_len(N_AGE), drop = FALSE])
   colnames(contact_cols) <- paste0("C_contact_scale_", seq_len(N_AGE))
-  colnames(tot_in_cols)  <- paste0("tot_in_scaling_fct_", seq_len(N_AGE))
+  colnames(tot_in_cols)  <- paste0("inflow_scale_", seq_len(N_AGE))
 
   cbind(
     contact_cols,
@@ -206,121 +188,42 @@ compute_age_quantities <- function(y_final) {
 # 3.  LOG-POSTERIOR AND GRADIENT
 # =============================================================================
 
-# ── 3a. Spline basis (dimension reduction) and log-prior ─────────────────────
-#
-# Instead of estimating N_AGE free values for each age-varying log vector, each
-# vector is represented by SPLINE_K B-spline coefficients:
-#   log_C_contact_scale    = SPLINE_B %*% alpha   (alpha = theta[1:K])
-#   log_tot_in_scaling_fct = SPLINE_B %*% gamma   (gamma = theta[K + 1:K])
-# so theta has length 2*SPLINE_K instead of 2*N_AGE.
-#
-# Per-age prior medians (unchanged targets, used to centre the coefficients).
-CONTACT_PRIOR_MEANS <- log(c(0.2506, 0.8799, 0.6041, 2.2305, 6.2280, 102.0037))
-TOT_IN_PRIOR_MEANS <- log(c(0.96, 0.23, 0.06, 0.33, 1.4, 2.0))
+# ── 3a. Direct age-specific log priors ───────────────────────────────────────
+CONTACT_PRIOR_MEANS <- log(c(3.68983, 0.06629, 0.08773, 0.61861, 1.74367,1.24803))
+INFLOW_SCALE_PRIOR_MEANS <- log(c(0.63544, 4.33889, 0.05326, 0.33554, 1.16247, 1.55939))
+CONTACT_PRIOR_SDS <- rep(0.375, N_AGE)
+INFLOW_SCALE_PRIOR_SDS <- rep(0.375, N_AGE)
 
-SPLINE_N_KNOTS   <- 1L     # internal B-spline knots per input vector
-SPLINE_RW_SD     <- 0.11   # tau: RW2 scale for deviations from the prior curve
-SPLINE_ANCHOR_SD <- 0.375   # sd on the first two deviation coefficients
-
-# Cubic B-spline basis over the age index, using exactly three internal knots.
-SPLINE_AGE_GRID <- seq_len(N_AGE)
-SPLINE_INTERNAL_KNOTS <- as.numeric(stats::quantile(
-  SPLINE_AGE_GRID,
-  probs = seq(0, 1, length.out = SPLINE_N_KNOTS + 2L)[-c(1L, SPLINE_N_KNOTS + 2L)],
-  names = FALSE,
-  type = 7
-))
-SPLINE_B <- splines::bs(
-  SPLINE_AGE_GRID,
-  knots = SPLINE_INTERNAL_KNOTS,
-  degree = 3L,
-  Boundary.knots = range(SPLINE_AGE_GRID),
-  intercept = TRUE
-)
-SPLINE_K <- ncol(SPLINE_B)
-
-# Parameter names are rebuilt from SPLINE_K so downstream matrices remain
-# consistent when the number of internal knots changes.
 param_names_log <- c(
-  paste0("alpha_", seq_len(SPLINE_K)),
-  paste0("gamma_", seq_len(SPLINE_K))
+  paste0("log_C_contact_scale_", seq_len(N_AGE)),
+  paste0("log_inflow_scale_", seq_len(N_AGE))
 )
 
-# Least-squares projection of the per-age prior means onto the basis. The full
-# projected coefficient vector is the reference curve for the centered RW2 prior
-# and can also be used for initialization.
-project_to_spline <- function(y) {
-  as.numeric(solve(crossprod(SPLINE_B), crossprod(SPLINE_B, y)))
-}
-CONTACT_COEF_PRIOR_MEANS <- project_to_spline(CONTACT_PRIOR_MEANS)
-TOT_IN_COEF_PRIOR_MEANS  <- project_to_spline(TOT_IN_PRIOR_MEANS)
-CONTACT_COEF_PRIOR_SDS   <- rep(SPLINE_ANCHOR_SD, SPLINE_K)
-TOT_IN_COEF_PRIOR_SDS    <- rep(SPLINE_ANCHOR_SD, SPLINE_K)
-
-# Update spline-coefficient prior centers and scales. HMC uses this to turn the
-# Nelder-Mead MAP coefficients into valid priors without changing constraints:
-# theta remains unconstrained and exp(SPLINE_B %*% theta) enforces positivity.
-configure_spline_priors <- function(contact_mean = CONTACT_COEF_PRIOR_MEANS,
-                                    tot_in_mean = TOT_IN_COEF_PRIOR_MEANS,
-                                    contact_sd = SPLINE_ANCHOR_SD,
-                                    tot_in_sd = SPLINE_ANCHOR_SD,
-                                    rw_sd = SPLINE_RW_SD) {
-  stopifnot(length(contact_mean) == SPLINE_K, length(tot_in_mean) == SPLINE_K)
-  if (length(contact_sd) == 1L) contact_sd <- rep(contact_sd, SPLINE_K)
-  if (length(tot_in_sd) == 1L) tot_in_sd <- rep(tot_in_sd, SPLINE_K)
-  stopifnot(length(contact_sd) == SPLINE_K, length(tot_in_sd) == SPLINE_K)
-  if (any(!is.finite(contact_mean)) || any(!is.finite(tot_in_mean)) ||
-      any(!is.finite(contact_sd)) || any(!is.finite(tot_in_sd)) ||
-      any(contact_sd <= 0) || any(tot_in_sd <= 0) ||
-      !is.finite(rw_sd) || rw_sd <= 0) {
-    stop("Spline prior means must be finite; standard deviations must be positive and finite")
+configure_age_priors <- function(contact_mean = CONTACT_PRIOR_MEANS,
+                                 inflow_scale_mean = INFLOW_SCALE_PRIOR_MEANS,
+                                 contact_sd = CONTACT_PRIOR_SDS,
+                                 inflow_scale_sd = INFLOW_SCALE_PRIOR_SDS) {
+  if (length(contact_sd) == 1L) contact_sd <- rep(contact_sd, N_AGE)
+  if (length(inflow_scale_sd) == 1L) inflow_scale_sd <- rep(inflow_scale_sd, N_AGE)
+  stopifnot(length(contact_mean) == N_AGE, length(inflow_scale_mean) == N_AGE,
+            length(contact_sd) == N_AGE, length(inflow_scale_sd) == N_AGE)
+  if (any(!is.finite(contact_mean)) || any(!is.finite(inflow_scale_mean)) ||
+      any(!is.finite(contact_sd)) || any(!is.finite(inflow_scale_sd)) ||
+      any(contact_sd <= 0) || any(inflow_scale_sd <= 0)) {
+    stop("Prior means must be finite; standard deviations must be positive and finite")
   }
-
-  CONTACT_COEF_PRIOR_MEANS <<- as.numeric(contact_mean)
-  TOT_IN_COEF_PRIOR_MEANS  <<- as.numeric(tot_in_mean)
-  CONTACT_COEF_PRIOR_SDS   <<- as.numeric(contact_sd)
-  TOT_IN_COEF_PRIOR_SDS    <<- as.numeric(tot_in_sd)
-  SPLINE_RW_SD             <<- as.numeric(rw_sd)
+  CONTACT_PRIOR_MEANS <<- as.numeric(contact_mean)
+  INFLOW_SCALE_PRIOR_MEANS <<- as.numeric(inflow_scale_mean)
+  CONTACT_PRIOR_SDS <<- as.numeric(contact_sd)
+  INFLOW_SCALE_PRIOR_SDS <<- as.numeric(inflow_scale_sd)
   invisible(TRUE)
 }
 
-# Centered P-spline log-prior for one coefficient vector.
-#
-# Let mean0 denote the complete projected reference coefficient curve and define
-# delta = coef - mean0. The first two deviations anchor the overall level and
-# slope relative to that curve. Subsequent deviations follow an RW2 prior:
-#   delta[k] - 2*delta[k-1] + delta[k-2] ~ Normal(0, SPLINE_RW_SD).
-# This preserves the curvature of the full reference curve in the prior mean,
-# while allowing data-driven departures that vary smoothly across coefficients.
-rw2_log_prior <- function(coef, mean0, sd0) {
-  K <- length(coef)
-  if (length(mean0) != K || length(sd0) != K) {
-    stop("coef, mean0 and sd0 must have the same length")
-  }
-
-  delta <- coef - mean0
-
-  lp <- dnorm(delta[1], mean = 0, sd = sd0[1], log = TRUE) +
-        dnorm(delta[2], mean = 0, sd = sd0[2], log = TRUE)
-
-  if (K >= 3L) {
-    for (k in 3:K) {
-      lp <- lp + dnorm(
-        delta[k],
-        mean = 2 * delta[k - 1L] - delta[k - 2L],
-        sd = SPLINE_RW_SD,
-        log = TRUE
-      )
-    }
-  }
-  lp
-}
-
 log_prior <- function(theta) {
-  alpha <- theta[1:SPLINE_K]
-  gamma <- theta[(SPLINE_K + 1):(2 * SPLINE_K)]
-  rw2_log_prior(alpha, CONTACT_COEF_PRIOR_MEANS, CONTACT_COEF_PRIOR_SDS) +
-  rw2_log_prior(gamma, TOT_IN_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_SDS)
+  if (length(theta) != 2L * N_AGE || any(!is.finite(theta))) return(-Inf)
+  sum(dnorm(theta[seq_len(N_AGE)], CONTACT_PRIOR_MEANS, CONTACT_PRIOR_SDS, log = TRUE)) +
+    sum(dnorm(theta[N_AGE + seq_len(N_AGE)], INFLOW_SCALE_PRIOR_MEANS,
+              INFLOW_SCALE_PRIOR_SDS, log = TRUE))
 }
 
 # ── 3b. Population composition log-likelihood (ALR-normal) ───────────────────
@@ -374,28 +277,10 @@ compute_prevalence_loglik <- function(q_age, obs_pos, obs_tot) {
 # reference and unit-testing against finite differences.
 #
 grad_log_prior_analytical <- function(theta) {
-  grad_coef <- function(coef, mean0, sd0) {
-    K     <- length(coef)
-    delta <- coef - mean0
-    g     <- numeric(K)
-
-    g[1] <- -delta[1] / sd0[1]^2
-    g[2] <- -delta[2] / sd0[2]^2
-
-    if (K >= 3L) {
-      for (k in 3:K) {
-        d <- (delta[k] - 2 * delta[k - 1L] + delta[k - 2L]) /
-             SPLINE_RW_SD^2
-        g[k]      <- g[k]      - d
-        g[k - 1L] <- g[k - 1L] + 2 * d
-        g[k - 2L] <- g[k - 2L] - d
-      }
-    }
-    g
-  }
   c(
-    grad_coef(theta[1:SPLINE_K], CONTACT_COEF_PRIOR_MEANS, CONTACT_COEF_PRIOR_SDS),
-    grad_coef(theta[(SPLINE_K + 1):(2 * SPLINE_K)], TOT_IN_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_SDS)
+    -(theta[seq_len(N_AGE)] - CONTACT_PRIOR_MEANS) / CONTACT_PRIOR_SDS^2,
+    -(theta[N_AGE + seq_len(N_AGE)] - INFLOW_SCALE_PRIOR_MEANS) /
+      INFLOW_SCALE_PRIOR_SDS^2
   )
 }
 
@@ -538,8 +423,8 @@ run_hmc_chain <- function(theta_init,
                            chain_id    = 1L) {
   if (!is.null(seed)) set.seed(seed)
 
-  if (length(theta_init) != 2L * SPLINE_K || any(!is.finite(theta_init))) {
-    stop(sprintf("theta_init must contain %d finite values", 2L * SPLINE_K))
+  if (length(theta_init) != 2L * N_AGE || any(!is.finite(theta_init))) {
+    stop(sprintf("theta_init must contain %d finite values", 2L * N_AGE))
   }
 
   n_p      <- length(theta_init)

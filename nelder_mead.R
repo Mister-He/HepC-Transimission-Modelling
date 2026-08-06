@@ -1,5 +1,5 @@
 # =============================================================================
-# Nelder-Mead MAP calibration for the 14-parameter HCV PWID spline model
+# Nelder-Mead MAP calibration for 12 direct age-specific HCV PWID parameters
 #
 # Run from this directory with:
 #   Rscript nelder_mead.R
@@ -26,7 +26,7 @@ N_AGE <- length(obs_tot)
 # Interpretable (age-level) parameter names, used for theta_to_orig() output.
 param_names_orig <- c(
   paste0("C_contact_scale_", seq_len(N_AGE)),
-  paste0("tot_in_scaling_fct_", seq_len(N_AGE))
+  paste0("inflow_scale_", seq_len(N_AGE))
 )
 
 source("setup.R")
@@ -51,17 +51,17 @@ predict_at_theta <- function(theta, base_params = params, sim_data = data) {
 
 # Fit one or more Nelder-Mead starts and retain every objective evaluation.
 fit_nelder_mead <- function(
-    theta_init = c(CONTACT_COEF_PRIOR_MEANS, TOT_IN_COEF_PRIOR_MEANS),
+    theta_init = c(CONTACT_PRIOR_MEANS, INFLOW_SCALE_PRIOR_MEANS),
     base_params = params,
     sim_data = data,
     n_starts = 6L,
     start_sd = 0.25,
     maxit = 1e+05,
     reltol = 1e-6,
-    seed = 42L,
+    seed = 114514L,
     report_every = 500L) {
 
-  stopifnot(length(theta_init) == 2L * SPLINE_K, n_starts >= 1L)
+  stopifnot(length(theta_init) == 2L * N_AGE, n_starts >= 1L)
   set.seed(seed)
   starts <- vector("list", n_starts)
   starts[[1L]] <- theta_init
@@ -69,8 +69,7 @@ fit_nelder_mead <- function(
     for (i in 2:n_starts) starts[[i]] <- theta_init + rnorm(length(theta_init), 0, start_sd)
   }
   if (n_starts >= 3L) {
-    # Deterministic early-age prevalence starts. These keep the 3-knot spline
-    # constraints but help avoid the local optimum with a near-zero age-1 curve.
+    # Deterministic early-age prevalence starts help explore alternate modes.
     starts[[2L]][1L] <- starts[[2L]][1L] + 1.0
     starts[[3L]][1L] <- starts[[3L]][1L] + 1.8
   }
@@ -110,7 +109,6 @@ fit_nelder_mead <- function(
 
   result <- list(
     theta_hat = theta_hat,
-    # Reconstruct interpretable age-level scales from the spline coefficients.
     par_hat = setNames(as.numeric(theta_to_orig(theta_hat)), param_names_orig),
     log_posterior = -best$optim$value,
     log_likelihood = log_likelihood(theta_hat, base_params, sim_data),
@@ -120,14 +118,11 @@ fit_nelder_mead <- function(
     counts = best$optim$counts,
     best_start = best_id,
     prediction = pred,
-    spline_prior = list(
-      n_internal_knots = SPLINE_N_KNOTS,
-      basis_dim = SPLINE_K,
-      contact_mean = CONTACT_COEF_PRIOR_MEANS,
-      tot_in_mean = TOT_IN_COEF_PRIOR_MEANS,
-      contact_sd = CONTACT_COEF_PRIOR_SDS,
-      tot_in_sd = TOT_IN_COEF_PRIOR_SDS,
-      rw_sd = SPLINE_RW_SD
+    age_specific_prior = list(
+      contact_mean = CONTACT_PRIOR_MEANS,
+      inflow_scale_mean = INFLOW_SCALE_PRIOR_MEANS,
+      contact_sd = CONTACT_PRIOR_SDS,
+      inflow_scale_sd = INFLOW_SCALE_PRIOR_SDS
     ),
     fits = fits,
     base_params = base_params,
@@ -163,12 +158,12 @@ plot_nm_convergence <- function(fit) {
 }
 
 plot_nm_parameters <- function(fit) {
-  prior_mean <- exp(c(CONTACT_PRIOR_MEANS, TOT_IN_PRIOR_MEANS))
+  prior_mean <- exp(c(CONTACT_PRIOR_MEANS, INFLOW_SCALE_PRIOR_MEANS))
   dat <- data.frame(
     parameter = factor(param_names_orig, levels = param_names_orig),
     prior_mean = prior_mean,
     estimate = as.numeric(fit$par_hat),
-    family = rep(c("Contact scale", "Total-in scale"), each = N_AGE)
+    family = rep(c("Contact scale", "Inflow scale"), each = N_AGE)
   )
   ggplot(dat, aes(prior_mean, estimate, colour = family, label = seq_len(nrow(dat)))) +
     geom_abline(slope = 1, intercept = 0, linetype = 2, colour = "grey45") +

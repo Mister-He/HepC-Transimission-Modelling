@@ -712,7 +712,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
                     for (int h = 0; h < 4; ++h) {
                         int base = idx(s, k, h, 0);
 
-                        for (int i = 0; i < 9; ++i) {
+                        for (int i = 0; i < 5; ++i) {
                             double y_change = y[base + i] / 5.0 * dt;
                             y_new[base + i]     -= y_change;
                             y_new[base + i + 1] += y_change;
