@@ -1,0 +1,8 @@
+"field","value"
+"hessian_method","numDeriv Richardson"
+"rank","12"
+"effective_dimension","11"
+"n_draws_used","1000"
+"n_parameters","12"
+"rel_thresh","1e-4"
+"n_draws_total","1000"

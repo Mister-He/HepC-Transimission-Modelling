@@ -11,9 +11,12 @@ sourceCpp("sim.cpp")
 
 # =============================================================================
 # HELPER: flat compartment index (mirrors C++ idx())
-# s in {0=D,1=J,2=F,3=X}, k in {1,2,3,4}, h in {0=u,1=a,2=c,3=t}, i in {0..9}
+# s in {0=D,1=J,2=X}, k in {1,2,3,4},
+# h in {0=u,1=a,2=c,3=t,4=s (seropositive cleared/post-SVR)}, i in {0..5}
 # =============================================================================
-idx <- function(s, k, h, i) s * 4 * 4 * 6 + (k - 1) * 4 * 6 + h * 6 + i + 1L
+# Returns the output-matrix column for compartment (s,k,h,i).
+# C++ flat index = s*120 + (k-1)*30 + h*6 + i; column = index + 2 (col 1 is time).
+idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 
 # =============================================================================
 # PARAMETERS
@@ -23,7 +26,8 @@ idx <- function(s, k, h, i) s * 4 * 4 * 6 + (k - 1) * 4 * 6 + h * 6 + i + 1L
 #   iota1/2   — Fasano (2024); WHO (2026)
 #   rho       — Zhao et al. (2019)
 #   alpha_*   — Pawlotsky (2020 EASL); Xiao et al. (2025)
-#   p_*       — Lim et al. (2018)
+#   p_*       — Thein et al. (2008); Alazawi et al. (2010, PMID 20497143);
+#               Rivera-Irigoin et al. (2006, PMID 17209765)
 #   r3_*      — Kanwal et al. (2014); derived (see Section X)
 #   phi_*     — van Meer (2012); Morgan et al. (2013)
 #   mu_DC/HCC — Lim et al. (2018)
@@ -74,9 +78,17 @@ params <- list(
 
   # ── Baseline progression rates (per year, other genotype) ─────────────────
   p_NC_CC   = 0.027,   # NC  → CC  (Thein et al. 2008)
-  p_CC_DC   = 0.039,   # CC  → DC  (Lim et al. 2018)
-  p_CC_HCC  = 0.014,   # CC  → HCC (Lim et al. 2018)
-  p_DC_HCC  = 0.014,   # DC  → HCC (Lim et al. 2018)
+  p_CC_DC   = 0.0788,  # CC  → DC  (Alazawi et al. 2010, Aliment Pharmacol
+                       #   Ther 32(3):344-55, PMID 20497143: untreated-only
+                       #   decompensation in compensated HCV cirrhosis
+                       #   7.88%/yr; pooled 6.37%/yr)
+  p_CC_HCC  = 0.0479,  # CC  → HCC (Alazawi et al. 2010: untreated-only HCC
+                       #   in compensated HCV cirrhosis 4.79%/yr; pooled
+                       #   3.36%/yr)
+  p_DC_HCC  = 0.0464,  # DC  → HCC (Rivera-Irigoin et al. 2006, AIDS Res Hum
+                       #   Retroviruses 22(12):1236-41, PMID 17209765: HCC in
+                       #   HCV-monoinfected decompensated cirrhosis 3.31/100
+                       #   py, 95% CI 2.70-4.64; upper bound used)
 
   # ── GT3 relative risks ────────────────────────────────────────────────────
   r3_NC_CC   = 1.36,   # r3^{NC→CC}  derived; CI: 1.27–1.46
@@ -90,12 +102,49 @@ params <- list(
   phi_DC_HCC  = 1.00,  # assumed no reduction DC→HCC after SVR
 
   # ── Background mortality (per year, age-varying) ──────────────────────────
-  # CALIBRATED: placeholder values from SingStat life table
+  # Singapore resident age-specific death rates (per year), 2015, mapped from
+  # SingStat 5-year bands (data.gov.sg "Age-Specific Death Rates, Annual",
+  # 2015 total):
+  #   <20 = 15-19 (0.2/1000)
+  #   20-29 = mean(20-24, 25-29) = 0.25/1000
+  #   30-39 = mean(30-34, 35-39) = 0.45/1000
+  #   40-49 = mean(40-44, 45-49) = 1.20/1000
+  #   50-59 = mean(50-54, 55-59) = 3.35/1000
+  #   60+   = population-weighted mean over 60-64, 65-69, 70-74, 75-79,
+  #           80-84, 85-89, 90+ (2015 resident population weights)
+  #           = 21.88/1000 (deaths 60+ / population 60+); the earlier value
+  #           (mean of 60-64 and 65-69 only, 8.45/1000) understated the
+  #           open-ended group by excluding ages 70+.
+  # See docs/calibration/mortality_review.md.
   # Age groups (example boundaries): <20, 20-29, 30-39, 40-49, 50-59, 60+
-  mu = c(0.0002000000, 0.0002506450, 0.0004508829, 0.0011935459, 0.0033220992, 0.0065000000),
+  mu = c(0.0002000000, 0.0002500000, 0.0004500000, 0.0012000000, 0.0033500000, 0.0218818000),
 
   # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
-  omega = 14.47,  # SMR for ever-PWIDs (Degenhardt et al. 2011)
+  # Pooled SMR for people who inject drugs (Mathers et al. 2013,
+  # Bull World Health Organ 91(2):102-123, PMID 23554523); applied as
+  # mu[i] * omega in sim.cpp.
+  omega = 14.68,
+
+  # ── Seropositive (cleared / post-SVR) background mortality multiplier ─────
+  # Age-varying multiplier applied to the s-state background mortality
+  # (mu[i]*omega*eta_s[i]). Default all 1; calibrated age-dependent values
+  # are justified in docs/calibration/DECISIONS.md. Rationale: HCV-
+  # seropositive PWID retain elevated all-cause mortality (liver-related and
+  # behavioural), affecting the age-specific seroprevalence pattern in the
+  # oldest groups.
+  eta_s = c(1, 1, 1, 1, 1, 1),
+
+  # ── Transmission multiplier: CONSTANT (fixed, not fitted) ────────────────
+  # This revision does NOT fit m_min/m_max. Transmission is constant over
+  # time: m(t) = 1 for all t (m_min = m_max = 1, m_t0/m_tau inert). The
+  # historical transmission level is absorbed by the fitted contact-matrix
+  # row scales (see AGENTS.md / prompt.md "No m_min/m_max fitting"). The
+  # code path is retained for compatibility with sim.cpp (which reads these
+  # fields), but the calibration parameterisation no longer includes them.
+  m_min = 1,
+  m_max = 1,
+  m_t0  = 25,
+  m_tau = 3,
 
   # ── Disease-specific excess mortality ──────────────────────────────────────
   mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
@@ -127,7 +176,7 @@ params <- list(
   
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
-  # CALIBRATED: constant-in-time placeholder — replace with beta_i(t) from calib.
+  # CALIBRATED: CNB 2015 number of new drug abusers — replace with beta_i(t) from calib.
   beta = c(
     257, # age group 1
     644, # age group 2
@@ -140,18 +189,20 @@ params <- list(
 
 # =============================================================================
 # INITIAL CONDITIONS
-# 640 compartments initialised to near-zero.
+# 360 compartments initialised to near-zero (3 strata x 4 stages x 5 HCV
+# states x 6 ages).
 # A small seed of chronic infection is placed in D_c,1,i (never-incarcerated,
 # non-cirrhosis, chronic, all age groups) to start the epidemic.
 # CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
 # =============================================================================
-y0 <- rep(0.0, 384)
+y0 <- rep(0.0, 360)
 
 # Susceptible population: put most of PWID in D_u,1,i
 # Seed chronic infection: 20 chronic per age group in D_c,1,i
 pos = c(26, 95, 164, 169, 183, 241)
 tot = c(145, 607, 759, 649, 564, 544)
 for (i in 0:5) {
+  # column index for the compartment in the 481-col output matrix
   y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
   y0[idx(s=0, k=1, h=1, i=i)] <- pos[i+1]             # D_{a,1,i}
 }
@@ -163,7 +214,7 @@ data <- list(
   t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
   t_end   = 150.0,   # simulate 50 years
   dt      = 1/365,   # daily time steps (1/365 of a year)
-  y0      = y0      # initial conditions (length-640 vector)
+  y0      = y0      # initial conditions (length-360 vector)
 )
 
 # =============================================================================
@@ -188,19 +239,32 @@ params_s1 <- modifyList(params, list(tau = c(0, 0, 0, 0)))
 # =============================================================================
 # COLUMN NAME HELPER (for labelling the output matrix)
 # =============================================================================
-strata_names <- c("D", "J", "F", "X")
+strata_names <- c("D", "J", "X")
 stage_names  <- c("NC", "CC", "DC", "HCC")
-state_names  <- c("u", "a", "c", "t")
+state_names  <- c("u", "a", "c", "t", "s")
 age_names    <- paste0("age", 1:6)
 
-expand.grid(age_names, state_names, stage_names, strata_names) %>%
-  mutate(col_name = paste(Var4, Var3, Var2, Var1, sep = "_")) %>%
-  pull(col_name) %>%
-  c("time", .) -> col_names
+# Column order must match the C++ flat index idx(s,k,h,i) = s*120 + (k-1)*30 + h*6 + i.
+# The output matrix is [time, compartment 0, ..., compartment 359], so the
+# compartment with C++ index idx sits in column idx + 2.
+col_names <- character(361)
+col_names[1] <- "time"
+for (ss in 0:2) {
+  for (kk in 1:4) {
+    for (hh in 0:4) {
+      for (ii in 0:5) {
+        pos <- ss * 120 + (kk - 1) * 30 + hh * 6 + ii + 2
+        col_names[pos] <- paste0(strata_names[ss + 1], "_", stage_names[kk], "_",
+                                 state_names[hh + 1], "_age", ii + 1)
+      }
+    }
+  }
+}
+stopifnot(length(col_names) == 361)
 
 # =============================================================================
 # BASELINE LAMBDA1
-# During HMC, build_params_from_theta() replaces lambda1 with
+# During calibration, build_params() replaces lambda1 with
 # lambda3 * c_composite / tot_in_scaling_fct before every simulation.
 # =============================================================================
 params_s1 <- modifyList(params_s1, 
@@ -232,15 +296,3 @@ end <- Sys.time()
 # plot(out[,"time"], rowSums(out[, grep("_t_", colnames(out))]),
 #      type = "l", xlab = "Year", ylab = "Total treated",
 #      main = "Status quo — no treatment")
-    
-# =============================================================================
-# MODEL CALIBRATION
-# =============================================================================
-# TODO: implement calibration procedure to fit beta_i and C_contact to SPS data
-# Firstly, we need to ensure the model has reached equalibrum
-# scaling factor of inflow beta
-# initial population scaling factor
-
-
-# Secondly, simulation results should be compared to observed data in 2017 with CIs
-
