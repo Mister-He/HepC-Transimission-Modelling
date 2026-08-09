@@ -73,6 +73,25 @@
 - 现状：12 参数已满足标准，故**未启用**；如需启用，见 AGENTS.md 的
   "Excess-mortality contingency" 与配套理由文件要求。
 
+### 实验 6 — 贝叶斯后验（NPE 首选 + MCMC 主结果，prompt_mcmc.md 修订版）
+- 尝试 A（NPE 首选）：sbi 0.27 `NPE_C`（MAF），3 轮序贯 SNPE（60,000
+  先验 + 2 x 20,000 提议仿真），双种子（2026/2027），各 60,000 后验
+  抽样；SBC 覆盖率 0.94-1.00。先验：log 接触 ~ Normal(0,2^2)、log beta
+  ~ Student-t(3,0,2)。
+- 结果 A（NPE 未采纳）：强识别方向过度自信（<20 患病率 CrI
+  [0.106, 0.116] vs MCMC [0.055, 0.174]），弱识别方向跨种子不稳定
+  （theta6 2.5% 分位 -4.21 vs -19.63；60+ 人口预测中位数 521 vs 491）。
+  按回退规则改用传统方法为主。
+- 尝试 B（MCMC 主结果）：adaptive Metropolis（Haario 2001），建议
+  协方差取 NPE 后验协方差；3 链（NPE 中位数 / NM 最优 / 知情 NM 解），
+  热重启至 40,000 迭代（burn-in 5000、thin 5）。
+- 结果 B：**严格标准全部满足**——R-hat 1.0008-1.0096（要求
+  [0.99, 1.01]），ESS 跨链 1,374-2,457（要求 > 400），接受率 0.238；
+  12 个目标量 MCMC 95% CrI 全部与观测区间及 Laplace 区间重叠；60+
+  后验预测患病率 0.379（[0.336, 0.424]）、人口 448（[381, 530]）。
+- 产物：`output/calibration/npe_bayes/`、
+  `docs/calibration/bayes_methodology.md`。
+
 ## 4. 文件说明（各文件是什么、哪次实验的产物）
 
 | 文件/目录 | 说明 | 产物来源 |
@@ -88,15 +107,22 @@
 | `src/calibration/run_calibration.R` | 端到端运行器（元数据、多重起点、输出） | 实验 0 |
 | `src/calibration/plot_results.R` | 全部 ggplot2 图件 | 实验 0 |
 | `src/calibration/probe_beta_constraint.R` | beta>1 探针 | 实验 4 |
+| `src/calibration/mcmc.R` | 先验、log 后验、adaptive Metropolis 采样器（含热重启） | 实验 6 |
+| `src/calibration/run_npe.R` | NPE+MCMC 全流程运行器（数据/训练/验证/预测/图件） | 实验 6 |
+| `src/calibration/npe_train.py` | Python NPE_C 训练/采样/SBC（多轮、多种子） | 实验 6 |
+| `src/calibration/plot_mcmc.R` | 贝叶斯图件（trace/density/预测/区间/SBC） | 实验 6 |
 | `output/calibration/run1_v1_12p/` | 12 参数直接多重起点（未达标） | 实验 1 |
 | `output/calibration/run2_v1_12p_warm/` | 最终校准（NLL 22.44，全部达标） | 实验 3 |
 | `output/calibration/probe_beta_constraint_*/` | beta>1 约束比较 | 实验 4 |
+| `output/calibration/npe_bayes/` | 贝叶斯后验（NPE 敏感性 + MCMC 主结果、诊断、可信区间、图件） | 实验 6 |
+| `output/calibration/npe_test/` | NPE 管道冒烟测试（审计留档） | 实验 6 |
 | `output/calibration/smoke_*/` | 冒烟测试（管道验证） | 实验 0/1 |
 | `docs/calibration/preflight.md` | 运行前 Git/哈希记录 | 实验 0 |
 | `docs/calibration/model_audit.md` | 模型审计 | 实验 0 |
 | `docs/calibration/mortality_review.md` | 2015 死亡率与 SMR 证据 | 实验 0 |
 | `docs/calibration/natural_history_review.md` | 进展率证据与取舍 | 实验 0 |
 | `docs/calibration/likelihood.md` | 统计模型规范 | 实验 0 |
+| `docs/calibration/bayes_methodology.md` | 贝叶斯理论、过程与结果解读 | 实验 6 |
 | `docs/calibration/DECISIONS.md` | 只追加决策日志 | 全程 |
 | `docs/calibration/final_report.md` | 最终校准报告 | 实验 3 |
 | `docs/calibration/PROJECT_OVERVIEW.md` | 本文件 | 全程 |
@@ -117,6 +143,14 @@ Rscript src/calibration/run_calibration.R \
 # 图件
 Rscript src/calibration/plot_results.R \
   --fit output/calibration/<run_id>/fit.rds --out-dir figures
+
+# 3. 贝叶斯后验（NPE 3 轮双种子 + MCMC 严格验证）
+Rscript src/calibration/run_npe.R --step all \
+  --root . --fit output/calibration/<run_id>/fit.rds \
+  --out-dir output/calibration/npe_bayes \
+  --n-sims 60000 --n-cores 6 --seed 2026 \
+  --n-draws 60000 --n-proposal 20000 --n-rounds 3 \
+  --n-iter-mcmc 20000 --burnin-mcmc 5000 --mcmc-max-iter 400000
 ```
 
 ## 6. 最终结果（run2_v1_12p_warm）
@@ -135,6 +169,11 @@ Rscript src/calibration/plot_results.R \
 
 - 12 参数、常数传播、无超额死亡率的模型即可满足全部接受标准，60+
   组患病率与人口均在标准内。
+- 贝叶斯（MCMC 主结果）结论一致：严格收敛（R-hat 1.0008-1.0096，
+  ESS>400），全部 12 个目标量的 95% 可信区间与观测区间及 Laplace 区间
+  重叠。NPE 已尝试（3 轮、双种子、SBC 校准良好）但因过度自信与弱识别
+  方向不稳定而按规则回退为敏感性方法（详见 bayes_methodology.md）。
 - 局限：60+ 患病率下降主要依赖大量未感染老年流入（beta6≈112/年）；
   <20 与 20-29 的 beta 缩放 <1；均衡为拟稳态（2015-2030 仍有小幅漂移）；
-  进展率取文献上限（GT3 加权后有效率更高，属刻意保守上限）。
+  进展率取文献上限（GT3 加权后有效率更高，属刻意保守上限）；
+  contact6/beta6 为弱识别方向（MCMC 区间宽，Laplace 截断该方向）。

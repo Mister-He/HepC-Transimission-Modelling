@@ -89,6 +89,17 @@
   规模小、所需净流入低于 CNB 基准 `beta` 而保持在 1 以下
   （见 DECISIONS.md）。
 
+### 4.1 贝叶斯推断（MCMC）
+
+在 NM 拟合之上进行贝叶斯后验采样。按修订版 `prompt_mcmc.md`，**先尝试
+NPE/SNPE**（sbi `NPE_C`，3 轮序贯、双种子、SBC 校准），但未采纳：其在
+强识别方向过度自信、弱识别方向跨种子不稳定。**传统 MCMC（adaptive
+Metropolis-Hastings）为最终主方法**，收敛从严：R-hat ∈ [0.99, 1.01]
+（实际 1.0008-1.0096）、ESS > 400（实际 1,374-2,457）、3 链 x 40,000
+迭代。先验：log 接触缩放 ~ Normal(0, 2^2)；log beta 缩放 ~
+Student-t(3, 0, 2)。逐年龄组后验预测 95% 可信区间与 Laplace 及观测区间
+重叠。详见 `prompt_mcmc.md` 与 `docs/calibration/bayes_methodology.md`。
+
 ## 5. 如何复现
 
 ```bash
@@ -101,6 +112,14 @@ Rscript src/calibration/run_calibration.R \
 # 2. 出版级图件（ggplot2）
 Rscript src/calibration/plot_results.R \
   --fit output/calibration/<run_id>/fit.rds --out-dir figures
+
+# 3. 贝叶斯后验（NPE 3 轮 + MCMC 严格验证）
+Rscript src/calibration/run_npe.R --step all \
+  --root . --fit output/calibration/<run_id>/fit.rds \
+  --out-dir output/calibration/npe_bayes \
+  --n-sims 60000 --n-cores 6 --seed 2026 \
+  --n-draws 60000 --n-proposal 20000 --n-rounds 3 \
+  --n-iter-mcmc 20000 --burnin-mcmc 5000 --mcmc-max-iter 400000
 ```
 
 每次运行输出：`run_config.csv`、`targets.csv`、`initial_values.csv`、
@@ -125,3 +144,8 @@ Rscript src/calibration/plot_results.R \
 最优 NLL 22.44；患病率 RMSE 0.0084；最大患病率误差 0.0195；人口 MAPE
 0.047；最大 APE 0.126；均衡通过。12 参数（无超额死亡率）满足全部接受
 标准。
+
+贝叶斯（MCMC 主结果）：严格收敛（R-hat 1.0008-1.0096、ESS>400）；12 个
+目标量的后验预测 95% 可信区间全部与观测区间及 Laplace 区间重叠（60+
+患病率 0.379，CrI [0.336, 0.424]；人口 448，[381, 530]）。NPE 已尝试并
+作为敏感性保留。输出位于 `output/calibration/npe_bayes/`。

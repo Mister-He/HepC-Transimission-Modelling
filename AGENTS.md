@@ -144,6 +144,54 @@ intervals for `p_hat[i]` and `N_hat[i]` compared with observed intervals
 (Binomial/Jeffreys for prevalence; log-Normal `sigma_pop = 0.10` for
 population). Record overlap per age group.
 
+## Bayesian inference phase (MCMC, following Nelder-Mead)
+
+After the Nelder-Mead calibration (final run `run2_v1_12p_warm`), obtain
+posterior samples of the 12 fitted parameters and Bayesian 95% credible
+intervals for the 12 target summaries, **retaining the Laplace 95%
+intervals** as a reported comparison. Instructions: `prompt_mcmc.md`.
+
+- Frozen baseline: `src/setup.R` / `src/sim.cpp` unchanged; 12 log-scale
+  parameters (6 contact row scales, 6 beta scales); likelihood unchanged;
+  no new fitted parameters.
+- **Priors** must be documented and model-/literature-based. Recommended:
+  `log(contact_scale) ~ Normal(0, 2^2)` (base contact matrix is a
+  calibrated guess); `log(beta_scale) ~ Normal(0, 1.5^2)` (base beta is
+  CNB-official-anchored). Do not construct priors from the NM fit itself
+  (no double counting); NM solutions serve only as chain starts and
+  proposal tuning. The equilibrium gate enters the log-posterior as a
+  strong model-validity penalty.
+- **Sampler**: any Bayesian method (MCMC, HMC, NPE — not limited to R).
+  **Method priority (revised): NPE/SNPE (e.g. Python `sbi` `NPE_C`) is the
+  primary method**; fall back to a traditional sampler only if NPE cannot
+  be made to work (document why). A traditional MCMC run is ALWAYS
+  required as an independent validation cross-check.
+- **Strict convergence criteria (revised)**: wherever R-hat and ESS are
+  computed they MUST satisfy **R-hat in [0.99, 1.01]** for every parameter
+  and **ESS > 400** (per parameter; pooled across chains and reported per
+  chain). Extend chains (warm-restart) until the criteria pass; record the
+  final chain length. For NPE, report instead: SBC coverage diagnostics,
+  multi-seed posterior stability (>= 2 independent trainings), agreement
+  with the MCMC validation posterior, and >= 50,000 posterior draws with
+  MC error on the interval quantiles.
+- **Multi-start chains**: at least 3 chains from different starts (e.g.
+  NM best, NPE posterior median, another NM start); all must converge to
+  the same posterior. Report acceptance rate, trace plots (all chains),
+  and marginal **density plots**.
+- **Posterior predictive credible intervals**: simulate at retained
+  posterior draws, keep equilibrium-feasible draws, report equal-tailed
+  95% CrI + posterior medians per age group, and compare MCMC vs Laplace
+  vs observed intervals (Jeffreys Binomial; log-Normal sigma_pop = 0.10)
+  with explicit overlap.
+- Outputs to `output/calibration/mcmc_<run_id>/`: `run_config.csv`,
+  `posterior_samples.csv`, `diagnostics.csv`, `credible_intervals.csv`,
+  `target_posterior.csv`, `sessionInfo.txt`, and ggplot2 figures
+  (trace, density, posterior-predictive density, CI comparison).
+- Documentation: `docs/calibration/bayes_methodology.md` (theory,
+  process, results interpretation); append to `DECISIONS.md`; update
+  `final_report.md`, `PROJECT_OVERVIEW.md`, `README.md`,
+  `README.zh-CN.md`.
+
 ## Excess-mortality contingency (60+ age group)
 
 Fit with the 12-parameter set first. Only if the 60+ HCV prevalence cannot
@@ -207,6 +255,10 @@ evidence-based), then revisions to `mu_DC`/`mu_HCC` with evidence.
 8. structural limitations documented;
 9. all figures ggplot2, publication quality;
 10. `PROJECT_OVERVIEW.md` and READMEs present.
+11. (Bayesian phase) chains converged (R-hat < 1.05 or documented), ESS
+    reported, posterior median consistent with the NM optimum, credible
+    intervals overlap observed intervals, Laplace intervals retained and
+    compared, `bayes_methodology.md` present.
 
 Stop and report rather than forcing a fit if targets are incompatible with
 the model states, evidence is missing, fits remain poor across reasonable

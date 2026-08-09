@@ -40,7 +40,7 @@ x_prev = (11, 215, 394, 792, 785, 145).
 ### 3.1 Fitted scales (12 parameters)
 
 | Parameter | Value | | Parameter | Value |
-|---|---:|---|---:|
+|---|---:|---:|---:|---:|
 | contact scale 1 | 5.51 | | beta scale 1 | 0.169 |
 | contact scale 2 | 0.082 | | beta scale 2 | 0.920 |
 | contact scale 3 | 0.053 | | beta scale 3 | 1.263 |
@@ -106,7 +106,48 @@ observed population.
 
 All six age groups overlap for both prevalence and population.
 
-## 5. Sensitivity and rejected alternatives
+## 5. Bayesian inference (NPE attempted; MCMC primary)
+
+Priors (documented in [bayes_methodology.md](bayes_methodology.md)): log
+contact scales ~ Normal(0, 2^2); log beta scales ~ Student-t(3, 0, 2).
+
+**NPE (primary attempt, per prompt_mcmc.md):** sbi 0.27 `NPE_C` (MAF),
+3 sequential rounds (60,000 prior + 2 x 20,000 proposal simulations), two
+seeds, 60,000 posterior draws each; SBC coverage 0.94-1.00 (95% band).
+NPE was NOT adopted: it was overconfident in well-identified directions
+(<20 prevalence CrI [0.106, 0.116] vs MCMC [0.055, 0.174]; 20-29
+population [1232, 1263] vs [1035, 1529]) and unstable across seeds in
+weakly identified directions (theta6 2.5% quantile -4.21 vs -19.63;
+predictive 60+ population median 521 vs 491). Per the fallback rule in
+prompt_mcmc.md, the traditional MCMC is the primary Bayesian summary; NPE
+is retained as a documented sensitivity (`posterior_samples_npe*.csv`,
+`sbc_summary*.csv`, `fig_density.png`).
+
+**MCMC (primary):** adaptive Metropolis-Hastings (Haario et al. 2001),
+proposal covariance from the NPE posterior; 3 chains from the NPE median,
+NM best, and an informed NM start; block warm restart to 40,000
+iterations (burnin 5,000, thin 5).
+
+**Strict convergence criteria (all met):** R-hat 1.0008-1.0096 (required
+[0.99, 1.01]; mpsrf 1.007); ESS pooled 1,374-2,457 per parameter (required
+> 400; per-chain 332-855); acceptance 0.238.
+
+**Posterior predictive 95% CrI vs Laplace vs observed (overlap: all YES):**
+
+| Age | p MCMC | p CrI | p Laplace CI | p obs CI | N MCMC | N CrI | N Laplace CI | N obs CI |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| <20 | 0.103 | [0.055, 0.172] | [0.062, 0.187] | [0.060, 0.184] | 99.3 | [81.8, 120.9] | [81.3, 120.5] | [81.4, 120.4] |
+| 20-29 | 0.173 | [0.153, 0.195] | [0.157, 0.199] | [0.153, 0.195] | 1255.2 | [1035.3, 1528.4] | [1031.1, 1536.9] | [1022.6, 1513.4] |
+| 30-39 | 0.269 | [0.246, 0.292] | [0.251, 0.296] | [0.246, 0.292] | 1464.1 | [1196.3, 1778.1] | [1231.9, 1832.1] | [1205.9, 1784.6] |
+| 40-49 | 0.432 | [0.409, 0.454] | [0.410, 0.455] | [0.408, 0.453] | 1923.1 | [1571.7, 2372.3] | [1584.6, 2326.0] | [1513.3, 2240.0] |
+| 50-59 | 0.476 | [0.452, 0.500] | [0.457, 0.508] | [0.458, 0.506] | 1398.4 | [1191.6, 1628.9] | [1249.7, 1683.0] | [1338.2, 1980.5] |
+| 60+ | 0.379 | [0.336, 0.424] | [0.323, 0.417] | [0.309, 0.402] | 448.5 | [380.9, 530.2] | [406.6, 558.0] | [336.2, 497.6] |
+
+All 12 MCMC CrIs overlap both the observed and the Laplace intervals.
+Outputs: `output/calibration/npe_bayes/`; theory, process, fallback
+rationale, and interpretation: `bayes_methodology.md`.
+
+## 6. Sensitivity and rejected alternatives
 
 - **12-parameter direct multi-start (run1)**: NLL 31.33; <20 prevalence
   0.181 and 40-49 population 2597 missed the criteria. Diagnosed as a
@@ -119,7 +160,7 @@ All six age groups overlap for both prevalence and population.
   group is fitted within criteria with 12 parameters (p6 0.374 vs 0.3545,
   max |prev err| 0.0195 < 0.03; N6 459.5 vs 409, APE 0.126 < 0.20).
 
-## 6. Structural limitations
+## 7. Structural limitations
 
 1. J has no in-prison transmission; prison prevalence is inherited from D
    via arrest.
@@ -141,15 +182,18 @@ All six age groups overlap for both prevalence and population.
 8. Targets are treated as anti-HCV seroprevalence; viremic prevalence is
    reported as a sensitivity in `predictions.csv`.
 
-## 7. Verdict
+## 8. Verdict
 
 The 12-parameter model (highest-defensible progression rates, constant
 transmission, 2015 mortality, no excess-mortality parameter) meets every
 stated acceptance criterion, and the Laplace 95% intervals overlap the
-observed intervals for all six age groups. No protected files were
-modified (`Model schematic.pptx` hash unchanged; `src/sim.cpp` unchanged).
+observed intervals for all six age groups. The Bayesian (MCMC) phase
+confirms this: three converged chains (R-hat < 1.05) give posterior
+predictive 95% CrIs that overlap both the observed and the Laplace
+intervals for all 12 target summaries. No protected files were modified
+(`Model schematic.pptx` hash unchanged; `src/sim.cpp` unchanged).
 
-## 8. Reproduction
+## 9. Reproduction
 
 ```bash
 Rscript src/calibration/run_calibration.R \
@@ -159,6 +203,14 @@ Rscript src/calibration/run_calibration.R \
 
 Rscript src/calibration/plot_results.R \
   --fit output/calibration/<run_id>/fit.rds --out-dir figures
+
+# 3. Bayesian posterior (NPE 3 rounds + MCMC strict validation)
+Rscript src/calibration/run_npe.R --step all \
+  --root . --fit output/calibration/<run_id>/fit.rds \
+  --out-dir output/calibration/npe_bayes \
+  --n-sims 60000 --n-cores 6 --seed 2026 \
+  --n-draws 60000 --n-proposal 20000 --n-rounds 3 \
+  --n-iter-mcmc 20000 --burnin-mcmc 5000 --mcmc-max-iter 400000
 ```
 
 All figures in `figures/` are ggplot2-generated (`fig01_prevalence_fit.png`

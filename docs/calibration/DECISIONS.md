@@ -141,3 +141,68 @@ deleted.
 - Decision: **run2_v1_12p_warm is the final selected fit.** No
   excess-mortality parameter (contingency not activated). Final outputs,
   figures, and reports written.
+
+## 2026-08-09 — Bayesian phase: priors, sampler, and multi-start MCMC
+
+- Change considered: posterior sampling for the 12 fitted parameters and
+  Bayesian credible intervals for the 12 target summaries, on top of the
+  NM fit (run2_v1_12p_warm). Instructions: `prompt_mcmc.md`.
+- Priors (documented in bayes_methodology.md): log contact scales ~
+  Normal(0, 2^2) (base contact matrix is a model-specific calibrated
+  guess); log beta scales ~ Student-t(3, 0, 2) (base beta is
+  CNB-official-anchored but per-age values are placeholders; heavy tails
+  tolerate the data-driven 60+ inflow). Priors are NOT constructed from
+  the NM fit (no double counting); NM solutions are only chain starts and
+  proposal tuning.
+- Sampler: adaptive Metropolis-Hastings (Haario et al. 2001), proposal
+  covariance initialised from the Laplace covariance (eigenvalue cutoff
+  1e-4). HMC not used: numerical gradients cost ~12 simulations per
+  gradient, making HMC ~10x more expensive per effective sample; NPE
+  would require a Python simulation interface and training data without
+  benefit over direct MCMC (documented in bayes_methodology.md).
+- Multi-start chains: 3 chains from warm_12p_22p5 (NLL 22.44),
+  warm_run7_derived_12p (22.48), population_informed_b6_c1 (31.33);
+  20000 iters, burnin 5000, thin 5, seed 2026.
+- Convergence (mcmc_bayes/diagnostics.csv): R-hat 1.0007-1.0480 (mpsrf
+  1.011), acceptance 0.247-0.277, per-chain ESS 88-434 (theta12 lowest,
+  pooled ~670). Posterior median vs NM max abs diff 0.695 at theta6
+  (contact row 6) — the weakly identified contact6/beta6 trade-off
+  direction that Laplace truncates (effective dim 11/12); MCMC keeps its
+  full marginal uncertainty under the prior.
+- Results (credible_intervals.csv): posterior predictive medians
+  (60+ p 0.379, N 450; beta6 scale median 107, CrI [43, 173]). All 12
+  target summaries' MCMC 95% CrIs overlap both the observed intervals and
+  the Laplace 95% CIs.
+- Decision: adopt the MCMC posterior as the primary Bayesian uncertainty
+  summary alongside the Laplace intervals; document both and their
+  differences in bayes_methodology.md and final_report.md.
+
+## 2026-08-09 (revised) — NPE primary attempt, strict criteria, fallback
+
+- Change considered: per user directive, the Bayesian phase was redone with
+  NPE/SNPE as the PRIMARY method, stricter convergence rules (R-hat in
+  [0.99, 1.01]; ESS > 400), and the previous round's MCMC outputs deleted.
+- NPE attempt: sbi 0.27 `NPE_C` (MAF), 3 sequential rounds (60,000 prior
+  draws + 2 x 20,000 proposal draws), two independent seeds (2026, 2027),
+  60,000 posterior draws per seed; SBC on 298 held-out prior points.
+- NPE diagnostics: SBC coverage acceptable (95% band 0.94-1.00), but the
+  posterior is (a) overconfident in well-identified directions — <20
+  prevalence CrI [0.106, 0.116] vs MCMC [0.055, 0.174], 20-29 population
+  [1232, 1263] vs [1035, 1529] — and (b) unstable across seeds in weakly
+  identified directions (theta6 2.5% quantile -4.21 vs -19.63; predictive
+  60+ population median 521 vs 491).
+- Fallback triggered per prompt_mcmc.md rule 1: the traditional MCMC
+  validation becomes the PRIMARY Bayesian summary. Adaptive Metropolis,
+  3 chains from NPE median / NM best / informed NM start, block warm
+  restart; final 40,000 iterations, burnin 5,000, thin 5.
+- Strict criteria met: R-hat 1.0008-1.0096 (all in [0.99, 1.01]; mpsrf
+  1.007); ESS pooled 1,374-2,457 (> 400 per parameter; per-chain 332-855);
+  acceptance 0.238.
+- Final results: MCMC posterior predictive 95% CrIs overlap observed and
+  Laplace intervals for all 12 targets (60+ prevalence 0.379, CrI
+  [0.336, 0.424]; population 448, [381, 530]). NPE retained as a fully
+  documented sensitivity (posterior_samples_npe*.csv, sbc_summary*.csv,
+  fig_density.png).
+- Decision: adopt MCMC as the primary Bayesian uncertainty summary (strict
+  criteria met); keep NPE results and the fallback rationale in
+  bayes_methodology.md.

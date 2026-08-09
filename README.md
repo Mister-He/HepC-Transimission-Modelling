@@ -99,6 +99,21 @@ HCV seroprevalence and population of the prison (detained) PWID stratum.
   populations require net inflows below the CNB-anchored base `beta`
   (see DECISIONS.md).
 
+### 4.1 Bayesian inference (MCMC)
+
+On top of the NM fit, Bayesian posterior sampling is performed. Per
+`prompt_mcmc.md` (revised), **NPE/SNPE was attempted first** (sbi `NPE_C`,
+3 sequential rounds, two seeds, SBC-calibrated) but was not adopted: it
+was overconfident in well-identified directions and unstable across seeds
+in weakly identified directions. The **traditional MCMC (adaptive
+Metropolis-Hastings) is the primary Bayesian summary**, with strict
+convergence: R-hat in [0.99, 1.01] (achieved 1.0008-1.0096), ESS > 400
+(achieved 1,374-2,457), 3 chains x 40,000 iterations. Priors: log contact
+scales ~ Normal(0, 2^2); log beta scales ~ Student-t(3, 0, 2). Posterior
+predictive 95% credible intervals per age group overlap both the Laplace
+and observed intervals. See `prompt_mcmc.md` and
+`docs/calibration/bayes_methodology.md`.
+
 ## 5. How to regenerate
 
 ```bash
@@ -111,6 +126,14 @@ Rscript src/calibration/run_calibration.R \
 # 2. Publication figures (ggplot2)
 Rscript src/calibration/plot_results.R \
   --fit output/calibration/<run_id>/fit.rds --out-dir figures
+
+# 3. Bayesian posterior (NPE 3 rounds + MCMC strict validation)
+Rscript src/calibration/run_npe.R --step all \
+  --root . --fit output/calibration/<run_id>/fit.rds \
+  --out-dir output/calibration/npe_bayes \
+  --n-sims 60000 --n-cores 6 --seed 2026 \
+  --n-draws 60000 --n-proposal 20000 --n-rounds 3 \
+  --n-iter-mcmc 20000 --burnin-mcmc 5000 --mcmc-max-iter 400000
 ```
 
 Per-run outputs: `run_config.csv`, `targets.csv`, `initial_values.csv`,
@@ -137,3 +160,10 @@ and limitations).
 Best NLL 22.44; prevalence RMSE 0.0084; max |prev err| 0.0195; population
 MAPE 0.047; max APE 0.126; equilibrium pass. All acceptance criteria met
 with 12 parameters (no excess mortality).
+
+Bayesian (MCMC primary): strict convergence (R-hat 1.0008-1.0096,
+ESS > 400); posterior predictive 95% CrIs overlap the observed and Laplace
+intervals for all 12 target summaries (60+ prevalence 0.379, CrI
+[0.336, 0.424]; population 448, [381, 530]). NPE attempted as primary and
+retained as a documented sensitivity. Outputs in
+`output/calibration/npe_bayes/`.
