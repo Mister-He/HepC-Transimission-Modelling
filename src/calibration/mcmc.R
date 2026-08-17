@@ -19,17 +19,18 @@
 # tolerating the large deviations the data require (e.g. 60+ inflow).
 # =============================================================================
 
-make_priors <- function(contact_mean = 0, contact_sd = 2,
-                        beta_mean = 0, beta_sd = 2, beta_df = 3) {
+make_priors <- function(contact_anchor = c(5.752, 0.0799, 0.058, 0.40, 5.727, 0.3),
+                        beta_anchor = c(0.171, 0.926, 1.5, 6.5, 9.171, 100),
+                        contact_sd = 0.5, beta_sd = 0.8, beta_df = 3) {
   list(
-    contact_mean = contact_mean, contact_sd = contact_sd,
-    beta_mean = beta_mean, beta_sd = beta_sd, beta_df = beta_df
+    contact_anchor = contact_anchor, contact_sd = contact_sd,
+    beta_anchor = beta_anchor, beta_sd = beta_sd, beta_df = beta_df
   )
 }
 
 log_prior <- function(theta, priors) {
-  lp <- sum(dnorm(theta[1:6], priors$contact_mean, priors$contact_sd, log = TRUE))
-  z <- (theta[7:12] - priors$beta_mean) / priors$beta_sd
+  lp <- sum(dnorm(theta[1:6], log(priors$contact_anchor), priors$contact_sd, log = TRUE))
+  z <- (theta[7:12] - log(priors$beta_anchor)) / priors$beta_sd
   lp <- lp + sum(dt(z, df = priors$beta_df, log = TRUE)) -
     6 * log(priors$beta_sd)
   lp
@@ -38,6 +39,7 @@ log_prior <- function(theta, priors) {
 log_posterior <- function(theta, base_params, data,
                           priors, target_mode = TARGET_MODE,
                           equilibrium_penalty = TRUE) {
+  if (!within_bounds(theta)) return(-Inf)
   pm <- tryCatch(build_params(theta, base_params), error = function(e) NULL)
   if (is.null(pm)) return(-Inf)
   out <- tryCatch(run_sim(pm, data), error = function(e) NULL)

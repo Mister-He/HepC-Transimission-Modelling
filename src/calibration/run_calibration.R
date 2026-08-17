@@ -8,9 +8,9 @@
 #     [--target-time 45] [--target-mode sero] [--excess-mortality] \
 #     [--out-dir output/calibration]
 #
-# Model-time convention: t = 0 <-> calendar 1970. Simulation t = -10..55
-# = calendar 1960-2025; targets compared at t = 45 (calendar 2015);
-# equilibrium gate at t = 55 vs t = 50 (calendar 2025 vs 2020).
+# Model-time convention: t = 0 <-> calendar 1970. Simulation runs at least
+# 150 model years (t = -10..140 by default); targets compared at t = 45
+# (calendar 2015); equilibrium gate at t = 140 vs t = 135.
 #
 # 12 fitted log-parameters: 6 contact row scales, 6 beta inflow scales.
 # Transmission is constant (m_min = m_max = 1, merged into contact scales).
@@ -32,7 +32,7 @@ MAXIT      <- as.integer(arg_val("--maxit", "3000"))
 N_STARTS   <- as.integer(arg_val("--n-starts", "6"))
 SD_PERTURB <- as.numeric(arg_val("--sd-perturb", "0.8"))
 T_START    <- as.numeric(arg_val("--t-start", "-10"))
-T_END      <- as.numeric(arg_val("--t-end", "55"))
+T_END      <- as.numeric(arg_val("--t-end", "140"))
 TARGET_TIME <- as.numeric(arg_val("--target-time", "45"))
 TARGET_MODE <- arg_val("--target-mode", "sero")
 EXCESS     <- "--excess-mortality" %in% args
@@ -149,37 +149,9 @@ writeLines(capture.output(sessionInfo()), file.path(OUT_DIR, "sessionInfo.txt"))
 obj_fn <- make_objective(base_params, data_local, target_mode = TARGET_MODE)
 starts <- make_start_set(n_perturbed = max(0, N_STARTS - 1),
                          sd_perturb = SD_PERTURB, seed_base = SEED)
-informed <- informed_theta0(base_params, cal_targets)
-starts <- append(starts,
-                 list(list(id = "population_informed",
-                           theta0 = informed, seed = SEED + 1000)),
-                 after = 1)
-informed_b6 <- informed_theta0_b6(base_params, cal_targets)
-starts <- append(starts,
-                 list(list(id = "population_informed_b6",
-                           theta0 = informed_b6, seed = SEED + 1100)),
-                 after = 2)
-informed_b6_c1 <- informed_theta0_b6_c1(base_params, cal_targets)
-starts <- append(starts,
-                 list(list(id = "population_informed_b6_c1",
-                           theta0 = informed_b6_c1, seed = SEED + 1200)),
-                 after = 3)
-warm1 <- warm_run7_derived_12p
-starts <- append(starts,
-                 list(list(id = "warm_run7_derived_12p",
-                           theta0 = warm1, seed = SEED + 1300)),
-                 after = 4)
-warm2 <- warm_12p_22p5
-starts <- append(starts,
-                 list(list(id = "warm_12p_22p5",
-                           theta0 = warm2, seed = SEED + 1400)),
-                 after = 5)
-cat("  informed beta scales:",
-    paste(round(exp(informed[7:12]), 2), collapse = ", "), "\n")
-cat("  informed_b6 beta scales:",
-    paste(round(exp(informed_b6[7:12]), 2), collapse = ", "), "\n")
-cat("  informed_b6_c1 beta scales:",
-    paste(round(exp(informed_b6_c1[7:12]), 2), collapse = ", "), "\n")
+a <- plausible_anchors()
+cat("  plausible anchors:", paste(round(a$contact, 3), collapse = ","),
+    "|", paste(round(a$beta, 3), collapse = ","), "\n")
 
 runs <- lapply(seq_along(starts), function(j) {
   st <- starts[[j]]

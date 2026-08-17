@@ -14,13 +14,15 @@ okabe_ito_mcmc <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7",
 theme_mcmc <- function(base_size = 13) {
   theme_minimal(base_size = base_size) +
     theme(
-      panel.grid.minor = element_blank(),
+      panel.grid = element_blank(),
       panel.border = element_rect(fill = NA, colour = "grey60", linewidth = 0.4),
+      panel.background = element_rect(fill = "white", colour = NA),
+      plot.background = element_rect(fill = "white", colour = NA),
       axis.ticks = element_line(colour = "grey60"),
       plot.title = element_text(face = "bold", hjust = 0),
       plot.subtitle = element_text(colour = "grey30"),
       legend.position = "top",
-      strip.background = element_rect(fill = "grey92", colour = NA),
+      strip.background = element_rect(fill = "white", colour = NA),
       strip.text = element_text(face = "bold", size = 9)
     )
 }
@@ -68,10 +70,12 @@ plot_density <- function(chains, priors, out_file = NULL,
   prior_df <- do.call(rbind, lapply(1:6, function(i) {
     data.frame(param = paste0("V", i),
                x = grid_pts,
-               y = dnorm(grid_pts, priors$contact_mean, priors$contact_sd))
+               y = dnorm(grid_pts, log(priors$contact_anchor[i]),
+                         priors$contact_sd))
   }))
   prior_df <- rbind(prior_df, do.call(rbind, lapply(7:12, function(i) {
-    z <- (grid_pts - priors$beta_mean) / priors$beta_sd
+    j <- i - 6
+    z <- (grid_pts - log(priors$beta_anchor[j])) / priors$beta_sd
     data.frame(param = paste0("V", i), x = grid_pts,
                y = dt(z, df = priors$beta_df) / priors$beta_sd)
   })))
@@ -221,9 +225,11 @@ plot_density_npe <- function(npe, npe2, mcmc, priors, out_file = NULL,
   grid_pts <- seq(-6, 6, length.out = 400)
   prior_df <- do.call(rbind, lapply(1:12, function(i) {
     if (i <= 6) {
-      y <- dnorm(grid_pts, priors$contact_mean, priors$contact_sd)
+      y <- dnorm(grid_pts, log(priors$contact_anchor[i]),
+                 priors$contact_sd)
     } else {
-      z <- (grid_pts - priors$beta_mean) / priors$beta_sd
+      j <- i - 6
+      z <- (grid_pts - log(priors$beta_anchor[j])) / priors$beta_sd
       y <- dt(z, df = priors$beta_df) / priors$beta_sd
     }
     data.frame(param = paste0("V", i), x = grid_pts, y = y)

@@ -144,26 +144,9 @@ figures.
 
 ## 6. Results
 
-Final run: `output/calibration/run2_v1_12p_warm/` (see
-`docs/calibration/final_report.md` for the full table, Laplace intervals,
-and limitations).
+Final run: `output/calibration/run5_redo150/`.
 
-| Age | N_obs | N_hat | p_obs | p_hat (sero) | p 95% CI overlap | N 95% CI overlap |
-|---|---:|---:|---:|---:|:---:|:---:|
-| <20 | 99 | 98.8 | 0.1111 | 0.1060 | YES | YES |
-| 20-29 | 1244 | 1255.5 | 0.1728 | 0.1731 | YES | YES |
-| 30-39 | 1467 | 1463.6 | 0.2686 | 0.2684 | YES | YES |
-| 40-49 | 1841 | 1880.4 | 0.4302 | 0.4303 | YES | YES |
-| 50-59 | 1628 | 1422.4 | 0.4822 | 0.4780 | YES | YES |
-| 60+ | 409 | 459.5 | 0.3545 | 0.3740 | YES | YES |
-
-Best NLL 22.44; prevalence RMSE 0.0084; max |prev err| 0.0195; population
-MAPE 0.047; max APE 0.126; equilibrium pass. All acceptance criteria met
-with 12 parameters (no excess mortality).
-
-Bayesian (MCMC primary): strict convergence (R-hat 1.0008-1.0096,
-ESS > 400); posterior predictive 95% CrIs overlap the observed and Laplace
-intervals for all 12 target summaries (60+ prevalence 0.379, CrI
-[0.336, 0.424]; population 448, [381, 530]). NPE attempted as primary and
-retained as a documented sensitivity. Outputs in
-`output/calibration/npe_bayes/`.
+Acceptance criteria are met with 12 parameters and no excess mortality.
+Bayesian outputs are in `output/calibration/npe_bayes/`; 50-year
+sensitivity projections are in `output/analysis/`. See
+`docs/calibration/final_report.md` and `docs/calibration/analysis_report.md`.

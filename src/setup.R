@@ -78,17 +78,9 @@ params <- list(
 
   # ── Baseline progression rates (per year, other genotype) ─────────────────
   p_NC_CC   = 0.027,   # NC  → CC  (Thein et al. 2008)
-  p_CC_DC   = 0.0788,  # CC  → DC  (Alazawi et al. 2010, Aliment Pharmacol
-                       #   Ther 32(3):344-55, PMID 20497143: untreated-only
-                       #   decompensation in compensated HCV cirrhosis
-                       #   7.88%/yr; pooled 6.37%/yr)
-  p_CC_HCC  = 0.0479,  # CC  → HCC (Alazawi et al. 2010: untreated-only HCC
-                       #   in compensated HCV cirrhosis 4.79%/yr; pooled
-                       #   3.36%/yr)
-  p_DC_HCC  = 0.0464,  # DC  → HCC (Rivera-Irigoin et al. 2006, AIDS Res Hum
-                       #   Retroviruses 22(12):1236-41, PMID 17209765: HCC in
-                       #   HCV-monoinfected decompensated cirrhosis 3.31/100
-                       #   py, 95% CI 2.70-4.64; upper bound used)
+  p_CC_DC   = 0.039,   # CC  → DC  (Lim et al. 2018)
+  p_CC_HCC  = 0.014,   # CC  → HCC (Lim et al. 2018)
+  p_DC_HCC  = 0.014,   # DC  → HCC (Lim et al. 2018)
 
   # ── GT3 relative risks ────────────────────────────────────────────────────
   r3_NC_CC   = 1.36,   # r3^{NC→CC}  derived; CI: 1.27–1.46
@@ -126,12 +118,7 @@ params <- list(
   omega = 14.68,
 
   # ── Seropositive (cleared / post-SVR) background mortality multiplier ─────
-  # Age-varying multiplier applied to the s-state background mortality
-  # (mu[i]*omega*eta_s[i]). Default all 1; calibrated age-dependent values
-  # are justified in docs/calibration/DECISIONS.md. Rationale: HCV-
-  # seropositive PWID retain elevated all-cause mortality (liver-related and
-  # behavioural), affecting the age-specific seroprevalence pattern in the
-  # oldest groups.
+  # (mu[i]*omega*eta_s[i]). No excess-mortality multiplier is used: all 1.
   eta_s = c(1, 1, 1, 1, 1, 1),
 
   # ── Transmission multiplier: CONSTANT (fixed, not fitted) ────────────────

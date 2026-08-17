@@ -43,6 +43,7 @@ N_ROUNDS <- as.integer(arg_val("--n-rounds", "3"))
 N_ITER_MCMC <- as.integer(arg_val("--n-iter-mcmc", "30000"))
 BURNIN_MCMC <- as.integer(arg_val("--burnin-mcmc", "5000"))
 MCMC_MAX_ITER <- as.integer(arg_val("--mcmc-max-iter", "400000"))
+THIN_MCMC <- as.integer(arg_val("--thin-mcmc", "20"))
 PYTHON   <- arg_val("--python", "/tmp/bayes-venv/bin/python")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
@@ -61,7 +62,7 @@ if (!exists("run_sim", envir = globalenv(), inherits = FALSE)) {
 }
 run_sim <- get("run_sim", envir = globalenv(), inherits = FALSE)
 for (f in c("targets.R", "model_metrics.R", "equilibrium.R",
-            "likelihood.R", "mcmc.R", "plot_mcmc.R")) {
+            "likelihood.R", "calibrate_nm.R", "mcmc.R", "plot_mcmc.R")) {
   sys.source(file.path(ROOT, "src", "calibration", f), envir = environment())
 }
 fit <- readRDS(FIT_PATH)
@@ -78,9 +79,12 @@ priors <- make_priors()
 sample_prior <- function(n, priors, seed) {
   set.seed(seed)
   th <- matrix(NA_real_, n, 12)
-  th[, 1:6] <- rnorm(n * 6, priors$contact_mean, priors$contact_sd)
+  for (i in 1:6) {
+    th[, i] <- rnorm(n, log(priors$contact_anchor[i]), priors$contact_sd)
+  }
   z <- matrix(rt(n * 6, df = priors$beta_df), n, 6)
-  th[, 7:12] <- priors$beta_mean + priors$beta_sd * z
+  th[, 7:12] <- matrix(rep(log(priors$beta_anchor), each = n), nrow = n,
+                       ncol = 6) + priors$beta_sd * z
   th
 }
 
@@ -226,11 +230,12 @@ step_mcmc <- function() {
   Sigma0 <- Sigma0 + 1e-8 * diag(12)
 
   sol <- fit$solutions
-  start_ids <- c("warm_12p_22p5", "population_informed_b6_c1")
+  best_id <- fit$best$start_id
+  start_ids <- c(best_id, best_id)
   starts <- list(
-    apply(th_npe, 2, median),
-    as.numeric(sol[sol$start_id == start_ids[1], paste0("theta", 1:12)]),
-    as.numeric(sol[sol$start_id == start_ids[2], paste0("theta", 1:12)])
+    clip_to_bounds(apply(th_npe, 2, median)),
+    clip_to_bounds(as.numeric(sol[sol$start_id == start_ids[1], paste0("theta", 1:12)])),
+    clip_to_bounds(as.numeric(sol[sol$start_id == start_ids[2], paste0("theta", 1:12)]))
   )
   start_names <- c("npe_median", start_ids)
 
@@ -238,7 +243,7 @@ step_mcmc <- function() {
                                         target_mode = TARGET_MODE)
   block <- N_ITER_MCMC
   burnin <- BURNIN_MCMC
-  thin   <- 5L
+  thin   <- THIN_MCMC
   chains <- NULL
   total_iter <- 0L
   repeat {
@@ -278,8 +283,8 @@ step_mcmc <- function() {
       coda::effectiveSize(coda::mcmc(m))
     }))
     ess_pool <- colSums(ess)
-    rhat_ok <- all(rhat$psrf[, 1] >= 0.99 & rhat$psrf[, 1] <= 1.01)
-    ess_ok  <- all(ess_pool > 400)
+    rhat_ok <- all(rhat$psrf[, 1] >= 0.995 & rhat$psrf[, 1] <= 1.005)
+    ess_ok  <- all(ess_pool > 1000)
     cat("  R-hat range:", round(range(rhat$psrf[, 1]), 4),
         "| ESS pooled range:", round(range(ess_pool), 1), "\n")
     if (rhat_ok && ess_ok) break

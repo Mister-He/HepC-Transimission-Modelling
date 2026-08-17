@@ -24,6 +24,7 @@ Outputs in --out:
 """
 import argparse
 import json
+import math
 import os
 import pickle
 
@@ -37,11 +38,23 @@ from torch.distributions import Normal, StudentT
 
 
 def build_prior():
-    return MultipleIndependent(
-        [Normal(torch.zeros(1), torch.ones(1))] * 6 +
-        [StudentT(df=torch.tensor([3.0]), loc=torch.zeros(1),
-                  scale=torch.ones(1))] * 6
-    )
+    contact_anchor = [5.752, 0.0799, 0.058, 0.40, 5.727, 0.3]
+    beta_anchor = [0.171, 0.926, 1.5, 6.5, 9.171, 100.0]
+    contact_sd = 0.5
+    beta_sd = 0.8
+    dists = []
+    for a in contact_anchor:
+        dists.append(Normal(
+            torch.tensor([math.log(a) / 2.0]),
+            torch.tensor([contact_sd / 2.0]),
+        ))
+    for a in beta_anchor:
+        dists.append(StudentT(
+            df=torch.tensor([3.0]),
+            loc=torch.tensor([math.log(a) / 2.0]),
+            scale=torch.tensor([beta_sd / 2.0]),
+        ))
+    return MultipleIndependent(dists)
 
 
 def load_config(args, suffix):

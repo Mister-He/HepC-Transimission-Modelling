@@ -34,15 +34,12 @@ laplace_intervals <- function(theta, base_params, data,
     return(list(success = FALSE, reason = "Hessian failed"))
   }
 
-  ev <- eigen(hess, symmetric = TRUE)
-  cutoff <- max(ev$values) * rel_thresh
-  keep <- ev$values > cutoff
-  rank_eff <- sum(keep)
-  if (rank_eff == 0) {
-    return(list(success = FALSE, reason = "no identified directions"))
+  Sigma <- tryCatch(MASS::ginv(hess), error = function(e) NULL)
+  if (is.null(Sigma) || any(!is.finite(Sigma))) {
+    return(list(success = FALSE, reason = "Hessian inversion failed"))
   }
-  V <- ev$vectors[, keep, drop = FALSE]
-  Sigma <- V %*% diag(1 / ev$values[keep]) %*% t(V)
+  ev <- eigen(hess, symmetric = TRUE)
+  rank_eff <- sum(ev$values > max(ev$values) * rel_thresh)
 
   set.seed(seed)
   draws <- MASS::mvrnorm(n_draws, mu = theta, Sigma = Sigma)

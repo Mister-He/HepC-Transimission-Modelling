@@ -129,23 +129,9 @@ Rscript src/calibration/run_npe.R --step all \
 
 ## 6. 结果
 
-最终运行：`output/calibration/run2_v1_12p_warm/`（完整表格、Laplace 区间
-与局限见 `docs/calibration/final_report.md`）。
+最终运行：`output/calibration/run5_redo150/`。
 
-| 年龄组 | N_obs | N_hat | p_obs | p_hat（血清） | 患病率 95% CI 重叠 | 人口 95% CI 重叠 |
-|---|---:|---:|---:|---:|:---:|:---:|
-| <20 | 99 | 98.8 | 0.1111 | 0.1060 | 是 | 是 |
-| 20-29 | 1244 | 1255.5 | 0.1728 | 0.1731 | 是 | 是 |
-| 30-39 | 1467 | 1463.6 | 0.2686 | 0.2684 | 是 | 是 |
-| 40-49 | 1841 | 1880.4 | 0.4302 | 0.4303 | 是 | 是 |
-| 50-59 | 1628 | 1422.4 | 0.4822 | 0.4780 | 是 | 是 |
-| 60+ | 409 | 459.5 | 0.3545 | 0.3740 | 是 | 是 |
-
-最优 NLL 22.44；患病率 RMSE 0.0084；最大患病率误差 0.0195；人口 MAPE
-0.047；最大 APE 0.126；均衡通过。12 参数（无超额死亡率）满足全部接受
-标准。
-
-贝叶斯（MCMC 主结果）：严格收敛（R-hat 1.0008-1.0096、ESS>400）；12 个
-目标量的后验预测 95% 可信区间全部与观测区间及 Laplace 区间重叠（60+
-患病率 0.379，CrI [0.336, 0.424]；人口 448，[381, 530]）。NPE 已尝试并
-作为敏感性保留。输出位于 `output/calibration/npe_bayes/`。
+12 参数、无超额死亡率，满足全部接受标准。贝叶斯输出见
+`output/calibration/npe_bayes/`；50 年敏感性分析见
+`output/analysis/`。详见 `docs/calibration/final_report.md` 和
+`docs/calibration/analysis_report.md`。

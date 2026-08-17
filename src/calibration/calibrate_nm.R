@@ -43,16 +43,40 @@ run_nm_start <- function(theta0, objective_fn, start_id = "start",
   )
 }
 
-make_start_set <- function(n_perturbed = 5, sd_perturb = 0.8, seed_base = 101) {
-  starts <- list(list(id = "baseline_zeros", theta0 = rep(0, N_THETA), seed = seed_base))
+clip_to_bounds <- function(theta) {
+  contact_scale <- exp(theta[1:6])
+  beta_scale <- exp(theta[7:12])
+  contact_scale <- pmin(pmax(contact_scale, CONTACT_LO), CONTACT_HI)
+  beta_scale <- pmin(pmax(beta_scale, BETA_LO), BETA_HI)
+  c(log(contact_scale), log(beta_scale))
+}
+
+plausible_anchors <- function() {
+  list(
+    contact = c(5.752, 0.0799, 0.058, 0.40, 5.727, 0.3),
+    beta    = c(0.171, 0.926, 1.5, 6.5, 9.171, 100)
+  )
+}
+
+make_start_set <- function(n_perturbed = 5, sd_perturb = 0.4, seed_base = 101) {
+  a <- plausible_anchors()
+  anchor <- c(log(a$contact), log(a$beta))
+  starts <- list(list(id = "plausible_anchor", theta0 = anchor, seed = seed_base))
+  set.seed(seed_base)
   for (j in seq_len(n_perturbed)) {
-    set.seed(seed_base + j)
+    theta_j <- anchor + rnorm(N_THETA, mean = 0, sd = sd_perturb)
     starts[[j + 1]] <- list(
       id = paste0("perturb_", j),
-      theta0 = rnorm(N_THETA, mean = 0, sd = sd_perturb),
+      theta0 = clip_to_bounds(theta_j),
       seed = seed_base + j
     )
   }
+  warm <- c(log(a$contact * c(1, 1, 1, 1, 1, 1)),
+            log(a$beta * c(1, 1, 1, 1, 1, 1)))
+  starts <- append(starts,
+                   list(list(id = "plausible_warm", theta0 = clip_to_bounds(warm),
+                             seed = seed_base + 1000)),
+                   after = 1)
   starts
 }
 

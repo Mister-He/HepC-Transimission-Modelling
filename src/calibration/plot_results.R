@@ -18,14 +18,16 @@ okabe_ito <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7",
 theme_pub <- function(base_size = 14) {
   theme_minimal(base_size = base_size) +
     theme(
-      panel.grid.minor = element_blank(),
+      panel.grid = element_blank(),
       panel.border = element_rect(fill = NA, colour = "grey60", linewidth = 0.4),
+      panel.background = element_rect(fill = "white", colour = NA),
+      plot.background = element_rect(fill = "white", colour = NA),
       axis.ticks = element_line(colour = "grey60"),
       plot.title = element_text(face = "bold", hjust = 0),
       plot.subtitle = element_text(colour = "grey30"),
       legend.position = "top",
       legend.title = element_blank(),
-      strip.background = element_rect(fill = "grey92", colour = NA),
+      strip.background = element_rect(fill = "white", colour = NA),
       strip.text = element_text(face = "bold")
     )
 }
