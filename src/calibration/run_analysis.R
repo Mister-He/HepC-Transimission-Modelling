@@ -23,7 +23,7 @@ arg_val <- function(name, default = NULL) {
 }
 
 ROOT <- normalizePath(arg_val("--root", getwd()), mustWork = TRUE)
-FIT_PATH <- normalizePath(arg_val("--fit", file.path(ROOT, "output", "calibration", "run7_final", "fit.rds")), mustWork = TRUE)
+FIT_PATH <- normalizePath(arg_val("--fit", file.path(ROOT, "output", "calibration", "run5_redo150", "fit.rds")), mustWork = TRUE)
 POST_PATH <- normalizePath(arg_val("--posterior", file.path(ROOT, "output", "calibration", "npe_bayes", "posterior_samples_mcmc.csv")), mustWork = TRUE)
 OUT_DIR <- normalizePath(arg_val("--out-dir", file.path(ROOT, "output", "analysis")), mustWork = FALSE)
 N_DRAWS <- as.integer(arg_val("--n-draws", "300"))
@@ -79,11 +79,11 @@ idx_hcv <- function(strata = 0:2, stages = 1:4, states = 1:3, ages = 0:5) {
 }
 idx_dc <- function(strata = 0:2, states = 0:4, ages = 0:5) {
   as.vector(sapply(strata, function(s) sapply(states, function(h)
-    sapply(ages, function(i) s * 120 + 2 * 30 + h * 6 + i + 2L))))
+    sapply(ages, function(i) s * 120 + (3 - 1) * 30 + h * 6 + i + 2L))))
 }
 idx_hcc <- function(strata = 0:2, states = 0:4, ages = 0:5) {
   as.vector(sapply(strata, function(s) sapply(states, function(h)
-    sapply(ages, function(i) s * 120 + 3 * 30 + h * 6 + i + 2L))))
+    sapply(ages, function(i) s * 120 + (4 - 1) * 30 + h * 6 + i + 2L))))
 }
 
 summarise_at_year <- function(out, years, year0 = 47) {
