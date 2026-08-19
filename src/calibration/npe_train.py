@@ -38,8 +38,8 @@ from torch.distributions import Normal, StudentT
 
 
 def build_prior():
-    contact_anchor = [5.752, 0.0799, 0.058, 0.40, 5.727, 0.3]
-    beta_anchor = [0.171, 0.926, 1.5, 6.5, 9.171, 100.0]
+    contact_anchor = [6.3713, 0.0857, 0.0589, 0.5584, 9.5232, 0.2558]
+    beta_anchor = [0.1670, 0.9443, 1.2297, 5.2385, 16.9018, 110.5976]
     contact_sd = 0.5
     beta_sd = 0.8
     dists = []

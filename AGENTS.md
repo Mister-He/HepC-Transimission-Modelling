@@ -6,12 +6,14 @@ Calibrate the Singapore HCV PWID model on branch `dev_params_reasonable`.
 
 ## Baseline
 
+- **Fixed model structure**: 4 strata `D/J/F/X`, 4 stages, 4 HCV states
+  `u/a/c/t`, 6 age groups; `lambda1` is the first-arrest rate.
 - Original progression rates: `0.027 / 0.039 / 0.014 / 0.014`.
 - Constant transmission (`m_min = m_max = 1`).
 - 2015 Singapore baseline mortality and `omega = 14.68`.
 - **No excess mortality**: `eta_s = 1`; do not fit or add `eta_s`.
 - 12 fitted parameters: 6 contact scaling factors, 6 beta scaling factors.
-- **Simulation horizon**: at least 150 model years; verify all-state
+- **Simulation horizon**: `t_start = 0`, `t_end = 150`; verify all-state
   convergence (including DC/HCC totals) before reporting equilibrium.
 - **Beta scaling factors have no upper bound**.
 
@@ -22,6 +24,8 @@ Calibrate the Singapore HCV PWID model on branch `dev_params_reasonable`.
   penalty in `likelihood.R`.
 - Beta scales should be monotone non-decreasing and preferably `>1`.
 - These preferences may be relaxed if they materially degrade fit.
+- MCMC density plots use the log-parameter scale to keep marginals close to
+  normal.
 
 ## Editing rules
 
@@ -64,6 +68,8 @@ After a passing MCMC fit, execute `prompt_analysis.md`:
 - treatment-rate configurations by liver stage;
 - GT3 proportion configurations;
 - other documented scenarios;
+- the scenario inventory lives in `src/calibration/scenarios.csv`
+  (single machine-readable table; see `prompt_analysis.md` for the schema);
 - 50-year projection from 2017;
 - report total HCV, DC, and HCC counts over time;
 - propagate MCMC posterior samples into credible intervals;

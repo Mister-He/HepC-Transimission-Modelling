@@ -258,25 +258,23 @@ plot_density_npe <- function(npe, npe2, mcmc, priors, out_file = NULL,
 # at scale = 1. Three chains overlaid.
 plot_density_mcmc_chains <- function(mcmc, out_file = NULL,
                                      width = 13, height = 7) {
-  sc <- exp(as.matrix(mcmc[, paste0("theta", 1:12)]))
+  sc <- as.matrix(mcmc[, paste0("theta", 1:12)])
   colnames(sc) <- paste0("V", 1:12)
   d <- as.data.frame(sc) %>%
     mutate(chain = mcmc$chain) %>%
-    tidyr::pivot_longer(c(-chain), names_to = "param", values_to = "scale")
+    tidyr::pivot_longer(c(-chain), names_to = "param", values_to = "value")
   d$param <- factor(d$param, levels = paste0("V", 1:12))
 
-  lab <- c(paste0("contact scale ", 1:6), paste0("beta scale ", 1:6))
-  p <- ggplot(d, aes(x = scale, colour = chain)) +
+  lab <- c(paste0("log contact scale ", 1:6), paste0("log beta scale ", 1:6))
+  p <- ggplot(d, aes(x = value, colour = chain)) +
     geom_density(linewidth = 0.7) +
-    geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
-    scale_x_log10() +
     facet_wrap(~param, ncol = 6, scales = "free",
                labeller = labeller(param = setNames(lab, paste0("V", 1:12)))) +
     scale_colour_manual(values = okabe_ito_mcmc) +
-    labs(x = "fitted scale factor (log10 axis)", y = "density",
+    labs(x = "log fitted scale factor", y = "density",
          title = "MCMC marginal posterior densities (3 chains)",
-         subtitle = paste0("row 1: contact scaling factors | ",
-                           "row 2: beta scaling factors | dashed line = 1")) +
+         subtitle = paste0("row 1: log contact scaling factors | ",
+                           "row 2: log beta scaling factors")) +
     theme_mcmc()
   if (!is.null(out_file)) {
     ggsave(out_file, p, width = width, height = height, dpi = 300)

@@ -10,7 +10,7 @@ HCV seroprevalence and population of the prison (detained) PWID stratum.
 .
 ├── src/
 │   ├── setup.R                # Parameters, initial conditions, helpers
-│   ├── sim.cpp                # Compiled ODE solver (3-strata model)
+│   ├── sim.cpp                # Compiled ODE solver (4-strata model)
 │   └── calibration/
 │       ├── targets.R          # Calibration target data + Binomial counts
 │       ├── model_metrics.R    # J summary extraction + fit metrics
@@ -19,6 +19,8 @@ HCV seroprevalence and population of the prison (detained) PWID stratum.
 │       ├── calibrate_nm.R     # Multi-start Nelder-Mead runner + informed/warm starts
 │       ├── laplace.R          # Laplace approximation (Hessian, MC intervals)
 │       ├── run_calibration.R  # End-to-end calibration runner
+│       ├── run_analysis.R     # 50-year sensitivity projections (posterior CrIs)
+│       ├── scenarios.csv      # Sensitivity scenario inventory (single source)
 │       ├── plot_results.R     # ggplot2 publication figures (all figures)
 │       ├── probe_beta_constraint.R  # beta_scale > 1 feasibility probe
 │       └── (analysis probes)  # Variant/sensitivity probes
@@ -41,30 +43,30 @@ HCV seroprevalence and population of the prison (detained) PWID stratum.
 ## 2. Model structure
 
 ```text
-3 strata:  D (community PWID, inject), J (detained), X (former PWID, non-injecting)
+4 strata:  D (never-arrested active), J (currently detained),
+           F (ever-arrested active), X (former, non-injecting)
 4 liver stages: NC, CC, DC, HCC
-5 HCV states:  u (susceptible), a (acute), c (chronic), t (treatment), s (seropositive cleared/post-SVR)
+4 HCV states:  u (susceptible/post-SVR), a (acute), c (chronic), t (treatment)
 6 age groups:  <20, 20-29, 30-39, 40-49, 50-59, 60+
-360 compartments
+384 compartments
 ```
 
-- **Transmission** occurs only in D (detained PWID do not inject; X do not
-  re-inject): frequency-dependent force of infection
-  `gamma_i = q * sum_j C_contact(i,j) * infectious_D_j / active_D_j`,
+- **Transmission** occurs only among active PWID (D and F inject; J and X
+  do not): frequency-dependent force of infection
+  `gamma_i = q * sum_j C_contact(i,j) * infectious_active_j / active_j`,
   with a **constant** transmission multiplier (m = 1; the historical level
   is absorbed by the fitted contact row scales).
 - **Ageing**: 10-year bands, `y_change = y/10 per year` to the next band
   (60+ open-ended).
-- **Arrest/release**: D -> J at `lambda1[i]`; J -> D with probability
-  `pi_recid` or J -> X with `1 - pi_recid` at `lambda2[i]`.
+- **Arrest/release**: D -> J (first arrest) at `lambda1[i]`; J -> F with
+  probability `pi_recid` or J -> X with `1 - pi_recid` at `lambda2[i]`;
+  F -> J (re-arrest) at `lambda3[i]`.
 - **Mortality**: `mu[i] * omega` (omega = 14.68 PWID SMR);
   decompensated cirrhosis adds `mu_DC = 0.130/yr`, HCC adds
   `mu_HCC = 0.430/yr`.
-- **Progression rates** (highest defensible literature values):
-  `p_NC_CC = 0.027` (Thein 2008); `p_CC_DC = 0.0788` and
-  `p_CC_HCC = 0.0479` (Alazawi et al. 2010, PMID 20497143, untreated-only
-  rates); `p_DC_HCC = 0.0464` (Rivera-Irigoin et al. 2006, PMID 17209765,
-  upper 95% CI). GT3 relative risks (Kanwal et al. 2014) retained.
+- **Progression rates** (original, literature-based): `p_NC_CC = 0.027`
+  (Thein 2008); `p_CC_DC = 0.039`, `p_CC_HCC = 0.014`, `p_DC_HCC = 0.014`
+  (Lim et al. 2018). GT3 relative risks (Kanwal et al. 2014) retained.
 
 ## 3. Data sources
 
@@ -75,8 +77,10 @@ HCV seroprevalence and population of the prison (detained) PWID stratum.
   2015, mapped to the six age groups (see `mortality_review.md`).
 - **PWID excess mortality**: Mathers et al. 2013 pooled SMR 14.68
   (PMID 23554523).
-- **Progression rates**: Alazawi et al. 2010 (PMID 20497143);
-  Rivera-Irigoin et al. 2006 (PMID 17209765); Thein et al. 2008.
+- **Progression rates**: Thein et al. 2008 (NC -> CC); Lim et al. 2018
+  (CC -> DC, CC -> HCC, DC -> HCC). Alazawi et al. 2010 and
+  Rivera-Irigoin et al. 2006 were used in earlier higher-rate variants
+  (see PROJECT_OVERVIEW.md).
 
 ## 4. Calibration
 
@@ -107,12 +111,12 @@ On top of the NM fit, Bayesian posterior sampling is performed. Per
 was overconfident in well-identified directions and unstable across seeds
 in weakly identified directions. The **traditional MCMC (adaptive
 Metropolis-Hastings) is the primary Bayesian summary**, with strict
-convergence: R-hat in [0.99, 1.01] (achieved 1.0008-1.0096), ESS > 400
-(achieved 1,374-2,457), 3 chains x 40,000 iterations. Priors: log contact
-scales ~ Normal(0, 2^2); log beta scales ~ Student-t(3, 0, 2). Posterior
-predictive 95% credible intervals per age group overlap both the Laplace
-and observed intervals. See `prompt_mcmc.md` and
-`docs/calibration/bayes_methodology.md`.
+convergence: R-hat in [0.995, 1.005] (achieved 0.9997-1.0041), pooled
+ESS > 1000 (achieved 1,310-1,958), 3 chains x 30,000 iterations, burn-in
+5,000, thin 20. Priors: log contact scales ~ Normal(0, 2^2); log beta
+scales ~ Student-t(3, 0, 2). Posterior predictive 95% credible intervals
+per age group overlap both the Laplace and observed intervals. See
+`prompt_mcmc.md`.
 
 ## 5. How to regenerate
 
@@ -120,7 +124,7 @@ and observed intervals. See `prompt_mcmc.md` and
 # 1. Full calibration run (defaults reproduce the final run)
 Rscript src/calibration/run_calibration.R \
   --run-id my_run --seed 101 --maxit 3000 --n-starts 6 \
-  --t-start -10 --t-end 55 --target-time 45 --target-mode sero \
+  --t-start 0 --t-end 150 --target-time 45 --target-mode sero \
   --out-dir output/calibration
 
 # 2. Publication figures (ggplot2)
@@ -142,9 +146,27 @@ Per-run outputs: `run_config.csv`, `targets.csv`, `initial_values.csv`,
 `laplace_diagnostics.csv`, `sessionInfo.txt`, `fit.rds`, and ggplot2
 figures.
 
+### 5.1 Sensitivity analysis (50-year projections from 2017)
+
+Scenario strategies are defined in one CSV
+(`src/calibration/scenarios.csv`): treatment rates by liver stage, GT3
+proportion, SVR/RBV mode, eligible strata (D/J/F/X flags), and a minimum
+eligible age group. Each row is one strategy; outputs are medians and 95%
+credible intervals over 300 posterior draws:
+
+```bash
+Rscript src/calibration/run_analysis.R \
+  --root . --fit output/calibration/run1_4strata/fit.rds \
+  --posterior output/calibration/npe_bayes/posterior_samples_mcmc.csv \
+  --out-dir output/analysis --n-draws 300 --n-cores 4
+```
+
+Outputs: `scenario_summary.csv`, `scenario_key_years.csv`,
+`fig_hcv_trajectories.png`, `fig_dc_hcc_trajectories.png`.
+
 ## 6. Results
 
-Final run: `output/calibration/run5_redo150/`.
+Final run: `output/calibration/run1_4strata/`.
 
 Acceptance criteria are met with 12 parameters and no excess mortality.
 Bayesian outputs are in `output/calibration/npe_bayes/`; 50-year

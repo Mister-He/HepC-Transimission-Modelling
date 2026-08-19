@@ -1,22 +1,22 @@
 # =============================================================================
 # model_metrics.R — J (prison) target extraction and fit metrics
 #
-# The model tracks 5 HCV states: u (susceptible), a (acute), c (chronic),
-# t (treatment), s (seropositive cleared/post-SVR). The prison screening
-# target is anti-HCV serology, so the primary fitted prevalence is
-# seroprevalence (a+c+t+s)/N; viremic prevalence (a+c+t)/N is a sensitivity.
+# The 4-state model tracks u (susceptible/post-SVR), a (acute), c (chronic),
+# t (treatment). There is no separate cleared state, so the fitted prevalence
+# is current/viremic prevalence (a+c+t)/N, used as a proxy for the prison
+# screening target.
 # =============================================================================
 
 # Compartment column for (stratum s, stage k, state h, age i):
 # 3-strata model (D=0, J=1, X=2): C++ idx = s*120 + (k-1)*30 + h*6 + i;
 # output column = idx + 2 (col 1 = time).
-idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
+idx <- function(s, k, h, i) s * 4 * 4 * 6 + (k - 1) * 4 * 6 + h * 6 + i + 2L
 
 j_pop_idx <- function(i) {
-  as.vector(sapply(1:4, function(k) sapply(0:4, function(h) idx(1, k, h, i - 1L))))
+  as.vector(sapply(1:4, function(k) sapply(0:3, function(h) idx(1, k, h, i - 1L))))
 }
 j_sero_idx <- function(i) {
-  as.vector(sapply(1:4, function(k) sapply(c(1, 2, 3, 4), function(h) idx(1, k, h, i - 1L))))
+  as.vector(sapply(1:4, function(k) sapply(c(1, 2, 3), function(h) idx(1, k, h, i - 1L))))
 }
 j_viremic_idx <- function(i) {
   as.vector(sapply(1:4, function(k) sapply(1:3, function(h) idx(1, k, h, i - 1L))))

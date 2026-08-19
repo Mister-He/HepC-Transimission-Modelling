@@ -50,40 +50,44 @@ eq_data <- setup_env$data
 eq_data$t_start <- fit$t_start
 eq_data$t_end <- fit$t_end
 
-scenarios <- list(
-  list(id = "no_treatment", tau = c(0, 0, 0, 0), rho = 0.78,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(0.07, 0.23, 1)),
-  list(id = "early_treatment", tau = c(0.5, 0.5, 0, 0), rho = 0.78,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(0.07, 0.23, 1)),
-  list(id = "broad_treatment", tau = c(0.5, 0.5, 0.3, 0.2), rho = 0.78,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(0.07, 0.23, 1)),
-  list(id = "aggressive_treatment", tau = c(0.8, 0.8, 0.6, 0.4), rho = 0.78,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(0.07, 0.23, 1)),
-  list(id = "rho_low", tau = c(0, 0, 0, 0), rho = 0.60,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(0.07, 0.23, 1)),
-  list(id = "rho_high", tau = c(0, 0, 0, 0), rho = 0.90,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(0.07, 0.23, 1)),
-  list(id = "dc_without_rbv", tau = c(0, 0, 0, 0), rho = 0.78,
-       alpha_DC = base_params$alpha_DC_neg, phi = c(0.07, 0.23, 1)),
-  list(id = "no_postsvr_modifiers", tau = c(0.5, 0.5, 0.3, 0.2), rho = 0.78,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(1, 1, 1)),
-  list(id = "broad_treatment_rho60", tau = c(0.5, 0.5, 0.3, 0.2), rho = 0.60,
-       alpha_DC = base_params$alpha_DC_pos, phi = c(0.07, 0.23, 1))
-)
+scenario_path <- file.path(ROOT, "src", "calibration", "scenarios.csv")
+scenario_df <- read.csv(scenario_path, stringsAsFactors = FALSE)
+
+load_scenarios <- function(sc_df, base_params) {
+  lapply(seq_len(nrow(sc_df)), function(j) {
+    sc <- sc_df[j, ]
+    tau_stratum <- c(sc$elig_D, sc$elig_J, sc$elig_F, sc$elig_X)
+    phi <- if (sc$phi_mode == "baseline") c(0.07, 0.23, 1) else c(1, 1, 1)
+    alpha_DC <- if (sc$alpha_DC_mode == "pos") base_params$alpha_DC_pos else
+      base_params$alpha_DC_neg
+    list(
+      id = sc$scenario,
+      description = sc$description,
+      tau = as.numeric(sc[c("tau_NC", "tau_CC", "tau_DC", "tau_HCC")]),
+      rho = sc$rho,
+      alpha_DC = alpha_DC,
+      phi = phi,
+      tau_stratum = as.numeric(tau_stratum),
+      tau_min_age = as.integer(sc$min_age_group)
+    )
+  })
+}
+
+scenarios <- load_scenarios(scenario_df, base_params)
 
 # Summary indices
-idx_hcv <- function(strata = 0:2, stages = 1:4, states = 1:3, ages = 0:5) {
+idx_hcv <- function(strata = 0:3, stages = 1:4, states = 1:3, ages = 0:5) {
   as.vector(sapply(strata, function(s) sapply(stages, function(k)
     sapply(states, function(h) sapply(ages, function(i)
-      s * 120 + (k - 1) * 30 + h * 6 + i + 2L)))))
+      s * 96 + (k - 1) * 24 + h * 6 + i + 2L)))))
 }
-idx_dc <- function(strata = 0:2, states = 0:4, ages = 0:5) {
+idx_dc <- function(strata = 0:3, states = 0:3, ages = 0:5) {
   as.vector(sapply(strata, function(s) sapply(states, function(h)
-    sapply(ages, function(i) s * 120 + (3 - 1) * 30 + h * 6 + i + 2L))))
+    sapply(ages, function(i) s * 96 + (3 - 1) * 24 + h * 6 + i + 2L))))
 }
-idx_hcc <- function(strata = 0:2, states = 0:4, ages = 0:5) {
+idx_hcc <- function(strata = 0:3, states = 0:3, ages = 0:5) {
   as.vector(sapply(strata, function(s) sapply(states, function(h)
-    sapply(ages, function(i) s * 120 + (4 - 1) * 30 + h * 6 + i + 2L))))
+    sapply(ages, function(i) s * 96 + (4 - 1) * 24 + h * 6 + i + 2L))))
 }
 
 summarise_at_year <- function(out, years, year0 = 47) {
@@ -101,13 +105,15 @@ project_one <- function(theta, scenario) {
   if (is.null(pm)) return(NULL)
   out_eq <- tryCatch(run_sim(pm, eq_data), error = function(e) NULL)
   if (is.null(out_eq)) return(NULL)
-  y0 <- out_eq[nrow(out_eq), 2:361]
+  y0 <- out_eq[nrow(out_eq), 2:385]
   pm$tau <- scenario$tau
   pm$rho <- scenario$rho
   pm$alpha_DC_pos <- scenario$alpha_DC
   pm$phi_CC_DC <- scenario$phi[1]
   pm$phi_CC_HCC <- scenario$phi[2]
   pm$phi_DC_HCC <- scenario$phi[3]
+  pm$tau_stratum <- scenario$tau_stratum
+  pm$tau_min_age <- scenario$tau_min_age
   proj_data <- eq_data
   proj_data$t_start <- 47
   proj_data$t_end <- 97
@@ -156,7 +162,10 @@ key_years <- c(2017, 2027, 2037, 2047, 2057, 2067)
 key_table <- summary %>% filter(year %in% key_years)
 write.csv(key_table, file.path(OUT_DIR, "scenario_key_years.csv"), row.names = FALSE)
 
-okabe <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442", "#000000", "#999999")
+okabe <- c("#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F",
+           "#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC",
+           "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD",
+           "#8C564B", "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF")
 theme_pub <- function() {
   theme_minimal(base_size = 13) +
     theme(panel.grid = element_blank(),
@@ -167,10 +176,7 @@ theme_pub <- function() {
           legend.position = "right")
 }
 
-scenario_order <- c("no_treatment", "early_treatment", "broad_treatment",
-                    "aggressive_treatment", "rho_low", "rho_high",
-                    "dc_without_rbv", "no_postsvr_modifiers",
-                    "broad_treatment_rho60")
+scenario_order <- scenario_df$scenario
 dat$scenario <- factor(dat$scenario, levels = scenario_order)
 
 p1 <- ggplot(summary, aes(x = year, y = hcv_median, colour = scenario)) +

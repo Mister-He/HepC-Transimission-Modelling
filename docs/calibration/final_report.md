@@ -3,33 +3,27 @@
 ## Run
 
 ```text
-output/calibration/run5_redo150/
+output/calibration/run1_4strata/
 ```
 
-## Baseline
+## Model
 
-- Original progression rates: `0.027 / 0.039 / 0.014 / 0.014`.
-- No excess mortality (`eta_s = 1`).
-- 2015 Singapore mortality, `omega = 14.68`.
-- Simulation horizon: `t = -10 .. 140` (150 model years); all states,
-  including DC/HCC totals, are converged at the equilibrium gate.
-- Beta scaling factors: no upper bound.
-
-## Fitted scales
-
-```text
-contact scales: 5.558, 0.0811, 0.0517, 0.4570, 7.120, 0.539
-beta scales:    0.1688, 0.9140, 1.2559, 5.4211, 14.090, 118.15
-```
+- 4 strata: `D/J/F/X` (`lambda1` = first arrest, `lambda3` = re-arrest).
+- 4 liver stages: NC, CC, DC, HCC.
+- 4 HCV states: `u/a/c/t` (no separate cleared state; `u` includes
+  susceptible and post-SVR).
+- 6 age groups.
+- Simulation: `t_start = 0`, `t_end = 150`.
+- Original progression rates; no excess mortality; beta scales unbounded.
 
 ## Fit metrics
 
 ```text
-best NLL                          22.80
-prevalence RMSE                   0.0088
-maximum prevalence error          0.0209
-population MAPE                   0.0493
-maximum population APE            0.1414
+best NLL                          21.42
+prevalence RMSE                   0.0051
+maximum prevalence error          0.0123
+population MAPE                   0.0360
+maximum population APE            0.0935
 equilibrium (all states)          pass
 ```
 
@@ -41,18 +35,15 @@ Laplace intervals overlap all observed intervals.
 output/calibration/npe_bayes/
 ```
 
-- NPE: 30,000 simulations, 2 rounds, 2 seeds.
-- MCMC validation: 3 chains, 30,000 total iterations, burn-in 5,000,
-  thin 20.
-- R-hat range: `1.0002 - 1.0035`.
-- Pooled ESS range: `1432.0 - 2026.2`.
+- thin 20; R-hat range `0.9997 - 1.0041`; pooled ESS `1309.6 - 1958.2`.
+- Density plots are reported on the log-parameter scale; skewness is
+  moderate (max absolute skew about 0.9) and marginals are close to normal.
 
-## Sensitivity analysis
+## Analysis
 
 ```text
 output/analysis/
-docs/calibration/analysis_report.md
 ```
 
-Status quo (no treatment) is now flat over 2017-2067:
-DC remains about 394 and HCC about 103.5, confirming equilibrium.
+Status quo is flat over 2017-2067: DC about 479 (CrI 429-535) and HCC about
+125.6 (CrI 112.7-140.1).

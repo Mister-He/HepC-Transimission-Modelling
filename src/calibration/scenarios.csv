@@ -1,0 +1,21 @@
+scenario,description,tau_NC,tau_CC,tau_DC,tau_HCC,rho,alpha_DC_mode,phi_mode,elig_D,elig_J,elig_F,elig_X,min_age_group
+no_treatment,status quo no treatment,0,0,0,0,0.78,pos,baseline,0,0,0,0,1
+early_treatment_community,treat NC/CC in active community D and F,0.5,0.5,0,0,0.78,pos,baseline,1,0,1,0,1
+broad_treatment_community,treat all stages in active community D and F,0.5,0.5,0.3,0.2,0.78,pos,baseline,1,0,1,0,1
+community_40plus,treat all stages in community D and F aged 40+,0.5,0.5,0.3,0.2,0.78,pos,baseline,1,0,1,0,4
+prison_only_treatment,treat all stages only while in prison J,0.5,0.5,0.3,0.2,0.78,pos,baseline,0,1,0,0,1
+prison_only_treatment_30plus,treat prison J aged 30+ only,0.5,0.5,0.3,0.2,0.78,pos,baseline,0,1,0,0,3
+prison_only_treatment_40plus,treat prison J aged 40+ only,0.5,0.5,0.3,0.2,0.78,pos,baseline,0,1,0,0,4
+prison_only_treatment_50plus,treat prison J aged 50+ only,0.5,0.5,0.3,0.2,0.78,pos,baseline,0,1,0,0,5
+prison_only_treatment_60plus,treat prison J aged 60+ only,0.5,0.5,0.3,0.2,0.78,pos,baseline,0,1,0,0,6
+prison_only_aggressive,aggressive treatment only in prison J,0.8,0.8,0.6,0.4,0.78,pos,baseline,0,1,0,0,1
+prison_universal_optout,universal opt-out prison screening with immediate DAA in J,0.7,0.7,0.5,0.3,0.78,pos,baseline,0,1,0,0,1
+aggressive_treatment_all,aggressive treatment in all strata,0.8,0.8,0.6,0.4,0.78,pos,baseline,1,1,1,1,1
+post_release_linkage,treat all stages in ever-arrested active F (linkage after release),0.5,0.5,0.3,0.2,0.78,pos,baseline,0,0,1,0,1
+prison_plus_postrelease,treat in prison J and continue in community F,0.5,0.5,0.3,0.2,0.78,pos,baseline,0,1,1,0,1
+rho_low_no_tx,GT3 proportion lower no treatment,0,0,0,0,0.6,pos,baseline,0,0,0,0,1
+rho_high_no_tx,GT3 proportion higher no treatment,0,0,0,0,0.9,pos,baseline,0,0,0,0,1
+dc_without_rbv,DC SVR without RBV no treatment,0,0,0,0,0.78,neg,baseline,0,0,0,0,1
+no_postsvr_modifiers,broad community treatment with post-SVR modifiers disabled,0.5,0.5,0.3,0.2,0.78,pos,none,1,0,1,0,1
+broad_community_rho60,broad community treatment with GT3 0.6,0.5,0.5,0.3,0.2,0.6,pos,baseline,1,0,1,0,1
+prison_only_50plus_rho90,prison 50+ treatment with GT3 0.9,0.5,0.5,0.3,0.2,0.9,pos,baseline,0,1,0,0,5

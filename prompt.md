@@ -5,12 +5,15 @@ project from the clean baseline and follow `AGENTS.md`.
 
 ## Baseline
 
+- **Model structure is fixed**: 4 strata `D/J/F/X`, 4 liver stages, 4 HCV
+  states `u/a/c/t`, 6 age groups; `lambda1` is the first-arrest rate
+  (`D -> J`).
 - Original progression rates: `0.027 / 0.039 / 0.014 / 0.014`.
 - `m_min = m_max = 1`.
 - 2015 Singapore mortality, scalar PWID SMR `omega = 14.68`.
 - **No excess-mortality parameter**: `eta_s = 1`.
 - 12 fitted parameters: 6 contact scaling factors, 6 beta scaling factors.
-- **Simulation horizon**: at least 150 model years so that all states,
+- **Simulation horizon**: exactly `t_start = 0`, `t_end = 150`; all states,
   including DC/HCC totals, converge before targets are extracted.
 - **Beta scaling factors have no upper bound**; only a small positive lower
   bound is used.
@@ -32,6 +35,8 @@ is not perfectly unimodal.
 - Beta scales should be monotone non-decreasing with age.
 - Values `>1` are preferred.
 - Both are soft; never force them at the cost of a passing fit.
+- MCMC density plots should be reported on the log-parameter scale so the
+  marginals are approximately normal and skewness is reduced.
 
 ## Figure style
 

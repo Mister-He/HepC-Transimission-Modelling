@@ -19,8 +19,8 @@
 # tolerating the large deviations the data require (e.g. 60+ inflow).
 # =============================================================================
 
-make_priors <- function(contact_anchor = c(5.752, 0.0799, 0.058, 0.40, 5.727, 0.3),
-                        beta_anchor = c(0.171, 0.926, 1.5, 6.5, 9.171, 100),
+make_priors <- function(contact_anchor = c(6.3713, 0.0857, 0.0589, 0.5584, 9.5232, 0.2558),
+                        beta_anchor = c(0.1670, 0.9443, 1.2297, 5.2385, 16.9018, 110.5976),
                         contact_sd = 0.5, beta_sd = 0.8, beta_df = 3) {
   list(
     contact_anchor = contact_anchor, contact_sd = contact_sd,

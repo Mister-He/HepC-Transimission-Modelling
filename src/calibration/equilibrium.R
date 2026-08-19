@@ -29,18 +29,18 @@ check_equilibrium <- function(out, t_lag = 5,
   total_log_ratio <- abs(log(tot_T / tot_T5))
 
   # All-state convergence: total HCV, DC, HCC, and every compartment.
-  idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
-  comp_idx <- as.vector(sapply(0:2, function(s) sapply(1:4, function(k)
-    sapply(0:4, function(h) sapply(0:5, function(i) idx(s, k, h, i))))))
+  idx <- function(s, k, h, i) s * 4 * 4 * 6 + (k - 1) * 4 * 6 + h * 6 + i + 2L
+  comp_idx <- as.vector(sapply(0:3, function(s) sapply(1:4, function(k)
+    sapply(0:3, function(h) sapply(0:5, function(i) idx(s, k, h, i))))))
   comp_T  <- out[row_T, comp_idx]
   comp_T5 <- out[row_T5, comp_idx]
   max_comp_log_ratio <- max(abs(log(pmax(comp_T, 1e-6) / pmax(comp_T5, 1e-6))))
 
-  hcv_idx <- as.vector(sapply(0:2, function(s) sapply(1:4, function(k)
+  hcv_idx <- as.vector(sapply(0:3, function(s) sapply(1:4, function(k)
     sapply(1:3, function(h) sapply(0:5, function(i) idx(s, k, h, i))))))
-  dc_idx <- as.vector(sapply(0:2, function(s) sapply(0:4, function(h)
+  dc_idx <- as.vector(sapply(0:3, function(s) sapply(0:3, function(h)
     sapply(0:5, function(i) idx(s, 3, h, i)))))
-  hcc_idx <- as.vector(sapply(0:2, function(s) sapply(0:4, function(h)
+  hcc_idx <- as.vector(sapply(0:3, function(s) sapply(0:3, function(h)
     sapply(0:5, function(i) idx(s, 4, h, i)))))
   state_log_ratio <- max(
     abs(log(sum(out[row_T, hcv_idx]) / sum(out[row_T5, hcv_idx]))),

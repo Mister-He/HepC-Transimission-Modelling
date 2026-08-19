@@ -11,12 +11,12 @@ sourceCpp("sim.cpp")
 
 # =============================================================================
 # HELPER: flat compartment index (mirrors C++ idx())
-# s in {0=D,1=J,2=X}, k in {1,2,3,4},
-# h in {0=u,1=a,2=c,3=t,4=s (seropositive cleared/post-SVR)}, i in {0..5}
+# s in {0=D,1=J,2=F,3=X}, k in {1,2,3,4},
+# h in {0=u,1=a,2=c,3=t}, i in {0..5}
 # =============================================================================
 # Returns the output-matrix column for compartment (s,k,h,i).
-# C++ flat index = s*120 + (k-1)*30 + h*6 + i; column = index + 2 (col 1 is time).
-idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
+# C++ flat index = s*96 + (k-1)*24 + h*6 + i; column = index + 2 (col 1 is time).
+idx <- function(s, k, h, i) s * 4 * 4 * 6 + (k - 1) * 4 * 6 + h * 6 + i + 2L
 
 # =============================================================================
 # PARAMETERS
@@ -75,6 +75,10 @@ params <- list(
     0.0,   # tau_3: DC   — SCENARIO-DEFINED
     0.0    # tau_4: HCC  — SCENARIO-DEFINED
   ),
+  # Treatment eligibility: which strata and which minimum age group
+  # (1-based) can initiate treatment. D=never, J=current, F=ever, X=former.
+  tau_stratum = c(1, 1, 1, 1),
+  tau_min_age = 1,
 
   # ── Baseline progression rates (per year, other genotype) ─────────────────
   p_NC_CC   = 0.027,   # NC  → CC  (Thein et al. 2008)
@@ -176,20 +180,20 @@ params <- list(
 
 # =============================================================================
 # INITIAL CONDITIONS
-# 360 compartments initialised to near-zero (3 strata x 4 stages x 5 HCV
+# 384 compartments initialised to near-zero (4 strata x 4 stages x 4 HCV
 # states x 6 ages).
 # A small seed of chronic infection is placed in D_c,1,i (never-incarcerated,
 # non-cirrhosis, chronic, all age groups) to start the epidemic.
 # CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
 # =============================================================================
-y0 <- rep(0.0, 360)
+y0 <- rep(0.0, 384)
 
 # Susceptible population: put most of PWID in D_u,1,i
 # Seed chronic infection: 20 chronic per age group in D_c,1,i
 pos = c(26, 95, 164, 169, 183, 241)
 tot = c(145, 607, 759, 649, 564, 544)
 for (i in 0:5) {
-  # column index for the compartment in the 481-col output matrix
+  # column index for the compartment in the 385-col output matrix
   y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
   y0[idx(s=0, k=1, h=1, i=i)] <- pos[i+1]             # D_{a,1,i}
 }
@@ -198,10 +202,10 @@ for (i in 0:5) {
 # DATA / SIMULATION SETTINGS
 # =============================================================================
 data <- list(
-  t_start = 0.0,    # start year (0 = model year 0; map to calendar year in R)
-  t_end   = 150.0,   # simulate 50 years
+  t_start = 0.0,    # start at model year 0
+  t_end   = 150.0,   # simulate 150 model years
   dt      = 1/365,   # daily time steps (1/365 of a year)
-  y0      = y0      # initial conditions (length-360 vector)
+  y0      = y0      # initial conditions (length-384 vector)
 )
 
 # =============================================================================
@@ -226,38 +230,34 @@ params_s1 <- modifyList(params, list(tau = c(0, 0, 0, 0)))
 # =============================================================================
 # COLUMN NAME HELPER (for labelling the output matrix)
 # =============================================================================
-strata_names <- c("D", "J", "X")
+strata_names <- c("D", "J", "F", "X")
 stage_names  <- c("NC", "CC", "DC", "HCC")
-state_names  <- c("u", "a", "c", "t", "s")
+state_names  <- c("u", "a", "c", "t")
 age_names    <- paste0("age", 1:6)
 
-# Column order must match the C++ flat index idx(s,k,h,i) = s*120 + (k-1)*30 + h*6 + i.
+# Column order must match the C++ flat index idx(s,k,h,i) = s*96 + (k-1)*24 + h*6 + i.
 # The output matrix is [time, compartment 0, ..., compartment 359], so the
 # compartment with C++ index idx sits in column idx + 2.
-col_names <- character(361)
+col_names <- character(385)
 col_names[1] <- "time"
-for (ss in 0:2) {
+for (ss in 0:3) {
   for (kk in 1:4) {
-    for (hh in 0:4) {
+    for (hh in 0:3) {
       for (ii in 0:5) {
-        pos <- ss * 120 + (kk - 1) * 30 + hh * 6 + ii + 2
+        pos <- ss * 96 + (kk - 1) * 24 + hh * 6 + ii + 2
         col_names[pos] <- paste0(strata_names[ss + 1], "_", stage_names[kk], "_",
                                  state_names[hh + 1], "_age", ii + 1)
       }
     }
   }
 }
-stopifnot(length(col_names) == 361)
+stopifnot(length(col_names) == 385)
 
 # =============================================================================
 # BASELINE LAMBDA1
-# During calibration, build_params() replaces lambda1 with
-# lambda3 * c_composite / tot_in_scaling_fct before every simulation.
+# lambda1 is the first-arrest rate (D -> J) and is used unchanged.
 # =============================================================================
-params_s1 <- modifyList(params_s1, 
-                        list(
-                          lambda1 = params$lambda3 * params$c_composite
-                        ))
+params_s1 <- modifyList(params_s1, list(lambda1 = params$lambda1))
 
 # =============================================================================
 # EXAMPLE RUN
