@@ -2,7 +2,7 @@
 # run_analysis.R — 50-year sensitivity projection with posterior CrIs
 #
 # Usage:
-#   Rscript src/calibration/run_analysis.R \
+#   Rscript scripts/run_analysis.R \
 #     --root . \
 #     --fit output/calibration/<run>/fit.rds \
 #     --posterior output/calibration/npe_bayes/posterior_samples_mcmc.csv \
@@ -23,7 +23,7 @@ arg_val <- function(name, default = NULL) {
 }
 
 ROOT <- normalizePath(arg_val("--root", getwd()), mustWork = TRUE)
-FIT_PATH <- normalizePath(arg_val("--fit", file.path(ROOT, "output", "calibration", "run5_redo150", "fit.rds")), mustWork = TRUE)
+FIT_PATH <- normalizePath(arg_val("--fit", file.path(ROOT, "output", "calibration", "run1_4strata", "fit.rds")), mustWork = TRUE)
 POST_PATH <- normalizePath(arg_val("--posterior", file.path(ROOT, "output", "calibration", "npe_bayes", "posterior_samples_mcmc.csv")), mustWork = TRUE)
 OUT_DIR <- normalizePath(arg_val("--out-dir", file.path(ROOT, "output", "analysis")), mustWork = FALSE)
 N_DRAWS <- as.integer(arg_val("--n-draws", "300"))

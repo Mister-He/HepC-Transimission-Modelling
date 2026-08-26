@@ -238,7 +238,7 @@ the present projections are consistent with its conclusions.
 
 ```text
 src/calibration/scenarios.csv           scenario inventory (single source)
-src/calibration/run_analysis.R          analysis driver
+scripts/run_analysis.R                  analysis driver
 output/analysis/scenario_summary.csv    per-scenario yearly medians/CrIs
 output/analysis/scenario_key_years.csv  key-year table (2017-2067)
 output/analysis/fig_hcv_trajectories.png

@@ -3,7 +3,7 @@
 #
 # Functions only; call plot_all(fit, out_dir) to render every figure.
 # CLI usage:
-#   Rscript src/calibration/plot_results.R --fit <fit.rds> --out-dir <dir>
+#   Rscript scripts/plot_results.R --fit=<fit.rds> --out-dir=<dir>
 # =============================================================================
 
 suppressMessages({

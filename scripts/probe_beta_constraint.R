@@ -8,7 +8,7 @@
 # rule is abandoned for the affected age groups and this probe documents why.
 #
 # Usage:
-#   Rscript src/calibration/probe_beta_constraint.R \
+#   Rscript scripts/probe_beta_constraint.R \
 #     --root . --fit output/calibration/<run_id>/fit.rds \
 #     --out-dir output/calibration/probe_beta_constraint_<run_id> \
 #     [--maxit 2000]

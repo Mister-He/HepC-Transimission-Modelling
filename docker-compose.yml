@@ -1,0 +1,34 @@
+# =============================================================================
+# docker-compose.yml — optional containerised workflows
+#
+# Usage:
+#   docker compose run --rm r-test          # run unit + integration tests
+#   docker compose run --rm r-calibrate     # run a short calibration
+#
+# The R service mounts the repository so outputs land on the host.
+# =============================================================================
+
+services:
+  r-test:
+    build: .
+    image: hepc-model:r
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: ["Rscript", "scripts/run_tests.R"]
+
+  r-calibrate:
+    build: .
+    image: hepc-model:r
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command:
+      - Rscript
+      - scripts/run_calibration.R
+      - --run-id
+      - docker_smoke
+      - --n-starts
+      - "1"
+      - --maxit
+      - "50"

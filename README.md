@@ -8,36 +8,50 @@ HCV seroprevalence and population of the prison (detained) PWID stratum.
 
 ```text
 .
+├── README.md / README.zh-CN.md  Project overview (EN / 中文)
+├── AGENTS.md / prompt*.md       Working instructions for agents
+├── Model schematic.pptx         Protected visual model description
+├── docs/
+│   ├── requirements.md          Functional & non-functional requirements
+│   ├── architecture.md          Model/component architecture + data flow
+│   ├── test-plan.md             Unit/integration testing strategy
+│   └── calibration/             Calibration & analysis reports
+│       ├── final_report.md
+│       └── analysis_report.md
 ├── src/
 │   ├── setup.R                # Parameters, initial conditions, helpers
-│   ├── sim.cpp                # Compiled ODE solver (4-strata model)
+│   ├── sim.cpp                # Compiled ODE solver (4 strata, 384 compartments)
 │   └── calibration/
-│       ├── targets.R          # Calibration target data + Binomial counts
+│       ├── targets.R          # Target data + Binomial count reconstruction
 │       ├── model_metrics.R    # J summary extraction + fit metrics
-│       ├── equilibrium.R      # T vs T-5 stability gate
+│       ├── equilibrium.R      # T vs T-5 stability gate (all states)
 │       ├── likelihood.R       # 12-parameterisation + NLL objective
-│       ├── calibrate_nm.R     # Multi-start Nelder-Mead runner + informed/warm starts
+│       ├── calibrate_nm.R     # Multi-start Nelder-Mead runner
 │       ├── laplace.R          # Laplace approximation (Hessian, MC intervals)
-│       ├── run_calibration.R  # End-to-end calibration runner
-│       ├── run_analysis.R     # 50-year sensitivity projections (posterior CrIs)
+│       ├── mcmc.R             # Adaptive Metropolis + priors
+│       ├── plot_results.R     # Calibration figures (library + CLI)
+│       ├── plot_mcmc.R        # Bayesian figures (library)
 │       ├── scenarios.csv      # Sensitivity scenario inventory (single source)
-│       ├── plot_results.R     # ggplot2 publication figures (all figures)
-│       ├── probe_beta_constraint.R  # beta_scale > 1 feasibility probe
-│       └── (analysis probes)  # Variant/sensitivity probes
-├── docs/calibration/
-│   ├── preflight.md           # Pre-run record (Git SHA, hashes)
-│   ├── model_audit.md         # Model audit + failure diagnosis
-│   ├── mortality_review.md    # 2015 mortality + PWID SMR evidence
-│   ├── natural_history_review.md  # Liver progression rate evidence
-│   ├── likelihood.md          # Statistical model specification
-│   ├── DECISIONS.md           # Append-only decision log
-│   ├── final_report.md        # Final calibration report
-│   └── PROJECT_OVERVIEW.md    # Full experiment walk-through (what was tried, file provenance)
-├── output/calibration/        # Per-run outputs (run_config, solutions, predictions, ...)
+│       └── (library modules)  # Sourced by scripts/ entry points
+├── scripts/                   # Pipeline entry points
+│   ├── run_calibration.R      # NM calibration end-to-end
+│   ├── run_npe.R              # NPE + MCMC Bayesian pipeline
+│   ├── npe_train.py           # Python NPE trainer (sbi/torch)
+│   ├── run_analysis.R         # 50-year sensitivity projections (posterior CrIs)
+│   ├── plot_results.R         # CLI wrapper for calibration figures
+│   ├── probe_beta_constraint.R# beta_scale > 1 feasibility probe
+│   └── run_tests.R            # Unit/integration test runner
+├── tests/
+│   ├── helper.R               # Assertion helpers
+│   ├── unit/                  # Fast dependency-light unit tests
+│   └── integration/           # Compile + simulate + pipeline smoke tests
 ├── figures/                   # Final ggplot2 figures
-├── README.md / README.zh-CN.md
-├── AGENTS.md / prompt.md      # Working instructions for agents
-└── Model schematic.pptx       # Visual record (protected, never modified)
+├── output/                    # Generated artefacts
+│   ├── calibration/           # Per-run outputs (run_config, solutions, ...)
+│   └── analysis/              # Sensitivity projections
+├── .github/workflows/ci.yml   # CI (unit + integration tests)
+├── Dockerfile                 # Optional reproducible R environment
+└── docker-compose.yml         # Optional containerised workflows
 ```
 
 ## 2. Model structure
@@ -122,22 +136,25 @@ per age group overlap both the Laplace and observed intervals. See
 
 ```bash
 # 1. Full calibration run (defaults reproduce the final run)
-Rscript src/calibration/run_calibration.R \
+Rscript scripts/run_calibration.R \
   --run-id my_run --seed 101 --maxit 3000 --n-starts 6 \
   --t-start 0 --t-end 150 --target-time 45 --target-mode sero \
   --out-dir output/calibration
 
 # 2. Publication figures (ggplot2)
-Rscript src/calibration/plot_results.R \
-  --fit output/calibration/<run_id>/fit.rds --out-dir figures
+Rscript scripts/plot_results.R \
+  --fit=output/calibration/<run_id>/fit.rds --out-dir=figures
 
 # 3. Bayesian posterior (NPE 3 rounds + MCMC strict validation)
-Rscript src/calibration/run_npe.R --step all \
+Rscript scripts/run_npe.R --step all \
   --root . --fit output/calibration/<run_id>/fit.rds \
   --out-dir output/calibration/npe_bayes \
   --n-sims 60000 --n-cores 6 --seed 2026 \
   --n-draws 60000 --n-proposal 20000 --n-rounds 3 \
   --n-iter-mcmc 20000 --burnin-mcmc 5000 --mcmc-max-iter 400000
+
+# 4. Tests (unit + integration)
+Rscript scripts/run_tests.R
 ```
 
 Per-run outputs: `run_config.csv`, `targets.csv`, `initial_values.csv`,
@@ -155,7 +172,7 @@ eligible age group. Each row is one strategy; outputs are medians and 95%
 credible intervals over 300 posterior draws:
 
 ```bash
-Rscript src/calibration/run_analysis.R \
+Rscript scripts/run_analysis.R \
   --root . --fit output/calibration/run1_4strata/fit.rds \
   --posterior output/calibration/npe_bayes/posterior_samples_mcmc.csv \
   --out-dir output/analysis --n-draws 300 --n-cores 4

@@ -12,7 +12,7 @@
 #   all     run every step
 #
 # Usage:
-#   Rscript src/calibration/run_npe.R --step all \
+#   Rscript scripts/run_npe.R --step all \
 #     --root . --fit output/calibration/run2_v1_12p_warm/fit.rds \
 #     --out-dir output/calibration/npe_bayes \
 #     --n-sims 60000 --n-cores 6 --seed 2026 \
@@ -30,7 +30,7 @@ STEP     <- arg_val("--step", "all")
 ROOT     <- normalizePath(arg_val("--root", getwd()), mustWork = TRUE)
 FIT_PATH <- normalizePath(arg_val("--fit",
               file.path(ROOT, "output", "calibration",
-                        "run2_v1_12p_warm", "fit.rds")), mustWork = TRUE)
+                        "run1_4strata", "fit.rds")), mustWork = TRUE)
 OUT_DIR  <- normalizePath(arg_val("--out-dir",
               file.path(ROOT, "output", "calibration", "npe_bayes")),
             mustWork = FALSE)
@@ -149,7 +149,7 @@ step_data <- function() {
 # ---------------------------------------------------------------------------
 step_train <- function() {
   if (!file.exists(PYTHON)) stop("python not found:", PYTHON)
-  py <- file.path(ROOT, "src", "calibration", "npe_train.py")
+  py <- file.path(ROOT, "scripts", "npe_train.py")
   base_args <- c("--theta", file.path(OUT_DIR, "theta_train.csv"),
                  "--x", file.path(OUT_DIR, "x_train.csv"),
                  "--x-obs", file.path(OUT_DIR, "x_obs.csv"),

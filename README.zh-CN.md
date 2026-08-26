@@ -7,36 +7,50 @@
 
 ```text
 .
+├── README.md / README.zh-CN.md  项目总览（EN / 中文）
+├── AGENTS.md / prompt*.md       面向 agent 的工作说明
+├── Model schematic.pptx         受保护的模型示意图
+├── docs/
+│   ├── requirements.md          功能性与非功能性需求
+│   ├── architecture.md          模型/组件架构与数据流
+│   ├── test-plan.md             单元/集成测试策略
+│   └── calibration/             校准与分析报告
+│       ├── final_report.md
+│       └── analysis_report.md
 ├── src/
 │   ├── setup.R                # 参数、初始条件、辅助函数
-│   ├── sim.cpp                # 编译的 ODE 求解器（4 层结构模型）
+│   ├── sim.cpp                # 编译的 ODE 求解器（4 层、384 分室）
 │   └── calibration/
 │       ├── targets.R          # 校准目标数据与二项计数重建
 │       ├── model_metrics.R    # J 层汇总提取与拟合指标
 │       ├── equilibrium.R      # T 与 T-5 稳定性门槛
 │       ├── likelihood.R       # 12 参数化与 NLL 目标函数
-│       ├── calibrate_nm.R     # 多重起点 Nelder-Mead + 知情/热启动
+│       ├── calibrate_nm.R     # 多重起点 Nelder-Mead
 │       ├── laplace.R          # Laplace 近似（Hessian、MC 区间）
-│       ├── run_calibration.R  # 端到端校准主程序
-│       ├── run_analysis.R     # 50 年敏感性投影（后验 CrI）
+│       ├── mcmc.R             # adaptive Metropolis + 先验
+│       ├── plot_results.R     # 校准图件（库 + CLI）
+│       ├── plot_mcmc.R        # 贝叶斯图件（库）
 │       ├── scenarios.csv      # 敏感性场景清单（单一数据源）
-│       ├── plot_results.R     # ggplot2 出版级图件（所有图）
-│       ├── probe_beta_constraint.R  # beta_scale>1 可行性探针
-│       └── （分析探针）        # 变体/敏感性探针
-├── docs/calibration/
-│   ├── preflight.md           # 运行前记录（Git SHA、哈希）
-│   ├── model_audit.md         # 模型审计与失败诊断
-│   ├── mortality_review.md    # 2015 年死亡率与 PWID SMR 证据
-│   ├── natural_history_review.md  # 肝脏疾病进展率证据综述
-│   ├── likelihood.md          # 统计模型规范
-│   ├── DECISIONS.md           # 只追加的决策日志
-│   ├── final_report.md        # 最终校准报告
-│   └── PROJECT_OVERVIEW.md    # 全流程实验说明（试过什么、文件来源）
-├── output/calibration/        # 每次运行的输出（run_config、solutions、predictions 等）
+│       └── （库模块）          # 由 scripts/ 入口脚本加载
+├── scripts/                   # 流水线入口
+│   ├── run_calibration.R      # NM 校准端到端
+│   ├── run_npe.R              # NPE + MCMC 贝叶斯流水线
+│   ├── npe_train.py           # Python NPE 训练器（sbi/torch）
+│   ├── run_analysis.R         # 50 年敏感性投影（后验 CrI）
+│   ├── plot_results.R         # 校准图件 CLI 包装
+│   ├── probe_beta_constraint.R# beta_scale>1 可行性探针
+│   └── run_tests.R            # 单元/集成测试运行器
+├── tests/
+│   ├── helper.R               # 断言辅助函数
+│   ├── unit/                  # 快速、轻依赖单元测试
+│   └── integration/           # 编译 + 模拟 + 流水线冒烟测试
 ├── figures/                   # 最终 ggplot2 图件
-├── README.md / README.zh-CN.md
-├── AGENTS.md / prompt.md      # 面向 agent 的工作说明
-└── Model schematic.pptx       # 模型示意图（受保护，不可修改）
+├── output/                    # 生成产物
+│   ├── calibration/           # 每次运行输出（run_config、solutions 等）
+│   └── analysis/              # 敏感性投影
+├── .github/workflows/ci.yml   # CI（单元 + 集成测试）
+├── Dockerfile                 # 可选的可复现 R 环境
+└── docker-compose.yml         # 可选的容器化工作流
 ```
 
 ## 2. 模型结构
@@ -109,22 +123,25 @@ Student-t(3, 0, 2)。逐年龄组后验预测 95% 可信区间与 Laplace 及观
 
 ```bash
 # 1. 完整校准（默认参数即可复现最终结果）
-Rscript src/calibration/run_calibration.R \
+Rscript scripts/run_calibration.R \
   --run-id my_run --seed 101 --maxit 3000 --n-starts 6 \
   --t-start 0 --t-end 150 --target-time 45 --target-mode sero \
   --out-dir output/calibration
 
 # 2. 出版级图件（ggplot2）
-Rscript src/calibration/plot_results.R \
-  --fit output/calibration/<run_id>/fit.rds --out-dir figures
+Rscript scripts/plot_results.R \
+  --fit=output/calibration/<run_id>/fit.rds --out-dir=figures
 
 # 3. 贝叶斯后验（NPE 3 轮 + MCMC 严格验证）
-Rscript src/calibration/run_npe.R --step all \
+Rscript scripts/run_npe.R --step all \
   --root . --fit output/calibration/<run_id>/fit.rds \
   --out-dir output/calibration/npe_bayes \
   --n-sims 60000 --n-cores 6 --seed 2026 \
   --n-draws 60000 --n-proposal 20000 --n-rounds 3 \
   --n-iter-mcmc 20000 --burnin-mcmc 5000 --mcmc-max-iter 400000
+
+# 4. 测试（单元 + 集成）
+Rscript scripts/run_tests.R
 ```
 
 每次运行输出：`run_config.csv`、`targets.csv`、`initial_values.csv`、
@@ -140,7 +157,7 @@ Rscript src/calibration/run_npe.R --step all \
 可信区间：
 
 ```bash
-Rscript src/calibration/run_analysis.R \
+Rscript scripts/run_analysis.R \
   --root . --fit output/calibration/run1_4strata/fit.rds \
   --posterior output/calibration/npe_bayes/posterior_samples_mcmc.csv \
   --out-dir output/analysis --n-draws 300 --n-cores 4

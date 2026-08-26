@@ -4,6 +4,25 @@
 
 Calibrate the Singapore HCV PWID model on branch `dev_params_reasonable`.
 
+## Repository layout (standard structure)
+
+```text
+src/                 model + analysis library (setup.R, sim.cpp,
+                     calibration modules, scenarios.csv)
+scripts/             pipeline entry points (run_calibration.R,
+                     run_npe.R, run_analysis.R, npe_train.py,
+                     run_tests.R, plot_results.R)
+tests/               unit/ (fast, no compilation) and
+                     integration/ (compile + simulate + pipeline smoke)
+docs/                requirements.md, architecture.md, test-plan.md,
+                     calibration/ reports
+.github/workflows/ci.yml
+Dockerfile / docker-compose.yml (optional)
+```
+
+Run `Rscript scripts/run_tests.R` after any change; the integration suite
+guards the `tau_stratum`/`tau_min_age` scenario wiring.
+
 ## Baseline
 
 - **Fixed model structure**: 4 strata `D/J/F/X`, 4 stages, 4 HCV states

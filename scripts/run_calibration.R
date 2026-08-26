@@ -2,15 +2,15 @@
 # run_calibration.R — deterministic multi-start Nelder-Mead calibration
 #
 # Usage:
-#   Rscript src/calibration/run_calibration.R \
+#   Rscript scripts/run_calibration.R \
 #     [--root <repo root>] [--run-id <id>] [--seed 101] [--maxit 3000] \
 #     [--n-starts 6] [--sd-perturb 0.8] [--t-start -10] [--t-end 55] \
 #     [--target-time 45] [--target-mode sero] [--excess-mortality] \
 #     [--out-dir output/calibration]
 #
-# Model-time convention: t = 0 <-> calendar 1970. Simulation runs at least
-# 150 model years (t = -10..140 by default); targets compared at t = 45
-# (calendar 2015); equilibrium gate at t = 140 vs t = 135.
+# Model-time convention: t = 0 <-> calendar 1970. Simulation runs 150 model
+# years (t = 0..150 by default); targets compared at t = 45 (calendar 2015);
+# equilibrium gate at t = 150 vs t = 145.
 #
 # 12 fitted log-parameters: 6 contact row scales, 6 beta inflow scales.
 # Transmission is constant (m_min = m_max = 1, merged into contact scales).
