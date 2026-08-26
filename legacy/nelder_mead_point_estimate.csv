@@ -1,0 +1,13 @@
+parameter,theta_log,scale_value,description
+theta1,1.85180416132217,6.37130401982815,log contact row scale age1 (contact_scale = exp(theta))
+theta2,-2.456917410171,0.0856987182124598,log contact row scale age2
+theta3,-2.83108349195722,0.0589489483438295,log contact row scale age3
+theta4,-0.582694482047231,0.558391761140578,log contact row scale age4
+theta5,2.25372719933782,9.52316450292186,log contact row scale age5
+theta6,-1.36343925736614,0.255779570701977,log contact row scale age6
+theta7,-1.78977034422545,0.166998517437349,log beta inflow scale age1 (beta_scale = exp(theta))
+theta8,-0.0573350799585561,0.944277607847825,log beta inflow scale age2
+theta9,0.206762639702967,1.22969065739798,log beta inflow scale age3
+theta10,1.65603708644149,5.23850989360077,log beta inflow scale age4
+theta11,2.82741816698456,16.9017669037974,log beta inflow scale age5
+theta12,4.70589814858433,110.597573406888,log beta inflow scale age6

@@ -1,0 +1,16 @@
+{
+  "dt_days": 7.0,
+  "num_warmup": 500,
+  "num_samples": 1000,
+  "num_chains": 4,
+  "seed": 2026,
+  "chain_method": "parallel",
+  "penalty_mode": "none",
+  "parameterization": "whiten",
+  "whiten_source": "legacy posterior mean + chol(cov + 1e-8 I)",
+  "numpyro_version": "0.21.0",
+  "jax_version": "0.11.1",
+  "init": "legacy Nelder-Mead point estimate",
+  "x64": "True",
+  "ppc_eq_pass_fraction": 1.0
+}

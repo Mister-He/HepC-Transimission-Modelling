@@ -1,0 +1,7 @@
+jax[cpu]>=0.4.30
+numpyro>=0.16
+numpy>=1.26
+scipy>=1.11
+pandas>=2.0
+matplotlib>=3.8
+arviz>=0.18

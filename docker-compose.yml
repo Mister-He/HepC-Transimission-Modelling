@@ -1,34 +1,28 @@
-# =============================================================================
-# docker-compose.yml — optional containerised workflows
-#
-# Usage:
-#   docker compose run --rm r-test          # run unit + integration tests
-#   docker compose run --rm r-calibrate     # run a short calibration
-#
-# The R service mounts the repository so outputs land on the host.
-# =============================================================================
-
 services:
-  r-test:
+  test:
     build: .
-    image: hepc-model:r
+    image: hepc-numpyro:latest
     working_dir: /workspace
     volumes:
       - .:/workspace
-    command: ["Rscript", "scripts/run_tests.R"]
+    command: ["python", "-m", "pytest", "tests/unit", "tests/integration", "-v"]
 
-  r-calibrate:
+  infer:
     build: .
-    image: hepc-model:r
+    image: hepc-numpyro:latest
     working_dir: /workspace
     volumes:
       - .:/workspace
     command:
-      - Rscript
-      - scripts/run_calibration.R
-      - --run-id
-      - docker_smoke
-      - --n-starts
-      - "1"
-      - --maxit
-      - "50"
+      - python
+      - scripts/run_nuts.py
+      - --num-warmup
+      - "500"
+      - --num-samples
+      - "1000"
+      - --num-chains
+      - "4"
+      - --dt-days
+      - "7"
+      - --out-dir
+      - results/numpyro_nuts

@@ -1,30 +1,19 @@
 # =============================================================================
-# Dockerfile — reproducible R environment for the HCV PWID model
-#
-# Optional: CI does not depend on this image. Build and run:
-#   docker build -t hepc-model:r .
-#   docker run --rm -v "$PWD":/workspace hepc-model:r
-#
-# The Python NPE stack (sbi/torch) is intentionally not included; it is heavy
-# and only needed for scripts/run_npe.R. See docker-compose.yml for how to
-# run the R pipeline.
+# Dockerfile — NumPyro/JAX 推断环境
+#   docker build -t hepc-numpyro:latest .
+#   docker run --rm hepc-numpyro:latest                # 运行全部测试
+#   docker run --rm -v "$PWD":/workspace hepc-numpyro:latest \
+#       python scripts/run_nuts.py --num-warmup 500 --num-samples 1000
 # =============================================================================
-
-FROM rocker/r-ver:4.4.1
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxml2-dev \
-    libgit2-dev \
-    libblas-dev \
-    liblapack-dev \
-    gfortran \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN install2.r Rcpp RcppArmadillo dplyr ggplot2 MASS patchwork
+FROM python:3.13-slim
 
 WORKDIR /workspace
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-CMD ["Rscript", "scripts/run_tests.R"]
+ENV MPLCONFIGDIR=/tmp/mplcache
+
+CMD ["python", "-m", "pytest", "tests/unit", "-v"]

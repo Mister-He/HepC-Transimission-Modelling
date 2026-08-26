@@ -1,4 +1,7 @@
 .DS_Store
-.Rhistory
+.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.Rhistory
+.RData

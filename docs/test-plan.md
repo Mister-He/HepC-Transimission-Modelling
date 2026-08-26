@@ -1,80 +1,58 @@
-# Test plan
+# 测试计划（Test Plan）
 
-## 1. Objectives
+## 1. 目标
 
-Verify, on every change, that:
+每次改动验证：
 
-1. the model compiles and produces valid dynamics (no negative values, no
-   NaN/Inf, finite positive population, prevalence in [0, 1]);
-2. the calibration parameterisation and likelihoods behave correctly;
-3. the equilibrium gate correctly separates converged from unconverged
-   trajectories;
-4. the scenario machinery correctly targets strata and age groups
-   (regression protection for the `tau_stratum` / `tau_min_age` wiring);
-5. the end-to-end pipeline runs without external secrets or heavy compute.
+1. 配置 JSON 正确加载、初始条件与 legacy 布局一致；
+2. JAX 模拟器与 legacy R/C++ 输出数值等价（容差 1e-8）；
+3. 似然/先验与 legacy 标定输出一致；
+4. 推断工具（摘要/比较/PPC）行为正确；
+5. 端到端 NumPyro NUTS 与 PPC 流水线可运行（短时域冒烟）。
 
-## 2. Test levels
+## 2. 测试层级
 
-### Unit tests — `tests/unit/`
+### 单元测试 —— `tests/unit/`
 
-Fast, dependency-light, no C++ compilation required.
-
-| File | Covers |
+| 文件 | 覆盖内容 |
 |---|---|
-| `test_targets.R` | age-group structure; prevalence inside (0,1); integer prison totals; Binomial count reconstruction within rounding tolerance |
-| `test_likelihood.R` | 12-parameter exp parameterisation; bounds; Binomial/log-Normal likelihoods; plausibility pattern penalty |
-| `test_metrics.R` | 384-compartment indexing; J summary extraction on synthetic outputs; fit metrics at observed values |
-| `test_equilibrium.R` | equilibrium gate passes on stable trajectories and fails on perturbed ones; default criteria |
+| `test_config.py` | 参数形状、目标一致性、y0 展开布局、模拟设置 |
+| `test_simulator.py` | NM 点估计处与 R 参考的摘要/终态一致性、平衡态门、JIT/grad、年龄推进数学 |
+| `test_likelihood.py` | 统计 NLL 与 legacy solutions.csv 对照、先验对数密度、边界因子 |
+| `test_inference.py` | theta 长表、摘要、与 legacy 比较（KS）、PPC 摘要 |
 
-### Integration tests — `tests/integration/`
+### 集成测试 —— `tests/integration/`
 
-Compile `src/sim.cpp` and exercise the real pipeline.
-
-| File | Covers |
+| 文件 | 覆盖内容 |
 |---|---|
-| `test_sim_and_pipeline.R` | compile + output shape; no negatives/NaN; population invariants; determinism; objective finite at theta=0; scenario CSV loaded; prison-only/age-restricted/community treatment effects (regression for the strata/age wiring) |
+| `test_nuts_smoke.py` | 短时域（5 年、7 天步长）NUTS 运行、样本有限、arviz 诊断；Predictive PPC 冒烟 |
 
-## 3. Running tests
+## 3. 回归基准（reference data）
 
-```bash
-# all tests (unit then integration)
-Rscript scripts/run_tests.R
+`tests/data/` 由 `legacy/validation/generate_reference.R` 用 R/C++ 模型生成：
 
-# a single scope
-Rscript scripts/run_tests.R --scope unit
-Rscript scripts/run_tests.R --scope integration
+- `summary_nm.csv`：NM 点估计处 t=45 的 J 层摘要；
+- `state_T.csv` / `state_T5.csv`：t=150 / t=145 全 384 隔室状态；
+- `traj_subset.csv`：每 1000 步的轨迹子集。
 
-# a single file
-Rscript tests/unit/test_likelihood.R
-Rscript tests/integration/test_sim_and_pipeline.R
-```
+单元测试以 1e-8 绝对容差对照（实测偏差 ~1e-12）。
 
-Each test file runs in its own R session; the runner exits non-zero if any
-file fails. Integration tests require `Rcpp` and `RcppArmadillo`.
+## 4. CI
 
-## 4. CI mapping
+`.github/workflows/ci.yml` 在 push/PR 时运行：
 
-`.github/workflows/ci.yml` runs on every push/PR:
+1. Python 3.13 + `requirements-dev.txt`；
+2. `pytest tests/unit`；
+3. `pytest tests/integration`（短时域冒烟，避免重计算）；
+4. `compileall` 语法检查。
 
-1. `r-tests` (ubuntu): set up R, install R packages, compile `src/sim.cpp`,
-   run unit tests, run integration tests;
-2. `python-npe-syntax`: syntax-check `scripts/npe_train.py` (heavy NPE
-   training is deliberately excluded from CI).
+完整推断（500+ 样本 × 4 链）不在 CI 中运行，按需通过
+`scripts/run_nuts.py` 或 `docker compose run infer` 执行。
 
-## 5. Acceptance / regression gates
+## 5. 手动验证清单
 
-- Unit + integration suites pass with zero failures.
-- `Rcpp::sourceCpp("src/sim.cpp")` compiles cleanly.
-- Known regression: an all-age prison-only scenario must reduce total HCV
-  more than a 40+-only scenario over the same horizon (guards the
-  `tau_min_age` wiring that previously made all scenarios equivalent).
-- The calibration acceptance criteria (see `requirements.md` section 3)
-  are verified by `run_calibration.R` output; the Bayesian criteria
-  (R-hat in [0.995, 1.005], pooled ESS > 1000) by `run_npe.R` output.
-
-## 6. Out of CI scope
-
-- Full multi-start calibration and full NPE training (hours of compute);
-  these are run on demand via `scripts/run_calibration.R` and
-  `scripts/run_npe.R` and reviewed from `output/calibration/`.
-- Platform matrix testing (macOS/Windows) — currently ubuntu-only in CI.
+- [ ] `pytest tests/unit -v` 全绿；
+- [ ] `pytest tests/integration -v` 全绿；
+- [ ] 完整 NUTS 运行：R-hat ∈ [0.995, 1.005]、ESS > 1000、发散数报告；
+- [ ] PPC：观测值落入 95% CrI，平衡态通过率报告；
+- [ ] 与 legacy 后验比较表（`compare_legacy.csv`）生成。

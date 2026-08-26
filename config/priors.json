@@ -1,0 +1,12 @@
+{
+  "_comment": "先验分布（与 legacy/prior_distribution.json 一致，来自 legacy MCMC 实际生效的 make_priors()）。theta[1:6] = log contact row scale ~ Normal(log(anchor), sd^2)；theta[7:12] = log beta inflow scale = log(anchor) + sd*z, z ~ StudentT(df)。",
+  "contact": {
+    "anchor_scale": [6.3713, 0.0857, 0.0589, 0.5584, 9.5232, 0.2558],
+    "sd": 0.5
+  },
+  "beta": {
+    "anchor_scale": [0.167, 0.9443, 1.2297, 5.2385, 16.9018, 110.5976],
+    "sd": 0.8,
+    "df": 3.0
+  }
+}

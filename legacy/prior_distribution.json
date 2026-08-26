@@ -1,0 +1,25 @@
+{
+  "n_parameters": 12,
+  "parameterisation": "theta[1:6] = log(contact row scale); theta[7:12] = log(beta inflow scale)",
+  "contact": {
+    "distribution": "Normal",
+    "anchor_log_mean": [
+      1.85238409206266, -2.45716876922737, -2.83190683537154,
+      -0.58266893819138, 2.25385735395469, -1.36330484297429
+    ],
+    "anchor_scale": [6.3713, 0.0857, 0.0589, 0.5584, 9.5232, 0.2558],
+    "sd": 0.5
+  },
+  "beta": {
+    "distribution": "ScaledStudentT",
+    "anchor_log_mean": [
+      -1.78927433324229, -0.0573159525430542, 0.206766230477881,
+      1.65582508696009, 2.82710230643952, 4.70615462686473
+    ],
+    "anchor_scale": [0.1670, 0.9443, 1.2297, 5.2385, 16.9018, 110.5976],
+    "sd": 0.8,
+    "df": 3
+  },
+  "documented_string": "log contact ~ Normal(0,2^2); log beta ~ Student-t(3,0,2)",
+  "effective_prior_note": "mcmc.R make_priors() with default anchors/sd is the prior actually used by the final MCMC run"
+}

@@ -1,0 +1,41 @@
+{
+  "targets": {
+    "age_groups": ["<20", "20-29", "30-39", "40-49", "50-59", "60+"],
+    "prison_total": [99, 1244, 1467, 1841, 1628, 409],
+    "prev_supplied": [0.1118421, 0.1731044, 0.2684954, 0.4301165, 0.4821029, 0.3544304],
+    "x_prev": [11, 215, 394, 792, 785, 145],
+    "target_time": 45,
+    "target_mode": "sero"
+  },
+  "statistical_likelihood": {
+    "prevalence": "Binomial(x_i | n_i, p_hat_i)",
+    "population": "log N_hat ~ Normal(log N_obs, sigma_pop^2)",
+    "sigma_pop": 0.1,
+    "eps_prev": 1e-10
+  },
+  "equilibrium_gate": {
+    "t_lag": 5,
+    "crit_log_pop": 0.01,
+    "crit_prev": 0.005,
+    "crit_total_pop": 0.01,
+    "crit_state": 0.01,
+    "crit_comp": 0.02,
+    "EQ_PENALTY_FACTOR": 1000000,
+    "mcmc_penalty_terms": ["log_pop_ratio/0.01", "prev_change/0.005", "total_log_ratio/0.01"],
+    "nm_penalty_terms": ["log_pop_ratio/0.01", "prev_change/0.005", "total_log_ratio/0.01", "state_log_ratio/0.01", "comp_log_ratio/0.02"]
+  },
+  "plausibility_penalty": {
+    "factor": 0.01,
+    "only_in_nm_objective": true,
+    "rules": [
+      "contact diagonal unimodal with peak at 30-39",
+      "50+/60+ diagonal <= 0.5 * 30-39 peak",
+      "beta scales monotone non-decreasing with age",
+      "soft preference beta_scale > 1"
+    ]
+  },
+  "bounds": {
+    "contact_scale": [0.01, 1000],
+    "beta_scale": [0.01, 1000000]
+  }
+}

@@ -1,0 +1,12 @@
+[project]
+name = "hepc-numpyro"
+version = "0.1.0"
+description = "Singapore HCV PWID compartmental model — NumPyro/JAX migration"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "integration: slow tests that run the NumPyro NUTS pipeline",
+]
