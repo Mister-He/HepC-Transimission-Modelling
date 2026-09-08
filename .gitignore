@@ -1,4 +1,8 @@
 .DS_Store
 .Rhistory
+.conda/
+data/
+cleaned_data.rds
+sps.csv
 __pycache__/
 *.pyc
