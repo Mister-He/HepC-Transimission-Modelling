@@ -52,6 +52,10 @@ struct Params {
     double alpha_HCC;
     std::vector<double> tau;
     std::vector<double> tau_stratum; // length 4: eligible strata (0/1)
+    // Optional stratum-by-stage treatment-initiation hazards, row-major
+    // order D/J/F/X x NC/CC/DC/HCC.  If absent, the legacy tau and
+    // tau_stratum fields are expanded to this matrix.
+    std::vector<double> tau_by_stratum; // length 16
     int tau_min_age;                 // 1-based minimum eligible age group
     double p_NC_CC, p_CC_DC, p_CC_HCC, p_DC_HCC;
     double r3_NC_CC, r3_CC_DC, r3_CC_HCC, r3_DC_HCC;
@@ -131,9 +135,9 @@ std::vector<double> rhs(double t, const std::vector<double>& y, const Params& p)
         double l2 = p.lambda2[i];
         double l3 = p.lambda3[i];
         double pi = p.pi_recid;
-        auto treat = [&](int s) -> double {
-            double elig = p.tau_stratum[s] * ((i + 1) >= p.tau_min_age ? 1.0 : 0.0);
-            return elig;
+        auto treatment_rate = [&](int s, int k) -> double {
+            double age_eligible = ((i + 1) >= p.tau_min_age ? 1.0 : 0.0);
+            return p.tau_by_stratum[s * 4 + (k - 1)] * age_eligible;
         };
 
         // ---- D: never arrested, active ----
@@ -144,7 +148,7 @@ std::vector<double> rhs(double t, const std::vector<double>& y, const Params& p)
             double mu_u = mu_eff(k,0,i), mu_a = mu_eff(k,1,i);
             double mu_c = mu_eff(k,2,i), mu_t = mu_eff(k,3,i);
 
-            double treat_rate = p.tau[k-1] * treat(0);
+            double treat_rate = treatment_rate(0, k);
             double prog_c_out = treat_rate;
             double prog_c_in = 0.0;
             if (k == 1) prog_c_out += ptc(1,2);
@@ -176,7 +180,7 @@ std::vector<double> rhs(double t, const std::vector<double>& y, const Params& p)
             double mu_u = mu_eff(k,0,i), mu_a = mu_eff(k,1,i);
             double mu_c = mu_eff(k,2,i), mu_t = mu_eff(k,3,i);
 
-            double treat_rate = p.tau[k-1] * treat(2);
+            double treat_rate = treatment_rate(2, k);
             double prog_c_out = treat_rate;
             double prog_c_in = 0.0;
             if (k == 1) prog_c_out += ptc(1,2);
@@ -207,7 +211,7 @@ std::vector<double> rhs(double t, const std::vector<double>& y, const Params& p)
                 dydt[idx(1,k,h,i)] += inflow - out * y[idx(1,k,h,i)];
             }
             double Ja = y[idx(1,k,1,i)], Jc = y[idx(1,k,2,i)], Jt = y[idx(1,k,3,i)];
-            double treat_rate = p.tau[k-1] * treat(1);
+            double treat_rate = treatment_rate(1, k);
             double prog_c_out = treat_rate;
             double prog_c_in = 0.0;
             if (k == 1) prog_c_out += ptc(1,2);
@@ -230,7 +234,7 @@ std::vector<double> rhs(double t, const std::vector<double>& y, const Params& p)
                 dydt[idx(3,k,h,i)] += inflow - mu_eff(k,h,i) * y[idx(3,k,h,i)];
             }
             double Xa = y[idx(3,k,1,i)], Xc = y[idx(3,k,2,i)], Xt = y[idx(3,k,3,i)];
-            double treat_rate = p.tau[k-1] * treat(3);
+            double treat_rate = treatment_rate(3, k);
             double prog_c_out = treat_rate;
             double prog_c_in = 0.0;
             if (k == 1) prog_c_out += ptc(1,2);
@@ -286,6 +290,18 @@ NumericMatrix run_sim(List params_r, List data_r) {
     }
     p.tau_min_age = params_r.containsElementNamed("tau_min_age") ?
         as<int>(params_r["tau_min_age"]) : 1;
+    if (params_r.containsElementNamed("tau_by_stratum")) {
+        NumericVector tss = as<NumericVector>(params_r["tau_by_stratum"]);
+        if (tss.size() != 16) stop("tau_by_stratum must have length 16");
+        p.tau_by_stratum.assign(tss.begin(), tss.end());
+    } else {
+        p.tau_by_stratum.resize(16);
+        for (int s = 0; s < 4; ++s) {
+            for (int k = 0; k < 4; ++k) {
+                p.tau_by_stratum[s * 4 + k] = p.tau[k] * p.tau_stratum[s];
+            }
+        }
+    }
     p.p_NC_CC = as<double>(params_r["p_NC_CC"]);
     p.p_CC_DC = as<double>(params_r["p_CC_DC"]);
     p.p_CC_HCC = as<double>(params_r["p_CC_HCC"]);

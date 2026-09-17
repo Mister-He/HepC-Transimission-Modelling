@@ -84,8 +84,8 @@ scenarios <- load_scenarios(scenario_df, base_params)
 # Additional scenario families used for figures analogous to F2/F3.  For D,
 # F, and X we vary the annual treatment-initiation rate from 1% to 15% of
 # chronic HCV cases in the targeted stratum.  J has four 100%-uptake,
-# infection-stage-specific scenarios.  Combined varies the annual rate from
-# 10% to 13%.  The panels report total Singapore outcomes for each targeted
+# infection-stage-specific scenarios.  Combined varies community treatment
+# from 1% to 15%/y while prison treatment is fixed at 100%/y.  The panels report total Singapore outcomes for each targeted
 # stratum and do not apply interactions between targeted strata.
 figure_rate_sets <- list(
   D = seq(0.01, 0.15, by = 0.01),
@@ -93,7 +93,7 @@ figure_rate_sets <- list(
   J = seq(0.1, 1.0, by = 0.1),
   F = seq(0.01, 0.15, by = 0.01),
   X = seq(0.01, 0.15, by = 0.01),
-  combined = seq(0.10, 0.13, by = 0.01)
+  combined = seq(0.01, 0.15, by = 0.01)
 )
 
 stratum_labels <- c(
@@ -118,7 +118,8 @@ family_palette <- list(
 
 make_figure_family <- function(prefix, description, elig, rates,
                                labels = paste0(round(100 * rates), "%/y"),
-                               tau_builder = function(rate, i) rep(rate, 4)) {
+                               tau_builder = function(rate, i) rep(rate, 4),
+                               tau_by_stratum_builder = NULL) {
   colours <- grDevices::colorRampPalette(family_palette[[prefix]])(length(rates))
   lapply(seq_along(rates), function(i) {
     rate <- rates[i]
@@ -126,6 +127,8 @@ make_figure_family <- function(prefix, description, elig, rates,
       id = paste0("figure_", prefix, "_", sprintf("%02d", i)),
       description = paste(description, labels[i]),
       tau = tau_builder(rate, i),
+      tau_by_stratum = if (is.null(tau_by_stratum_builder)) NULL else
+        as.vector(t(tau_by_stratum_builder(rate, i))),
       rho = base_params$rho,
       alpha_DC = base_params$alpha_DC_pos,
       phi = c(base_params$phi_CC_DC, base_params$phi_CC_HCC,
@@ -187,7 +190,11 @@ figure_scenarios <- c(
   make_figure_family("F", "F treatment", c(0, 0, 1, 0), figure_rate_sets$F),
   make_figure_family("X", "X treatment", c(0, 0, 0, 1), figure_rate_sets$X),
   make_figure_family("combined", "Combined treatment", c(1, 1, 1, 1),
-                     figure_rate_sets$combined)
+                     figure_rate_sets$combined,
+                     tau_by_stratum_builder = function(rate, i) {
+                       rbind(D = rep(rate, 4), J = rep(1, 4),
+                             F = rep(rate, 4), X = rep(rate, 4))
+                     })
 )
 
 analysis_scenarios <- c(scenarios, figure_scenarios)
@@ -264,8 +271,14 @@ cumulative_flows <- function(out, pm, scenario) {
         as.numeric((i + 1) >= scenario$tau_min_age)
       for (k in 1:4) {
         chronic <- out[, comp_cols(s, k, 2)[i + 1]]
+        treatment_rate <- if (is.null(scenario$tau_by_stratum)) {
+          scenario$tau[k] * eligible
+        } else {
+          scenario$tau_by_stratum[s * 4 + k] *
+            as.numeric((i + 1) >= scenario$tau_min_age)
+        }
         flow_treatment[, s + 1] <- flow_treatment[, s + 1] +
-          scenario$tau[k] * eligible * chronic
+          treatment_rate * chronic
       }
 
       base_mu <- pm$mu[i + 1] * pm$omega
@@ -321,6 +334,9 @@ project_one <- function(eq_state, scenario) {
   pm$phi_CC_HCC <- scenario$phi[2]
   pm$phi_DC_HCC <- scenario$phi[3]
   pm$tau_stratum <- scenario$tau_stratum
+  if (!is.null(scenario$tau_by_stratum)) {
+    pm$tau_by_stratum <- scenario$tau_by_stratum
+  }
   pm$tau_min_age <- scenario$tau_min_age
   proj_data <- eq_data
   proj_data$t_start <- 47
@@ -573,11 +589,13 @@ plot_f3 <- function() {
 
 p_f2 <- plot_f2()
 p_f3 <- plot_f3()
+legend_title_size <- 6.0
+legend_text_size <- 5.0
 make_right_legend <- function() {
   min_labels <- c(D = "1%/y", J = "10%/y", F = "1%/y", X = "1%/y",
-                  combined = "10%/y")
+                  combined = "1%/y")
   max_labels <- c(D = "15%/y", J = "100%y", F = "15%/y", X = "15%/y",
-                  combined = "13%/y")
+                  combined = "15%/y")
   families <- figure_targets
   lines <- bind_rows(lapply(seq_along(families), function(i) {
     family <- families[i]
@@ -594,15 +612,19 @@ make_right_legend <- function() {
     stringsAsFactors = FALSE
   )
   ggplot() +
+    geom_text(data = data.frame(x = 0.05, y = max(labels$y) + 0.20,
+                                label = "Treatment scenarios"),
+              aes(x = x, y = y, label = label), hjust = 0,
+              size = legend_title_size) +
     geom_segment(data = lines,
                  aes(x = x, xend = xend, y = y, yend = y,
                      colour = figure_colour), linewidth = 2.2, lineend = "butt") +
     geom_text(data = labels, aes(x = 0.05, y = y, label = display_label),
-              hjust = 0, size = 5.2) +
+              hjust = 0, size = legend_text_size) +
     geom_text(data = labels, aes(x = 1.6, y = y, label = min_label),
-              hjust = 1, size = 4.8) +
+              hjust = 1, size = legend_text_size) +
     geom_text(data = labels, aes(x = 4.0, y = y, label = max_label),
-              hjust = 0, size = 4.8) +
+              hjust = 0, size = legend_text_size) +
     scale_colour_identity() +
     coord_cartesian(xlim = c(0, 4.6), ylim = c(0.2, 2.0), expand = FALSE,
                     clip = "off") +
