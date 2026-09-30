@@ -6,7 +6,7 @@
 #
 # Each tests/**/test_*.R file is executed in its own R session so that
 # failures are isolated and reported per file; the runner exits non-zero if
-# any test fails. Integration tests compile src/sim.cpp (Rcpp), so they
+# any test fails. Integration tests compile scripts/model/sim.cpp (Rcpp), so they
 # require Rcpp and RcppArmadillo.
 # =============================================================================
 

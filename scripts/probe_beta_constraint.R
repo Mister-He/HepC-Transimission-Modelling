@@ -29,13 +29,13 @@ OUT_DIR  <- normalizePath(arg_val("--out-dir",
 MAXIT    <- as.integer(arg_val("--maxit", "2000"))
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
-old_wd <- setwd(file.path(ROOT, "src"))
+old_wd <- setwd(file.path(ROOT, "scripts", "model"))
 setup_env <- new.env(parent = globalenv())
 sys.source("setup.R", envir = setup_env)
 setwd(old_wd)
 
 if (!exists("run_sim", envir = globalenv(), inherits = FALSE)) {
-  Rcpp::sourceCpp(file.path(ROOT, "src", "sim.cpp"))
+  Rcpp::sourceCpp(file.path(ROOT, "scripts", "model", "sim.cpp"))
 }
 run_sim <- get("run_sim", envir = globalenv(), inherits = FALSE)
 base_params <- setup_env$params
@@ -49,7 +49,7 @@ data_local$t_end   <- fit$t_end
 
 for (f in c("targets.R", "model_metrics.R", "equilibrium.R",
             "likelihood.R", "calibrate_nm.R")) {
-  sys.source(file.path(ROOT, "src", "calibration", f), envir = environment())
+  sys.source(file.path(ROOT, "scripts", "calibration", f), envir = environment())
 }
 TARGET_TIME <- 45
 

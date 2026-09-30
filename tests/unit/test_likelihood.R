@@ -7,14 +7,15 @@
 .file_arg <- sub("^--file=", "", .args0[grepl("^--file=", .args0)])
 root <- normalizePath(file.path(dirname(normalizePath(.file_arg)), "..", ".."))
 source(file.path(root, "tests", "helper.R"))
-source(file.path(root, "src", "calibration", "targets.R"))
-source(file.path(root, "src", "calibration", "likelihood.R"))
+source(file.path(root, "scripts", "calibration", "targets.R"))
+targets <- read_targets(file.path(root, "data", "calibration_targets.json"))
+source(file.path(root, "scripts", "calibration", "likelihood.R"))
 
 # Synthetic base parameters: the unit test exercises the parameterisation
 # (exp transforms, bounds, likelihoods), not the fitted values.
 base_params <- list(
   C_contact = matrix(1, nrow = 6, ncol = 6),
-  beta = rep(1, 6)
+  beta = rep(1, 6), beta_base = rep(1, 6)
 )
 
 check_equal(N_THETA, 12, "exactly 12 fitted parameters")
@@ -47,14 +48,14 @@ check_true(within_bounds(rep(0, N_THETA)), "zero theta is within bounds")
 check_true(!within_bounds(rep(50, N_THETA)), "large theta is out of bounds")
 
 # Binomial likelihood: perfect prediction beats a poor one
-check_true(nll_prev(cal_targets$prev_binom) <
+check_true(nll_prev(targets$p_prev_binom) <
              nll_prev(rep(0.01, 6)),
            "perfect prevalence prediction has lower NLL")
-check_true(is.finite(nll_prev(cal_targets$prev_binom)),
+check_true(is.finite(nll_prev(targets$p_prev_binom)),
            "NLL is finite at the target prevalence")
 
 # Population likelihood: exact match gives zero contribution
-check_equal(nll_pop(cal_targets$prison_total), 0,
+check_equal(nll_pop(targets$population), 0,
             "nll_pop is 0 when N_hat == N_obs")
 
 # Plausibility penalty: a diagonal peaking at 30-39 with small 50+/60+

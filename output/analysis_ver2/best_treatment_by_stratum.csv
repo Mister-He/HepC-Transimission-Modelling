@@ -1,6 +1,0 @@
-"scenario_family","scenario_design","outcome","best_hcv_10","best_hcv_20","best_scenario_id","scenario_name","coverage_label","treatment_regimen","age_specific_design","disease_stage_specific_design","combination_strategy"
-"combination","J + D/F","D",295.100452816692,111.452668623744,"combo_J_DF_12","J + D/F, level 12","C=15%/y; J=100%/y","SOF/VEL+RBV","<20 and older","NC=CC=DC=HCC","strong prison J plus weak community D/F"
-"combination","J + D/F","J",234.454686984819,91.143331677329,"combo_J_DF_12","J + D/F, level 12","C=15%/y; J=100%/y","SOF/VEL+RBV","<20 and older","NC=CC=DC=HCC","strong prison J plus weak community D/F"
-"combination","J + D/F","F",224.194061730317,92.3215946272865,"combo_J_DF_12","J + D/F, level 12","C=15%/y; J=100%/y","SOF/VEL+RBV","<20 and older","NC=CC=DC=HCC","strong prison J plus weak community D/F"
-"combination","J + D/F/X","X",1013.24857042251,197.145055366982,"combo_J_DFX_12","J + D/F/X, level 12","C=15%/y; J=100%/y","SOF/VEL+RBV","<20 and older","NC=CC=DC=HCC","strong prison J plus weak community D/F/X"
-"combination","J + D/F/X","Total",1774.38178504372,492.727291755636,"combo_J_DFX_12","J + D/F/X, level 12","C=15%/y; J=100%/y","SOF/VEL+RBV","<20 and older","NC=CC=DC=HCC","strong prison J plus weak community D/F/X"

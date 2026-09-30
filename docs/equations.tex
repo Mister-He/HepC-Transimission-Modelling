@@ -1,0 +1,566 @@
+\subsection{Effective Rate Definitions}
+
+The population-entry term is piecewise in model time. The state at model year
+$t=150$ is the equilibrium snapshot mapped to calendar year 2015. Before that
+snapshot, $\beta_i(t)=b_i\,s_i$, where $b_i$ is the 2015 SingStat/CNB
+age-specific new-drug-abuser count and $s_i$ is the calibrated age-specific
+scale. For calendar years 2016--2025, $\beta_i(t)=b_i(y)\,s_i$ uses the
+corresponding SingStat/CNB count; after the latest observed year,
+$b_i(y)=b_i(2025)$ through 2030. This schedule affects the inflow into
+$D_{u,1,i}$ only.
+
+To account for genotype-3 excess risk, define the effective progression 
+rates for each transition as weighted composites across genotypes:
+\begin{align*}
+\tilde{p}_{c,1\to2} &= \rho\,r_3^{\mathrm{NC\to CC}}\,p_3^{\mathrm{NC\to CC}} 
+                      + (1-\rho)\,p_3^{\mathrm{NC\to CC}} \\
+\tilde{p}_{c,2\to3} &= \rho\,r_3^{\mathrm{CC\to DC}}\,p_3^{\mathrm{CC\to DC}} 
+                      + (1-\rho)\,p_3^{\mathrm{CC\to DC}} \\
+\tilde{p}_{c,2\to4} &= \rho\,r_3^{\mathrm{CC\to HCC}}\,p_3^{\mathrm{CC\to HCC}} 
+                      + (1-\rho)\,p_3^{\mathrm{CC\to HCC}} \\
+\tilde{p}_{c,3\to4} &= \rho\,r_3^{\mathrm{DC\to HCC}}\,p_3^{\mathrm{DC\to HCC}} 
+                      + (1-\rho)\,p_3^{\mathrm{DC\to HCC}}
+\end{align*}
+
+\noindent and the post-SVR effective progression rates for recovered individuals:
+\begin{align*}
+\tilde{p}_{r,2\to3} &= \phi^{\mathrm{CC\to DC}}\,\tilde{p}_{c,2\to3} \\
+\tilde{p}_{r,2\to4} &= \phi^{\mathrm{CC\to HCC}}\,\tilde{p}_{c,2\to4} \\
+\tilde{p}_{r,3\to4} &= \phi^{\mathrm{DC\to HCC}}\,\tilde{p}_{c,3\to4}
+\end{align*}
+
+\noindent The five HCV states are $u$ (susceptible/uninfected), $a$ (acute
+infection), $c$ (chronic infection), $t$ (on treatment), and $r$ (recovered).
+The state transitions are
+\begin{align*}
+a &\xrightarrow{\kappa/\iota_1} r, \\
+a &\xrightarrow{(1-\kappa)/\iota_1} c, \\
+c &\xrightarrow{\tau_k} t, \\
+t &\xrightarrow{\bar\alpha_k/\iota_2} r, \\
+t &\xrightarrow{(1-\bar\alpha_k)/\iota_2} c, \\
+r &\xrightarrow{\gamma_{i,j}(t)} a.
+\end{align*}
+For the active injecting strata $D$ and $F$, recovered individuals are exposed
+to reinfection. In accordance with the existing model, $J$ and $X$ do not have
+a transmission term because they are not active injectors.
+
+\noindent The effective SVR12 rate at each stage accounts for the genotype 
+mix:
+\begin{align*}
+\bar{\alpha}_1 &= \rho\,\alpha_3^{\mathrm{NC}} + (1-\rho)\,\alpha_o^{\mathrm{NC}} \\
+\bar{\alpha}_3^{\pm} &= \rho\,\alpha_3^{\mathrm{DC}\pm} + (1-\rho)\,\alpha_o^{\mathrm{DC}\pm}
+\end{align*}
+
+\noindent For stages 1--2 (non-cirrhosis and compensated cirrhosis), 
+$\bar{\alpha} \equiv \bar{\alpha}_1$. For stage 3 (decompensated cirrhosis), 
+$\bar{\alpha} \equiv \bar{\alpha}_3^{+}$ (RBV+) or $\bar{\alpha}_3^{-}$ 
+(RBV-free) depending on the treatment scenario. For stage 4 (HCC), 
+we assume $\bar{\alpha} \equiv \bar{\alpha}_3^{+}$ as a conservative 
+approximation. \\[1em]
+
+\noindent The effective disease-specific mortality rates incorporating 
+SVR benefit are:
+\begin{align*}
+\omega\mu^{\mathrm{DC}}_{\mathrm{SVR}} &= \psi^{\mathrm{DC}}\,(\omega\mu^{\mathrm{DC}}+\omega\mu_i) \\
+\omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}} &= \psi^{\mathrm{HCC}}\,(\omega\mu^{\mathrm{HCC}}+\omega\mu_i)
+\end{align*}
+
+%-------------------------------------------------------------------
+\subsection{Never Incarcerated ($D$)}
+%-------------------------------------------------------------------
+
+\begin{align*}
+%--- Stage 1: Non-cirrhosis ---
+\frac{dD_{u,1,i}}{dt}
+  &= -\bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i\bigr)\,D_{u,1,i}
+     + \beta_i(t)
+\\[0.8em]
+\frac{dD_{a,1,i}}{dt}
+  &= \gamma_{i,j}(t)\,D_{u,1,i}
+     + \gamma_{i,j}(t)\,D_{r,1,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(1)} + \omega\mu_i\right)D_{a,1,i}
+\\[0.8em]
+\frac{dD_{c,1,i}}{dt}
+  &= \frac{1-\kappa}{\iota_1}\,D_{a,1,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,D_{t,1,i}
+     - \bigl(\tau_1 + \lambda_i^{(1)} + \omega\mu_i + \tilde{p}_{c,1\to2}\bigr)\,D_{c,1,i}
+\\[0.8em]
+\frac{dD_{t,1,i}}{dt}
+  &= \tau_1\,D_{c,1,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(1)} + \omega\mu_i\right)D_{t,1,i}
+\\[0.8em]
+\frac{dD_{r,1,i}}{dt}
+  &= \frac{\kappa}{\iota_1}\,D_{a,1,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,D_{t,1,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i\bigr)\,D_{r,1,i}
+\\[1.2em]
+%--- Stage 2: Compensated cirrhosis ---
+\frac{dD_{u,2,i}}{dt}
+  &= -\bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i\bigr)\,D_{u,2,i}
+\\[0.8em]
+\frac{dD_{a,2,i}}{dt}
+  &= \gamma_{i,j}(t)\,D_{u,2,i}
+     + \gamma_{i,j}(t)\,D_{r,2,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(1)} + \omega\mu_i\right)D_{a,2,i}
+\\[0.8em]
+\frac{dD_{c,2,i}}{dt}
+  &= \frac{1-\kappa}{\iota_1}\,D_{a,2,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,D_{t,2,i}
+     + \tilde{p}_{c,1\to2}\,D_{c,1,i}
+     - \bigl(\tau_2 + \lambda_i^{(1)} + \omega\mu_i 
+             + \tilde{p}_{c,2\to3} + \tilde{p}_{c,2\to4}\bigr)\,D_{c,2,i}
+\\[0.8em]
+\frac{dD_{t,2,i}}{dt}
+  &= \tau_2\,D_{c,2,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(1)} + \omega\mu_i\right)D_{t,2,i}
+\\[0.8em]
+\frac{dD_{r,2,i}}{dt}
+  &= \frac{\kappa}{\iota_1}\,D_{a,2,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,D_{t,2,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i
+             + \tilde{p}_{r,2\to3} + \tilde{p}_{r,2\to4}\bigr)\,D_{r,2,i}
+\\[1.2em]
+%--- Stage 3: Decompensated cirrhosis ---
+\frac{dD_{u,3,i}}{dt}
+  &= -\bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i
+            + \omega\mu^{\mathrm{DC}}\bigr)\,D_{u,3,i}
+\\[0.8em]
+\frac{dD_{a,3,i}}{dt}
+  &= \gamma_{i,j}(t)\,D_{u,3,i}
+     + \gamma_{i,j}(t)\,D_{r,3,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(1)} + \omega\mu_i 
+             + \omega\mu^{\mathrm{DC}}\right)D_{a,3,i}
+\\[0.8em]
+\frac{dD_{c,3,i}}{dt}
+  &= \frac{1-\kappa}{\iota_1}\,D_{a,3,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,D_{t,3,i}
+     + \tilde{p}_{c,2\to3}\,D_{c,2,i}
+     - \bigl(\tau_3 + \lambda_i^{(1)} + \omega\mu_i + \omega\mu^{\mathrm{DC}}
+             + \tilde{p}_{c,3\to4}\bigr)\,D_{c,3,i}
+\\[0.8em]
+\frac{dD_{t,3,i}}{dt}
+  &= \tau_3\,D_{c,3,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(1)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}\right)D_{t,3,i}
+\\[0.8em]
+\frac{dD_{r,3,i}}{dt}
+  &= \frac{\kappa}{\iota_1}\,D_{a,3,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,D_{t,3,i}
+     + \tilde{p}_{r,2\to3}\,D_{r,2,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i
+             + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}
+             + \tilde{p}_{r,3\to4}\bigr)\,D_{r,3,i}
+\\[1.2em]
+%--- Stage 4: HCC ---
+\frac{dD_{u,4,i}}{dt}
+  &= -\bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i
+            + \omega\mu^{\mathrm{HCC}}\bigr)\,D_{u,4,i}
+\\[0.8em]
+\frac{dD_{a,4,i}}{dt}
+  &= \gamma_{i,j}(t)\,D_{u,4,i}
+     + \gamma_{i,j}(t)\,D_{r,4,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(1)} + \omega\mu_i 
+             + \omega\mu^{\mathrm{HCC}}\right)D_{a,4,i}
+\\[0.8em]
+\frac{dD_{c,4,i}}{dt}
+  &= \frac{1-\kappa}{\iota_1}\,D_{a,4,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,D_{t,4,i}
+     + \tilde{p}_{c,2\to4}\,D_{c,2,i}
+     + \tilde{p}_{c,3\to4}\,D_{c,3,i}
+     - \bigl(\tau_4 + \lambda_i^{(1)} + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\bigr)\,D_{c,4,i}
+\\[0.8em]
+\frac{dD_{t,4,i}}{dt}
+  &= \tau_4\,D_{c,4,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(1)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\right)D_{t,4,i}
+\\[0.8em]
+\frac{dD_{r,4,i}}{dt}
+  &= \frac{\kappa}{\iota_1}\,D_{a,4,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,D_{t,4,i}
+     + \tilde{p}_{r,2\to4}\,D_{r,2,i}
+     + \tilde{p}_{r,3\to4}\,D_{r,3,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(1)} + \omega\mu_i
+             + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\bigr)\,D_{r,4,i}
+\end{align*}
+
+%-------------------------------------------------------------------
+\subsection{Currently Incarcerated ($J$)}
+%-------------------------------------------------------------------
+
+\begin{align*}
+%--- Stage 1 ---
+\frac{dJ_{u,1,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{u,1,i} + \lambda_i^{(3)}\,F_{u,1,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i\bigr)\,J_{u,1,i}
+\\[0.8em]
+\frac{dJ_{a,1,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{a,1,i} + \lambda_i^{(3)}\,F_{a,1,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(2)} + \omega\mu_i\right)J_{a,1,i}
+\\[0.8em]
+\frac{dJ_{c,1,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{c,1,i} + \lambda_i^{(3)}\,F_{c,1,i}
+     + \frac{1-\kappa}{\iota_1}\,J_{a,1,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,J_{t,1,i}
+     - \bigl(\tau_1 + \lambda_i^{(2)} + \omega\mu_i + \tilde{p}_{c,1\to2}\bigr)\,J_{c,1,i}
+\\[0.8em]
+\frac{dJ_{t,1,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{t,1,i} + \lambda_i^{(3)}\,F_{t,1,i}
+     + \tau_1\,J_{c,1,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(2)} + \omega\mu_i\right)J_{t,1,i}
+\\[0.8em]
+\frac{dJ_{r,1,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{r,1,i} + \lambda_i^{(3)}\,F_{r,1,i}
+     + \frac{\kappa}{\iota_1}\,J_{a,1,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,J_{t,1,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i\bigr)\,J_{r,1,i}
+\\[1.2em]
+%--- Stage 2 ---
+\frac{dJ_{u,2,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{u,2,i} + \lambda_i^{(3)}\,F_{u,2,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i\bigr)\,J_{u,2,i}
+\\[0.8em]
+\frac{dJ_{a,2,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{a,2,i} + \lambda_i^{(3)}\,F_{a,2,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(2)} + \omega\mu_i\right)J_{a,2,i}
+\\[0.8em]
+\frac{dJ_{c,2,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{c,2,i} + \lambda_i^{(3)}\,F_{c,2,i}
+     + \frac{1-\kappa}{\iota_1}\,J_{a,2,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,J_{t,2,i}
+     + \tilde{p}_{c,1\to2}\,J_{c,1,i}
+     - \bigl(\tau_2 + \lambda_i^{(2)} + \omega\mu_i 
+             + \tilde{p}_{c,2\to3} + \tilde{p}_{c,2\to4}\bigr)\,J_{c,2,i}
+\\[0.8em]
+\frac{dJ_{t,2,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{t,2,i} + \lambda_i^{(3)}\,F_{t,2,i}
+     + \tau_2\,J_{c,2,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(2)} + \omega\mu_i\right)J_{t,2,i}
+\\[0.8em]
+\frac{dJ_{r,2,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{r,2,i} + \lambda_i^{(3)}\,F_{r,2,i}
+     + \frac{\kappa}{\iota_1}\,J_{a,2,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,J_{t,2,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i
+             + \tilde{p}_{r,2\to3} + \tilde{p}_{r,2\to4}\bigr)\,J_{r,2,i}
+\\[1.2em]
+%--- Stage 3 ---
+\frac{dJ_{u,3,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{u,3,i} + \lambda_i^{(3)}\,F_{u,3,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i + \omega\mu^{\mathrm{DC}}\bigr)\,J_{u,3,i}
+\\[0.8em]
+\frac{dJ_{a,3,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{a,3,i} + \lambda_i^{(3)}\,F_{a,3,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(2)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{DC}}\right)J_{a,3,i}
+\\[0.8em]
+\frac{dJ_{c,3,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{c,3,i} + \lambda_i^{(3)}\,F_{c,3,i}
+     + \frac{1-\kappa}{\iota_1}\,J_{a,3,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,J_{t,3,i}
+     + \tilde{p}_{c,2\to3}\,J_{c,2,i}
+     - \bigl(\tau_3 + \lambda_i^{(2)} + \omega\mu_i + \omega\mu^{\mathrm{DC}}
+             + \tilde{p}_{c,3\to4}\bigr)\,J_{c,3,i}
+\\[0.8em]
+\frac{dJ_{t,3,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{t,3,i} + \lambda_i^{(3)}\,F_{t,3,i}
+     + \tau_3\,J_{c,3,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(2)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}\right)J_{t,3,i}
+\\[0.8em]
+\frac{dJ_{r,3,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{r,3,i} + \lambda_i^{(3)}\,F_{r,3,i}
+     + \frac{\kappa}{\iota_1}\,J_{a,3,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,J_{t,3,i}
+     + \tilde{p}_{r,2\to3}\,J_{r,2,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i
+             + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}
+             + \tilde{p}_{r,3\to4}\bigr)\,J_{r,3,i}
+\\[1.2em]
+%--- Stage 4 ---
+\frac{dJ_{u,4,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{u,4,i} + \lambda_i^{(3)}\,F_{u,4,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\bigr)\,J_{u,4,i}
+\\[0.8em]
+\frac{dJ_{a,4,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{a,4,i} + \lambda_i^{(3)}\,F_{a,4,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(2)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\right)J_{a,4,i}
+\\[0.8em]
+\frac{dJ_{c,4,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{c,4,i} + \lambda_i^{(3)}\,F_{c,4,i}
+     + \frac{1-\kappa}{\iota_1}\,J_{a,4,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,J_{t,4,i}
+     + \tilde{p}_{c,2\to4}\,J_{c,2,i}
+     + \tilde{p}_{c,3\to4}\,J_{c,3,i}
+     - \bigl(\tau_4 + \lambda_i^{(2)} + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\bigr)\,J_{c,4,i}
+\\[0.8em]
+\frac{dJ_{t,4,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{t,4,i} + \lambda_i^{(3)}\,F_{t,4,i}
+     + \tau_4\,J_{c,4,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(2)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\right)J_{t,4,i}
+\\[0.8em]
+\frac{dJ_{r,4,i}}{dt}
+  &= \lambda_i^{(1)}\,D_{r,4,i} + \lambda_i^{(3)}\,F_{r,4,i}
+     + \frac{\kappa}{\iota_1}\,J_{a,4,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,J_{t,4,i}
+     + \tilde{p}_{r,2\to4}\,J_{r,2,i}
+     + \tilde{p}_{r,3\to4}\,J_{r,3,i}
+     - \bigl(\lambda_i^{(2)} + \omega\mu_i
+             + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\bigr)\,J_{r,4,i}
+\end{align*}
+
+%-------------------------------------------------------------------
+\subsection{Ever-Incarcerated ($F$)}
+%-------------------------------------------------------------------
+
+\begin{align*}
+%--- Stage 1 ---
+\frac{dF_{u,1,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{u,1,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i\bigr)\,F_{u,1,i}
+\\[0.8em]
+\frac{dF_{a,1,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{a,1,i}
+     + \gamma_{i,j}(t)\,F_{u,1,i}
+     + \gamma_{i,j}(t)\,F_{r,1,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(3)} + \omega\mu_i\right)F_{a,1,i}
+\\[0.8em]
+\frac{dF_{c,1,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{c,1,i}
+     + \frac{1-\kappa}{\iota_1}\,F_{a,1,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,F_{t,1,i}
+     - \bigl(\tau_1 + \lambda_i^{(3)} + \omega\mu_i + \tilde{p}_{c,1\to2}\bigr)\,F_{c,1,i}
+\\[0.8em]
+\frac{dF_{t,1,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{t,1,i}
+     + \tau_1\,F_{c,1,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(3)} + \omega\mu_i\right)F_{t,1,i}
+\\[0.8em]
+\frac{dF_{r,1,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{r,1,i}
+     + \frac{\kappa}{\iota_1}\,F_{a,1,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,F_{t,1,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i\bigr)\,F_{r,1,i}
+\\[1.2em]
+%--- Stage 2 ---
+\frac{dF_{u,2,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{u,2,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i\bigr)\,F_{u,2,i}
+\\[0.8em]
+\frac{dF_{a,2,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{a,2,i}
+     + \gamma_{i,j}(t)\,F_{u,2,i}
+     + \gamma_{i,j}(t)\,F_{r,2,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(3)} + \omega\mu_i\right)F_{a,2,i}
+\\[0.8em]
+\frac{dF_{c,2,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{c,2,i}
+     + \frac{1-\kappa}{\iota_1}\,F_{a,2,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,F_{t,2,i}
+     + \tilde{p}_{c,1\to2}\,F_{c,1,i}
+     - \bigl(\tau_2 + \lambda_i^{(3)} + \omega\mu_i 
+             + \tilde{p}_{c,2\to3} + \tilde{p}_{c,2\to4}\bigr)\,F_{c,2,i}
+\\[0.8em]
+\frac{dF_{t,2,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{t,2,i}
+     + \tau_2\,F_{c,2,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(3)} + \omega\mu_i\right)F_{t,2,i}
+\\[0.8em]
+\frac{dF_{r,2,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{r,2,i}
+     + \frac{\kappa}{\iota_1}\,F_{a,2,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,F_{t,2,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i
+             + \tilde{p}_{r,2\to3} + \tilde{p}_{r,2\to4}\bigr)\,F_{r,2,i}
+\\[1.2em]
+%--- Stage 3 ---
+\frac{dF_{u,3,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{u,3,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i
+             + \omega\mu^{\mathrm{DC}}\bigr)\,F_{u,3,i}
+\\[0.8em]
+\frac{dF_{a,3,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{a,3,i}
+     + \gamma_{i,j}(t)\,F_{u,3,i}
+     + \gamma_{i,j}(t)\,F_{r,3,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(3)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{DC}}\right)F_{a,3,i}
+\\[0.8em]
+\frac{dF_{c,3,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{c,3,i}
+     + \frac{1-\kappa}{\iota_1}\,F_{a,3,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,F_{t,3,i}
+     + \tilde{p}_{c,2\to3}\,F_{c,2,i}
+     - \bigl(\tau_3 + \lambda_i^{(3)} + \omega\mu_i + \omega\mu^{\mathrm{DC}}
+             + \tilde{p}_{c,3\to4}\bigr)\,F_{c,3,i}
+\\[0.8em]
+\frac{dF_{t,3,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{t,3,i}
+     + \tau_3\,F_{c,3,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(3)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}\right)F_{t,3,i}
+\\[0.8em]
+\frac{dF_{r,3,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{r,3,i}
+     + \frac{\kappa}{\iota_1}\,F_{a,3,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,F_{t,3,i}
+     + \tilde{p}_{r,2\to3}\,F_{r,2,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i
+             + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}
+             + \tilde{p}_{r,3\to4}\bigr)\,F_{r,3,i}
+\\[1.2em]
+%--- Stage 4 ---
+\frac{dF_{u,4,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{u,4,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\bigr)\,F_{u,4,i}
+\\[0.8em]
+\frac{dF_{a,4,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{a,4,i}
+     + \gamma_{i,j}(t)\,F_{u,4,i}
+     + \gamma_{i,j}(t)\,F_{r,4,i}
+     - \left(\frac{1}{\iota_1} + \lambda_i^{(3)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\right)F_{a,4,i}
+\\[0.8em]
+\frac{dF_{c,4,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{c,4,i}
+     + \frac{1-\kappa}{\iota_1}\,F_{a,4,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,F_{t,4,i}
+     + \tilde{p}_{c,2\to4}\,F_{c,2,i}
+     + \tilde{p}_{c,3\to4}\,F_{c,3,i}
+     - \bigl(\tau_4 + \lambda_i^{(3)} + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\bigr)\,F_{c,4,i}
+\\[0.8em]
+\frac{dF_{t,4,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{t,4,i}
+     + \tau_4\,F_{c,4,i}
+     - \left(\frac{1}{\iota_2} + \lambda_i^{(3)} 
+             + \omega\mu_i + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\right)F_{t,4,i}
+\\[0.8em]
+\frac{dF_{r,4,i}}{dt}
+  &= \pi\,\lambda_i^{(2)}\,J_{r,4,i}
+     + \frac{\kappa}{\iota_1}\,F_{a,4,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,F_{t,4,i}
+     + \tilde{p}_{r,2\to4}\,F_{r,2,i}
+     + \tilde{p}_{r,3\to4}\,F_{r,3,i}
+     - \bigl(\gamma_{i,j}(t) + \lambda_i^{(3)} + \omega\mu_i
+             + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\bigr)\,F_{r,4,i}
+\end{align*}
+
+%-------------------------------------------------------------------
+\subsection{Former PWID ($X$)}
+%-------------------------------------------------------------------
+
+\begin{align*}
+%--- Stage 1 ---
+\frac{dX_{u,1,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{u,1,i}
+     - \omega\mu_i\,X_{u,1,i}
+\\[0.8em]
+\frac{dX_{a,1,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{a,1,i}
+     - \left(\frac{1}{\iota_1} + \omega\mu_i\right)X_{a,1,i}
+\\[0.8em]
+\frac{dX_{c,1,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{c,1,i}
+     + \frac{1-\kappa}{\iota_1}\,X_{a,1,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,X_{t,1,i}
+     - \bigl(\tau_1 + \omega\mu_i + \tilde{p}_{c,1\to2}\bigr)\,X_{c,1,i}
+\\[0.8em]
+\frac{dX_{t,1,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{t,1,i}
+     + \tau_1\,X_{c,1,i}
+     - \left(\frac{1}{\iota_2} + \omega\mu_i\right)X_{t,1,i}
+\\[0.8em]
+\frac{dX_{r,1,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{r,1,i}
+     + \frac{\kappa}{\iota_1}\,X_{a,1,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,X_{t,1,i}
+     - \omega\mu_i\,X_{r,1,i}
+\\[1.2em]
+%--- Stage 2 ---
+\frac{dX_{u,2,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{u,2,i}
+     - \omega\mu_i\,X_{u,2,i}
+\\[0.8em]
+\frac{dX_{a,2,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{a,2,i}
+     - \left(\frac{1}{\iota_1} + \omega\mu_i\right)X_{a,2,i}
+\\[0.8em]
+\frac{dX_{c,2,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{c,2,i}
+     + \frac{1-\kappa}{\iota_1}\,X_{a,2,i}
+     + \frac{1-\bar{\alpha}_1}{\iota_2}\,X_{t,2,i}
+     + \tilde{p}_{c,1\to2}\,X_{c,1,i}
+     - \bigl(\tau_2 + \omega\mu_i + \tilde{p}_{c,2\to3} + \tilde{p}_{c,2\to4}\bigr)\,X_{c,2,i}
+\\[0.8em]
+\frac{dX_{t,2,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{t,2,i}
+     + \tau_2\,X_{c,2,i}
+     - \left(\frac{1}{\iota_2} + \omega\mu_i\right)X_{t,2,i}
+\\[0.8em]
+\frac{dX_{r,2,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{r,2,i}
+     + \frac{\kappa}{\iota_1}\,X_{a,2,i}
+     + \frac{\bar{\alpha}_1}{\iota_2}\,X_{t,2,i}
+     - \bigl(\omega\mu_i + \tilde{p}_{r,2\to3}
+             + \tilde{p}_{r,2\to4}\bigr)\,X_{r,2,i}
+\\[1.2em]
+%--- Stage 3 ---
+\frac{dX_{u,3,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{u,3,i}
+     - \bigl(\omega\mu_i + \omega\mu^{\mathrm{DC}}\bigr)\,X_{u,3,i}
+\\[0.8em]
+\frac{dX_{a,3,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{a,3,i}
+     - \left(\frac{1}{\iota_1} + \omega\mu_i + \omega\mu^{\mathrm{DC}}\right)X_{a,3,i}
+\\[0.8em]
+\frac{dX_{c,3,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{c,3,i}
+     + \frac{1-\kappa}{\iota_1}\,X_{a,3,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,X_{t,3,i}
+     + \tilde{p}_{c,2\to3}\,X_{c,2,i}
+     - \bigl(\tau_3 + \omega\mu_i + \omega\mu^{\mathrm{DC}} + \tilde{p}_{c,3\to4}\bigr)\,X_{c,3,i}
+\\[0.8em]
+\frac{dX_{t,3,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{t,3,i}
+     + \tau_3\,X_{c,3,i}
+     - \left(\frac{1}{\iota_2} + \omega\mu_i + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}\right)X_{t,3,i}
+\\[0.8em]
+\frac{dX_{r,3,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{r,3,i}
+     + \frac{\kappa}{\iota_1}\,X_{a,3,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,X_{t,3,i}
+     + \tilde{p}_{r,2\to3}\,X_{r,2,i}
+     - \bigl(\omega\mu_i + \omega\mu^{\mathrm{DC}}_{\mathrm{SVR}}
+             + \tilde{p}_{r,3\to4}\bigr)\,X_{r,3,i}
+\\[1.2em]
+%--- Stage 4 ---
+\frac{dX_{u,4,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{u,4,i}
+     - \bigl(\omega\mu_i + \omega\mu^{\mathrm{HCC}}\bigr)\,X_{u,4,i}
+\\[0.8em]
+\frac{dX_{a,4,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{a,4,i}
+     - \left(\frac{1}{\iota_1} + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\right)X_{a,4,i}
+\\[0.8em]
+\frac{dX_{c,4,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{c,4,i}
+     + \frac{1-\kappa}{\iota_1}\,X_{a,4,i}
+     + \frac{1-\bar{\alpha}_3^{\pm}}{\iota_2}\,X_{t,4,i}
+     + \tilde{p}_{c,2\to4}\,X_{c,2,i}
+     + \tilde{p}_{c,3\to4}\,X_{c,3,i}
+     - \bigl(\tau_4 + \omega\mu_i + \omega\mu^{\mathrm{HCC}}\bigr)\,X_{c,4,i}
+\\[0.8em]
+\frac{dX_{t,4,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{t,4,i}
+     + \tau_4\,X_{c,4,i}
+     - \left(\frac{1}{\iota_2} + \omega\mu_i + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\right)X_{t,4,i}
+\\[0.8em]
+\frac{dX_{r,4,i}}{dt}
+  &= (1-\pi)\,\lambda_i^{(2)}\,J_{r,4,i}
+     + \frac{\kappa}{\iota_1}\,X_{a,4,i}
+     + \frac{\bar{\alpha}_3^{\pm}}{\iota_2}\,X_{t,4,i}
+     + \tilde{p}_{r,2\to4}\,X_{r,2,i}
+     + \tilde{p}_{r,3\to4}\,X_{r,3,i}
+     - \bigl(\omega\mu_i + \omega\mu^{\mathrm{HCC}}_{\mathrm{SVR}}\bigr)\,X_{r,4,i}
+\end{align*}

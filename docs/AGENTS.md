@@ -2,94 +2,105 @@
 
 ## Scope
 
-Calibrate the Singapore HCV PWID model on branch `dev_params_reasonable`.
+This repository contains the Singapore PWID HCV transmission model. Keep
+changes limited to the repository and avoid running post-calibration analysis
+unless explicitly requested.
 
-## Repository layout (standard structure)
+## File and directory discipline
 
-```text
-src/                 model + analysis library (setup.R, sim.cpp,
-                     calibration modules, scenarios.csv)
-scripts/             pipeline entry points (run_calibration.R,
-                     run_npe.R, run_analysis.R, npe_train.py,
-                     run_tests.R, plot_results.R)
-tests/               unit/ (fast, no compilation) and
-                     integration/ (compile + simulate + pipeline smoke)
-docs/                requirements.md, architecture.md, test-plan.md,
-                     calibration/ reports
-.github/workflows/ci.yml
-Dockerfile / docker-compose.yml (optional)
+- Unless the user clearly asks for them, create as few new files and folders as
+  possible. Prefer existing files and result directories.
+- Every substantive directory has a concise Markdown guide describing its
+  contents. Read that guide before traversing the directory; generated
+  timestamped log directories are documented by their parent.
+- Do not create a new result directory when an existing result directory can be
+  overwritten safely.
+
+## Model contract
+
+- Strata are `D`, `J`, `F`, and `X`; liver stages are `NC`, `CC`, `DC`, and
+  `HCC`; ages are six groups from `<20` to `60+`.
+- HCV states are `u`, `a`, `c`, `t`, and `r`, giving 480 compartments.
+- `a -> r` occurs at spontaneous clearance rate `kappa / iota1` and
+  `t -> r` at `SVR12 / iota2`.
+- `r -> a` uses the same infection force as `u -> a` in active strata D and F.
+  Recovered people remain antibody-reactive and are not infectious.
+- J and X have no infection force because they are not active injectors.
+- Seroprevalence is always
+  `(r + a + c + t) / (u + r + a + c + t)` within the relevant population.
+  Viremic prevalence remains `(a + c + t) / N` and is a separate diagnostic.
+- `docs/equations.tex` is the equation reference. Its post-SVR progression
+  terms are retained and must be kept consistent with the C++ implementation.
+
+## Repository layout
+
+All executable model and calibration code is under `scripts/`:
+
+- `scripts/model/`: `sim.cpp`, `setup.R`, model helpers, and rate files.
+- `scripts/calibration/`: JSON target loader, metrics, likelihood, equilibrium,
+  deterministic calibration, NPE support, and scenario definitions.
+- `scripts/run_calibration.R`: deterministic multi-start fit.
+- `scripts/run_npe.R`: NPE data generation, training, and quality gate.
+- `scripts/npe_train.py`: `sbi`/PyTorch NPE-C trainer.
+- `scripts/post_calibration_analysis.R`: the single post-calibration analysis
+  entry point. It is not run by training.
+- `tests/`: unit tests for targets, indexing, likelihood, and equilibrium;
+  integration tests for compilation, flows, reinfection, and pipeline wiring.
+
+## Targets and likelihood
+
+- Age-specific targets are used unchanged. The supplied values are the
+  seroprevalence targets for this calibration round; no `0.74` multiplier is
+  applied.
+- The only calibration observations are the six age-specific seroprevalence
+  targets and six prison-population counts in `data/calibration_targets.json`.
+  No halfway-house/release-cohort target is used.
+- Population targets use the existing log-normal observation model with
+  `sigma_pop = 0.10`.
+
+## Calibration and uncertainty
+
+- Fit the 12 log-scale contact and entry-rate parameters with multi-start
+  Nelder-Mead, recording starts, objectives, and equilibrium diagnostics.
+  Every objective evaluation runs model years 0--150 and checks the final
+  five-year equilibrium window; model year 150 is the 2015 snapshot.
+- NPE-C/SNPE is primary. Use the regularized best-fit-centred priors documented
+  in `training.md`, observation-noise augmentation, and multiple seeds. A
+  sequential round is preferred, but a one-round robustness check is allowed
+  when the proposal collapses around a model-data conflict.
+- Accept NPE only when SBC coverage is compatible with nominal coverage and
+  posterior standard deviations are not collapsed. A passing NPE is the
+  reported posterior; do not run MCMC merely as a ritual validation.
+- If the NPE quality gate fails, record the failure before considering the
+  optional MCMC-like fallback. Laplace approximation is not part of this
+  repository.
+- From the 2015 snapshot, 2016--2025 inflow uses the official SingStat/CNB
+  age-specific new-drug-abuser series in `data/singstat_new_drug_abusers.csv`;
+  the latest observed year is held constant through 2030. The same calibrated
+  age-specific beta scales multiply every year of that schedule.
+
+## Initial values and references
+
+- `setup.R` seeds D/u and D/a with the existing age-specific PWID totals and
+  acute seeds; all new `r` compartments start at zero and are generated by the
+  specified flows.
+- Deterministic calibration starts use the previous contact/beta anchors as
+  deliberately broad model-scale anchors, then log-normal perturbations and
+  a population-informed start. They are not treated as literature estimates.
+- Natural-history and mortality references are retained in the comments of
+  `scripts/model/setup.R` and `docs/equations.tex`: Thein et al. (2008), Lim
+  et al. (2018), Kanwal et al. (2014), Mathers et al. (2013), SingStat,
+  Micallef et al. (2006), and the treatment/SVR sources already cited there.
+
+## Results and generated files
+
+The protected documentation files are `AGENTS.md`, `equations.tex`, and
+`2026-09-18.pptx`. New training keeps only `training.md`, `evaluation.md`,
+and `model_card.md` in `docs/`; generated calibration files belong under
+`output/` and are not part of the protected documentation contract.
+
+Run tests with:
+
+```bash
+Rscript scripts/run_tests.R --scope all
 ```
-
-Run `Rscript scripts/run_tests.R` after any change; the integration suite
-guards the `tau_stratum`/`tau_min_age` scenario wiring.
-
-## Baseline
-
-- **Fixed model structure**: 4 strata `D/J/F/X`, 4 stages, 4 HCV states
-  `u/a/c/t`, 6 age groups; `lambda1` is the first-arrest rate.
-- Original progression rates: `0.027 / 0.039 / 0.014 / 0.014`.
-- Constant transmission (`m_min = m_max = 1`).
-- 2015 Singapore baseline mortality and `omega = 14.68`.
-- **No excess mortality**: `eta_s = 1`; do not fit or add `eta_s`.
-- 12 fitted parameters: 6 contact scaling factors, 6 beta scaling factors.
-- **Simulation horizon**: `t_start = 0`, `t_end = 150`; verify all-state
-  convergence (including DC/HCC totals) before reporting equilibrium.
-- **Beta scaling factors have no upper bound**.
-
-## Soft preferences
-
-- Scaled contact-matrix **diagonal** should be unimodal, peak near 30-39
-  (or 20-29), with 50+/60+ diagonal entries small. Enforced as a small
-  penalty in `likelihood.R`.
-- Beta scales should be monotone non-decreasing and preferably `>1`.
-- These preferences may be relaxed if they materially degrade fit.
-- MCMC density plots use the log-parameter scale to keep marginals close to
-  normal.
-
-## Editing rules
-
-- `Model schematic.pptx`: never modify.
-- `src/sim.cpp`: do not modify unless strictly necessary; currently unchanged.
-- `src/setup.R`: original progression rates are required.
-- Keep generated files minimal.
-- All ggplot figures: pure white background, no grid lines; analysis legend
-  on the right, scenario order per `analysis_report.md`, 95% CrIs.
-
-## Calibration rules
-
-- Multi-start Nelder-Mead; record starts, objectives, convergence, metrics.
-- Acceptance criteria:
-
-  ```text
-  prevalence RMSE                    <= 0.02
-  maximum absolute prevalence error <= 0.03
-  population MAPE                    <= 0.10
-  maximum population APE            <= 0.20
-  equilibrium                       pass
-  ```
-
-- Laplace intervals must overlap observed intervals.
-
-## Bayesian rules
-
-- NPE/SNPE primary; strict MCMC validation required.
-- Use a **wide thinning interval** (e.g. `thin = 20`).
-- **Strict convergence**: R-hat in `[0.995, 1.005]` and pooled ESS `> 1000`
-  for every parameter. Extend chains until both are met.
-- Before reporting, numerically and visually review trace plots and density
-  plots: chains must overlap, densities must be smooth and unimodal, and
-  per-chain posterior means must be close.
-
-## Sensitivity analysis
-
-After a passing MCMC fit, execute `prompt_analysis.md`:
-
-- treatment-rate configurations by liver stage;
-- GT3 proportion configurations;
-- other documented scenarios;
-- the scenario inventory lives in `src/calibration/scenarios.csv`
-  (single machine-readable table; see `prompt_analysis.md` for the schema);
-- 50-year projection from 2017;
-- report total HCV, DC, and HCC counts over time;
-- propagate MCMC posterior samples into credible intervals;
-- report tables and figures.

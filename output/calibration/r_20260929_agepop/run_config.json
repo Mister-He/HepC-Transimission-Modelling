@@ -1,0 +1,18 @@
+{
+  "run_id": "r_20260929_agepop",
+  "seed": 20260929,
+  "maxit": 1000,
+  "n_starts": 5,
+  "horizon": 150,
+  "target_year": 2015,
+  "fitted_parameters": 12,
+  "optimizer": "Nelder-Mead",
+  "target_source": "data/calibration_targets.json",
+  "inflow_source": "data/singstat_new_drug_abusers.csv",
+  "inflow_rule": "2015 baseline; 2016--2025 SingStat age-specific counts; latest year held constant through 2030; all multiplied by calibrated beta scale",
+  "best_objective": 33.1808,
+  "equilibrium_pass": true,
+  "git_sha": "92b776557334b4557c3d221613f436ffcb2e4d4e",
+  "setup_md5": "5bd841b8c4bf60d3c92f124a5d40859d",
+  "sim_cpp_md5": "80325a7c9526c7f2ad05e53b5ceba4fc"
+}

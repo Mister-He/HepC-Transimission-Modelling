@@ -1,0 +1,274 @@
+# =============================================================================
+# setup.R  —  Parameter and data lists for the HCV PWID compartmental model
+# Compile the C++ ODE solver first:
+#   Rcpp::sourceCpp("sim.cpp")
+# Then source this file and call run_sim(params, data)
+# =============================================================================
+
+library(Rcpp)
+library(dplyr)
+
+# =============================================================================
+# HELPER: flat compartment index (mirrors C++ idx())
+# s in {0=D,1=J,2=F,3=X}, k in {1,2,3,4},
+# h in {0=u,1=a,2=c,3=t,4=r}, i in {0..5}
+# =============================================================================
+# Returns the output-matrix column for compartment (s,k,h,i).
+# C++ flat index = s*120 + (k-1)*30 + h*6 + i; column = index + 2 (col 1 is time).
+idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
+
+# =============================================================================
+# PARAMETERS
+# Sources:
+#   q         — Boelen et al. (2014)
+#   kappa     — Micallef et al. (2006)
+#   iota1/2   — Fasano (2024); WHO (2026)
+#   rho       — Zhao et al. (2019)
+#   alpha_*   — Pawlotsky (2020 EASL); Xiao et al. (2025)
+#   p_*       — Thein et al. (2008); Alazawi et al. (2010, PMID 20497143);
+#               Rivera-Irigoin et al. (2006, PMID 17209765)
+#   r3_*      — Kanwal et al. (2014); derived (see Section X)
+#   phi_*     — van Meer (2012); Morgan et al. (2013)
+#   mu_DC/HCC — Lim et al. (2018)
+#   psi_*     — Premkumar (2024); Dang et al. (2020)
+#   pi_recid  — fitted to SPS data (0.65)
+#   lambda*   — CALIBRATED to SPS data (guesses used here)
+#   mu        — CALIBRATED to SingStat life tables (guesses used here)
+#   c_contact — CALIBRATED to HCV prevalence trajectory (guess used here)
+#   beta      — CALIBRATED to PWID population size (guess used here)
+# =============================================================================
+
+params <- list(
+
+  # ── Transmission & natural history ────────────────────────────────────────
+  q      = 0.0057,          # transmission prob per needle-sharing event
+  kappa  = 0.26,            # prob spontaneous clearance after acute infection
+  iota1  = 180 / 365,       # mean acute duration (years); 180 days
+  iota2  =  84 / 365,       # mean treatment duration (years); 84 days = 12 weeks
+
+  # ── Genotype ──────────────────────────────────────────────────────────────
+  rho    = 0.78,            # proportion with genotype 3
+
+  # ── SVR12 rates (effective, genotype-weighted) ─────────────────────────────
+  # Stages 1-2 (NC & CC), RBV-free
+  # alpha_NC = rho * alpha3_NC + (1-rho) * alphao_NC
+  #          = 0.78*0.976 + 0.22*0.988 = 0.9787
+  alpha_NC     = 0.9787,
+
+  # Stage 3 (DC) with RBV+
+  # alpha_DC_pos = 0.78*0.87 + 0.22*0.92 = 0.8818
+  alpha_DC_pos = 0.8818,
+
+  # Stage 3 (DC) without RBV (used in sensitivity)
+  # alpha_DC_neg = 0.78*0.45 + 0.22*0.90 = 0.5490
+  alpha_DC_neg = 0.5490,
+
+  # Stage 4 (HCC): assumed equal to DC+ (no dedicated trial data; see Section X)
+  alpha_HCC    = 0.8818,
+
+  # ── Treatment initiation rates (per year, per stage) ──────────────────────
+  # GUESS: set to 0 (no treatment) as base scenario; override in scenarios
+  tau = c(
+    0.0,   # tau_1: NC   — SCENARIO-DEFINED; 0 = no treatment
+    0.0,   # tau_2: CC   — SCENARIO-DEFINED
+    0.0,   # tau_3: DC   — SCENARIO-DEFINED
+    0.0    # tau_4: HCC  — SCENARIO-DEFINED
+  ),
+  # Treatment eligibility: which strata and which minimum age group
+  # (1-based) can initiate treatment. D=never, J=current, F=ever, X=former.
+  tau_stratum = c(1, 1, 1, 1),
+  tau_min_age = 1,
+  tau_max_age = 6,
+
+  # ── Baseline progression rates (per year, other genotype) ─────────────────
+  p_NC_CC   = 0.027,   # NC  → CC  (Thein et al. 2008)
+  p_CC_DC   = 0.039,   # CC  → DC  (Lim et al. 2018)
+  p_CC_HCC  = 0.014,   # CC  → HCC (Lim et al. 2018)
+  p_DC_HCC  = 0.014,   # DC  → HCC (Lim et al. 2018)
+
+  # ── GT3 relative risks ────────────────────────────────────────────────────
+  r3_NC_CC   = 1.36,   # r3^{NC→CC}  derived; CI: 1.27–1.46
+  r3_CC_DC   = 1.36,   # r3^{CC→DC}  derived; CI: 1.27–1.46
+  r3_CC_HCC  = 1.93,   # r3^{CC→HCC} derived; CI: 1.71–2.17
+  r3_DC_HCC  = 1.93,   # r3^{DC→HCC} derived; CI: 1.71–2.17
+
+  # ── Post-SVR progression modifiers ────────────────────────────────────────
+  phi_CC_DC   = 0.07,  # relative risk CC→DC after SVR (van Meer 2012)
+  phi_CC_HCC  = 0.23,  # relative risk CC→HCC after SVR (Morgan et al. 2013)
+  phi_DC_HCC  = 1.00,  # assumed no reduction DC→HCC after SVR
+
+  # ── Background mortality (per year, age-varying) ──────────────────────────
+  # Singapore resident age-specific death rates (per year), 2015, mapped from
+  # SingStat 5-year bands (data.gov.sg "Age-Specific Death Rates, Annual",
+  # 2015 total):
+  #   <20 = 15-19 (0.2/1000)
+  #   20-29 = mean(20-24, 25-29) = 0.25/1000
+  #   30-39 = mean(30-34, 35-39) = 0.45/1000
+  #   40-49 = mean(40-44, 45-49) = 1.20/1000
+  #   50-59 = mean(50-54, 55-59) = 3.35/1000
+  #   60+   = population-weighted mean over 60-64, 65-69, 70-74, 75-79,
+  #           80-84, 85-89, 90+ (2015 resident population weights)
+  #           = 21.88/1000 (deaths 60+ / population 60+); the earlier value
+  #           (mean of 60-64 and 65-69 only, 8.45/1000) understated the
+  #           open-ended group by excluding ages 70+.
+  # See docs/calibration/mortality_review.md.
+  # Age groups (example boundaries): <20, 20-29, 30-39, 40-49, 50-59, 60+
+  mu = c(0.0002000000, 0.0002500000, 0.0004500000, 0.0012000000, 0.0033500000, 0.0218818000),
+
+  # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
+  # Pooled SMR for people who inject drugs (Mathers et al. 2013,
+  # Bull World Health Organ 91(2):102-123, PMID 23554523); applied as
+  # mu[i] * omega in sim.cpp.
+  omega = 14.68,
+
+  # ── Seropositive (cleared / post-SVR) background mortality multiplier ─────
+  # (mu[i]*omega*eta_s[i]). No excess-mortality multiplier is used: all 1.
+  eta_s = c(1, 1, 1, 1, 1, 1),
+
+  # ── Transmission multiplier: CONSTANT (fixed, not fitted) ────────────────
+  # This revision does NOT fit m_min/m_max. Transmission is constant over
+  # time: m(t) = 1 for all t (m_min = m_max = 1, m_t0/m_tau inert). The
+  # historical transmission level is absorbed by the fitted contact-matrix
+  # row scales (see AGENTS.md / prompt.md "No m_min/m_max fitting"). The
+  # code path is retained for compatibility with sim.cpp (which reads these
+  # fields), but the calibration parameterisation no longer includes them.
+  m_min = 1,
+  m_max = 1,
+  m_t0  = 25,
+  m_tau = 3,
+
+  # ── Disease-specific excess mortality ──────────────────────────────────────
+  mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
+  mu_HCC  = 0.430,  # additional mortality in HCC                     (Lim 2018)
+
+  # ── SVR mortality modifiers ────────────────────────────────────────────────
+  psi_DC  = 0.45,   # relative mortality risk DC after SVR  (Premkumar 2024)
+  psi_HCC = 0.37,   # relative mortality risk HCC after SVR (Dang 2020)
+
+  # ── Incarceration rates (per year, age-varying) ────────────────────────────
+  # CALIBRATED: placeholder values — replace with SPS-fitted rates
+  lambda1 = c(0.597, 0.57, 0.58, 0.607, 0.555, 0.33),  # baseline first-arrest rate lambda_i^(1) — GUESS
+  c_composite = c(0.624, 1.96, 2.31, 4.15, 3.86, 3.07),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
+  lambda2 = c(0.462, 0.636, 0.454, 0.337, 0.325, 0.394),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
+  lambda3 = c(0.597, 0.57, 0.58, 0.607, 0.555, 0.33),  # re-arrest rate      lambda_i^(3) — GUESS
+  pi_recid = 0.59,          # recidivism probability (fitted to SPS; Assumption)
+
+  # ── Needle-sharing contact rate ────────────────────────────────────────────
+  # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
+  C_contact = matrix(c(
+    1.23, 1.01, 0.2, 0.15, 0, 0,
+    23.53, 101.22, 95.84, 21, 1.64/2, 1.64/2,
+    3.36, 62.69, 240.59, 83.91, 6.93/2, 6.93/2,
+    0, 7.96, 34.58, 35.12, 3.19/2, 3.19/2,
+    0.18/2, 3.40/2, 4.48/2, 2.60/2, 0.42/4, 0.42/4,
+    0.18/2, 3.40/2, 4.48/2, 2.60/2, 0.42/4, 0.42/4
+  ), byrow = T, nrow = 6
+  ) * 4,
+  
+
+  # ── Population entry rates (per year, age-varying) ────────────────────────
+  # SingStat/CNB 2015 new-drug-abuser counts. The calibrated beta scale is
+  # applied to these counts; 2016 onward uses the time series loaded below.
+  beta = c(
+    257, # age group 1
+    644, # age group 2
+    292, # age group 3
+    94,  # age group 4
+    21,  # age group 5
+    1    # age group 6
+  )
+)
+
+# =============================================================================
+# INITIAL CONDITIONS
+# 480 compartments initialised to near-zero (4 strata x 4 stages x 5 HCV
+# states x 6 ages).
+# A small seed of chronic infection is placed in D_c,1,i (never-incarcerated,
+# non-cirrhosis, chronic, all age groups) to start the epidemic.
+# CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
+# =============================================================================
+y0 <- rep(0.0, 480)
+
+# Susceptible population: put most of PWID in D_u,1,i
+# Seed chronic infection: 20 chronic per age group in D_c,1,i
+pos = c(26, 95, 164, 169, 183, 241)
+tot = c(145, 607, 759, 649, 564, 544)
+for (i in 0:5) {
+  # Column index for the compartment in the 481-column output matrix.
+  y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
+  y0[idx(s=0, k=1, h=1, i=i)] <- pos[i+1]             # D_{a,1,i}
+}
+
+# =============================================================================
+# DATA / SIMULATION SETTINGS
+# =============================================================================
+inflow_path <- file.path("..", "..", "data", "singstat_new_drug_abusers.csv")
+if (!file.exists(inflow_path)) stop("Missing ", inflow_path)
+inflow <- read.csv(inflow_path, stringsAsFactors = FALSE)
+inflow$age_group <- factor(inflow$age_group,
+                           levels = c("<20", "20-29", "30-39", "40-49", "50-59", "60+"))
+inflow <- inflow[order(inflow$year, inflow$age_group), ]
+inflow_matrix <- do.call(rbind, lapply(sort(unique(inflow$year)), function(yr)
+  inflow$new_drug_abusers[inflow$year == yr]))
+rownames(inflow_matrix) <- sort(unique(inflow$year))
+
+data <- list(
+  t_start = 0.0,    # start at model year 0
+  t_end   = 150.0,   # simulate 150 model years
+  dt      = 1/365,   # daily time steps (1/365 of a year)
+  y0      = y0,      # initial conditions (length-480 vector)
+  # Model time 150 is the 2015 snapshot; row 2016 starts after that state.
+  inflow_schedule = inflow_matrix,
+  inflow_schedule_start = 150.0
+)
+
+# =============================================================================
+# SCENARIO HELPERS
+# =============================================================================
+
+# Scenario 1: no treatment (baseline counterfactual)
+params_s1 <- modifyList(params, list(tau = c(0, 0, 0, 0)))
+
+# # Scenario 2: treat NC and CC only (limited access)
+# params_s2 <- modifyList(params, list(tau = c(0.5, 0.5, 0, 0)))
+
+# # Scenario 3: treat all stages
+# params_s3 <- modifyList(params, list(tau = c(0.5, 0.5, 0.3, 0.2)))
+
+# # Scenario 4: aggressive elimination target
+# params_s4 <- modifyList(params, list(tau = c(0.8, 0.8, 0.6, 0.4)))
+
+# # Scenario 5: sensitivity analysis with reduced DC SVR efficacy
+# params_s5 <- modifyList(params, list(tau = c(1.0, 1.0, 1.0, 1.0)))
+
+# =============================================================================
+# COLUMN NAME HELPER (for labelling the output matrix)
+# =============================================================================
+strata_names <- c("D", "J", "F", "X")
+stage_names  <- c("NC", "CC", "DC", "HCC")
+state_names  <- c("u", "a", "c", "t", "r")
+age_names    <- paste0("age", 1:6)
+
+# Column order must match idx(s,k,h,i) = s*120 + (k-1)*30 + h*6 + i.
+# The output matrix is [time, compartment 0, ..., compartment 479], so the
+# compartment with C++ index idx sits in column idx + 2.
+col_names <- character(481)
+col_names[1] <- "time"
+for (ss in 0:3) {
+  for (kk in 1:4) {
+    for (hh in 0:4) {
+      for (ii in 0:5) {
+        pos <- ss * 120 + (kk - 1) * 30 + hh * 6 + ii + 2
+        col_names[pos] <- paste0(strata_names[ss + 1], "_", stage_names[kk], "_",
+                                 state_names[hh + 1], "_age", ii + 1)
+      }
+    }
+  }
+}
+stopifnot(length(col_names) == 481)
+
+# =============================================================================
+# BASELINE LAMBDA1
+# lambda1 is the first-arrest rate (D -> J) and is used unchanged.
+# =============================================================================
+params_s1 <- modifyList(params_s1, list(lambda1 = params$lambda1))
