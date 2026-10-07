@@ -19,80 +19,73 @@ present.
 
 ## Current run
 
-The deterministic age/population run is
-`output/calibration/r_20260929_agepop/`. Its selected objective is `33.1808`,
-with prevalence RMSE `0.0649`, population MAPE `0.0723`, and a passing
-equilibrium gate. The multi-start table and age-specific residuals are in
-`solutions.csv` and `predictions.csv`.
+The corrected 2015 age-specific prevalence targets and population observation
+sigma (`0.10`) are in `data/calibration_targets.json`. The deterministic
+multi-start calibration in `output/calibration/r_20260929_agepop/` achieved an
+objective of `19.56661`, prevalence RMSE `0.00872`, population MAPE `0.037718`,
+and a passing equilibrium gate. See `predictions.csv`, `solutions.csv`, and
+`run_config.json` there.
 
-The accepted NPE result is in `output/calibration/npe_agepop/`. It used 600
-simulations, one-round NPE-C, two seeds, 1,000 posterior draws, and 250 maximum
-epochs. Both seeds passed the 95%/90% SBC coverage gate and the posterior-spread
-gate. Two-round sensitivity runs are retained separately because each had one
-parameter just below the coverage threshold.
+The primary posterior is `output/calibration/npe_agepop_recal/`. It uses one
+shared set of 3,000 training simulations, one-round MAF NPE-C, two independently
+trained seeds, 5,000 posterior draws per seed, 128 hidden features, 10
+transforms, 500 maximum epochs, and a
+best-fit-centred log-scale Normal prior with SD `0.20` for both parameter
+blocks. Prevalence observation noise is Binomial and population noise is
+log-normal with sigma `0.10`. Both seeds pass the 95% and 90% SBC coverage
+checks and the minimum posterior SD `0.05` check. The authoritative gate is
+`NPE_OK.txt`; the seed-specific results are in `npe_evaluation*.csv` and
+`sbc_summary*.csv`.
 
-The 2026 scenario run is in `output/scenarios_2026/`. The scenario script uses
-the calibrated `fit$best$theta` to construct the 2015 snapshot and evaluates
-75 D-free combinations. Under the WHO screen, 6 of 75 pass; all six are in
-the all-age setting. No 20--50 or 30--60-only combination passes both targets.
-The endpoint and treatment-demand results are in `scenario_2030_summary.csv`
-and `target_scenario_treatment_summary.csv`. The primary trade-off output is
-`scenario_tradeoff.csv`, with target-reaching policies in
-`target_scenario_tradeoff.csv` and the combined figure in
-`scenario_tradeoff.png`.
+`output/scenarios_2026/` now contains a J-only comparator, 15 finite annual
+F/X screening-quota policies and an unconstrained-screening stress test. All
+policies share J treatment from 2019 and the same 2026 branch state. The
+WHO-style model-wide target is the joint 80% incidence and 65% HCV-related
+mortality reduction versus 2015; F/X is also evaluated separately. Three of
+15 finite policies meet both components at the NPE median: annual screening
+5,000 with F 25%, and 8,000 with F 25% or 50%. The 5,000/F25 mortality
+margin is only about 0.13 percentage points. The ideal screening case meets
+both within this model, requiring about 80,908
+F/X screenings and 1,877 F/X treatment starts over 2026--2030. It is a
+feasibility stress test rather than an observed program. Cost accounting now
+includes only 2026--2030 F/J/X services, discounted 3% per year to 2026.
+The SOF/VEL model price is USD 2,577/week for 12 weeks, converted with the
+2025 average SGD/USD rate; this and the service charges are not verified
+Singapore payer net costs.
+See `output/scenarios_2026/README.md` for methods, evidence and limitations.
 
-The 2015 stratum-level posterior predictions are in
-`output/calibration/npe_agepop/model_prediction_2015_strata.csv`, with a
-report-ready table in `model_prediction_2015_strata_pretty.csv` and a figure
-in `model_prediction_2015_strata.png`. They use the combined accepted NPE
-draws from both seeds; 1,991 of 2,000 finite draws pass the equilibrium gate.
-Total population includes `u+a+c+t+r`, while active HCV cases are `a+c+t`.
-These are conditional model diagnostics, not national elimination estimates.
-The CSV also retains
-`current_viremic_prev` for the D+F subgroup.
+Incidence is the instantaneous annualized flow of new and repeat infections
+from `u` and `r` into `a` in D/F; mortality is the DC/HCC HCV-attributed
+annual death flow. These are event counts per year, not per-person rates.
+Treatment starts, completions and cures are integrated model events, counted
+as courses and not distinct people. Re-treatment consumes a new start quota.
+The calibration was not repeated after changing the 2019-onward historical J
+assumption, so 2019 observed treatment counts are a separate validation check.
 
-Incidence is the model flow of new infections into acute infection from `u`
-and reinfected `r` in D/F. HCV-related mortality is the model-specific
-disease mortality component from DC/HCC; background PWID mortality is not
-counted as HCV-related. The reported 2015 and 2030 rates are reference-year
-annualized rates evaluated at the corresponding model snapshots.
+## Posterior and predictive checks
 
-Treatment starts are numerically integrated from `tau * c` for each stratum
-over 2026--2030. `treatment_courses_per_2026_person_*` is a secondary
-descriptive ratio. It is cumulative courses divided by the population present
-in 2026, not the fraction of unique people treated and may include repeat
-courses after reinfection. The primary efficiency metric is treatment starts
-per 1,000 cumulative viremic person-years averted.
+The 2015 stratum-level posterior prediction in
+`output/calibration/npe_agepop_recal/` uses all 10,000 combined NPE draws;
+every draw was finite and passed the equilibrium check. Its median model
+populations are approximately 2,900 current PWID (D+F) and 20,915 ever-PWID
+(D+J+F+X). The NPE/MCMC age calibration plot is in `figures/`. These checks
+concern the fitted PWID model; they are not estimates for Singapore's general
+population.
 
-The scenario code also contains an explicit regression fix for treatment-rate
-indexing: C++ reads `tau_by_stratum` in stratum-major order, so the R matrix is
-transposed before flattening. Earlier scenario files produced before this fix
-must not be used for interpretation.
+`figures/calibration_interval_overlap.csv` shows that all six age-specific
+seroprevalence and all six prison-population 95% predictive intervals from
+both NPE and MCMC overlap their respective target intervals. In ages 30--39
+and 40--49, the NPE prevalence interval widths are about 4.45 and 4.83
+percentage points, respectively, below the target observation interval widths
+of about 6.32 and 7.12 points. Overlap is a calibration diagnostic, not
+validation of prospective treatment-policy predictions.
 
-## Current NPE and MCMC sensitivity
-
-The current NPE result is in `output/calibration/npe_agepop_recal/`. It uses
-3,000 simulations per seed, one-round MAF NPE-C, 128 hidden features, 10
-transforms, 500 maximum epochs, and a best-fit-centred log-scale Normal prior
-with SD 0.15. Prevalence observation noise is Binomial and population noise is
-log-normal with sigma 0.10. Both seeds pass the SBC 95%/90% coverage gate.
-
-The predictive interval comparison is in
-`figures/calibration_interval_overlap.csv`; the figure is
-`figures/calibration_agepop.png`. The narrower prior reduces the seroprevalence
-BCI width, but the 30--49 age groups remain wider than their target intervals,
-indicating residual parameter non-identifiability. The 60+ posterior remains
-centred above its target, so overlap is not claimed for that age group.
-
-MCMC is initialized from the combined NPE covariance and uses the same target
-likelihood. The current validation uses the full 150-year horizon with an
-explicit monthly integration step recorded in
-`output/calibration/mcmc_recal/mcmc_run_config.json`. It is accepted only when
-every parameter has ESS > 4,000 and R-hat < 1.0001; the result of that gate is
-in `output/calibration/mcmc_recal/MCMC_STRICT_GATE.txt`. The current gate is
-FAIL: ESS passes, but several R-hat values remain above 1.0001. Therefore NPE
-remains the usable posterior and MCMC remains a diagnostic sensitivity check.
-
-The NPE-median scenario rerun overwrote `output/scenarios_2026_recal_npe/`:
-75 combinations were evaluated and 6 all-age combinations passed both WHO
-impact thresholds; no 20--50 or 30--60-only combination passed.
+MCMC is initialized using the combined NPE covariance and targets the same
+likelihood over the full 150-year equilibrium horizon with a monthly
+integration step. Its run settings are in
+`output/calibration/mcmc_recal/mcmc_run_config.json`. The strict gate requires
+every parameter to have ESS above 4,000 and R-hat below 1.001; the authoritative
+result is `MCMC_STRICT_GATE.txt`. This four-chain run passed: the minimum pooled
+ESS is 10,302 and the maximum R-hat is 1.000552. MCMC provides an independent
+posterior sensitivity check; its parameter medians differ from the combined
+NPE medians by at most 0.0195 on the log scale. The 11-policy screen uses the quality-gated NPE posterior median.

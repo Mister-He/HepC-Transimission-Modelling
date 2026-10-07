@@ -1,0 +1,19 @@
+{
+  "policy_start_year": 2026,
+  "j_start_year": 2019,
+  "end_year": 2030,
+  "annual_screening_totals": [600, 1000, 2000, 5000, 8000],
+  "f_allocation_fractions": [0.25, 0.5, 0.75],
+  "j_annual_start_probability": 0.99995,
+  "fx_annual_start_probability": 0.99,
+  "discount_rate": 0.03,
+  "discount_base_year": 2026,
+  "price_year": 2026,
+  "price_basis": "Illustrative 2026 SGD model prices using 2025 average USD/SGD 1.3066, flat nominal prices, 3% discount to 2026; not Singapore payer acquisition costs",
+  "unit_cost_sgd": {"antibody": 25.31, "rna": 307, "consultation": 25},
+  "sof_vel_usd_per_week": 2577,
+  "sof_vel_weeks": 12,
+  "usd_to_sgd": 1.3066,
+  "consultations_per_start": 1,
+  "cost_sensitivity_multiplier": [0.5, 1, 1.5]
+}

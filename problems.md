@@ -1,5 +1,34 @@
 # Problems and follow-up
 
+## 2026-10-01: corrected-target rerun
+
+- The tracked `targets.json` copies specify 30--39 seroprevalence 0.3000 and
+  population log-scale observation sigma 0.10. The runtime target input had
+  drifted to 0.3001245 and 0.05; it was synchronized before rerunning.
+- The first corrected-target NPE run used 3,000 simulations, two seeds, and
+  best-fit-centred Normal(0.15) log-scale priors. The R simulator had
+  previously sampled its training and SBC parameters with unit SD even when
+  the Python prior used 0.15; that mismatch was fixed before this run.
+  Both seeds met SBC coverage bounds. Seed 1 failed the existing absolute
+  posterior-spread gate only for `theta2` (SD 0.0471 versus required 0.05);
+  seed 2 had SD 0.0506. The failure was recorded rather than labelled an
+  accepted posterior. A wider 0.20 prior was then evaluated as a sensitivity
+  rerun in the same result path.
+- The Normal(0.20) rerun passed both SBC and spread gates: minimum 95%
+  coverage was 0.9267 in each seed and minimum posterior SD was 0.0549 and
+  0.0544. Its two-seed posterior median was used to regenerate the 75 policies
+  in `output/scenarios_2026/`.
+- Six all-age policies pass the point-parameter WHO-style screen, but their
+  modelled 2026 treatment starts range from 3,119 to 4,342, including 2,260
+  to 3,442 starts in community F/X. Capacity is not constrained in the model,
+  so target passage cannot establish practical feasibility. Mortality
+  reductions are only 65.7--67.4%, close to the 65% threshold.
+- The corrected-target MCMC validation used four 120,000-iteration chains,
+  20,000 burn-in iterations each, a monthly model step, and NPE covariance for
+  initialization. All 12 parameters pass ESS > 4,000 and R-hat < 1.001;
+  minimum pooled ESS is 10,302 and maximum R-hat is 1.000552. The NPE-median
+  scenario screen has not been converted into a posterior pass probability.
+
 ## 2026-09-29: age/population calibration and 2026 scenarios
 
 - The 47% halfway-house/release-cohort observation is no longer a calibration

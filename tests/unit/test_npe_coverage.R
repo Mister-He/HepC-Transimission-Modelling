@@ -3,7 +3,7 @@ args0 <- commandArgs(FALSE)
 file_arg <- sub("^--file=", "", args0[grepl("^--file=", args0)])
 root <- normalizePath(file.path(dirname(normalizePath(file_arg)), "..", ".."))
 source(file.path(root, "tests/helper.R"))
-npe_dir <- file.path(root, "output", "calibration", "npe_agepop")
+npe_dir <- file.path(root, "output", "calibration", "npe_agepop_recal")
 eval_path <- file.path(npe_dir, "npe_evaluation.csv")
 post_path <- file.path(npe_dir, "posterior_samples_npe.csv")
 if (!file.exists(eval_path) || !file.exists(post_path)) {
@@ -22,6 +22,9 @@ check_true(all(eval$posterior_sd >= 0.05),
            "NPE posterior standard deviations are not collapsed")
 check_true(nrow(post) >= 500 && all(is.finite(as.matrix(theta))),
            "NPE posterior draws are finite and sufficiently large")
+check_true(file.exists(file.path(npe_dir, "NPE_OK.txt")) &&
+             !file.exists(file.path(npe_dir, "NPE_NOT_OK.txt")),
+           "active NPE quality gate is accepted without a stale failure marker")
 
 eval2_path <- file.path(npe_dir, "npe_evaluation_seed2.csv")
 if (file.exists(eval2_path)) {

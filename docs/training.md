@@ -4,7 +4,7 @@
 
 ```bash
 Rscript scripts/run_calibration.R \
-  --run-id r_YYYYMMDD_agepop --maxit 1000 --n-starts 5 --seed 20260929
+  --run-id r_20260929_agepop --maxit 1000 --n-starts 5 --seed 20261001
 ```
 
 Targets are read from `data/calibration_targets.json`. Every objective
@@ -21,43 +21,67 @@ constant through 2030.
 
 ```bash
 Rscript scripts/run_npe.R --step all \
-  --fit output/calibration/r_YYYYMMDD_agepop/fit.rds \
-  --out-dir output/calibration/npe_agepop \
-  --n-sims 600 --n-proposal 100 --n-draws 1000 \
-  --n-cores 4 --n-rounds 1 --max-epochs 250 --seed 20260929 \
+  --fit output/calibration/r_20260929_agepop/fit.rds \
+  --out-dir output/calibration/npe_agepop_recal \
+  --n-sims 3000 --n-draws 5000 --n-cores 4 --n-rounds 1 \
+  --max-epochs 500 --seed 20261001 \
+  --npe-contact-sd 0.20 --npe-beta-sd 0.20 \
+  --npe-hidden-features 128 --npe-num-transforms 10 \
   --python /path/to/python
 ```
 
 NPE uses binomial prevalence noise and log-normal population noise
 (`sigma = 0.10`). SBC coverage and posterior spread are quality gates. No
-Laplace approximation is run or stored. The current accepted run uses
-`/tmp/bayes-venv/bin/python`; use an equivalent environment containing
-PyTorch and `sbi`.
+Laplace approximation is run or stored. The corrected-target accepted run is
+in `output/calibration/npe_agepop_recal/`; the R prior simulator and Python
+prior now use the same SD. The current machine uses
+`/opt/homebrew/Caskroom/miniconda/base/envs/bayes-venv/bin/python`.
+
+## MCMC validation and 2015 predictions
+
+```bash
+Rscript scripts/run_mcmc_validation.R \
+  --fit output/calibration/r_20260929_agepop/fit.rds \
+  --npe-dir output/calibration/npe_agepop_recal \
+  --out-dir output/calibration/mcmc_recal \
+  --n-iter 120000 --burnin 20000 --thin 1 \
+  --n-chains 4 --parallel-chains 4 --seed 20261002 \
+  --contact-sd 0.20 --beta-sd 0.20 --dt 0.0833 \
+  --ess-min 4000 --rhat-max 1.001 --same-start true
+Rscript scripts/predict_2015_posterior.R \
+  --fit output/calibration/r_20260929_agepop/fit.rds \
+  --out-dir output/calibration/npe_agepop_recal --year 2015 --cores 4
+Rscript scripts/plot_calibration.R \
+  --fit output/calibration/r_20260929_agepop/fit.rds \
+  --npe-dir output/calibration/npe_agepop_recal \
+  --mcmc-dir output/calibration/mcmc_recal --cores 4 --max-draws 2000
+```
+
+The MCMC chain uses a monthly integration step over the full 150-year
+equilibrium horizon. Its strict gate requires every parameter to have pooled
+ESS above 4,000 and R-hat below 1.001. Run the calibration plot after MCMC
+finishes so it uses the new samples. The 2015 stratum prediction uses both NPE
+seed posteriors; the calibration comparison randomly selects 2,000 draws per
+method.
 
 ## 2026 treatment scenarios
 
 ```bash
 Rscript scripts/scenarios_2026.R \
-  --fit output/calibration/r_YYYYMMDD_agepop/fit.rds
+  --fit output/calibration/r_20260929_agepop/fit.rds \
+  --posterior-dir output/calibration/npe_agepop_recal
 ```
 
-The script projects 2015--2025 without treatment and starts each policy in
-2026. Treatment is prohibited in D in every scenario. The run evaluates 75
-combinations: J and F/X treatment initiation probabilities of 0%, 25%, 50%,
-75%, and 100%, crossed with age settings 20--50, 30--60, and all age groups.
-These map to the model's 20--49 and 30--59 five-year age bands.
-The WHO impact screen requires 80% incidence reduction and 65% HCV-related
-mortality reduction versus the 2015 baseline. The script converts initiation
-probability to the ODE hazard using `tau = -log(1 - probability)`; 100% is
-represented numerically by a 10/y hazard (99.995%). It writes age-specific
-Nature-style figures, one combined heatmap, treatment-demand figures only for
-age settings with at least one passing policy, one combined trade-off figure,
-endpoint tables and an optional Excel workbook.
-
-Treatment-demand counts are integrated treatment starts over 2026--2030. They
-are treatment courses rather than unique people; because the model permits
-reinfection, one person may contribute more than one course. The primary
-trade-off is reported using treatment starts versus cumulative viremic
-person-years averted relative to status quo, with a Pareto frontier and an
-efficiency ratio. The exact individual-level number of people treated at least
-once is not identifiable from the aggregate compartment model.
+The script retains the accepted NPE posterior median and 2015 equilibrium, runs
+J background treatment from 2019, and branches all policies from the same 2026
+state. D has no treatment; F/X interventions cover all age groups. Annual
+screening quotas are 600, 1,000, 2,000, 5,000 or 8,000, with F receiving 25%, 50% or 75%,
+plus J-only and infinite-screening comparators. Quotas generate chronic
+start capacities from a fixed year-start non-treatment population snapshot;
+the C++ solver enforces them at the actual c-to-t event. See
+`data/scenario_policy_config.json` for externally editable assumptions and
+`output/scenarios_2026/README.md` for definitions, cost evidence and results.
+Costs are illustrative SGD public-price proxies, not confirmed Singapore
+healthcare-payer net costs. The outputs are expected course events under one
+NPE median parameter vector, not unique patients or posterior policy
+probabilities.

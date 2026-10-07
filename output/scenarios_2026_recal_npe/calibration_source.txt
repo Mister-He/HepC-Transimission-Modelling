@@ -1,1 +1,0 @@
-NPE posterior median: /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_agepop_recal/posterior_samples_npe.csv; /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_agepop_recal/posterior_samples_npe_seed2.csv

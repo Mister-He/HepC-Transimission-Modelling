@@ -256,6 +256,46 @@ std::vector<double> rk4_step(double time, double dt,
     return out;
 }
 
+// Integrate treatment events with the same RK4 stages as the disease states.
+// Event order per stratum: starts, completions, cures. Counts are courses.
+struct PolicyStep {
+    std::vector<double> y;
+    std::vector<double> events;
+};
+
+std::vector<double> treatment_events(const std::vector<double>& y, const Params& p) {
+    std::vector<double> e(12, 0.0);
+    for (int s = 0; s < N_STRATA; ++s)
+        for (int k = 1; k <= N_STAGES; ++k)
+            for (int age = 0; age < N_AGES; ++age) {
+                if (age + 1 >= p.tau_min_age && age + 1 <= p.tau_max_age)
+                    e[s] += p.tau_by_stratum[s*N_STAGES+k-1] * y[idx(s,k,2,age)];
+                const double finishing = y[idx(s,k,3,age)] / p.iota2;
+                e[4+s] += finishing;
+                e[8+s] += finishing * (k <= 2 ? p.alpha_NC :
+                    (k == 3 ? p.alpha_DC : p.alpha_HCC));
+            }
+    return e;
+}
+
+PolicyStep rk4_policy_step(double time, double dt,
+                           const std::vector<double>& y, const Params& p) {
+    auto k1 = rhs(time, y, p), e1 = treatment_events(y, p);
+    std::vector<double> y2(N_COMP), y3(N_COMP), y4(N_COMP);
+    for (int i = 0; i < N_COMP; ++i) y2[i] = y[i] + 0.5*dt*k1[i];
+    auto k2 = rhs(time+0.5*dt, y2, p), e2 = treatment_events(y2, p);
+    for (int i = 0; i < N_COMP; ++i) y3[i] = y[i] + 0.5*dt*k2[i];
+    auto k3 = rhs(time+0.5*dt, y3, p), e3 = treatment_events(y3, p);
+    for (int i = 0; i < N_COMP; ++i) y4[i] = y[i] + dt*k3[i];
+    auto k4 = rhs(time+dt, y4, p), e4 = treatment_events(y4, p);
+    PolicyStep out{std::vector<double>(N_COMP), std::vector<double>(12)};
+    for (int i = 0; i < N_COMP; ++i)
+        out.y[i] = y[i] + (dt/6.0)*(k1[i]+2*k2[i]+2*k3[i]+k4[i]);
+    for (int i = 0; i < 12; ++i)
+        out.events[i] = (dt/6.0)*(e1[i]+2*e2[i]+2*e3[i]+e4[i]);
+    return out;
+}
+
 // [[Rcpp::export]]
 NumericMatrix run_sim(List params_r, List data_r) {
     Params p;
@@ -323,11 +363,53 @@ NumericMatrix run_sim(List params_r, List data_r) {
     int n_steps = static_cast<int>((t_end-t_start)/dt) + 1;
     NumericVector y0 = as<NumericVector>(data_r["y0"]);
     if (y0.size() != N_COMP) stop("y0 must have length 480 (five HCV states)");
-    std::vector<double> y(y0.begin(), y0.end()); NumericMatrix out(n_steps, N_COMP+1);
+    bool capped = data_r.containsElementNamed("treatment_capacity");
+    std::vector<double> capacity(N_STRATA, R_PosInf), cumulative(12, 0.0);
+    if (capped) {
+        NumericVector v = as<NumericVector>(data_r["treatment_capacity"]);
+        if (v.size() != N_STRATA) stop("treatment_capacity must have length 4");
+        for (int s = 0; s < N_STRATA; ++s) {
+            if (NumericVector::is_na(v[s]) || v[s] < 0) stop("Invalid treatment capacity");
+            capacity[s] = v[s];
+        }
+    }
+    std::vector<double> y(y0.begin(), y0.end()); NumericMatrix out(n_steps, N_COMP+1+(capped ? 12 : 0));
     out(0,0) = t_start; for (int c = 0; c < N_COMP; ++c) out(0,c+1) = y[c];
     double time = t_start;
     for (int step = 1; step < n_steps; ++step) {
-        y = rk4_step(time, dt, y, p); time += dt;
+        if (capped) {
+            double left = dt;
+            while (left > 1e-12) {
+                // An event splits the daily step exactly when the first
+                // stratum exhausts its own remaining annual quota.
+                Params active = p;
+                for (int s = 0; s < N_STRATA; ++s)
+                    if (cumulative[s] >= capacity[s] - 1e-9)
+                        for (int k = 0; k < N_STAGES; ++k)
+                            active.tau_by_stratum[s*N_STAGES+k] = 0.0;
+                PolicyStep full = rk4_policy_step(time, left, y, active);
+                double duration = left;
+                bool event = false;
+                for (int s = 0; s < N_STRATA; ++s) {
+                    if (!std::isfinite(capacity[s]) ||
+                        cumulative[s] + full.events[s] <= capacity[s] + 1e-9) continue;
+                    double lo = 0.0, hi = left;
+                    for (int j = 0; j < 42; ++j) {
+                        const double mid = (lo + hi) / 2.0;
+                        if (cumulative[s] + rk4_policy_step(time, mid, y, active).events[s] < capacity[s]) lo = mid;
+                        else hi = mid;
+                    }
+                    duration = std::min(duration, lo);
+                    event = true;
+                }
+                if (event && duration < left) full = rk4_policy_step(time, duration, y, active);
+                for (int i = 0; i < 12; ++i) cumulative[i] += full.events[i];
+                y.swap(full.y); time += duration; left -= duration;
+                if (event && duration < 1e-12) stop("Treatment capacity event did not advance");
+            }
+        } else {
+            y = rk4_step(time, dt, y, p); time += dt;
+        }
         for (double& value : y) if (value < 0.0) value = 0.0;
         std::vector<double> aged = y;
         for (int s = 0; s < N_STRATA; ++s) for (int k = 1; k <= N_STAGES; ++k)
@@ -337,6 +419,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
             }
         y.swap(aged); out(step,0) = time;
         for (int c = 0; c < N_COMP; ++c) out(step,c+1) = y[c];
+        if (capped) for (int c = 0; c < 12; ++c) out(step,N_COMP+1+c) = cumulative[c];
     }
     return out;
 }

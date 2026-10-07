@@ -53,7 +53,7 @@ def write_numeric_csv(path, values, columns):
         writer.writerows(values.tolist())
 
 
-def add_observation_noise(x_raw, n_prev):
+def add_observation_noise(x_raw, n_prev, population_sigma_log):
     """Approximate the calibration observation model for NPE training.
 
     The R simulator returns noiseless summaries. Training directly on those
@@ -66,7 +66,7 @@ def add_observation_noise(x_raw, n_prev):
     p = np.clip(x[:, :6], 1e-8, 1 - 1e-8)
     x[:, :6] = np.random.binomial(n_prev[None, :], p) / n_prev[None, :]
     x[:, 6:12] = np.exp(np.log(np.maximum(x[:, 6:12], 1e-8)) +
-                         np.random.normal(0.0, 0.10, size=x[:, 6:12].shape))
+                         np.random.normal(0.0, population_sigma_log, size=x[:, 6:12].shape))
     return x
 
 
@@ -144,6 +144,7 @@ def main():
     ap.add_argument("--beta-anchor", required=True)
     ap.add_argument("--contact-sd", type=float, required=True)
     ap.add_argument("--beta-sd", type=float, required=True)
+    ap.add_argument("--population-sigma-log", type=float, default=0.10)
     ap.add_argument("--beta-df", type=float, default=float("inf"))
     ap.add_argument("--hidden-features", type=int, default=64)
     ap.add_argument("--num-transforms", type=int, default=8)
@@ -165,7 +166,7 @@ def main():
     if args.round == 1:
         theta_raw = read_numeric_csv(args.theta).astype(np.float64)
         x_raw = read_numeric_csv(args.x).astype(np.float64)
-        x_raw = add_observation_noise(x_raw, n_prev)
+        x_raw = add_observation_noise(x_raw, n_prev, args.population_sigma_log)
         z_train = theta_raw / 2.0
         trans_x, mu_x, sd_x = make_x_transform(x_raw)
         x_z = trans_x(x_raw)
@@ -203,7 +204,8 @@ def main():
                 z_draws * 2.0, [f"theta{i}" for i in range(1, 13)])
             theta_sbc_raw = read_numeric_csv(args.theta_sbc).astype(np.float64)
             x_sbc_raw = add_observation_noise(
-                read_numeric_csv(args.x_sbc).astype(np.float64), n_prev)
+                read_numeric_csv(args.x_sbc).astype(np.float64), n_prev,
+                args.population_sigma_log)
             z_sbc = theta_sbc_raw / 2.0
             x_z_sbc = trans_x(x_sbc_raw)
             n_sbc = min(args.n_sbc, len(z_sbc))
@@ -236,7 +238,7 @@ def main():
                 "prior_contact_sd": args.contact_sd,
                 "prior_beta_sd": args.beta_sd,
                 "prior_beta_df": args.beta_df,
-                "observation_noise": "Binomial age p; logNormal N sigma=0.10",
+                "observation_noise": f"Binomial age p; logNormal N sigma={args.population_sigma_log}",
                 "mu_x": mu_x.tolist(), "sd_x": sd_x.tolist(),
                 "max_epochs": args.max_epochs,
             }
@@ -263,7 +265,7 @@ def main():
             "prior_contact_sd": args.contact_sd,
             "prior_beta_sd": args.beta_sd,
             "prior_beta_df": args.beta_df,
-            "observation_noise": "Binomial age p; logNormal N sigma=0.10",
+            "observation_noise": f"Binomial age p; logNormal N sigma={args.population_sigma_log}",
             "mu_x": mu_x.tolist(), "sd_x": sd_x.tolist(),
             "max_epochs": args.max_epochs,
         }
@@ -286,7 +288,7 @@ def main():
 
     theta_r = read_numeric_csv(args.theta2).astype(np.float64) / 2.0
     x_r_raw = read_numeric_csv(args.x2).astype(np.float64)
-    x_r_raw = add_observation_noise(x_r_raw, n_prev)
+    x_r_raw = add_observation_noise(x_r_raw, n_prev, args.population_sigma_log)
     x_r_z = trans_x(x_r_raw)
 
     inference.append_simulations(
@@ -329,7 +331,7 @@ def main():
 
     theta_sbc_raw = read_numeric_csv(args.theta_sbc).astype(np.float64)
     x_sbc_raw = read_numeric_csv(args.x_sbc).astype(np.float64)
-    x_sbc_raw = add_observation_noise(x_sbc_raw, n_prev)
+    x_sbc_raw = add_observation_noise(x_sbc_raw, n_prev, args.population_sigma_log)
     z_sbc = theta_sbc_raw / 2.0
     x_z_sbc = trans_x(x_sbc_raw)
     n_sbc = min(args.n_sbc, len(z_sbc))
@@ -363,7 +365,7 @@ def main():
     cfg["round"] = args.round
     cfg[f"n_round{args.round}"] = len(theta_r)
     cfg["n_draws"] = args.n_draws
-    cfg["observation_noise"] = "Binomial age p; logNormal N sigma=0.10"
+    cfg["observation_noise"] = f"Binomial age p; logNormal N sigma={args.population_sigma_log}"
     with open(os.path.join(args.out, f"npe_config{suffix}.json"), "w") as fh:
         json.dump(cfg, fh, indent=2)
     print(f"[npe] round {args.round} (final) done; posterior -> "

@@ -2,30 +2,35 @@
 # Deterministic calibration. Every objective evaluation runs model years 0--150;
 # the final row is the equilibrium-checked 2015 snapshot.
 
+# Read arguments from CommandLine
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) {
   i <- match(name, args); if (is.na(i)) default else args[i + 1]
 }
-ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-RUN_ID <- arg("--run-id", format(Sys.time(), "%Y%m%dT%H%M%S"))
-OUT <- file.path(ROOT, arg("--out-dir", "output/calibration"), RUN_ID)
-SEED <- as.integer(arg("--seed", "20260929"))
-MAXIT <- as.integer(arg("--maxit", "1000"))
-N_STARTS <- as.integer(arg("--n-starts", "8"))
+ROOT       <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
+RUN_ID     <- arg("--run-id", format(Sys.time(), "%Y%m%dT%H%M%S"))
+OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration"), RUN_ID)
+SEED       <- as.integer(arg("--seed", "20260929"))
+MAXIT      <- as.integer(arg("--maxit", "1000"))
+N_STARTS   <- as.integer(arg("--n-starts", "8"))
 PERTURB_SD <- as.numeric(arg("--sd-perturb", "0.7"))
 
+# Read from repo path
 source(file.path(ROOT, "scripts", "calibration", "targets.R"))
-targets <- read_targets(file.path(ROOT, "data", "calibration_targets.json"))
-old <- setwd(file.path(ROOT, "scripts", "model"))
-setup_env <- new.env(parent = globalenv()); sys.source("setup.R", setup_env); setwd(old)
+targets    <- read_targets(file.path(ROOT, "data", "calibration_targets.json"))
+old        <- setwd(file.path(ROOT, "scripts", "model"))
+setup_env  <- new.env(parent = globalenv()); sys.source("setup.R", setup_env); setwd(old)
+
+# Read simulation logic from cpp
 Rcpp::sourceCpp(file.path(ROOT, "scripts", "model", "sim.cpp"))
-base_params <- setup_env$params
-data <- setup_env$data
+base_params  <- setup_env$params
+data         <- setup_env$data
 data$t_start <- 0
-data$t_end <- targets$equilibrium_horizon_years
+data$t_end   <- targets$equilibrium_horizon_years
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "calibrate_nm.R"))
   sys.source(file.path(ROOT, "scripts", "calibration", f), envir = environment())
 
+# Save calibration results insdie output/
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 file.copy(file.path(ROOT, "data", "calibration_targets.json"),
           file.path(OUT, "targets.json"), overwrite = TRUE)

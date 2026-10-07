@@ -32,8 +32,10 @@ center <- as.numeric(fit$best$theta); N_PARAM <- 12L; N_SUMMARY <- 12L
 
 sample_prior <- function(n, seed) {
   set.seed(seed); z <- matrix(rnorm(n * N_PARAM), n, N_PARAM)
-  z[, 1:6] <- sweep(z[, 1:6], 2, center[1:6], "+")
-  z[, 7:12] <- sweep(z[, 7:12], 2, center[7:12], "+")
+  z[, 1:6] <- sweep(sweep(z[, 1:6, drop = FALSE], 2, CONTACT_SD, "*"),
+                    2, center[1:6], "+")
+  z[, 7:12] <- sweep(sweep(z[, 7:12, drop = FALSE], 2, BETA_SD, "*"),
+                     2, center[7:12], "+")
   z
 }
 
@@ -63,6 +65,8 @@ write_obs <- function() {
 }
 
 step_data <- function() {
+  old_gates <- file.path(OUT, c("NPE_OK.txt", "NPE_NOT_OK.txt"))
+  file.remove(old_gates[file.exists(old_gates)])
   th <- sample_prior(N_SIMS, SEED); sim <- simulate_many(th)
   write.csv(th[sim$ok, , drop = FALSE], file.path(OUT, "theta_train.csv"), row.names = FALSE)
   write.csv(sim$x, file.path(OUT, "x_train.csv"), row.names = FALSE)
@@ -82,6 +86,7 @@ py_round <- function(seed, round, suffix = "") {
          "--n-proposal", N_PROPOSAL, "--contact-anchor", paste(exp(center[1:6]), collapse = ","),
          "--beta-anchor", paste(exp(center[7:12]), collapse = ","), "--contact-sd", CONTACT_SD,
          "--beta-sd", BETA_SD, "--hidden-features", HIDDEN, "--num-transforms", TRANSFORMS,
+         "--population-sigma-log", targets$population_sigma_log,
          "--max-epochs", MAX_EPOCHS)
   if (nzchar(suffix)) a <- c(a, "--suffix", suffix)
   if (round > 1) a <- c(a, "--theta2", file.path(OUT, paste0("proposal_theta_round", round, tag, ".csv")),
@@ -130,6 +135,8 @@ step_evaluate <- function() {
   writeLines(if (ok) "PASS: NPE posterior accepted." else
                "FAIL: NPE quality gate failed; inspect SBC before using posterior.",
              file.path(OUT, if (ok) "NPE_OK.txt" else "NPE_NOT_OK.txt"))
+  stale_gate <- file.path(OUT, if (ok) "NPE_NOT_OK.txt" else "NPE_OK.txt")
+  if (file.exists(stale_gate)) file.remove(stale_gate)
   cat("NPE quality gate:", if (ok) "PASS" else "FAIL", "\n")
   invisible(ok)
 }

@@ -91,6 +91,46 @@ check_true(sum(calendar_2016[nrow(calendar_2016), -1]) + 5 <
              sum(calendar_2015[nrow(calendar_2015), -1]),
            "post-2015 schedule starts with the 2016 row")
 
+# Event-located annual quotas: F and X stop independently; existing courses
+# finish after the cap, and restarting the solver resets the annual counter.
+cap_data <- e$data; cap_data$t_start <- 160; cap_data$t_end <- 161
+cap_data$y0 <- rep(0,480)
+for (s in 1:3) cap_data$y0[idx(s,1,2,2)-1L] <- 100
+cap_data$treatment_capacity <- c(Inf,Inf,5,10)
+cap_pm <- e$params; cap_pm$q <- 0; cap_pm$beta <- rep(0,6)
+cap_pm$lambda1 <- cap_pm$lambda2 <- cap_pm$lambda3 <- rep(0,6)
+cap_pm$tau_by_stratum <- c(rep(0,4),rep(10,12))
+cap_pm$tau_min_age <- 1; cap_pm$tau_max_age <- 6
+cap_out <- run_sim(cap_pm,cap_data)
+cap_events <- cap_out[nrow(cap_out),482:493]
+check_true(abs(cap_events[3]-5)<1e-6 && abs(cap_events[4]-10)<1e-6 &&
+             cap_events[2]>10,"F/X independent quotas stop exactly; J continues")
+check_true(cap_events[7]>0 && cap_events[8]>0 &&
+             cap_events[11]>0 && cap_events[12]>0,
+           "completion and cure continue after quota exhaustion")
+cap_data$y0 <- cap_out[nrow(cap_out),2:481]
+cap_data$t_start <- 161; cap_data$t_end <- 162
+reset_out <- run_sim(cap_pm,cap_data)
+check_true(abs(reset_out[nrow(reset_out),484]-5)<1e-6,
+           "annual F quota resets with retained disease state")
+cap_data$treatment_capacity <- c(Inf,Inf,0,0)
+zero_out <- run_sim(cap_pm,cap_data)
+check_true(all(abs(zero_out[nrow(zero_out),484:485])<1e-8) &&
+             zero_out[nrow(zero_out),483]>0,
+           "zero F/X quota leaves J treatment active")
+balance_pm <- cap_pm; balance_pm$mu <- rep(0,6)
+balance_pm$mu_DC <- 0; balance_pm$mu_HCC <- 0
+balance_pm$p_NC_CC <- 0; balance_pm$p_CC_DC <- 0
+balance_pm$p_CC_HCC <- 0; balance_pm$p_DC_HCC <- 0
+balance_data <- cap_data; balance_data$t_start <- 160; balance_data$t_end <- 160.2
+balance_data$y0 <- rep(0,480); balance_data$y0[idx(2,1,2,2)-1L] <- 100
+balance_data$treatment_capacity <- c(Inf,Inf,5,Inf)
+balance_out <- run_sim(balance_pm,balance_data)
+balance_events <- balance_out[nrow(balance_out),482:493]
+f_t <- sum(balance_out[nrow(balance_out),sapply(0:5,function(a) idx(2,1,3,a))])
+check_true(abs(f_t-(balance_events[3]-balance_events[7]))<1e-5,
+           "c-to-t start flow matches t inflow before treatment completions")
+
 cal_data <- e$data; cal_data$t_end <- 10
 obj <- make_objective(e$params, cal_data)
 check_true(is.finite(obj(rep(0, N_THETA))), "likelihood is finite at theta zero")

@@ -3,6 +3,7 @@ library(lubridate)
 
 # Clear the environment
 rm(list = ls())
+source('~/.Rprofile')
 gc()
 
 # Read SPS data
@@ -42,8 +43,7 @@ data = data %>%
     data %>% 
       group_by(IDENTIFER) %>% 
       reframe(
-        counts = sum(CONSUMPTION),
-        cases = sum(DRC == 0)
+        counts = sum(CONSUMPTION)
       ) %>% 
       ungroup(),
     by = "IDENTIFER"

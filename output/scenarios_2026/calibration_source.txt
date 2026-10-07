@@ -1,0 +1,2 @@
+Pooled NPE posterior draws: 1000 random draws from each seed (used seed 1: 1000, seed 2: 1000 valid); sampling seed 20261005. Medians and 95% UIs (2.5th-97.5th percentiles) across draws.
+Sources: /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling-feature-AddRecovery/output/calibration/npe_agepop_recal/posterior_samples_npe.csv; /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling-feature-AddRecovery/output/calibration/npe_agepop_recal/posterior_samples_npe_seed2.csv

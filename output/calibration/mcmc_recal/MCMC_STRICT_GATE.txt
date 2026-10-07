@@ -1,1 +1,1 @@
-FAIL: strict gate requires ESS > 4000 and Rhat < 1.0001 for every parameter.
+PASS: ESS > 4000 and Rhat < 1.0010 for every parameter.

@@ -64,8 +64,10 @@ load_draws <- function(files) {
   as.matrix(x)
 }
 
-simulate_or_load <- function(theta, cache_file, label) {
-  if (file.exists(cache_file)) return(read.csv(cache_file, check.names = FALSE))
+simulate_or_load <- function(theta, cache_file, label, source_files) {
+  cache_fresh <- file.exists(cache_file) &&
+    file.info(cache_file)$mtime >= max(file.info(source_files)$mtime)
+  if (isTRUE(cache_fresh)) return(read.csv(cache_file, check.names = FALSE))
   message("Evaluating ", nrow(theta), " ", label, " draws with ", cores, " cores...")
   if (cores > 1 && .Platform$OS.type != "windows") {
     result <- parallel::mclapply(seq_len(nrow(theta)),
@@ -85,12 +87,12 @@ npe_files <- c(file.path(npe_dir, "posterior_samples_npe.csv"),
 npe_files <- npe_files[file.exists(npe_files)]
 if (!length(npe_files)) stop("No NPE posterior samples found")
 npe <- simulate_or_load(load_draws(npe_files),
-  file.path(npe_dir, "model_prediction_2015_age_draws.csv"), "NPE posterior")
+  file.path(npe_dir, "model_prediction_2015_age_draws.csv"), "NPE posterior", npe_files)
 
 mcmc_file <- file.path(mcmc_dir, "posterior_samples_mcmc.csv")
 if (!file.exists(mcmc_file)) stop("Missing MCMC samples: ", mcmc_file)
 mcmc <- simulate_or_load(load_draws(mcmc_file),
-  file.path(mcmc_dir, "model_prediction_2015_age_draws.csv"), "MCMC posterior")
+  file.path(mcmc_dir, "model_prediction_2015_age_draws.csv"), "MCMC posterior", mcmc_file)
 
 summarise_draws <- function(x, source, prefix) {
   x <- x[as.logical(x$equilibrium_pass), , drop = FALSE]

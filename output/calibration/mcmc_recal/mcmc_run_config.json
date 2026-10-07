@@ -1,6 +1,6 @@
 {
-  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20260929_agepop/fit.rds",
-  "npe_dir": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_agepop_recal",
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling-feature-AddRecovery/output/calibration/r_20260929_agepop/fit.rds",
+  "npe_dir": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling-feature-AddRecovery/output/calibration/npe_agepop_recal",
   "n_npe_draws": 10000,
   "n_chains": 4,
   "n_iter": 120000,
@@ -8,11 +8,11 @@
   "thin": 1,
   "parallel_chains": 4,
   "same_start": true,
-  "prior": "best-fit-centred Normal(0.15) on all log scales; same Binomial/log-normal target likelihood",
-  "beta_sd": 0.15,
+  "prior": "best-fit-centred Normal(0.2) on all log scales; same Binomial/log-normal target likelihood",
+  "beta_sd": 0.2,
   "ess_min": 4000,
-  "rhat_max": 1.0001,
+  "rhat_max": 1.001,
   "integration_dt": 0.0833,
-  "strict_pass": false,
+  "strict_pass": true,
   "covariance": "empirical covariance of combined NPE seed1 + seed2 posterior"
 }

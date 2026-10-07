@@ -1,59 +1,42 @@
-# Structured execution prompt
+# 2026 年 HCV 政策分析执行说明
 
-## Objective
+## 输入与边界
 
-Continue work on the Singapore PWID HCV transmission model on a dedicated
-`feature/AddRecovery` branch and worktree, while preserving the current model
-changes and keeping result paths stable.
+- 保留 2015 年平衡态校准、目标文件与合格 NPE 两种子的后验样本；政策分析使用两个后验样本合并后的逐参数中位数。不得把历史治疗新设定隐含为重新校准。
+- 模型仍有 D/J/F/X、四个肝病阶段、六个年龄组和 u/a/c/t/r 五种 HCV 状态；全部年龄参与政策分析。D 保持原有零治疗背景。
+- 所有政策共享 2015–2018 无治疗及 2019–2025 J 背景治疗历史，并在同一 2026 年初状态分支。
 
-## Repository and Git
+## 固定治疗与容量
 
-1. Add persistent agent rules requiring minimal creation of files/folders.
-2. Add a concise Markdown directory guide to every substantive existing
-   directory; document generated timestamped log directories from their parent.
-3. Move all current working-tree changes onto `feature/AddRecovery`.
-4. Create a worktree for that branch in the parent directory of this repo.
+- J 于 2019 年起，对各年龄和肝病阶段的 c 使用可配置的有限连续时间启动率。默认无竞争事件时一年启动概率 0.99995；无年度限额。该数值不是保证每人实际治疗。正在 t 的疗程继续完成；失败或再感染后的重新启动再计一次。
+- F/X 于 2026 年起，对 c 使用年概率 0.99 所对应的基础速率。每日危险率为 `-log(1-p)/365`，求解器按年计时，输入 `-log(1-p)`。不把该速率与年度治疗配额混为一谈。
+- 年初一次计算 `N=u+a+c+r`、`P_Ab=(a+c+r)/N`、`P_RNA=(a+c)/N`、`P_c=c/N`；零分母得到零。实际筛查 `min(配额,N)`，抗体检测等于实际筛查，RNA 检测为实际筛查乘 `P_Ab`，RNA 阳性为实际筛查乘 `P_RNA`，慢性可治疗识别及当年治疗启动容量为实际筛查乘 `P_c`。
+- 这是聚合配额近似，不新增确诊待治 compartment，也不推断每位治疗者经历了逐人检测。年内不再按变化的患病率重新生成配额；同一人可在不同年份被重复计入筛查估计。F/X 未用名额不自动互转。
+- C++ 求解器按当年的治疗启动事件积分，在触顶的积分步内定位事件并关闭对应 stratum 的 c→t；J、D 和既有 t 不受影响。跨年保留全部疾病状态，重置累计启动计数。输出为疗程启动次数，非独立人数。
 
-## Calibration
+## 情景与评价
 
-1. Re-run the current NPE in the existing NPE result directory; do not create a
-   new result directory.
-2. Reduce the excessive NPE 95% predictive BCI width for ages 30--49 using
-   defensible prior, likelihood, simulation-budget, or estimator changes.
-3. Retain SBC/coverage diagnostics and report any remaining structural
-   non-identifiability rather than hiding it.
-4. Relax the MCMC convergence gate to ESS > 4,000 and Rhat < 1.001. Initialize
-   adaptive MCMC from the NPE posterior covariance and overwrite the existing
-   MCMC result files.
+- 对照：J-only。有限情景：总筛查 600、1000、2000、5000、8000 人/年 × F 分配 25%、50%、75%，共 15 项。600 是以 HCSA–ETT 公开筛查计划作量级参照的本研究假设；其他容量及分配比例均不是已公布政策。删除旧 800 人情景。
+- 理想情景：F、X 每年年初的非在治目标人群全部筛查一次，筛查资源上限为 Inf，但实际检测量及治疗配额有限。
+- 主结果：2030 年模型总体和 F/X 子群的年度新感染流量相对 2015 年下降 80%，HCV 相关死亡流量相对 2015 年下降 65%，两项目标分别及联合报告。不得将模型子群 PASS 等同于新加坡全国消除。
+- 输出年度和累计筛查、RNA 检测、RNA 阳性、识别慢性、启动、完成、治愈、在治人数、未用容量、费用及 WHO 式目标；优先呈现图表与政策汇总。仅为 NPE 中位参数点结果，不输出未经计算的后验达标概率。
 
-## Literature review
+## 成本口径
 
-Review current and primary/authoritative evidence relevant to Singapore HCV:
+- 成本配置放在 `data/scenario_policy_config.json`，证据及链接放在 `output/scenarios_2026/cost_evidence.csv`。SOF/VEL 400/100 mg 每日一次 12 周；用户指定 2019 年文献中的 SOF/VEL 替代情景价 USD 2,577/周，即 USD 30,924/疗程，按新加坡统计局 2025 年均汇率 1.3066 换成 S$40,405.2984。该价是模型假设，不是政府采购价；需记录论文摘要中的 USD 32,325/疗程与全文周价乘法不一致。2019 美元药价和 2025/2026 年服务收费不做 CPI 上调，平移为 2026 SGD 价格基准。DC 使用 RBV-free 效果分支。
+- F/X：实际筛查一次抗体检测；抗体阳性一次 RNA 检测；每次真实 c→t 启动一次预治疗 consultation、一次完整 SOF/VEL 疗程费用。费用在事件发生年份一次记账。当前不含随访、SVR12、护理导航及基因型检测。
+- J：2019 年首次把当时 a+c+r 存量计入抗体检测，其后按模型进入 J 的 a+c+r 流量计入入狱抗体检测；每次真实 J c→t 启动计一次 RNA、consultation 和完整疗程。此为指定简化假设，不是全部入狱者普筛；重复入狱可重复检测。J 中启动后转至 F/X 的疗程不重新计 F/X 启动或药费。
+- **仅计算完整 2026–2030 日历年** F/J/X 成本；2019–2025 J 治疗仍改变期初状态，但历史费用不进入成本输出。按 `C_y/(1.03)^(y-2026)` 折现年度费用，图和累计成本统一使用 2026 SGD 折现值；服务次数不折现。报告按 stratum、费用项目与 J-only 增量的折现费用。保留 0.5、1、1.5 倍统一价格敏感性。
 
-- HCV treatment cost and cost-effectiveness;
-- treatment access, linkage, and barriers among PWID and people in the
-  Singapore care system;
-- treatment capacity, service delivery, and feasible treatment volume.
+## 图形交付
 
-Write the synthesis, evidence links, uncertainty, and model implications to
-`docs/background.md`.
+- 采用已有 Nature style（classic 主题、字体、线宽、viridis 情景色、300 dpi），F/J/X 在成本与启动图中使用同一配色和情景排序。
+- 参照 `output/scenarios_2026/old_trajectory.png` 更新组合图：左侧两个分面给出 2015–2030 发病与死亡年度事件流量相对各自 2015 年的比例，标注 J 2019 和 F/X 2026 起始年；右侧两个分面给出全部 17 个情景 2030 年发病与死亡降幅及门槛。不得把事件数称作人年发生率。
+- 目标热图展示 15 个有限政策、J-only 和无上限参考，分别给出发病、死亡与联合达标，缺值为 Unknown。
+- 成本组成饼图仅纳入双目标达标情景，另将 J-only status quo 作为未达标参照；所有饼图单行排列，共用 legend。各扇区标注百分比，狭小扇区使用外置标签和指向扇区的引线；各情景标题显示 2026–2030 折现总额。达标筛选与热图共用同一结果。
+- 左右并列图分别以 F/J/X 堆叠 2026–2030 折现成本和未折现启动次数；年度 F/X 启动图区分筛查名额、筛查推导治疗配额及真实启动。删除旧 trade-off 图及其专用数据。
+- 所有当前生成的图移除图像最底部的小字说明；必要的单位、阈值与折现口径放在标题、副标题、轴标题、图例或结果说明文档中。
 
-## Policy optimization
+## 验证
 
-1. Expand treatment levels beyond the current grid where computationally and
-   substantively justified.
-2. Consider treatment in additional strata, subject to the model's stratum
-   definitions and the user's policy scope.
-3. Define a transparent objective balancing HCV benefit against treatment
-   burden, access constraints, and treatment-capacity constraints.
-4. Implement or prepare Bayesian optimization to identify the optimal treatment
-   policy, retaining reproducible policy definitions and diagnostics in the
-   existing output paths.
-
-## Guardrails
-
-- Do not add unrelated features or run post-calibration analyses that are not
-  needed for this objective.
-- Preserve the 150-year equilibrium convention and the recovered state model.
-- Clearly distinguish exact-model results, approximations, literature facts,
-  and assumptions.
+运行 `Rscript scripts/run_tests.R --scope all`、`Rscript scripts/scenarios_2026.R --root .`。检查共用政策分支、J/F/X 起始年、零容量、触顶无超额、独立性、跨年重置、空群与 Inf、疗程事件流、2030 全年、15+2 情景、折现及汇率、费用项目和 stratum 对账、年度累计一致性、饼图与热图筛选一致、图形渲染和旧图清理。结果统一写入 `output/scenarios_2026/`。

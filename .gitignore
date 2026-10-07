@@ -1,7 +1,11 @@
 .DS_Store
 .Rhistory
 .conda/
-data/
+data/*
+!data/README.md
+!data/calibration_targets.json
+!data/singstat_new_drug_abusers.csv
+!data/scenario_policy_config.json
 cleaned_data.rds
 sps.csv
 __pycache__/
