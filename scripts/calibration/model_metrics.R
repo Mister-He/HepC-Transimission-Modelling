@@ -10,12 +10,14 @@ j_viremic_idx <- function(i) as.vector(sapply(1:4, function(k)
   sapply(1:3, function(h) idx(1, k, h, i - 1L))))
 
 J_summary_at <- function(out, row) {
-  age <- seq_along(targets$age_groups)
-  N <- vapply(age, function(i) sum(out[row, j_pop_idx(i)]), numeric(1))
-  sero <- vapply(age, function(i) sum(out[row, j_sero_idx(i)]), numeric(1))
+  age     <- seq_along(targets$age_groups)
+  N       <- vapply(age, function(i) sum(out[row, j_pop_idx(i)]), numeric(1))
+  sero    <- vapply(age, function(i) sum(out[row, j_sero_idx(i)]), numeric(1))
   viremic <- vapply(age, function(i) sum(out[row, j_viremic_idx(i)]), numeric(1))
-  data.frame(age_group = targets$age_groups, N_hat = N,
-             p_sero = sero / N, p_viremic = viremic / N)
+  data.frame(age_group = targets$age_groups,
+  	     N_hat     = N,
+             p_sero    = sero / N,
+             p_viremic = viremic / N)
 }
 
 summary_row <- function(out, time = tail(out[, 1], 1))

@@ -2,21 +2,21 @@
 # NPE-C calibration. This script uses the same 2015 equilibrium snapshot and
 # age-specific observations as run_calibration.R; no Laplace approximation is used.
 
-args <- commandArgs(trailingOnly = TRUE)
-arg <- function(name, default = NULL) {
-  i <- match(name, args); if (is.na(i)) default else args[i + 1]
+args       <- commandArgs(trailingOnly = TRUE)
+arg        <- function(name, default = NULL) {
+  i        <- match(name, args); if (is.na(i)) default else args[i + 1]
 }
-STEP <- arg("--step", "all")
-ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/fit.rds")), mustWork = TRUE)
-OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/npe"))
-PYTHON <- arg("--python", Sys.which("python3"))
-N_SIMS <- as.integer(arg("--n-sims", "20000")); N_PROPOSAL <- as.integer(arg("--n-proposal", "6000"))
-N_DRAWS <- as.integer(arg("--n-draws", "20000")); N_CORES <- as.integer(arg("--n-cores", "4"))
-N_ROUNDS <- as.integer(arg("--n-rounds", "2")); MAX_EPOCHS <- as.integer(arg("--max-epochs", "250"))
-SEED <- as.integer(arg("--seed", "20260929"))
+STEP       <- arg("--step", "all")
+ROOT       <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
+FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/fit.rds")), mustWork = TRUE)
+OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration/npe"))
+PYTHON     <- arg("--python", Sys.which("python3"))
+N_SIMS     <- as.integer(arg("--n-sims", "20000")); N_PROPOSAL <- as.integer(arg("--n-proposal", "6000"))
+N_DRAWS    <- as.integer(arg("--n-draws", "20000")); N_CORES <- as.integer(arg("--n-cores", "4"))
+N_ROUNDS   <- as.integer(arg("--n-rounds", "2")); MAX_EPOCHS <- as.integer(arg("--max-epochs", "250"))
+SEED       <- as.integer(arg("--seed", "20260929"))
 CONTACT_SD <- as.numeric(arg("--npe-contact-sd", "0.50")); BETA_SD <- as.numeric(arg("--npe-beta-sd", "0.50"))
-HIDDEN <- as.integer(arg("--npe-hidden-features", "64")); TRANSFORMS <- as.integer(arg("--npe-num-transforms", "8"))
+HIDDEN     <- as.integer(arg("--npe-hidden-features", "64")); TRANSFORMS <- as.integer(arg("--npe-num-transforms", "8"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 
 source(file.path(ROOT, "scripts/calibration/targets.R"))

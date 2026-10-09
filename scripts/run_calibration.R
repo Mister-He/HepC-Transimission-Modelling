@@ -1,10 +1,15 @@
 #!/usr/bin/env Rscript
-# Deterministic calibration. Every objective evaluation runs model years 0--150;
+# Deterministic calibration using Nelder-Mead. 
+# Every objective evaluation runs model years 0--150;
 # the final row is the equilibrium-checked 2015 snapshot.
+# 6 start sets: 
+# plausible_anchor: empricial guess
+# plausible_warm (removed for now): multiplied empirical guess
+# perturb_{1,..,5}: empirical guess + random noise
 
 # Read arguments from CommandLine
 args <- commandArgs(trailingOnly = TRUE)
-arg <- function(name, default = NULL) {
+arg  <- function(name, default = NULL) {
   i <- match(name, args); if (is.na(i)) default else args[i + 1]
 }
 ROOT       <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
@@ -49,12 +54,15 @@ runs <- lapply(starts, function(st) {
   cat("start", st$id, "\n")
   run_nm_start(st$theta0, objective, st$id, MAXIT, seed = st$seed)
 })
-best <- runs[[which.min(vapply(runs, `[[`, numeric(1), "objective"))]]
-pm_best <- build_params(best$theta, base_params)
-out_best <- run_sim(pm_best, data)
-summary_best <- J_summary_final(out_best)
-eq_best <- check_equilibrium(out_best)
 
+# Record the best parammeter set with lowest objective values
+best         <- runs[[which.min(vapply(runs, `[[`, numeric(1), "objective"))]]
+pm_best      <- build_params(best$theta, base_params)
+out_best     <- run_sim(pm_best, data)
+summary_best <- J_summary_final(out_best)
+eq_best      <- check_equilibrium(out_best)
+
+# solutions: Summary of model fitting performance
 summarise_run <- function(r) {
   pm <- build_params(r$theta, base_params); out <- run_sim(pm, data)
   s <- J_summary_final(out); eq <- check_equilibrium(out); m <- fit_metrics(s)
@@ -69,34 +77,43 @@ summarise_run <- function(r) {
 solutions <- do.call(rbind, lapply(runs, summarise_run))
 write.csv(solutions, file.path(OUT, "solutions.csv"), row.names = FALSE)
 
-predictions <- data.frame(
-  age_group = summary_best$age_group,
-  population_target = targets$population,
-  population_hat = summary_best$N_hat,
-  seroprevalence_target = targets$p_prev_binom,
-  seroprevalence_hat = summary_best$p_sero,
-  viremic_prevalence_hat = summary_best$p_viremic
-)
-write.csv(predictions, file.path(OUT, "predictions.csv"), row.names = FALSE)
-write.csv(eq_best$by_age, file.path(OUT, "equilibrium.csv"), row.names = FALSE)
-
+# history: Parameter values in each iteration per start points
 history <- do.call(rbind, lapply(runs, function(r) {
-  if (is.null(r$history)) return(NULL)
-  cbind(data.frame(start_id = r$start_id), r$history)
+  					 if (is.null(r$history)) return(NULL)
+  					 cbind(data.frame(start_id = r$start_id), r$history)
 }))
 write.csv(history, file.path(OUT, "optimization_history.csv"), row.names = FALSE)
 write.csv(data.frame(start_id = vapply(starts, `[[`, character(1), "id"),
                      seed = vapply(starts, `[[`, numeric(1), "seed")),
           file.path(OUT, "initial_values.csv"), row.names = FALSE)
 
+# predictions: Actual predictions of targets (including viremic prevalence)
+predictions <- data.frame(
+  age_group              = summary_best$age_group,
+  population_target      = targets$population,
+  population_hat         = summary_best$N_hat,
+  seroprevalence_target  = targets$p_prev_binom,
+  seroprevalence_hat     = summary_best$p_sero,
+  viremic_prevalence_hat = summary_best$p_viremic
+)
+write.csv(predictions, file.path(OUT, "predictions.csv"), row.names = FALSE)
+write.csv(eq_best$by_age, file.path(OUT, "equilibrium.csv"), row.names = FALSE)
+
+# config: Config used in current calibration run 
 config <- list(
-  run_id = RUN_ID, seed = SEED, maxit = MAXIT, n_starts = length(starts),
-  horizon = targets$equilibrium_horizon_years, target_year = targets$target_year,
-  fitted_parameters = 12, optimizer = "Nelder-Mead",
+  run_id = RUN_ID, 
+  seed = SEED, 
+  maxit = MAXIT, 
+  n_starts = length(starts),
+  horizon = targets$equilibrium_horizon_years, 
+  target_year = targets$target_year,
+  fitted_parameters = 12, 
+  optimizer = "Nelder-Mead",
   target_source = "data/calibration_targets.json",
   inflow_source = "data/singstat_new_drug_abusers.csv",
   inflow_rule = "2015 baseline; 2016--2025 SingStat age-specific counts; latest year held constant through 2030; all multiplied by calibrated beta scale",
-  best_objective = best$objective, equilibrium_pass = eq_best$pass,
+  best_objective = best$objective, 
+  equilibrium_pass = eq_best$pass,
   git_sha = system("git rev-parse HEAD", intern = TRUE),
   setup_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/setup.R"))),
   sim_cpp_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/sim.cpp")))
@@ -104,8 +121,15 @@ config <- list(
 jsonlite::write_json(config, file.path(OUT, "run_config.json"), pretty = TRUE,
                      auto_unbox = TRUE)
 
-fit <- list(run_id = RUN_ID, best = best, runs = runs, solutions = solutions,
-            predictions = predictions, equilibrium = eq_best, targets = targets,
-            base_params = base_params, data = data)
+# fit: Overall summary of solutions, predictions and etc in fit.rds
+fit <- list(run_id = RUN_ID, 
+	    best = best, 
+	    runs = runs, 
+	    solutions = solutions,
+            predictions = predictions, 
+            equilibrium = eq_best, 
+            targets = targets,
+            base_params = base_params, 
+            data = data)
 saveRDS(fit, file.path(OUT, "fit.rds"))
 cat("best objective:", best$objective, "| equilibrium:", eq_best$pass, "\n")

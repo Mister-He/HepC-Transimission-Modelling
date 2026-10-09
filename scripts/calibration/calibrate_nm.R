@@ -71,12 +71,14 @@ make_start_set <- function(n_perturbed = 5, sd_perturb = 0.4, seed_base = 101) {
       seed = seed_base + j
     )
   }
-  warm <- c(log(a$contact * c(1, 1, 1, 1, 1, 1)),
-            log(a$beta * c(1, 1, 1, 1, 1, 1)))
-  starts <- append(starts,
-                   list(list(id = "plausible_warm", theta0 = clip_to_bounds(warm),
-                             seed = seed_base + 1000)),
-                   after = 1)
+
+  # No idea what should be put in plausible_warm
+  # warm <- c(log(a$contact * c(1, 1, 1, 1, 1, 1)),
+  #           log(a$beta * c(1, 1, 1, 1, 1, 1)))
+  # starts <- append(starts,
+  #                  list(list(id = "plausible_warm", theta0 = clip_to_bounds(warm),
+  #                            seed = seed_base + 1000)),
+  #                  after = 1)
   starts
 }
 

@@ -2,10 +2,12 @@
 # equilibrium.R — stability checks for the J target summaries
 #
 # "Equilibrium" = the age-specific summaries are stable over the final 5
-# years of the simulation horizon (T vs T-5).
+# years of the simulation horizon (T vs T-10).
+# Population stability (overall & per age grp): |log(N(T) / N(T-10)| \leq 0.01
+# Default convergence: max(|p_a(T) - p_a(T-10)|) \leq 0.005
 # =============================================================================
 
-check_equilibrium <- function(out, t_lag = 5, target_mode = "sero",
+check_equilibrium <- function(out, t_lag = 10, target_mode = "sero",
                               crit_log_pop = 0.01,
                               crit_prev = 0.005,
                               crit_total_pop = 0.01,
