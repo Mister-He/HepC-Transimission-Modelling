@@ -131,9 +131,19 @@ f_t <- sum(balance_out[nrow(balance_out),sapply(0:5,function(a) idx(2,1,3,a))])
 check_true(abs(f_t-(balance_events[3]-balance_events[7]))<1e-5,
            "c-to-t start flow matches t inflow before treatment completions")
 
-cal_data <- e$data; cal_data$t_end <- 10
+# The equilibrium gate compares the final state with T-10
+# (scripts/calibration/equilibrium.R), so a horizon shorter than 10 years
+# compares against the t = 0 seed, where the DC/HCC compartments are still zero
+# and the penalty becomes non-finite. Calibration always runs model years 0--150
+# (year 150 is the 2015 snapshot), so evaluate the objective on that horizon.
+cal_data <- e$data
+cal_data$t_end <- targets$equilibrium_horizon_years
 obj <- make_objective(e$params, cal_data)
 check_true(is.finite(obj(rep(0, N_THETA))), "likelihood is finite at theta zero")
+
+cal_out <- run_sim(build_params(rep(0, N_THETA), e$params), cal_data)
+check_true(check_equilibrium(cal_out)$pass,
+           "base parameters satisfy the 10-year equilibrium gate")
 
 n_fail <- test_report("tests/integration/test_sim_and_pipeline.R")
 if (n_fail > 0) quit(status = 1)
