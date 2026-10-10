@@ -48,7 +48,7 @@ jobs:
       - name: Install R packages
         run: |
           install.packages(
-            c("Rcpp", "RcppArmadillo", "dplyr", "ggplot2", "MASS", "patchwork"),
+            c("Rcpp", "RcppArmadillo", "dplyr", "ggplot2", "MASS", "patchwork", "jsonlite"),
             repos = "https://cloud.r-project.org", quiet = TRUE
           )
         shell: Rscript {0}
