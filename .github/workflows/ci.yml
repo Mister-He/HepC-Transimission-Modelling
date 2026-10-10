@@ -53,9 +53,9 @@ jobs:
           )
         shell: Rscript {0}
 
-      - name: Compile check (src/sim.cpp)
+      - name: Compile check (scripts/model/sim.cpp)
         run: |
-          Rcpp::sourceCpp("src/sim.cpp")
+          Rcpp::sourceCpp("scripts/model/sim.cpp")
           cat("compile OK\n")
         shell: Rscript {0}
 
