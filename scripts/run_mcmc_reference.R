@@ -1,34 +1,35 @@
 #!/usr/bin/env Rscript
-# Adaptive-Metropolis validation initialized from the NPE posterior covariance.
-# The target likelihood is the same Binomial prevalence + log-normal population
-# likelihood used by deterministic calibration and NPE observation augmentation.
+# =============================================================================
+# run_mcmc_reference.R — reference MCMC calibration: adaptive random-walk Metropolis
+# on the exact posterior (4 prior-started chains), with convergence diagnostics.
+#
+# Target (shared with single-round NPE): independent Normal(fit$best$theta, prior_sd)
+# prior on the 12 log-scale parameters, Binomial prevalence + log-normal population
+# likelihood, and the 2015 equilibrium check as a hard restriction. Defaults reproduce
+# the production run: 1 init slot + 4,999 warmup + 45,000 retained proposals per chain.
+# =============================================================================
 
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) {
   i <- match(name, args)
   if (is.na(i)) default else args[i + 1]
 }
+T_SCRIPT0 <- proc.time()[["elapsed"]]
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20260929_agepop/fit.rds")), mustWork = TRUE)
-NPE_DIR <- normalizePath(arg("--npe-dir", file.path(ROOT,
-  "output/calibration/npe_agepop_recal")), mustWork = TRUE)
-OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_recal"))
-N_ITER <- as.integer(arg("--n-iter", "4000"))
-BURNIN <- as.integer(arg("--burnin", "1000"))
-THIN <- as.integer(arg("--thin", "5"))
-N_CHAINS <- as.integer(arg("--n-chains", "3"))
-PARALLEL_CHAINS <- as.integer(arg("--parallel-chains", "1"))
-SEED <- as.integer(arg("--seed", "20260930"))
-CONTACT_SD <- as.numeric(arg("--contact-sd", "0.35"))
-BETA_SD <- as.numeric(arg("--beta-sd", "0.35"))
-ESS_MIN <- as.numeric(arg("--ess-min", "4000"))
-RHAT_MAX <- as.numeric(arg("--rhat-max", "1.001"))
+  "output/calibration/r_20261010_agepop/fit.rds")), mustWork = TRUE)
+OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
+N_CHAINS <- as.integer(arg("--n-chains", "4"))
+CORES <- as.integer(arg("--cores", "4"))
+N_WARMUP <- as.integer(arg("--n-warmup", "4999"))
+MAX_EVALS <- as.integer(arg("--max-evals", "50000"))
+SEED <- as.integer(arg("--seed", "20261101"))
+PRIOR_SD <- as.numeric(arg("--prior-sd", "0.20"))
+INIT_SCALE <- as.numeric(arg("--init-scale", "0.1"))
+N_PRIOR_VAR <- as.integer(arg("--n-prior-var", "2048"))
 DT <- as.numeric(arg("--dt", as.character(1 / 365)))
-SAME_START <- identical(arg("--same-start", "false"), "true")
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
-gate_file <- file.path(OUT, "MCMC_STRICT_GATE.txt")
-if (file.exists(gate_file)) file.remove(gate_file)
+Sys.setenv(OMP_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1", VECLIB_MAXIMUM_THREADS = "1")
 
 source(file.path(ROOT, "scripts/calibration/targets.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
@@ -40,108 +41,108 @@ Rcpp::sourceCpp(file.path(ROOT, "scripts/model/sim.cpp"))
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "mcmc.R"))
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
-
-files <- c(file.path(NPE_DIR, "posterior_samples_npe.csv"),
-           file.path(NPE_DIR, "posterior_samples_npe_seed2.csv"))
-files <- files[file.exists(files)]
-if (!length(files)) stop("No NPE posterior samples found")
-npe <- do.call(rbind, lapply(files, function(f) read.csv(f)[, paste0("theta", 1:12)]))
-npe <- as.matrix(npe)
-if (any(!is.finite(npe))) stop("NPE posterior contains non-finite values")
-
-# Match the NPE regularized prior: best-fit-centred log-normal scales.
-priors <- make_priors(
-  contact_anchor = exp(fit$best$theta[1:6]),
-  beta_anchor = exp(fit$best$theta[7:12]),
-  contact_sd = CONTACT_SD, beta_sd = BETA_SD, beta_df = Inf
-)
 base_params <- setup_env$params
 data <- setup_env$data
 data$t_start <- 0
 data$t_end <- targets$equilibrium_horizon_years
 data$dt <- DT
-logpost <- function(theta)
-  log_posterior(theta, base_params, data, priors, target_mode = "sero",
-                equilibrium_penalty = TRUE)
+startup_sec <- proc.time()[["elapsed"]] - T_SCRIPT0
 
-Sigma0 <- stats::cov(npe)
-ridge <- max(1e-6, median(diag(Sigma0)) * 1e-4)
-Sigma0 <- Sigma0 + diag(ridge, ncol(Sigma0))
-theta_mean <- colMeans(npe)
-set.seed(SEED)
-theta0 <- if (SAME_START) {
-  matrix(theta_mean, nrow = N_CHAINS, ncol = length(theta_mean), byrow = TRUE)
-} else rbind(theta_mean,
-  MASS::mvrnorm(N_CHAINS - 1L, theta_mean, Sigma0))
-rownames(theta0) <- paste0("chain", seq_len(N_CHAINS))
+# ---- sampling ----
+T_METHOD0 <- proc.time()[["elapsed"]]
+prior_mean <- as.numeric(fit$best$theta)
+prior_sd <- rep(PRIOR_SD, 12)
+logpost <- function(theta) log_posterior_exact(theta, base_params, data, prior_mean, prior_sd)
 
-if (!all(vapply(seq_len(N_CHAINS), function(i) is.finite(logpost(theta0[i, ])), logical(1))))
-  stop("At least one NPE-initialized MCMC chain has non-finite log posterior")
+# Transformed-prior variances from prior draws (no ODE solves). theta is already
+# unconstrained and the prior is defined on theta, so no Jacobian is needed.
+set.seed(SEED + 3000)
+prior_draws <- sweep(matrix(rnorm(N_PRIOR_VAR * 12), N_PRIOR_VAR, 12), 2, prior_sd, "*") +
+  matrix(prior_mean, N_PRIOR_VAR, 12, byrow = TRUE)
+prior_var <- apply(prior_draws, 2, stats::var)
+Sigma_init <- diag(INIT_SCALE^2 * prior_var)
+reg <- diag(1e-6 * prior_var)
+pre_chain_sec <- proc.time()[["elapsed"]] - T_METHOD0
 
-cat("Running", N_CHAINS, "adaptive MCMC chains; NPE draws:", nrow(npe),
-    "iterations per chain:", N_ITER, "\n")
 run_chain <- function(i) {
-  am_mcmc(theta0[i, ], logpost, n_iter = N_ITER, burnin = BURNIN,
-          Sigma0 = Sigma0, seed = SEED + i, adapt_from = 200, thin = THIN)
+  set.seed(SEED + 2000 + i)
+  draw_prior <- function() rnorm(12, prior_mean, prior_sd)
+  res <- arwm_budget(logpost, draw_prior, Sigma_init, reg, n_warmup = N_WARMUP,
+                     max_evals = MAX_EVALS,
+                     seed = SEED + 1000 + i, t_offset = pre_chain_sec)
+  res$chain <- i
+  res
 }
-chains <- if (PARALLEL_CHAINS > 1 && .Platform$OS.type != "windows") {
-  parallel::mclapply(seq_len(N_CHAINS), run_chain,
-                     mc.cores = min(PARALLEL_CHAINS, N_CHAINS))
+chains <- if (CORES > 1 && .Platform$OS.type != "windows") {
+  parallel::mclapply(seq_len(N_CHAINS), run_chain, mc.cores = min(CORES, N_CHAINS),
+                     mc.set.seed = FALSE)
 } else lapply(seq_len(N_CHAINS), run_chain)
+method_sec <- proc.time()[["elapsed"]] - T_METHOD0
 
-chain_rows <- do.call(rbind, lapply(seq_along(chains), function(i) {
-  x <- as.data.frame(chains[[i]]$samples)
-  names(x) <- paste0("theta", 1:12)
-  x$chain <- paste0("chain", i)
-  x$iteration <- chains[[i]]$iteration
-  x
+bad <- vapply(chains, function(ch) !is.list(ch) || !identical(ch$status, "ok"), logical(1))
+chain_summary <- do.call(rbind, lapply(seq_along(chains), function(i) {
+  ch <- chains[[i]]
+  if (!is.list(ch)) return(data.frame(chain = i, status = "error", stringsAsFactors = FALSE))
+  data.frame(chain = i, status = ch$status, init_tries = ch$init_tries %||% NA,
+             warmup_acceptance = ch$warmup_acceptance %||% NA,
+             retained_total = if (!is.null(ch$info)) nrow(ch$info) else 0L,
+             acceptance = if (!is.null(ch$info)) mean(ch$info[, "accepted"]) else NA,
+             total_evals = ch$total_evals %||% ch$evals, total_ode = ch$total_ode %||% ch$ode,
+             warmup_sec = ch$warmup_sec %||% NA, total_sec = ch$total_sec %||% NA,
+             stringsAsFactors = FALSE)
 }))
-write.csv(chain_rows, file.path(OUT, "posterior_samples_mcmc.csv"), row.names = FALSE)
-write.csv(posterior_summaries(as.matrix(chain_rows[, paste0("theta", 1:12)])),
+write.csv(chain_summary, file.path(OUT, "mcmc_chain_summary.csv"), row.names = FALSE)
+if (any(bad)) {
+  writeLines(paste("FAIL: chain(s)", paste(which(bad), collapse = ","), "did not produce retained output"),
+             file.path(OUT, "MCMC_STATUS.txt"))
+  stop("MCMC chain failure; see mcmc_chain_summary.csv")
+}
+
+draws <- do.call(rbind, lapply(chains, function(ch) {
+  x <- as.data.frame(ch$samples); names(x) <- paste0("theta", 1:12)
+  cbind(data.frame(chain = ch$chain, iteration = seq_len(nrow(x))), x, as.data.frame(ch$info))
+}))
+write.csv(draws, file.path(OUT, "mcmc_draws.csv"), row.names = FALSE)
+warm <- do.call(rbind, lapply(chains, function(ch) {
+  x <- as.data.frame(ch$warmup); names(x) <- paste0("theta", 1:12)
+  cbind(data.frame(chain = ch$chain, warmup_iteration = seq_len(nrow(x)) - 1L), x)
+}))
+write.csv(warm, file.path(OUT, "mcmc_warmup.csv"), row.names = FALSE)
+
+# Rank-normalised split R-hat, bulk/tail ESS and MCSE (posterior package).
+diag_for <- function(sel, label) {
+  d <- draws[sel, ]
+  n_min <- min(table(d$chain))
+  arr <- array(NA_real_, c(n_min, N_CHAINS, 12))
+  for (k in seq_len(N_CHAINS)) arr[, k, ] <- as.matrix(d[d$chain == k, paste0("theta", 1:12)][seq_len(n_min), ])
+  do.call(rbind, lapply(1:12, function(j) {
+    x <- arr[, , j]
+    data.frame(subset = label, parameter = paste0("theta", j), draws_per_chain = n_min,
+               mean = mean(x), sd = sd(as.vector(x)),
+               rhat = posterior::rhat(x), ess_bulk = posterior::ess_bulk(x),
+               ess_tail = posterior::ess_tail(x), mcse_mean = posterior::mcse_mean(x),
+               mcse_q025 = posterior::mcse_quantile(x, 0.025),
+               mcse_q975 = posterior::mcse_quantile(x, 0.975))
+  }))
+}
+diagnostics <- diag_for(rep(TRUE, nrow(draws)), "all_retained")
+write.csv(diagnostics, file.path(OUT, "mcmc_diagnostics.csv"), row.names = FALSE)
+write.csv(posterior_summaries(as.matrix(draws[, paste0("theta", 1:12)])),
           file.path(OUT, "mcmc_parameter_summary.csv"), row.names = FALSE)
 
-if (requireNamespace("coda", quietly = TRUE)) {
-  mlist <- coda::mcmc.list(lapply(chains, function(x) coda::mcmc(x$samples)))
-  gd <- coda::gelman.diag(mlist, autoburnin = FALSE, multivariate = TRUE)
-  ess <- coda::effectiveSize(mlist)
-  diagnostics <- data.frame(
-    parameter = paste0("theta", 1:12),
-    rhat = gd$psrf[, "Point est."],
-    ess_pooled = as.numeric(ess),
-    acceptance_mean = mean(vapply(chains, `[[`, numeric(1), "acceptance")),
-    n_iter = N_ITER, burnin = BURNIN, thin = THIN
-  )
-  write.csv(diagnostics, file.path(OUT, "mcmc_diagnostics.csv"), row.names = FALSE)
-} else {
-  diagnostics <- data.frame(parameter = paste0("theta", 1:12),
-    rhat = NA_real_, ess_pooled = NA_real_,
-    acceptance_mean = mean(vapply(chains, `[[`, numeric(1), "acceptance")),
-    n_iter = N_ITER, burnin = BURNIN, thin = THIN)
-  write.csv(diagnostics, file.path(OUT, "mcmc_diagnostics.csv"), row.names = FALSE)
-}
-
-strict_pass <- all(is.finite(diagnostics$ess_pooled) &
-  diagnostics$ess_pooled > ESS_MIN &
-  is.finite(diagnostics$rhat) & diagnostics$rhat < RHAT_MAX)
-writeLines(if (strict_pass) {
-  sprintf("PASS: ESS > %.0f and Rhat < %.4f for every parameter.",
-          ESS_MIN, RHAT_MAX)
-} else {
-  sprintf("FAIL: strict gate requires ESS > %.0f and Rhat < %.4f for every parameter.",
-          ESS_MIN, RHAT_MAX)
-}, file.path(OUT, "MCMC_STRICT_GATE.txt"))
-
-write.csv(Sigma0, file.path(OUT, "npe_covariance_used.csv"), row.names = FALSE)
 jsonlite::write_json(list(
-  fit = FIT, npe_dir = NPE_DIR, n_npe_draws = nrow(npe),
-  n_chains = N_CHAINS, n_iter = N_ITER, burnin = BURNIN, thin = THIN,
-  parallel_chains = PARALLEL_CHAINS,
-  same_start = SAME_START,
-  prior = sprintf("best-fit-centred Normal(%s) on all log scales; same Binomial/log-normal target likelihood",
-                  CONTACT_SD),
-  beta_sd = BETA_SD, ess_min = ESS_MIN, rhat_max = RHAT_MAX,
-  integration_dt = DT,
-  strict_pass = strict_pass,
-  covariance = "empirical covariance of combined NPE seed1 + seed2 posterior"
+  fit = FIT, sampler = "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
+  n_chains = N_CHAINS, cores = CORES, n_warmup = N_WARMUP, max_evals_per_chain = MAX_EVALS,
+  adapt_start = 200, adapt_every = 50, safety_p = 0.05,
+  adaptive_scale = "2.38^2/d", init_scale = INIT_SCALE, n_prior_var_draws = N_PRIOR_VAR,
+  regularisation = "1e-6 * diag(prior variance)", thinning = 1,
+  prior = sprintf("independent Normal(fit$best$theta, %s) on theta", PRIOR_SD),
+  target = "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
+  integration_dt = DT, seed = SEED,
+  seeds = list(prior_variance = SEED + 3000, chain_init = "SEED+2000+i", chain = "SEED+1000+i"),
+  startup_sec = startup_sec, pre_chain_sec = pre_chain_sec, method_sec = method_sec,
+  r_version = R.version.string
 ), file.path(OUT, "mcmc_run_config.json"), pretty = TRUE, auto_unbox = TRUE)
-cat("Wrote MCMC validation outputs to", OUT, "\n")
+writeLines("OK: all chains produced retained output; see mcmc_diagnostics.csv",
+           file.path(OUT, "MCMC_STATUS.txt"))
+cat("MCMC done in", round(method_sec), "s; outputs in", OUT, "\n")

@@ -1,1 +1,0 @@
-FAIL: NPE quality gate failed; inspect SBC before using posterior.

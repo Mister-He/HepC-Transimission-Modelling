@@ -1,0 +1,3 @@
+"stage","seconds","n_attempted","n_ok","n_nonfinite","n_equilibrium_fail","workers","time"
+"prior_simulation",1389.142,50000,49765,0,235,14,"2026-10-11T13:10:49"
+"python_training",39.998,NA,NA,NA,NA,14,"2026-10-11T13:11:29"

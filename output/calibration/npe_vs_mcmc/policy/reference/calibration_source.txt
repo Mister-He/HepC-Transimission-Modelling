@@ -1,0 +1,2 @@
+Pooled NPE posterior draws: 1000 random draws from each seed (used seed 1: 1000 valid); sampling seed 20261010. Medians and 95% UIs (2.5th-97.5th percentiles) across draws.
+Sources: /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/policy/reference/policy_input_states.csv

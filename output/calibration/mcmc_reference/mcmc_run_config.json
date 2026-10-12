@@ -1,0 +1,30 @@
+{
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261010_agepop/fit.rds",
+  "sampler": "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
+  "n_chains": 4,
+  "cores": 4,
+  "n_warmup": 4999,
+  "max_evals_per_chain": 50000,
+  "deadline_sec": 0,
+  "adapt_start": 200,
+  "adapt_every": 50,
+  "safety_p": 0.05,
+  "adaptive_scale": "2.38^2/d",
+  "init_scale": 0.1,
+  "n_prior_var_draws": 2048,
+  "regularisation": "1e-6 * diag(prior variance)",
+  "thinning": 1,
+  "prior": "independent Normal(fit$best$theta, 0.2) on theta",
+  "target": "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
+  "integration_dt": 0.0027,
+  "seed": 20261101,
+  "seeds": {
+    "prior_variance": 20264101,
+    "chain_init": "SEED+2000+i",
+    "chain": "SEED+1000+i"
+  },
+  "startup_sec": 2.442,
+  "pre_chain_sec": 0.002,
+  "method_sec": 13538.856,
+  "r_version": "R version 4.5.1 (2025-06-13)"
+}

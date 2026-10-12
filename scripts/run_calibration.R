@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
-# Deterministic calibration using Nelder-Mead. 
-# Every objective evaluation runs model years 0--150;
-# the final row is the equilibrium-checked 2015 snapshot.
-# 6 start sets: 
-# plausible_anchor: empricial guess
-# plausible_warm (removed for now): multiplied empirical guess
-# perturb_{1,..,5}: empirical guess + random noise
+# =============================================================================
+# run_calibration.R — deterministic multi-start Nelder-Mead calibration of the 12
+# log-scale parameters; the best fit centres the NPE and MCMC prior.
+#
+# Each objective evaluation runs model years 0–150; the final row is the equilibrium-checked
+# 2015 snapshot. Starts: plausible_anchor (earlier anchor), perturb_1..n (anchor + log-normal
+# noise, SD --sd-perturb) and population_informed (steady-state balance).
+# =============================================================================
 
 # Read arguments from CommandLine
 args <- commandArgs(trailingOnly = TRUE)
@@ -18,7 +19,8 @@ OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration"), RUN_ID)
 SEED       <- as.integer(arg("--seed", "20260929"))
 MAXIT      <- as.integer(arg("--maxit", "1000"))
 N_STARTS   <- as.integer(arg("--n-starts", "8"))
-PERTURB_SD <- as.numeric(arg("--sd-perturb", "0.7"))
+PERTURB_SD <- as.numeric(arg("--sd-perturb", "0.9"))   # log-scale SD of perturbed starts (was 0.7)
+N_CORES    <- as.integer(arg("--cores", "1"))         # starts run in parallel when > 1
 
 # Read from repo path
 source(file.path(ROOT, "scripts", "calibration", "targets.R"))
@@ -50,10 +52,17 @@ objective <- make_objective(base_params, data)
 cat("== calibration", RUN_ID, "==\n")
 cat("snapshot: model year", targets$equilibrium_horizon_years,
     "| maxit:", MAXIT, "| starts:", length(starts), "\n")
-runs <- lapply(starts, function(st) {
+# Starts are independent, so they can run in parallel (forked workers; not on Windows).
+run_start <- function(st) {
   cat("start", st$id, "\n")
   run_nm_start(st$theta0, objective, st$id, MAXIT, seed = st$seed)
-})
+}
+runs <- if (N_CORES > 1 && .Platform$OS.type != "windows") {
+  parallel::mclapply(starts, run_start, mc.cores = min(N_CORES, length(starts)),
+                     mc.preschedule = FALSE)
+} else lapply(starts, run_start)
+failed <- vapply(runs, function(r) inherits(r, "try-error") || is.null(r$objective), logical(1))
+if (any(failed)) stop("Nelder-Mead start failed: ", paste(which(failed), collapse = ", "))
 
 # Record the best parammeter set with lowest objective values
 best         <- runs[[which.min(vapply(runs, `[[`, numeric(1), "objective"))]]
@@ -104,6 +113,8 @@ config <- list(
   run_id = RUN_ID, 
   seed = SEED, 
   maxit = MAXIT, 
+  sd_perturb = PERTURB_SD,
+  convergence = vapply(runs, `[[`, numeric(1), "convergence"),
   n_starts = length(starts),
   horizon = targets$equilibrium_horizon_years, 
   target_year = targets$target_year,

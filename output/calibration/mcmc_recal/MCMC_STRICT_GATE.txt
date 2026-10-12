@@ -1,1 +1,0 @@
-PASS: ESS > 4000 and Rhat < 1.0010 for every parameter.

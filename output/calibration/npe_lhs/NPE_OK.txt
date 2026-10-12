@@ -1,0 +1,1 @@
+PASS: NPE posterior accepted. (SBC not run; accuracy is checked against the reference MCMC in output/calibration/npe_vs_mcmc/)
