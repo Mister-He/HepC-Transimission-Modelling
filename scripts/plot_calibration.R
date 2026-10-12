@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
-# Compare observed target intervals with NPE and adaptive-MCMC predictive
-# intervals at the 2015 equilibrium snapshot.
+# =============================================================================
+# plot_calibration.R — compares the 2015 target intervals with posterior predictive
+# intervals from the reference MCMC posterior and single-round NPE (calibration figure).
+# =============================================================================
 
 suppressPackageStartupMessages({
   library(ggplot2)
@@ -14,11 +16,13 @@ arg <- function(name, default = NULL) {
 }
 root <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 fit_path <- normalizePath(arg("--fit", file.path(root,
-  "output/calibration/r_20260929_agepop/fit.rds")), mustWork = TRUE)
-npe_dir <- normalizePath(arg("--npe-dir", file.path(root,
-  "output/calibration/npe_agepop_recal")), mustWork = TRUE)
-mcmc_dir <- normalizePath(arg("--mcmc-dir", file.path(root,
-  "output/calibration/mcmc_recal")), mustWork = TRUE)
+  "output/calibration/r_20261010_agepop/fit.rds")), mustWork = TRUE)
+mcmc_file <- normalizePath(arg("--mcmc-file", file.path(root,
+  "output/calibration/mcmc_reference/mcmc_draws.csv")), mustWork = TRUE)
+npe_file <- normalizePath(arg("--npe-file", file.path(root,
+  "output/calibration/npe_lhs/posterior_samples_npe.csv")), mustWork = TRUE)
+MCMC_LABEL <- arg("--mcmc-label", "Reference MCMC (production)")
+NPE_LABEL <- arg("--npe-label", "Single-round NPE (50,000 LHS)")
 out_file <- file.path(root, arg("--out", "figures/calibration_agepop.png"))
 cores <- as.integer(arg("--cores", "4"))
 max_draws <- as.integer(arg("--max-draws", "2000"))
@@ -82,17 +86,10 @@ simulate_or_load <- function(theta, cache_file, label, source_files) {
   out
 }
 
-npe_files <- c(file.path(npe_dir, "posterior_samples_npe.csv"),
-               file.path(npe_dir, "posterior_samples_npe_seed2.csv"))
-npe_files <- npe_files[file.exists(npe_files)]
-if (!length(npe_files)) stop("No NPE posterior samples found")
-npe <- simulate_or_load(load_draws(npe_files),
-  file.path(npe_dir, "model_prediction_2015_age_draws.csv"), "NPE posterior", npe_files)
-
-mcmc_file <- file.path(mcmc_dir, "posterior_samples_mcmc.csv")
-if (!file.exists(mcmc_file)) stop("Missing MCMC samples: ", mcmc_file)
+npe <- simulate_or_load(load_draws(npe_file),
+  file.path(dirname(npe_file), "model_prediction_2015_age_draws.csv"), "NPE posterior", npe_file)
 mcmc <- simulate_or_load(load_draws(mcmc_file),
-  file.path(mcmc_dir, "model_prediction_2015_age_draws.csv"), "MCMC posterior", mcmc_file)
+  file.path(dirname(mcmc_file), "model_prediction_2015_age_draws.csv"), "MCMC posterior", mcmc_file)
 
 summarise_draws <- function(x, source, prefix) {
   x <- x[as.logical(x$equilibrium_pass), , drop = FALSE]
@@ -127,13 +124,13 @@ target_intervals <- function(measure) {
 }
 
 age_cols <- c("#FDE725", "#B4DE2C", "#35B779", "#31688E", "#443983", "#440154")
-source_levels <- c("Target", "NPE posterior", "MCMC posterior")
-source_shapes <- c("Target" = 17, "NPE posterior" = 16, "MCMC posterior" = 15)
+source_levels <- c("Target", MCMC_LABEL, NPE_LABEL)
+source_shapes <- setNames(c(17, 15, 16), source_levels)
 
 plot_calibration <- function(npe, mcmc, measure, y_label, title, formatter) {
   d <- rbind(target_intervals(measure),
-             summarise_draws(npe, "NPE posterior", measure),
-             summarise_draws(mcmc, "MCMC posterior", measure))
+             summarise_draws(mcmc, MCMC_LABEL, measure),
+             summarise_draws(npe, NPE_LABEL, measure))
   d$age_group <- factor(d$age_group, levels = age_names)
   d$source <- factor(d$source, levels = source_levels)
   ggplot(d, aes(x = age_group, y = estimate, colour = age_group, shape = source)) +
@@ -170,7 +167,7 @@ p_population <- plot_calibration(npe, mcmc, "N", "Prison population",
 figure <- (p_sero + p_population) + plot_layout(guides = "collect") &
   theme(legend.position = "bottom", legend.box = "horizontal",
         legend.box.just = "center")
-ggsave(out_file, figure, width = 13, height = 8, dpi = 300, bg = "white")
+ggsave(out_file, figure, width = 15, height = 8, dpi = 300, bg = "white")
 
 overlap <- function(x, lo, hi) x$upper >= lo & x$lower <= hi
 target_p <- target_intervals("p")

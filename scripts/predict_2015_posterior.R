@@ -1,5 +1,8 @@
 #!/usr/bin/env Rscript
-# Posterior 2015 predictions by stratum using accepted NPE draws.
+# =============================================================================
+# predict_2015_posterior.R — posterior predictions of 2015 population and active HCV by
+# stratum (D, J, F, X), from the reference MCMC draws unless --posterior-files is given.
+# =============================================================================
 # Active HCV cases are a+c+t (viremic states); recovered r is not active.
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -7,10 +10,11 @@ arg <- function(name, default = NULL) {
   i <- match(name, args); if (is.na(i)) default else args[i + 1]
 }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/npe_agepop"))
+OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20260929_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261010_agepop/fit.rds")), mustWork = TRUE)
 CORES <- as.integer(arg("--cores", "4"))
+MAX_DRAWS <- as.integer(arg("--max-draws", "4000"))   # 0 = use all draws
 TARGET_YEAR <- as.integer(arg("--year", "2015"))
 if (!TARGET_YEAR %in% c(2015L, 2016L, 2017L))
   stop("--year must be 2015, 2016, or 2017")
@@ -27,14 +31,17 @@ for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R"))
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
 
-sample_files <- c(primary = file.path(OUT, "posterior_samples_npe.csv"),
-                  seed2 = file.path(OUT, "posterior_samples_npe_seed2.csv"))
-sample_files <- sample_files[file.exists(sample_files)]
-if (length(sample_files) == 0) stop("No accepted NPE posterior samples found")
+sample_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
+sample_files <- ifelse(grepl("^/", sample_files), sample_files, file.path(ROOT, sample_files))
+names(sample_files) <- basename(dirname(sample_files))
+if (length(sample_files) == 0) stop("No posterior samples found")
 draws <- do.call(rbind, lapply(names(sample_files), function(source) {
   x <- read.csv(sample_files[[source]]); x$posterior_source <- source; x
 }))
 theta_names <- paste0("theta", 1:12)
+if (MAX_DRAWS > 0 && nrow(draws) > MAX_DRAWS) {
+  set.seed(20261011); draws <- draws[sample.int(nrow(draws), MAX_DRAWS), , drop = FALSE]
+}
 
 idx0 <- function(s, k, h, i) s * 120 + (k - 1) * 30 + h * 6 + i + 2L
 stratum_idx <- function(s, states) as.vector(sapply(1:4, function(k)
@@ -114,7 +121,7 @@ pretty <- data.frame(
 write.csv(pretty, file.path(OUT, paste0("model_prediction_", FILE_TAG, "_strata_pretty.csv")), row.names = FALSE)
 writeLines(c(
   paste0("# Model prediction at ", TARGET_YEAR), "",
-  "Posterior medians and equal-tailed 95% Bayesian credible intervals from the accepted NPE posterior draws.",
+  paste0("Posterior medians and equal-tailed 95% Bayesian credible intervals from ", nrow(draws), " posterior draws (", paste(sample_files, collapse = "; "), ")."),
   "Active HCV cases are a+c+t (viremic states); recovered r is antibody-reactive but not active.", "",
   "| Group | Total population | Active HCV cases |", "|---|---:|---:|",
   apply(pretty, 1, function(z) paste0("| ", z[1], " | ", z[2], " | ", z[3], " |")), "",

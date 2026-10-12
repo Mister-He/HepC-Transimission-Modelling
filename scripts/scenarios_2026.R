@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
-# Post-calibration policy analysis: J 2019 background, F/X 2026 screening quota.
-# Every number is a median with a 95% uncertainty interval over NPE posterior draws pooled across seeds.
+# =============================================================================
+# scenarios_2026.R — 2026–2030 policy analysis (J treatment from 2019, F/X screening
+# quotas from 2026): runs every scenario per posterior draw and reports medians and 95% UIs.
+# =============================================================================
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i+1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20260929_agepop/fit.rds")), mustWork = TRUE)
-POSTERIOR_DIR <- arg("--posterior-dir", "output/calibration/npe_agepop_recal")
+FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261010_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/scenarios_2026"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 config <- jsonlite::fromJSON(file.path(ROOT, "data/scenario_policy_config.json"))
@@ -22,12 +23,13 @@ source(file.path(ROOT, "scripts/calibration/equilibrium.R"))
 source(file.path(ROOT, "scripts/calibration/likelihood.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
 fit <- readRDS(FIT)
-posterior_dir <- normalizePath(file.path(ROOT, POSTERIOR_DIR), mustWork = TRUE)
-posterior_files <- file.path(posterior_dir, c("posterior_samples_npe.csv", "posterior_samples_npe_seed2.csv"))
-posterior_files <- posterior_files[file.exists(posterior_files)]
-if (!length(posterior_files)) stop("No accepted NPE posterior found")
-# Equal numbers of posterior draws from every accepted NPE seed are pooled.
-DRAWS_PER_SEED <- as.integer(arg("--draws-per-seed", 500)); N_CORES <- as.integer(arg("--cores", 8))
+# --posterior-files: comma-separated CSVs with columns theta1..theta12; each file is one
+# sampling group. Default: the reference MCMC posterior.
+posterior_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
+posterior_files <- ifelse(grepl("^/", posterior_files), posterior_files, file.path(ROOT, posterior_files))
+posterior_files <- normalizePath(posterior_files, mustWork = TRUE)
+# Equal numbers of draws are taken from every posterior file.
+DRAWS_PER_SEED <- as.integer(arg("--draws-per-seed", 2000)); N_CORES <- as.integer(arg("--cores", 8))
 SAMPLE_SEED <- as.integer(arg("--sample-seed", 20261005)); set.seed(SAMPLE_SEED)
 theta_cols <- paste0("theta", 1:12)
 posterior_all <- lapply(posterior_files, function(f) read.csv(f)[, theta_cols, drop = FALSE])
@@ -35,7 +37,6 @@ draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
   d <- posterior_all[[k]]; d <- d[sample.int(nrow(d), min(DRAWS_PER_SEED, nrow(d))), , drop = FALSE]
   data.frame(seed = k, draw = seq_len(nrow(d)), d)
 }))
-pooled_median_theta <- apply(do.call(rbind, posterior_all), 2, median)  # old single-point analysis
 
 idx0 <- function(s, k, h, i) s * 120 + (k - 1) * 30 + h * 6 + i + 2L
 all_idx <- function(strata, states = 0:4) as.vector(sapply(strata, function(s)
@@ -369,7 +370,9 @@ if (any(errors)) stop("Draw failed: ",conditionMessage(results[[which(errors)[1]
 valid <- !vapply(results,is.null,logical(1))
 cat("Valid draws:",sum(valid),"of",length(valid),"(equilibrium failures:",sum(!valid),")\n")
 draw_seed <- draw_table$seed[valid]; results <- results[valid]
-stopifnot(length(results)>=0.9*length(valid))
+MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))  # benchmark policy runs pass 0
+stopifnot(length(results)>=MIN_VALID_SHARE*length(valid))
+writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid))), file.path(OUT,"draw_validity.txt"))
 collect <- function(name) lapply(results,`[[`,name)
 process <- agg_draws(collect("process"),c("scenario_id","year","stratum"))
 trajectories <- agg_draws(collect("trajectories"),c("scenario_id","year"))
@@ -377,6 +380,12 @@ no_treatment <- agg_draws(collect("no_tx"),c("scenario_id","year"))
 write.csv(no_treatment,file.path(OUT,"no_treatment_trajectory.csv"),row.names=FALSE)
 endpoint_draws <- collect("endpoint")
 endpoint <- agg_draws(endpoint_draws,"scenario_id")
+# Draw-level 2030 endpoints for key outcomes (used for Monte Carlo error in the benchmark).
+key_cols <- c("scenario_id","incidence_reduction","mortality_reduction","who_incidence_pass",
+  "who_mortality_pass","who_joint_pass","total_discounted_cost_2026_2030_sgd","fx_treatment_starts")
+write.csv(do.call(rbind,lapply(seq_along(endpoint_draws),function(i)
+  cbind(draw=i,seed=draw_seed[i],endpoint_draws[[i]][,intersect(key_cols,names(endpoint_draws[[i]]))]))),
+  file.path(OUT,"scenario_2030_draws.csv"),row.names=FALSE)
 treatment <- agg_draws(collect("treatment"),c("scenario_id","stratum"))
 item_totals <- agg_draws(collect("item_totals"),"scenario_id")
 stratum_totals <- agg_draws(collect("stratum_totals"),c("scenario_id","stratum"))
@@ -433,9 +442,9 @@ endpoint$j_starts_text <- local({ j <- subset(process,stratum=="J")
 endpoint$joint_pass_probability <- endpoint$who_joint_pass_prob
 annual <- process
 stopifnot(nrow(process)==nrow(scenario_table)*5*3)
-writeLines(paste0("Pooled NPE posterior draws: ",DRAWS_PER_SEED," random draws from each seed (used ",
-  paste(paste0("seed ",sort(unique(draw_seed)),": ",as.vector(table(draw_seed))),collapse=", "),
-  " valid); sampling seed ",SAMPLE_SEED,". Medians and 95% UIs (2.5th-97.5th percentiles) across draws.\nSources: ",
+writeLines(paste0("Posterior draws: ",DRAWS_PER_SEED," random draws from each posterior file (valid: ",
+  paste(paste0("file ",sort(unique(draw_seed)),": ",as.vector(table(draw_seed))),collapse=", "),
+  "); sampling seed ",SAMPLE_SEED,". Medians and 95% UIs (2.5th-97.5th percentiles) across draws.\nSources: ",
   paste(posterior_files,collapse="; ")),file.path(OUT,"calibration_source.txt"))
 write.csv(scenario_table,file.path(OUT,"scenario_definitions.csv"),row.names=FALSE)
 write.csv(trajectories,file.path(OUT,"scenario_trajectories.csv"),row.names=FALSE)
@@ -452,6 +461,9 @@ if (requireNamespace("writexl",quietly=TRUE)) writexl::write_xlsx(
   list(Definitions=scenario_table,Endpoint=endpoint,BySeed=by_seed,Annual=annual,Treatment=treatment),
   file.path(OUT,"scenario_results.xlsx"))
 
+if (identical(arg("--no-figures", "false"), "true")) {
+  cat("Wrote", nrow(scenario_table), "policies to", OUT, "(figures skipped)\n"); quit(save = "no")
+}
 library(ggplot2); library(tidyr); library(patchwork)
 # Reuse the repository's Nature-style conventions: classic theme, 10 pt base,
 # 0.7 pt trajectory lines, viridis policy palette and 300 dpi PNG export.
@@ -528,16 +540,20 @@ p_traj <- ggplot()+
 
 # A single 2030 attainment data frame drives both the heatmap and pie filter.
 attainment <- endpoint[,c("scenario_id","scenario_type","screening_total","f_share",
- "incidence_reduction","mortality_reduction","who_incidence_pass",
+ "incidence_reduction","mortality_reduction","incidence_reduction_lo","incidence_reduction_hi",
+ "mortality_reduction_lo","mortality_reduction_hi","who_incidence_pass",
  "who_mortality_pass","who_joint_pass","target_status")]
 attainment$scenario_label <- policy_label_factor(attainment$scenario_id)
 heat <- rbind(
   data.frame(attainment,indicator="Incidence",value=attainment$incidence_reduction,
+             value_lo=attainment$incidence_reduction_lo,value_hi=attainment$incidence_reduction_hi,
              pass=attainment$who_incidence_pass),
   data.frame(attainment,indicator="Mortality",value=attainment$mortality_reduction,
+             value_lo=attainment$mortality_reduction_lo,value_hi=attainment$mortality_reduction_hi,
              pass=attainment$who_mortality_pass),
   data.frame(attainment,indicator="Joint",value=pmin(attainment$incidence_reduction/.8,
-             attainment$mortality_reduction/.65),pass=attainment$who_joint_pass))
+             attainment$mortality_reduction/.65),value_lo=NA_real_,value_hi=NA_real_,
+             pass=attainment$who_joint_pass))
 heat$indicator <- factor(heat$indicator,levels=c("Incidence","Mortality","Joint"))
 heat$status <- ifelse(is.na(heat$pass),"Unknown",ifelse(heat$pass,"PASS","FAIL"))
 heat$cell_label <- ifelse(heat$indicator=="Joint",heat$status,
@@ -558,6 +574,7 @@ bar_limits <- data.frame(indicator=factor(c("Incidence","Mortality"),
   levels=levels(target_bars$indicator)),threshold=c(.8,.65))
 p_bars <- ggplot(target_bars,aes(scenario_label,value,fill=status))+
   geom_col(width=.75)+
+  geom_errorbar(aes(ymin=value_lo,ymax=value_hi),width=.35,linewidth=.35,colour="grey20")+
   geom_hline(data=bar_limits,aes(yintercept=threshold),
     linetype=2,colour="black",linewidth=.55)+
   coord_flip()+facet_wrap(~indicator,nrow=1)+
@@ -566,7 +583,7 @@ p_bars <- ggplot(target_bars,aes(scenario_label,value,fill=status))+
     breaks=c(0,.25,.5,.75),expand=expansion(mult=c(0,.02)))+
   labs(x=NULL,y="Reduction versus 2015",fill="2030 target",
     title="B  2030 WHO target attainment",
-    subtitle="Dashed thresholds: incidence 80%; mortality 65%")+
+    subtitle="Bars: median; whiskers: 95% UI. Dashed thresholds: incidence 80%; mortality 65%")+
   nature_theme()+theme(legend.position="bottom",legend.title.position="left")
 p <- (p_traj+p_bars+plot_layout(widths=c(1.1,1.9),guides="collect")) &
   theme(legend.position="bottom")
@@ -579,21 +596,28 @@ budget_totals <- data.frame(scenario_id=endpoint$scenario_id,
   discounted_cost_total_sgd=endpoint$total_discounted_cost_2026_2030_sgd)
 budget_totals$scenario_label <- policy_label_factor(budget_totals$scenario_id)
 budget_totals$cost_m <- budget_totals$discounted_cost_total_sgd/1e6
+budget_totals$lo_m <- endpoint$total_discounted_cost_2026_2030_sgd_lo/1e6
+budget_totals$hi_m <- endpoint$total_discounted_cost_2026_2030_sgd_hi/1e6
 start_totals <- data.frame(scenario_id=endpoint$scenario_id,
-  treatment_starts=endpoint$total_treatment_starts)
+  treatment_starts=endpoint$total_treatment_starts,
+  lo=endpoint$total_treatment_starts_lo,hi=endpoint$total_treatment_starts_hi)
 start_totals$scenario_label <- policy_label_factor(start_totals$scenario_id)
 p_cost <- ggplot(stratum_totals,aes(scenario_label,discounted_cost_total_sgd/1e6,fill=stratum))+
   geom_col(width=.7)+coord_flip(clip="off")+
-  geom_text(data=budget_totals,aes(scenario_label,cost_m,
-    label=sprintf("%.1f",cost_m)),inherit.aes=FALSE,hjust=-.1,size=2.7)+
+  geom_errorbar(data=budget_totals,aes(scenario_label,ymin=lo_m,ymax=hi_m),inherit.aes=FALSE,
+    width=.35,linewidth=.35)+
+  geom_text(data=budget_totals,aes(scenario_label,hi_m,
+    label=sprintf("%.1f",cost_m)),inherit.aes=FALSE,hjust=-.15,size=2.7)+
   scale_fill_manual(values=stratum_colours,breaks=c("F","J","X"),drop=FALSE)+
   scale_y_continuous(expand=expansion(mult=c(0,.19)))+
   labs(x=NULL,y="Discounted cost (2026 SGD millions)",fill="Stratum",
        title="A  2026–2030 discounted costs",
-       subtitle="3% annual discount to 2026")+nature_theme()
+       subtitle="3% annual discount to 2026; label = median total, whiskers = 95% UI")+nature_theme()
 p_starts <- ggplot(stratum_totals,aes(scenario_label,treatment_starts,fill=stratum))+
   geom_col(width=.7)+coord_flip(clip="off")+
-  geom_text(data=start_totals,aes(scenario_label,treatment_starts,
+  geom_errorbar(data=start_totals,aes(scenario_label,ymin=lo,ymax=hi),inherit.aes=FALSE,
+    width=.35,linewidth=.35)+
+  geom_text(data=start_totals,aes(scenario_label,hi,
     label=scales::comma(round(treatment_starts))),inherit.aes=FALSE,
     hjust=-.1,size=2.7)+
   scale_fill_manual(values=stratum_colours,breaks=c("F","J","X"),drop=FALSE)+
@@ -614,7 +638,11 @@ start_long$measure <- factor(start_long$measure,
   levels=c("treatment_starts","treatment_capacity"),
   labels=c("Actual starts","Screen-derived treatment quota"))
 p <- ggplot(start_long,aes(year,courses,colour=stratum,linetype=measure,
-  group=interaction(stratum,measure)))+geom_line(linewidth=.7)+geom_point(
+  group=interaction(stratum,measure)))+
+  geom_ribbon(data=finite,aes(year,ymin=treatment_starts_lo,ymax=treatment_starts_hi,fill=stratum,
+    group=stratum),inherit.aes=FALSE,alpha=.18)+
+  scale_fill_manual(values=stratum_colours[c("F","X")],guide="none")+
+  geom_line(linewidth=.7)+geom_point(
   data=subset(start_long,measure=="Actual starts"),shape=21,fill="white",size=1.6,stroke=.6)+
   facet_grid(share_label~capacity_label,scales="free_y")+
   scale_colour_manual(values=stratum_colours[c("F","X")],drop=FALSE)+
@@ -622,7 +650,8 @@ p <- ggplot(start_long,aes(year,courses,colour=stratum,linetype=measure,
     "Screen-derived treatment quota"="dashed"))+
   scale_x_continuous(breaks=c(2026,2028,2030))+
   labs(x="Calendar year",y="Treatment starts or quota (courses)",colour="Stratum",
-    linetype="Measure",title="Annual F/X starts under screening quotas")+
+    linetype="Measure",title="Annual F/X starts under screening quotas",
+    subtitle="Lines: medians; shaded band: 95% UI of actual starts")+
   nature_theme()+theme(strip.text.y=element_text(angle=0),legend.position="bottom")
 ggsave(file.path(OUT,"scenario_treatment_starts.png"),p,width=18,height=10,dpi=300)
 

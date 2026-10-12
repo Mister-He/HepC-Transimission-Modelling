@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
-# Manuscript figures built from output/scenarios_2026/*.csv (run scenarios_2026.R first).
-# Writes paper_fig1_schematic.png, paper_fig2_trajectories.png, paper_fig3_allocation.png
-# and paper_fig4_f_pool.png into output/scenarios_2026/.
+# =============================================================================
+# paper_figures.R — manuscript figures (model schematic, trajectories, allocation and
+# F-quota use) built from output/scenarios_2026/*.csv; run scenarios_2026.R first.
+# =============================================================================
+
 suppressPackageStartupMessages({library(ggplot2); library(patchwork)})
 args <- commandArgs(trailingOnly = TRUE)
 ROOT <- normalizePath(if (length(args)) args[1] else getwd(), mustWork = TRUE)
