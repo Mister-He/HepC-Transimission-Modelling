@@ -1,12 +1,17 @@
 #!/usr/bin/env Rscript
 # =============================================================================
 # run_mcmc_reference.R — reference MCMC calibration: adaptive random-walk Metropolis
-# on the exact posterior (4 prior-started chains), with convergence diagnostics.
+# on the exact posterior, with convergence, adaptation and proposal diagnostics.
 #
 # Target (shared with single-round NPE): independent Normal(fit$best$theta, prior_sd)
 # prior on the 12 log-scale parameters, Binomial prevalence + log-normal population
-# likelihood, and the 2015 equilibrium check as a hard restriction. Defaults reproduce
-# the production run: 1 init slot + 4,999 warmup + 45,000 retained proposals per chain.
+# likelihood, and the 2015 equilibrium check as a hard restriction. Defaults: 4
+# prior-started chains, 10,000 warmup proposals with adaptation from proposal 5,000,
+# 50,000 evaluations per chain, draws stored every 10th iteration (--thin; all
+# diagnostics use every retained draw). The stored production run
+# (output/calibration/mcmc_reference) used --n-warmup 4999 --adapt-start 200 --thin 1.
+# Options for the ablation: --start-file (one row of theta per chain), --cov-file
+# (12 x 12 proposal covariance, multiplied by --cov-scale), --dt, --adapt-every.
 # =============================================================================
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -21,15 +26,24 @@ FIT <- normalizePath(arg("--fit", file.path(ROOT,
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 N_CHAINS <- as.integer(arg("--n-chains", "4"))
 CORES <- as.integer(arg("--cores", "4"))
-N_WARMUP <- as.integer(arg("--n-warmup", "4999"))
+N_WARMUP <- as.integer(arg("--n-warmup", "10000"))
 MAX_EVALS <- as.integer(arg("--max-evals", "50000"))
+ADAPT_START <- as.integer(arg("--adapt-start", "5000"))
+ADAPT_EVERY <- as.integer(arg("--adapt-every", "50"))
+THIN <- as.integer(arg("--thin", "10"))
 SEED <- as.integer(arg("--seed", "20261101"))
 PRIOR_SD <- as.numeric(arg("--prior-sd", "0.20"))
 INIT_SCALE <- as.numeric(arg("--init-scale", "0.1"))
 N_PRIOR_VAR <- as.integer(arg("--n-prior-var", "2048"))
 DT <- as.numeric(arg("--dt", as.character(1 / 365)))
+START_FILE <- arg("--start-file")
+COV_FILE <- arg("--cov-file")
+COV_SCALE <- as.numeric(arg("--cov-scale", "1"))
+SAVE_FULL <- identical(arg("--save-unthinned", "false"), "true")
+if (ADAPT_START >= N_WARMUP) warning("--adapt-start >= --n-warmup: the proposal never adapts")
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 Sys.setenv(OMP_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1", VECLIB_MAXIMUM_THREADS = "1")
+rel <- function(p) if (is.null(p)) NULL else if (grepl("^/", p)) p else file.path(ROOT, p)
 
 source(file.path(ROOT, "scripts/calibration/targets.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
@@ -47,6 +61,7 @@ data$t_start <- 0
 data$t_end <- targets$equilibrium_horizon_years
 data$dt <- DT
 startup_sec <- proc.time()[["elapsed"]] - T_SCRIPT0
+TH <- paste0("theta", 1:12)
 
 # ---- sampling ----
 T_METHOD0 <- proc.time()[["elapsed"]]
@@ -60,16 +75,21 @@ set.seed(SEED + 3000)
 prior_draws <- sweep(matrix(rnorm(N_PRIOR_VAR * 12), N_PRIOR_VAR, 12), 2, prior_sd, "*") +
   matrix(prior_mean, N_PRIOR_VAR, 12, byrow = TRUE)
 prior_var <- apply(prior_draws, 2, stats::var)
-Sigma_init <- diag(INIT_SCALE^2 * prior_var)
 reg <- diag(1e-6 * prior_var)
+Sigma_init <- if (is.null(COV_FILE)) diag(INIT_SCALE^2 * prior_var) else
+  COV_SCALE * unname(as.matrix(read.csv(rel(COV_FILE))))
+stopifnot(all(dim(Sigma_init) == 12), isSymmetric(Sigma_init, tol = 1e-8))
+starts <- if (is.null(START_FILE)) NULL else as.matrix(read.csv(rel(START_FILE))[, TH])
+if (!is.null(starts)) stopifnot(nrow(starts) >= N_CHAINS)
 pre_chain_sec <- proc.time()[["elapsed"]] - T_METHOD0
 
 run_chain <- function(i) {
   set.seed(SEED + 2000 + i)
   draw_prior <- function() rnorm(12, prior_mean, prior_sd)
   res <- arwm_budget(logpost, draw_prior, Sigma_init, reg, n_warmup = N_WARMUP,
-                     max_evals = MAX_EVALS,
-                     seed = SEED + 1000 + i, t_offset = pre_chain_sec)
+                     max_evals = MAX_EVALS, adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY,
+                     seed = SEED + 1000 + i, t_offset = pre_chain_sec,
+                     theta_init = if (is.null(starts)) NULL else starts[i, ])
   res$chain <- i
   res
 }
@@ -83,13 +103,15 @@ bad <- vapply(chains, function(ch) !is.list(ch) || !identical(ch$status, "ok"), 
 chain_summary <- do.call(rbind, lapply(seq_along(chains), function(i) {
   ch <- chains[[i]]
   if (!is.list(ch)) return(data.frame(chain = i, status = "error", stringsAsFactors = FALSE))
-  data.frame(chain = i, status = ch$status, init_tries = ch$init_tries %||% NA,
-             warmup_acceptance = ch$warmup_acceptance %||% NA,
-             retained_total = if (!is.null(ch$info)) nrow(ch$info) else 0L,
-             acceptance = if (!is.null(ch$info)) mean(ch$info[, "accepted"]) else NA,
+  acc <- if (!is.null(ch$info)) mean(ch$info[, "accepted"]) else NA
+  data.frame(chain = i, status = ch$status, start_source = ch$start_source %||% NA,
+             init_tries = ch$init_tries %||% NA, warmup_acceptance = ch$warmup_acceptance %||% NA,
+             retained_total = if (!is.null(ch$info)) nrow(ch$info) else 0L, acceptance = acc,
+             acceptance_flag = !is.na(acc) && (acc < 0.15 || acc > 0.50),
+             mean_jump_retained = if (!is.null(ch$info)) mean(ch$info[, "jump"]) else NA,
              total_evals = ch$total_evals %||% ch$evals, total_ode = ch$total_ode %||% ch$ode,
              warmup_sec = ch$warmup_sec %||% NA, total_sec = ch$total_sec %||% NA,
-             stringsAsFactors = FALSE)
+             cpu_sec = ch$cpu_sec %||% NA, stringsAsFactors = FALSE)
 }))
 write.csv(chain_summary, file.path(OUT, "mcmc_chain_summary.csv"), row.names = FALSE)
 if (any(bad)) {
@@ -99,50 +121,99 @@ if (any(bad)) {
 }
 
 draws <- do.call(rbind, lapply(chains, function(ch) {
-  x <- as.data.frame(ch$samples); names(x) <- paste0("theta", 1:12)
+  x <- as.data.frame(ch$samples); names(x) <- TH
   cbind(data.frame(chain = ch$chain, iteration = seq_len(nrow(x))), x, as.data.frame(ch$info))
 }))
-write.csv(draws, file.path(OUT, "mcmc_draws.csv"), row.names = FALSE)
+keep_rows <- (draws$iteration - 1L) %% THIN == 0L
+write.csv(draws[keep_rows, ], file.path(OUT, "mcmc_draws.csv"), row.names = FALSE)
+if (SAVE_FULL) write.csv(draws, gzfile(file.path(OUT, "mcmc_draws_unthinned.csv.gz")), row.names = FALSE)
 warm <- do.call(rbind, lapply(chains, function(ch) {
-  x <- as.data.frame(ch$warmup); names(x) <- paste0("theta", 1:12)
+  x <- as.data.frame(ch$warmup); names(x) <- TH
   cbind(data.frame(chain = ch$chain, warmup_iteration = seq_len(nrow(x)) - 1L), x)
 }))
-write.csv(warm, file.path(OUT, "mcmc_warmup.csv"), row.names = FALSE)
+write.csv(warm[(warm$warmup_iteration %% THIN) == 0L, ], file.path(OUT, "mcmc_warmup.csv"), row.names = FALSE)
 
-# Rank-normalised split R-hat, bulk/tail ESS and MCSE (posterior package).
-diag_for <- function(sel, label) {
-  d <- draws[sel, ]
-  n_min <- min(table(d$chain))
-  arr <- array(NA_real_, c(n_min, N_CHAINS, 12))
-  for (k in seq_len(N_CHAINS)) arr[, k, ] <- as.matrix(d[d$chain == k, paste0("theta", 1:12)][seq_len(n_min), ])
-  do.call(rbind, lapply(1:12, function(j) {
-    x <- arr[, , j]
-    data.frame(subset = label, parameter = paste0("theta", j), draws_per_chain = n_min,
-               mean = mean(x), sd = sd(as.vector(x)),
-               rhat = posterior::rhat(x), ess_bulk = posterior::ess_bulk(x),
-               ess_tail = posterior::ess_tail(x), mcse_mean = posterior::mcse_mean(x),
-               mcse_q025 = posterior::mcse_quantile(x, 0.025),
-               mcse_q975 = posterior::mcse_quantile(x, 0.975))
-  }))
-}
-diagnostics <- diag_for(rep(TRUE, nrow(draws)), "all_retained")
+# ---- convergence: rank-normalised split R-hat, bulk/tail ESS, MCSE (all retained draws) ----
+n_min <- min(table(draws$chain))
+arr <- array(NA_real_, c(n_min, N_CHAINS, 12))
+for (k in seq_len(N_CHAINS)) arr[, k, ] <- as.matrix(draws[draws$chain == k, TH][seq_len(n_min), ])
+diagnostics <- do.call(rbind, lapply(1:12, function(j) {
+  x <- arr[, , j]
+  data.frame(subset = "all_retained", parameter = TH[j], draws_per_chain = n_min,
+             mean = mean(x), sd = sd(as.vector(x)),
+             rhat = posterior::rhat(x), ess_bulk = posterior::ess_bulk(x),
+             ess_tail = posterior::ess_tail(x), mcse_mean = posterior::mcse_mean(x),
+             mcse_q025 = posterior::mcse_quantile(x, 0.025),
+             mcse_q975 = posterior::mcse_quantile(x, 0.975),
+             iat = n_min * N_CHAINS / posterior::ess_basic(x))
+}))
 write.csv(diagnostics, file.path(OUT, "mcmc_diagnostics.csv"), row.names = FALSE)
-write.csv(posterior_summaries(as.matrix(draws[, paste0("theta", 1:12)])),
-          file.path(OUT, "mcmc_parameter_summary.csv"), row.names = FALSE)
+write.csv(posterior_summaries(as.matrix(draws[, TH])), file.path(OUT, "mcmc_parameter_summary.csv"), row.names = FALSE)
+per_chain <- do.call(rbind, lapply(seq_len(N_CHAINS), function(k) {
+  x <- as.matrix(draws[draws$chain == k, TH])
+  data.frame(chain = k, parameter = TH, median = apply(x, 2, median), sd = apply(x, 2, sd),
+             q025 = apply(x, 2, quantile, 0.025), q975 = apply(x, 2, quantile, 0.975))
+}))
+pooled_sd <- setNames(diagnostics$sd, TH); pooled_mean <- setNames(diagnostics$mean, TH)
+per_chain$median_shift_sd <- (per_chain$median - pooled_mean[per_chain$parameter]) / pooled_sd[per_chain$parameter]
+write.csv(per_chain, file.path(OUT, "mcmc_per_chain.csv"), row.names = FALSE)
+
+# ---- adaptation (diminishing adaptation) and proposal geometry ----
+drift <- do.call(rbind, lapply(chains, function(ch) if (is.null(ch$adapt_trace)) NULL else
+  data.frame(chain = ch$chain, ch$adapt_trace)))
+if (!is.null(drift)) write.csv(drift, file.path(OUT, "covariance_drift.csv"), row.names = FALSE)
+eig_row <- function(label, chain, S) {
+  e <- eigen(S, symmetric = TRUE, only.values = TRUE)$values
+  data.frame(matrix_label = label, chain = chain, t(setNames(e, paste0("eigen", 1:12))),
+             condition_number = max(e) / min(e), min_eigen = min(e))
+}
+eig <- rbind(eig_row("initial_proposal", NA, Sigma_init),
+             do.call(rbind, lapply(chains, function(ch) if (is.null(ch$proposal_cov_adapt)) NULL else
+               eig_row("adapted_proposal", ch$chain, ch$proposal_cov_adapt))),
+             eig_row("retained_draws_covariance", NA, stats::cov(as.matrix(draws[, TH]))))
+write.csv(eig, file.path(OUT, "covariance_eigen.csv"), row.names = FALSE)
+# Retained-window stability: covariance of consecutive blocks of retained draws (pooled chains).
+block <- max(10L, n_min %/% 10L)
+blocks <- split(seq_len(n_min), ceiling(seq_len(n_min) / block))
+bcov <- lapply(blocks, function(ix) stats::cov(do.call(rbind, lapply(seq_len(N_CHAINS), function(k) matrix(arr[ix, k, ], nrow = length(ix))))))
+nb <- length(bcov)
+retained_drift <- data.frame(block = seq_len(max(0L, nb - 1L)) + 1L, block_size = rep(block, max(0L, nb - 1L)),
+  drift = vapply(seq_len(max(0L, nb - 1L)) + 1L, function(b) norm(bcov[[b]] - bcov[[b - 1]], "F") /
+                   norm(bcov[[b - 1]], "F"), numeric(1)))
+write.csv(retained_drift, file.path(OUT, "retained_block_covariance_drift.csv"), row.names = FALSE)
+jumps <- do.call(rbind, lapply(chains, function(ch) {
+  w <- ch$warmup_jump; bin <- ceiling(seq_len(nrow(w)) / 250)
+  data.frame(chain = ch$chain, phase = "warmup", bin_end = tapply(seq_len(nrow(w)), bin, max),
+             mean_jump = tapply(w[, "jump"], bin, mean), acceptance = tapply(w[, "accepted"], bin, mean))
+}))
+write.csv(jumps, file.path(OUT, "mcmc_jumps.csv"), row.names = FALSE)
+
+# ---- trace plots (stored draws) ----
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  tp <- draws[keep_rows, c("chain", "iteration", TH)]
+  tl <- data.frame(chain = factor(rep(tp$chain, 12)), iteration = rep(tp$iteration, 12),
+                   parameter = factor(rep(TH, each = nrow(tp)), TH), value = unlist(tp[, TH]))
+  p <- ggplot2::ggplot(tl, ggplot2::aes(iteration, value, colour = chain)) +
+    ggplot2::geom_line(linewidth = 0.15) + ggplot2::facet_wrap(~parameter, scales = "free_y", ncol = 3) +
+    ggplot2::labs(x = "Retained iteration", y = "theta", colour = "Chain") + ggplot2::theme_classic(base_size = 8)
+  ggplot2::ggsave(file.path(OUT, "mcmc_traceplots.png"), p, width = 11, height = 9, dpi = 150)
+}
 
 jsonlite::write_json(list(
   fit = FIT, sampler = "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
   n_chains = N_CHAINS, cores = CORES, n_warmup = N_WARMUP, max_evals_per_chain = MAX_EVALS,
-  adapt_start = 200, adapt_every = 50, safety_p = 0.05,
-  adaptive_scale = "2.38^2/d", init_scale = INIT_SCALE, n_prior_var_draws = N_PRIOR_VAR,
-  regularisation = "1e-6 * diag(prior variance)", thinning = 1,
+  adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY, safety_p = 0.05, adaptive_scale = "2.38^2/d",
+  thin_storage = THIN, init_scale = INIT_SCALE, n_prior_var_draws = N_PRIOR_VAR,
+  initial_covariance = if (is.null(COV_FILE)) "init_scale^2 * diag(prior variance)" else paste(COV_FILE, "x", COV_SCALE),
+  starts = if (is.null(START_FILE)) "independent prior draws" else START_FILE,
+  regularisation = "1e-6 * diag(prior variance)",
   prior = sprintf("independent Normal(fit$best$theta, %s) on theta", PRIOR_SD),
   target = "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
   integration_dt = DT, seed = SEED,
   seeds = list(prior_variance = SEED + 3000, chain_init = "SEED+2000+i", chain = "SEED+1000+i"),
   startup_sec = startup_sec, pre_chain_sec = pre_chain_sec, method_sec = method_sec,
-  r_version = R.version.string
-), file.path(OUT, "mcmc_run_config.json"), pretty = TRUE, auto_unbox = TRUE)
+  cpu_sec_total = sum(chain_summary$cpu_sec), r_version = R.version.string
+), file.path(OUT, "mcmc_run_config.json"), pretty = TRUE, auto_unbox = TRUE, digits = NA)
 writeLines("OK: all chains produced retained output; see mcmc_diagnostics.csv",
            file.path(OUT, "MCMC_STATUS.txt"))
 cat("MCMC done in", round(method_sec), "s; outputs in", OUT, "\n")

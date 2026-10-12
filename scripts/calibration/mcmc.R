@@ -29,12 +29,17 @@ log_posterior_exact <- function(theta, base_params, data, prior_mean, prior_sd) 
 #   (2.38^2/d) * (empirical covariance of warmup states + reg), refreshed every
 #   adapt_every proposals. Adaptation is frozen before the first retained proposal.
 # - sampling: retained proposals until evaluations reach max_evals. Every retained row
-#   stores cumulative evaluations, ODE calls and elapsed time.
+#   stores cumulative evaluations, ODE calls, elapsed time and proposal jump size.
+# - theta_init: optional fixed start (one budgeted evaluation); if it is not finite the
+#   chain falls back to prior draws.
+# Diagnostics returned: adaptation trace (relative Frobenius change of the adapted
+# covariance between updates and its condition number), warmup jump sizes, CPU time.
 arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
                         max_evals = 50000L, adapt_start = 200L,
                         adapt_every = 50L, safety_p = 0.05, seed = 1L,
-                        t_offset = 0, max_init_tries = 100L) {
+                        t_offset = 0, max_init_tries = 100L, theta_init = NULL) {
   set.seed(seed)
+  cpu0 <- sum(proc.time()[c("user.self", "sys.self")])
   t0 <- proc.time()[["elapsed"]] - t_offset
   elapsed <- function() proc.time()[["elapsed"]] - t0
   d <- ncol(Sigma_init); c_d <- 2.38^2 / d
@@ -42,8 +47,12 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
   evals <- 0L; ode <- 0L
   ev <- function(th) { r <- logpost(th); evals <<- evals + 1L; ode <<- ode + r$ode; r$lp }
 
-  # Initialisation from the prior (budgeted).
-  lp <- -Inf; tries <- 0L
+  # Initialisation: the given start, else prior draws (all budgeted).
+  lp <- -Inf; tries <- 0L; start_source <- "prior"
+  if (!is.null(theta_init)) {
+    theta <- as.numeric(theta_init); lp <- ev(theta); tries <- 1L; start_source <- "given"
+    if (!is.finite(lp)) start_source <- "given_invalid_then_prior"
+  }
   while (!is.finite(lp) && tries < max_init_tries && evals < max_evals) {
     theta <- draw_prior(); lp <- ev(theta); tries <- tries + 1L
   }
@@ -51,44 +60,54 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
   init_evals <- evals
 
   warm <- matrix(NA_real_, n_warmup + 1L, d); warm[1, ] <- theta
-  L_adapt <- NULL; acc_w <- 0L; status <- "ok"
+  warm_jump <- matrix(NA_real_, n_warmup, 2, dimnames = list(NULL, c("jump", "accepted")))
+  L_adapt <- NULL; acc_w <- 0L; status <- "ok"; S_prev <- NULL; S_adapt <- NULL
+  adapt_trace <- list()
   for (t in seq_len(n_warmup)) {
     if (evals >= max_evals) { status <- "budget_exhausted_in_warmup"; break }
     if (t > adapt_start && ((t - adapt_start - 1L) %% adapt_every == 0L || is.null(L_adapt))) {
       S <- stats::cov(warm[seq_len(t), , drop = FALSE]) + reg
       L_adapt <- tryCatch(chol(c_d * S), error = function(e) L_init)
+      ev_S <- eigen(c_d * S, symmetric = TRUE, only.values = TRUE)$values
+      drift <- if (is.null(S_prev)) NA_real_ else norm(S - S_prev, "F") / max(norm(S_prev, "F"), 1e-12)
+      adapt_trace[[length(adapt_trace) + 1L]] <- c(iteration = t, drift = drift,
+                                                   condition_number = max(ev_S) / min(ev_S))
+      S_prev <- S; S_adapt <- c_d * S
     }
     L <- if (t <= adapt_start || runif(1) < safety_p) L_init else L_adapt
-    prop <- theta + as.numeric(crossprod(L, rnorm(d)))
-    lp_prop <- ev(prop)
-    if (is.finite(lp_prop) && log(runif(1)) < lp_prop - lp) { theta <- prop; lp <- lp_prop; acc_w <- acc_w + 1L }
-    warm[t + 1L, ] <- theta
+    step <- as.numeric(crossprod(L, rnorm(d))); prop <- theta + step
+    lp_prop <- ev(prop); acc <- 0
+    if (is.finite(lp_prop) && log(runif(1)) < lp_prop - lp) { theta <- prop; lp <- lp_prop; acc_w <- acc_w + 1L; acc <- 1 }
+    warm[t + 1L, ] <- theta; warm_jump[t, ] <- c(sqrt(sum(step^2)), acc)
   }
   warmup_evals <- evals; warmup_sec <- elapsed()
   if (status != "ok") return(list(status = status, evals = evals, ode = ode, warmup = warm))
   if (is.null(L_adapt)) L_adapt <- L_init  # frozen from here on
 
   cap <- max(1000L, max_evals - evals) * 4L
-  keep <- matrix(NA_real_, cap, d); info <- matrix(NA_real_, cap, 5)
-  colnames(info) <- c("lp", "accepted", "evals", "ode", "elapsed_sec")
+  keep <- matrix(NA_real_, cap, d); info <- matrix(NA_real_, cap, 6)
+  colnames(info) <- c("lp", "accepted", "evals", "ode", "elapsed_sec", "jump")
   n <- 0L
   while (evals < max_evals) {
     L <- if (runif(1) < safety_p) L_init else L_adapt
-    prop <- theta + as.numeric(crossprod(L, rnorm(d)))
+    step <- as.numeric(crossprod(L, rnorm(d))); prop <- theta + step
     lp_prop <- ev(prop); acc <- 0
     if (is.finite(lp_prop) && log(runif(1)) < lp_prop - lp) { theta <- prop; lp <- lp_prop; acc <- 1 }
     n <- n + 1L
     if (n > nrow(keep)) {
-      keep <- rbind(keep, matrix(NA_real_, cap, d)); info <- rbind(info, matrix(NA_real_, cap, 5))
+      keep <- rbind(keep, matrix(NA_real_, cap, d)); info <- rbind(info, matrix(NA_real_, cap, 6))
     }
-    keep[n, ] <- theta; info[n, ] <- c(lp, acc, evals, ode, elapsed())
+    keep[n, ] <- theta; info[n, ] <- c(lp, acc, evals, ode, elapsed(), sqrt(sum(step^2)))
   }
   list(status = status, samples = keep[seq_len(n), , drop = FALSE],
        info = info[seq_len(n), , drop = FALSE], warmup = warm,
        init_tries = tries, init_evals = init_evals, warmup_evals = warmup_evals,
        warmup_sec = warmup_sec, warmup_acceptance = acc_w / n_warmup,
-       proposal_chol_adapt = L_adapt, total_evals = evals, total_ode = ode,
-       total_sec = elapsed())
+       proposal_chol_adapt = L_adapt, proposal_cov_adapt = S_adapt,
+       adapt_trace = if (length(adapt_trace)) do.call(rbind, adapt_trace) else NULL,
+       warmup_jump = warm_jump, start_source = start_source,
+       total_evals = evals, total_ode = ode, total_sec = elapsed(),
+       cpu_sec = sum(proc.time()[c("user.self", "sys.self")]) - cpu0)
 }
 
 posterior_summaries <- function(samples, theta_names = paste0("theta", 1:12)) {
