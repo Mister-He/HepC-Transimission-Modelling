@@ -1,4 +1,8 @@
-# Extract the 2015 equilibrium snapshot used by calibration.
+# =============================================================================
+# model_metrics.R — J-stratum summaries (prison population, seroprevalence,
+# viraemic prevalence) at the 2015 snapshot and fit metrics against the targets.
+# =============================================================================
+
 idx <- function(s, k, h, i)
   s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 

@@ -1,4 +1,8 @@
-# Targets are data, not model code. Keep this loader deliberately small.
+# =============================================================================
+# targets.R — loads the 2015 age-specific calibration targets from JSON and
+# derives the binomial prevalence counts.
+# =============================================================================
+
 read_targets <- function(path) {
   if (!requireNamespace("jsonlite", quietly = TRUE))
     stop("Package jsonlite is required to read calibration_targets.json")

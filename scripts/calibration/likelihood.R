@@ -1,4 +1,8 @@
-# Likelihood and parameterisation for six contact and six inflow scales.
+# =============================================================================
+# likelihood.R — likelihood, parameter bounds and parameterisation for the
+# six contact and six inflow scales used by every calibration method.
+# =============================================================================
+
 N_THETA <- 12L
 TARGET_MODE <- "sero"
 EPS <- 1e-10

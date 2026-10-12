@@ -1,4 +1,7 @@
-# Unit tests for five-state indexing and seroprevalence summaries.
+# =============================================================================
+# tests/unit/test_metrics.R — unit tests for five-state compartment indexing and seroprevalence summaries.
+# =============================================================================
+
 args0 <- commandArgs(FALSE)
 file_arg <- sub("^--file=", "", args0[grepl("^--file=", args0)])
 root <- normalizePath(file.path(dirname(normalizePath(file_arg)), "..", ".."))

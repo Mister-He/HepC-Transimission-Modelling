@@ -1,5 +1,7 @@
-// HCV transmission model: D/J/F/X x NC/CC/DC/HCC x u/a/c/t/r x six ages.
-// r is antibody-reactive, susceptible to reinfection, and non-infectious.
+// =============================================================================
+// sim.cpp — daily RK4 solver for the HCV transmission model (D/J/F/X x NC/CC/DC/HCC
+// x u/a/c/t/r x six ages); r is antibody-reactive, reinfectable and non-infectious.
+// =============================================================================
 
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>

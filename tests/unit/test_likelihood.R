@@ -1,6 +1,6 @@
 # =============================================================================
-# Unit tests: 12-parameter likelihood / parameterisation (likelihood.R)
-# Run: Rscript tests/unit/test_likelihood.R
+# tests/unit/test_likelihood.R — unit tests for the 12-parameter likelihood and parameterisation
+# (likelihood.R). Run: Rscript tests/unit/test_likelihood.R
 # =============================================================================
 
 .args0 <- commandArgs(FALSE)

@@ -1,3 +1,7 @@
+# =============================================================================
+# tests/unit/test_targets.R — unit tests for loading the 2015 calibration targets and inflow data.
+# =============================================================================
+
 args0 <- commandArgs(FALSE)
 file_arg <- sub("^--file=", "", args0[grepl("^--file=", args0)])
 root <- normalizePath(file.path(dirname(normalizePath(file_arg)), "..", ".."))

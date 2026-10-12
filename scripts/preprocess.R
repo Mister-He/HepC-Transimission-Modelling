@@ -1,3 +1,8 @@
+# =============================================================================
+# preprocess.R — older copy of scripts/model/preprocess.R that uses ../ paths and is
+# run from scripts/; cleans prison records and fits release and re-arrest rates with Stan.
+# =============================================================================
+
 library(dplyr)
 library(lubridate)
 

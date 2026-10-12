@@ -1,4 +1,7 @@
-# Unit tests for the stability gate with five HCV states.
+# =============================================================================
+# tests/unit/test_equilibrium.R — unit tests for the equilibrium (stability) gate with five HCV states.
+# =============================================================================
+
 args0 <- commandArgs(FALSE)
 file_arg <- sub("^--file=", "", args0[grepl("^--file=", args0)])
 root <- normalizePath(file.path(dirname(normalizePath(file_arg)), "..", ".."))

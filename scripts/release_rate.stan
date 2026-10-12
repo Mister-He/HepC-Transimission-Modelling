@@ -1,3 +1,8 @@
+// =============================================================================
+// release_rate.stan — survival model of age-specific prison release rates from segmented
+// prison-stay records (used by preprocess.R).
+// =============================================================================
+
 data {
   int<lower=1> n_age;
   int<lower=1> N_seg;          // total number of segments

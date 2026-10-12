@@ -1,5 +1,7 @@
 # Review of the scenario update
 
+> **Update 2026-10-11:** the user has set the incidence target back to **80%** (mortality 65%). The 90% threshold discussed below is withdrawn; the code, outputs and manuscript use 80%/65%. The single-point issue with 结论.md noted below still applies.
+
 ## Overall assessment
 
 The regenerated scenario outputs are internally consistent with the key results in claude.md. The main scenario table and the generated report include 95% uncertainty intervals (UIs), and the figures are documented as showing posterior medians only. The updated claude.md now reports that the repository test suite passed, but it still states an 80% incidence target; it has not incorporated the confirmed 90% threshold.

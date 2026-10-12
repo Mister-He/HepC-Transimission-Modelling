@@ -25,19 +25,16 @@ Rscript scripts/run_calibration.R \
   --run-id r_YYYYMMDD_agepop --maxit 1000 --n-starts 5 --seed 20260929
 ```
 
-NPE 是主要的不确定性方法，不使用 Laplace：
+生产后验为参考 MCMC（自适应随机游走 Metropolis，4 条链 × 45,000 抽样）；单轮 NPE（50,000 个 LHS 先验模拟）作为对照：
 
 ```bash
-Rscript scripts/run_npe.R --step all \
-  --fit output/calibration/r_YYYYMMDD_agepop/fit.rds \
-  --out-dir output/calibration/npe_agepop \
-  --n-sims 20000 --n-cores 4 --n-rounds 2 \
-  --python /path/to/python
+Rscript scripts/run_mcmc_reference.R --fit output/calibration/r_20261010_agepop/fit.rds   # 约 3.8 小时
+Rscript scripts/run_npe.R --step all --fit output/calibration/r_20261010_agepop/fit.rds \
+  --n-sims 50000 --sampling lhs --n-cores 14 --python /path/to/python
+Rscript scripts/compare_npe_mcmc.R
 ```
 
-Python 需要 `torch` 和 `sbi`。SBC 与 posterior-spread gate 未通过时，不应把
-NPE output 当作最终 posterior；可按 `problems.md` 记录后再考虑 MCMC-like
-fallback。
+Python 需要 `torch` 和 `sbi`。详见 `docs/training.md` 与 `output/calibration/README.md`。
 
 ## Scenario 和测试
 

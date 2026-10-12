@@ -1,3 +1,8 @@
+# =============================================================================
+# preprocess.R — cleans Singapore Prison Service records (data/sps.csv) and fits
+# release and re-arrest rates with Stan; run interactively from the repository root.
+# =============================================================================
+
 library(dplyr)
 library(lubridate)
 

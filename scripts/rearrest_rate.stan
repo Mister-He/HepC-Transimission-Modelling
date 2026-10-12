@@ -1,3 +1,8 @@
+// =============================================================================
+// rearrest_rate.stan — cure-type survival model of re-arrest after release (probability of
+// re-arrest and age-specific hazard; used by preprocess.R).
+// =============================================================================
+
 functions {
   real softplus(real x) {
     return log1p_exp(x);  // smooth, always positive

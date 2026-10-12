@@ -1,5 +1,15 @@
 # Learning route: Singapore PWID HCV model
 
+> **Update 2026-10-11.** Calibration was rebuilt after this guide was written:
+> - **Inference:** the workflow now keeps only single-round NPE (`scripts/run_npe.R`, 50,000 Latin hypercube
+>   prior simulations) and the reference MCMC (`scripts/run_mcmc_reference.R`). Multi-round APT/SNPE and
+>   short-chain MCMC were removed.
+> - **Outputs:** they live in `output/calibration/{r_20261010_agepop, mcmc_reference, npe_lhs, npe_vs_mcmc}`.
+> - **Current commands:** see `docs/training.md`.
+>
+> Stages 6–8 and 10 below describe the earlier pipeline and its deleted output folders. The simulator
+> sections are still valid.
+
 This guide walks you through the repository in the order the analysis was built:
 concepts → simulator → calibration → posterior → scenarios → manuscript. Every
 stage gives the command that reproduces its results, a short code example, the

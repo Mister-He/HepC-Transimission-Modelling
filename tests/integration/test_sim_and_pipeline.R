@@ -1,4 +1,8 @@
-# Integration tests for the 480-compartment simulator and calibration wiring.
+# =============================================================================
+# tests/integration/test_sim_and_pipeline.R — integration tests for the 480-compartment simulator
+# (compilation, flows, reinfection, treatment, inflow) and calibration wiring.
+# =============================================================================
+
 args0 <- commandArgs(FALSE)
 file_arg <- sub("^--file=", "", args0[grepl("^--file=", args0)])
 root <- normalizePath(file.path(dirname(normalizePath(file_arg)), "..", ".."))
