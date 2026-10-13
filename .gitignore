@@ -10,3 +10,10 @@ cleaned_data.rds
 sps.csv
 __pycache__/
 *.pyc
+sbi-logs/
+Rplots.pdf
+.ipynb_checkpoints/
+scripts/rearrest_rate
+scripts/release_rate
+scripts/model/rearrest_rate
+scripts/model/release_rate

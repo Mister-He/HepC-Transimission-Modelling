@@ -30,4 +30,3 @@ Workflow, in order:
      `docs/main.docx` and `docs/Supplementary Information.docx`.
 6. **Tests:** `run_tests.R` runs everything under `tests/`.
 
-`probe_beta_constraint.R` is a one-off diagnostic and is not part of the workflow.
