@@ -1,0 +1,33 @@
+{
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261013_agepop/fit.rds",
+  "targets": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/mcmc_sbc/targets_ds07.json",
+  "sampler": "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
+  "n_chains": 1,
+  "cores": 1,
+  "n_warmup": 10000,
+  "max_evals_per_chain": 30000,
+  "adapt_start": 5000,
+  "adapt_every": 50,
+  "safety_p": 0.05,
+  "adaptive_scale": "2.38^2/d",
+  "thin_storage": 10,
+  "init_scale": 0.1,
+  "n_prior_var_draws": 2048,
+  "initial_covariance": "init_scale^2 * diag(prior variance)",
+  "starts": "independent prior draws",
+  "regularisation": "1e-6 * diag(prior variance)",
+  "prior": "independent Normal(prior_centre(fit$best$theta), 0.2) on theta",
+  "prior_centre": [2.21611998646109, -2.44878153336557, -2.79712967079821, -0.120505069759968, 1.66510180099564, -3.60517018598809, -2.0014136526581, -0.369072183720951, -1.16212061774955, 0.145731870399954, 2.09640122063781, 4.47239476535481],
+  "target": "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
+  "integration_dt": 0.00273972602739726,
+  "seed": 20261208,
+  "seeds": {
+    "prior_variance": 20264208,
+    "chain": "SEED+1000+i (initial prior draws and sampling)"
+  },
+  "startup_sec": 5.622,
+  "pre_chain_sec": 0.000999999999999446,
+  "method_sec": 9273.578,
+  "cpu_sec_total": 9246.389,
+  "r_version": "R version 4.5.1 (2025-06-13)"
+}

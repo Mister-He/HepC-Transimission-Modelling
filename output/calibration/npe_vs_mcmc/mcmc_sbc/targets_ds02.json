@@ -1,0 +1,9 @@
+{
+  "target_year": 2015,
+  "age_groups": ["<20", "20-29", "30-39", "40-49", "50-59", "60+"],
+  "seroprevalence": [0.082089552238806, 0.148738379814077, 0.336448598130841, 0.506191950464396, 0.553030303030303, 0.6],
+  "population": [134, 753, 642, 646, 528, 125],
+  "population_sigma_log": 0.1,
+  "equilibrium_horizon_years": 150,
+  "equilibrium_lag_years": 5
+}
