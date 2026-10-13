@@ -34,6 +34,9 @@ def red(sid, c): return pct(summ[sid], c)
 def med(sid, c, scale=100, d=1): return f"{F(summ[sid][c])*scale:.{d}f}"
 
 j = summ["J_only"]
+j_inc = 100 * F(j["incidence_reduction"])
+j_inc_words = ("about three quarters" if 72 <= j_inc < 78 else "about two thirds" if 63 <= j_inc < 70 else
+               "more than half" if 50 < j_inc < 63 else f"{j_inc:.0f}%")
 nt30, nt25, nt19 = ntr(2030), ntr(2025), ntr(2019)
 j19, j25, j26, j30 = tr("J_only", 2019), tr("J_only", 2025), tr("J_only", 2026), tr("J_only", 2030)
 cF, cX = an("J_only", 2026, "F"), an("J_only", 2026, "X")
@@ -80,6 +83,12 @@ npe_w = F(npe_l["mean_width95_ratio"])
 npe_pol = max(F(r["error"]) for r in pol_cmp if r["run"] == "npe_lhs" and r["error_unit"] == "relative")
 npe_pp = max(F(r["error"]) for r in pol_cmp if r["run"] == "npe_lhs" and r["error_unit"] != "relative")
 npe_ss = json.load(open(os.path.join(ROOT, "output/calibration/npe_lhs/simulation_summary.json")))
+npe_cfg = json.load(open(os.path.join(ROOT, "output/calibration/npe_lhs/npe_config.json")))
+npe_sbc = [r for r in rd("output/calibration/npe_lhs/sbc_summary.csv")]
+mc_sbc = {r["parameter"]: r for r in rd(CMP + "/mcmc_sbc/mcmc_sbc_summary.csv")}["all"]
+ref_cfg = json.load(open(os.path.join(ROOT, "output/calibration/mcmc_reference/mcmc_run_config.json")))
+def rng(k, d=2): v = [F(r[k]) for r in npe_sbc]; return f"{min(v):.{d}f} to {max(v):.{d}f}"
+sbc_uniform = all(r["rank_shape"] == "uniform" for r in npe_sbc)
 w_txt = (f"on average {100*(1-npe_w):.0f}% narrower than" if npe_w < 0.995 else
          f"on average {100*(npe_w-1):.0f}% wider than" if npe_w > 1.005 else "about as wide as")
 def stx(m, full=True):
@@ -146,7 +155,7 @@ In this model, prison treatment sharply reduces new HCV infections, but the fall
 ## What did the researchers do and find?
 
 - We built a model of hepatitis C transmission and liver disease among people with a history of injecting drugs in Singapore. We calibrated it to prison data and carried uncertainty in all model parameters through to the results.
-- Prison treatment alone reduced new infections by about three quarters by 2030. It reduced hepatitis C deaths by less than half.
+- Prison treatment alone reduced new infections by {j_inc_words} by 2030. It reduced hepatitis C deaths by less than half.
 - By 2026, nearly all chronic infections and deaths among released people were in those who had stopped injecting. Shifting screening towards people who still inject did not improve infections once that small group was covered. It did reduce the fall in deaths.
 
 ## What do these findings mean?
@@ -181,7 +190,7 @@ Transmission occurs only among active injectors in D and F. People in J and X ar
 
 We fitted the model to 2015 data from the Singapore Prison Service. These were seroprevalence and prison population counts in six age groups. We estimated 12 parameters. Six scaled the contact rates by age. Six scaled the rate of entry into injecting by age. Each model run started in model year 0 and ran for 150 years to reach equilibrium. The end of that period represents 2015. From 2016, entry into injecting followed the official annual number of new drug users by age [@singstat_drug]. The 2025 value was held constant to 2030.
 
-A multi start Nelder Mead fit gave the best fitting parameter values. We used them as the centre of a normal prior with standard deviation 0.20 on the log scale. The likelihood was binomial for the prevalence counts and log normal for the population counts. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran four chains from independent prior draws, with 50,000 model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. Policy results agreed within {100*npe_pol:.1f}%. The neural posterior's 95% intervals were {w_txt} those from MCMC. We used MCMC, which samples the exact posterior and whose error falls with longer runs. S1 Text, Section 2 gives details.
+A multi start Nelder Mead fit gave the best fitting parameter values. We used them as the centre of a normal prior with standard deviation 0.20 on the log scale. Any best fit value closer than five prior standard deviations to a parameter bound was moved inward to that distance, so that the prior lies within the bounds. The likelihood was binomial for the prevalence counts and log normal for the population counts. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran four chains from independent prior draws, with 50,000 model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. Simulation based calibration on {int(npe_sbc[0]['n_sbc']):,} simulated datasets showed well calibrated neural posteriors (95% coverage {rng('coverage_95')}). Policy results agreed within {100*npe_pol:.1f}%. The neural posterior's 95% intervals were {w_txt} those from MCMC. We used MCMC, which samples the exact posterior and whose error falls with longer runs. S1 Text, Section 2 gives details.
 
 ## Treatment and screening scenarios
 
@@ -211,13 +220,13 @@ The model reproduced the age specific seroprevalence and population targets. All
 
 Without any treatment, new infections rose after 2015 as entry into injecting increased. They remained high to 2030 (Fig 2). In 2030 annual new infections were {ratio_pct(nt30, 'incidence_ratio_2015')} of the 2015 level. HCV deaths were {ratio_pct(nt30, 'mortality_ratio_2015')} of the 2015 level.
 
-Prison treatment from 2019 changed the course of new infections. By 2025 they were {ratio_pct(j25, 'incidence_ratio_2015')} of the 2015 level. By 2030 they had fallen by {red('J_only', 'incidence_reduction')}. This was close to the 80% target. Deaths fell more slowly. By 2025 they were still {ratio_pct(j25, 'mortality_ratio_2015')} of the 2015 level. By 2030 the reduction was {red('J_only', 'mortality_reduction')}, well short of the 65% target.
+Prison treatment from 2019 changed the course of new infections. By 2025 they were {ratio_pct(j25, 'incidence_ratio_2015')} of the 2015 level. By 2030 they had fallen by {red('J_only', 'incidence_reduction')}. {"This was close to" if j_inc >= 70 else "This was well short of"} the 80% target. Deaths fell more slowly. By 2025 they were still {ratio_pct(j25, 'mortality_ratio_2015')} of the 2015 level. By 2030 the reduction was {red('J_only', 'mortality_reduction')}, well short of the 65% target.
 
 The reason lies in where infection and disease sit after release. In 2026, F held {col(cF, 'chronic_stock_start', d=0)} people with chronic infection. X held {col(cX, 'chronic_stock_start', d=0)}. X thus held {100*xshare:.0f}% of chronic infections among released people. In the J only scenario, {100*fx_death_share_2026:.0f}% of HCV deaths in 2026 occurred in F and X. By 2030 this share was {100*fx_death_share_2030:.0f}%. People in X do not inject and do not transmit. Prison treatment does not reach them after release.
 
 ## Community screening needed to meet both targets
 
-Adding community screening increased both reductions (Table 1). The incidence target was met at the median in {'all 15' if n_inc==15 else str(n_inc)+' of 15'} scenarios. The mortality target was met in only {n_mort}. Only {n_joint} scenarios met both. {'This was' if n_joint == 1 else 'These were'} {scen_phrase(pass_finite)}. {s5_txt} At 8,000 tests a year with 25% to F, both targets were met in {prob('S8000_F25')} of draws. With 50% to F, the share was {prob('S8000_F50')}. The ideal reference met both targets with a mortality reduction of {red('SInf', 'mortality_reduction')}.
+Adding community screening increased both reductions (Table 1). The incidence target was met at the median in {'all 15' if n_inc==15 else str(n_inc)+' of 15'} scenarios. The mortality target was met in only {n_mort}. Only {n_joint} scenario{"" if n_joint == 1 else "s"} met both. {'This was' if n_joint == 1 else 'These were'} {scen_phrase(pass_finite)}. {s5_txt} At 8,000 tests a year with 25% to F, both targets were met in {prob('S8000_F25')} of draws. With 50% to F, the share was {prob('S8000_F50')}. The ideal reference met both targets with a mortality reduction of {red('SInf', 'mortality_reduction')}.
 
 At 600 tests a year, the planned size of the current community programme, the mortality reduction was at most {max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S600_F75'])*100:.1f}%. This was a gain of under 5 percentage points over prison treatment alone.
 
@@ -231,7 +240,7 @@ At lower capacities there was a real trade off. At 2,000 tests a year, moving fr
 
 ## Treatment volume and cost
 
-Treatment starts in F and X over 2026 to 2030 ranged from {summ['S600_F75']['fx_starts_text']} at 600 tests a year with 75% to F, to {summ['S8000_F25']['fx_starts_text']} at 8,000 tests a year with 25% to F (Table 1). Starts were highest in 2026 and fell each year as the stock of chronic infection was treated. The discounted cost of the {n_joint} finite scenarios that met both targets ranged from S${min(pass_costs):.1f} million to S${max(pass_costs):.1f} million over five years. Drugs made up {ds_txt} of this cost. Compared with prison treatment alone, each extra percentage point of mortality reduction cost about S${(inc_per_pp('S5000_F25')+inc_per_pp('S8000_F25'))/2:.1f} million in the two scenarios with 25% to F at 5,000 and 8,000 tests a year. Single round neural posterior estimation gave policy results within {100*npe_pol:.1f}% of these values (S1 Text, Table S4).
+Treatment starts in F and X over 2026 to 2030 ranged from {summ['S600_F75']['fx_starts_text']} at 600 tests a year with 75% to F, to {summ['S8000_F25']['fx_starts_text']} at 8,000 tests a year with 25% to F (Table 1). Starts were highest in 2026 and fell each year as the stock of chronic infection was treated. {f"The discounted cost of the finite scenario that met both targets was S${pass_costs[0]:.1f} million" if n_joint == 1 else f"The discounted cost of the {n_joint} finite scenarios that met both targets ranged from S${min(pass_costs):.1f} million to S${max(pass_costs):.1f} million"} over five years. Drugs made up {ds_txt} of this cost. Compared with prison treatment alone, each extra percentage point of mortality reduction cost about S${(inc_per_pp('S5000_F25')+inc_per_pp('S8000_F25'))/2:.1f} million in the two scenarios with 25% to F at 5,000 and 8,000 tests a year. Single round neural posterior estimation gave policy results within {100*npe_pol:.1f}% of these values (S1 Text, Table S4).
 
 **Table 1. HCV outcomes in 2030 and services from 2026 to 2030 in selected scenarios.**
 
@@ -243,13 +252,13 @@ Reductions compare 2030 with 2015. Values are medians (95% UI) across {ndraw:,} 
 
 # Discussion
 
-In this model, prison treatment from 2019 cut new HCV infections among people who inject drugs in Singapore by about three quarters by 2030. It did much less for deaths. By 2026, nearly all chronic infections and HCV deaths among released people were in those who had stopped injecting. Community screening was needed to meet the mortality target. The split of screening between released people who still inject and those who have stopped mattered as much as the total amount.
+In this model, prison treatment from 2019 cut new HCV infections among people who inject drugs in Singapore by {j_inc_words} by 2030. It did much less for deaths. By 2026, nearly all chronic infections and HCV deaths among released people were in those who had stopped injecting. Community screening was needed to meet the mortality target. The split of screening between released people who still inject and those who have stopped mattered as much as the total amount.
 
 Prison treatment works on transmission because most active injectors pass through prison. Curing them before release removes infection from the injecting network. This matches earlier work on treatment as prevention [@martin2013; @lim2018]. Deaths follow a different path. They arise from cirrhosis and liver cancer that built up over many years. Most of this burden sits in people who stopped injecting long ago. They are rarely in prison and do not transmit. Cure also does not remove all risk in people who already have cirrhosis [@morgan2013; @vandermeer2012]. So the mortality curve bends late. This lag is a feature of HCV natural history. It is not a failure of prison treatment.
 
 Our findings on the F and X split have direct use for planning. A programme that targets people who still inject may seem the best choice for elimination. Our results show this holds only up to a point. The F group is small and quickly covered. After that, extra tests for F add nothing. The same tests given to X would prevent deaths. Planners should therefore set the F quota by the size of the eligible F group. They should direct the rest to people who have stopped injecting. These people may be harder to reach. They may not use drug services and may not see themselves as at risk. Outreach through primary care, addiction services and records of past imprisonment may be needed.
 
-The scale required is large. The scenarios that met both targets needed {cap_txt}. That is {mult_txt} the planned capacity of the current community programme [@moh2025ett]. Even 5,000 tests a year met both targets in fewer than half of the draws. All scenarios also assumed that every person identified starts treatment. Real linkage is weaker. In a Singapore trial among halfway house residents, only 12.6% of people with antibodies started treatment [@hsiang2022]. Care navigation and simpler models of care can raise uptake [@clink2022; @eckhardt2022]. Even then, real programmes will likely need more screening than our model suggests.
+The scale required is large. The scenarios that met both targets needed {cap_txt}. That is {mult_txt} the planned capacity of the current community programme [@moh2025ett]. Even 5,000 tests a year with 25% to F met both targets in only {prob('S5000_F25')} of draws. All scenarios also assumed that every person identified starts treatment. Real linkage is weaker. In a Singapore trial among halfway house residents, only 12.6% of people with antibodies started treatment [@hsiang2022]. Care navigation and simpler models of care can raise uptake [@clink2022; @eckhardt2022]. Even then, real programmes will likely need more screening than our model suggests.
 
 Our study has several strengths. We propagated parameter uncertainty through every scenario using {ndraw:,} draws from a well converged MCMC posterior. We checked the posterior against an independent method, neural posterior estimation. We modelled screening capacity explicitly, so treatment depends on how many people are found. We separated released people by injecting status, which earlier work did not do [@chaillon2021].
 
@@ -320,23 +329,30 @@ ref_draws = rd(REF + "/mcmc_draws.csv")
 theta_names = ([f"Contact scale, age {a}" for a in ["<20", "20–29", "30–39", "40–49", "50–59", "60+"]] +
                [f"Entry scale, age {a}" for a in ["<20", "20–29", "30–39", "40–49", "50–59", "60+"]])
 def qtxt(xs, d=3): return f"{quant(xs,.5):.{d}f} ({quant(xs,.025):.{d}f} to {quant(xs,.975):.{d}f})"
-post_rows = []
+post_rows = []; sd_ratio = []
 for i in range(12):
     t = f"theta{i+1}"
     a = [F(r[t]) for r in ref_draws]
     m = sum(a) / len(a); sd = (sum((v - m) ** 2 for v in a) / (len(a) - 1)) ** 0.5
-    post_rows.append(f"| θ{i+1} | {theta_names[i]} | {F(nm_best[t]):.3f} | {qtxt(a)} | {sd:.3f} | {sd/0.20:.2f} |")
+    post_rows.append(f"| θ{i+1} | {theta_names[i]} | {F(nm_best[t]):.3f} | {ref_cfg['prior_centre'][i]:.3f} | {qtxt(a)} | {sd:.3f} | {sd/0.20:.2f} |")
+    sd_ratio.append(sd / 0.20)
+moved = [f"θ{i+1}" for i in range(12) if abs(ref_cfg['prior_centre'][i] - F(nm_best[f"theta{i+1}"])) > 1e-9]
+prior_dom = [f"θ{i+1}" for i in range(12) if sd_ratio[i] > 0.8]
+assert moved and prior_dom
+pd_txt = ", ".join(prior_dom[:-1]) + " and " + prior_dom[-1] if len(prior_dom) > 1 else prior_dom[0]
 diag_rows = [f"| θ{i+1} | {F(d['rhat']):.4f} | {F(d['ess_bulk']):,.0f} | {F(d['ess_tail']):,.0f} | {F(d['mcse_mean'])/F(d['sd']):.3f} |" for i, d in enumerate(ref_diag)]
 def bench_row(k):
     a = acc_sum[k]
     pc = [r for r in pol_cmp if r["run"] == k and r["error_unit"] == "relative"]
     pp = [r for r in pol_cmp if r["run"] == k and r["error_unit"] != "relative"]
-    name = ("Latin hypercube sampling" if k == "npe_lhs" else "Random sampling, replicate " + k[-1])
+    name = f"Single round NPE, {npe_cfg['n_ensemble']} network ensemble, Latin hypercube sampling"
     return (f"| {name} | {int(F(a['forward_runs'])):,} ({int(F(a['valid_simulations'])):,}) | {F(a['max_abs_smd']):.2f} | "
             f"{F(a['max_abs_endpoint']):.2f} | {F(a['mean_width95_ratio']):.3f} ({F(a['min_width95_ratio']):.2f} to {F(a['max_width95_ratio']):.2f}) | "
             f"{100*F(a['share_pass_all']):.0f}% | {100*max(F(r['error']) for r in pc):.1f}% | {max(F(r['error']) for r in pp):.1f} |")
-bench_rows = [bench_row(k) for k in ["npe_lhs"] + sorted(x for x in acc_sum if x.startswith("npe_random"))]
+bench_rows = [bench_row("npe_lhs")]
 seros = [o for o in ovl if o["measure"] == "seroprevalence"]; pops = [o for o in ovl if o["measure"] == "population"]
+n_ovl = sum(o["MCMC_overlap"] == "TRUE" for o in ovl)
+miss_txt = "" if n_ovl == 12 else " (not: " + ", ".join(f"{o['measure']} {o['age_group']}" for o in ovl if o["MCMC_overlap"] != "TRUE") + ")"
 cal_rows = []
 for c, s_, p_ in zip(calib, seros, pops):
     cal_rows.append(f"| {c['age_group']} | {100*F(c['seroprevalence_target']):.1f}% | {100*F(c['seroprevalence_hat']):.1f}% | {100*F(s_['MCMC_lower']):.1f}% to {100*F(s_['MCMC_upper']):.1f}% | {F(c['population_target']):.0f} | {F(c['population_hat']):.0f} | {F(p_['MCMC_lower']):.0f} to {F(p_['MCMC_upper']):.0f} |")
@@ -462,11 +478,11 @@ From 2016 to 2025, entry into D followed the annual number of new drug users by 
 
 ## 2.3 Calibrated parameters and priors
 
-We estimated 12 parameters on the log scale. Parameters θ1 to θ6 multiply the contact rates of the six age groups. Parameters θ7 to θ12 multiply the entry rates of the six age groups. A deterministic Nelder Mead fit with {len(nm_sol)} starts gave the centre of the prior. The starts were an earlier anchor, {len(nm_sol)-2} random perturbations of it (standard deviation {nm_cfg['sd_perturb']} on the log scale) and a population informed start. Each start ran for up to {nm_cfg['maxit']:,} iterations. The best fit had an objective of {F(nm_best['objective']):.2f}, a prevalence root mean square error of {F(nm_best['prevalence_rmse']):.4f} and a population mean absolute percentage error of {100*F(nm_best['population_mape']):.1f}%. Every model evaluation ran from model year 0 to 150. The last ten years had to be at equilibrium. The prior for each parameter was normal on the log scale, centred on the best fit, with standard deviation 0.20.
+We estimated 12 parameters on the log scale. Parameters θ1 to θ6 multiply the contact rates of the six age groups. Parameters θ7 to θ12 multiply the entry rates of the six age groups. A deterministic Nelder Mead fit with {len(nm_sol)} starts gave the centre of the prior. The starts were an earlier anchor, {len(nm_sol)-2} random perturbations of it (standard deviation {nm_cfg['sd_perturb']} on the log scale) and a population informed start. Each start ran for up to {nm_cfg['maxit']:,} iterations. The best fit had an objective of {F(nm_best['objective']):.2f}, a prevalence root mean square error of {F(nm_best['prevalence_rmse']):.4f} and a population mean absolute percentage error of {100*F(nm_best['population_mape']):.1f}%. Every model evaluation ran from model year 0 to 150. The last ten years had to be at equilibrium. The prior for each parameter was normal on the log scale with standard deviation 0.20. Its centre was the best fit, except that any value closer than five prior standard deviations (1.0 on the log scale) to a parameter bound was moved inward to that distance. This changed only {', '.join(moved)}, which the best fit placed at its lower bound, where the likelihood is flat (Table S5). Without this step about half of the prior mass for that parameter would lie outside the bounds. Contact scales were bounded to 0.01 to 1,000 and entry scales to 0.01 to 10⁶.
 
 ## 2.4 Posterior sampling
 
-The posterior combined the prior, a binomial likelihood for the six prevalence counts and a log normal likelihood (standard deviation 0.10) for the six population counts. Parameter sets whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. Four chains started from independent prior draws. The initial proposal covariance was 0.01 times the prior variance. Adaptation began after 200 proposals, was refreshed every 50 proposals and was frozen after warmup. A 5% share of proposals always used the initial covariance. Each chain ran 4,999 warmup and 45,000 retained proposals, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained draws. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
+The posterior combined the prior, a binomial likelihood for the six prevalence counts and a log normal likelihood (standard deviation 0.10) for the six population counts. Parameter sets outside the bounds or whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. Four chains started from independent prior draws. The initial proposal covariance was 0.01 times the prior variance. Adaptation began after {ref_cfg['adapt_start']:,} proposals, was refreshed every {ref_cfg['adapt_every']} proposals and was frozen after warmup. A 5% share of proposals always used the initial covariance. Each chain ran {ref_cfg['max_evals_per_chain']:,} model evaluations, of which {ref_cfg['n_warmup']:,} were warmup, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained iterations. Every {ref_cfg['thin_storage']}th iteration was stored ({len(ref_draws):,} draws), and diagnostics used all retained iterations. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
 
 **Table S3. Convergence diagnostics of the MCMC posterior.**
 
@@ -476,27 +492,31 @@ The posterior combined the prior, a binomial likelihood for the six prevalence c
 
 ## 2.5 Comparison with neural posterior estimation
 
-We checked the MCMC posterior against single round neural posterior estimation (NPE) [@greenberg2019], implemented in the sbi package [@sbi2020]. Both methods used the same prior, likelihood, solver and equilibrium restriction. We drew {npe_ss['n_attempted']:,} parameter sets from the prior by Latin hypercube sampling. The design had one point in each of {npe_ss['n_attempted']:,} equal probability strata for every parameter, and each column was mapped through the normal inverse distribution function of that parameter's prior. Of these, {npe_ss['n_valid']:,} simulations were valid. {npe_ss['n_excluded_equilibrium']:,} failed the equilibrium check and {npe_ss['n_excluded_nonfinite']:,} were not finite. Failed simulations were dropped and not replaced. The network was a masked autoregressive flow with 50 hidden features and 5 transforms [@papamakarios2017], trained in one round with the standard loss. Table S4 compares it with the MCMC posterior. Earlier single round runs with 26,000 random prior simulations are shown for context. The full comparison is in the project repository (`output/calibration/npe_vs_mcmc/report.md`).
+We checked the MCMC posterior against single round neural posterior estimation (NPE) [@greenberg2019], implemented in the sbi package [@sbi2020]. Both methods used the same prior, likelihood, solver and equilibrium restriction. We drew {npe_ss['n_attempted']:,} parameter sets from the prior by Latin hypercube sampling. The design had one point in each of {npe_ss['n_attempted']:,} equal probability strata for every parameter, and each column was mapped through the normal inverse distribution function of that parameter's prior. Of these, {npe_ss['n_valid']:,} simulations were valid. Exclusions were {npe_ss['n_excluded_bounds']:,} draws outside the bounds, {npe_ss['n_excluded_equilibrium']:,} equilibrium failures and {npe_ss['n_excluded_nonfinite']:,} non-finite simulations; excluded draws are dropped, not replaced. The estimator was an equal weight ensemble of {npe_cfg['n_ensemble']} masked autoregressive flows, each with 50 hidden features and 5 transforms [@papamakarios2017], trained in one round with the standard loss from different random seeds. A single network gave a small seed dependent bias in one parameter, which the ensemble removed.
+
+We checked the neural posterior by simulation based calibration [@talts2018] on {int(npe_sbc[0]['n_sbc']):,} datasets simulated from independent prior draws. For each parameter, 95% interval coverage was {rng('coverage_95', 3)} and 90% coverage {rng('coverage_90', 3)}. {"No" if sbc_uniform else "Some"} rank histogram{"" if sbc_uniform else "s"} showed systematic skew (U shape, central peak, shift or Bonferroni corrected chi-square departure). The predeclared gate required 95% coverage of at least 0.85 and 90% coverage of at least 0.75 for every parameter. As a smaller direct check, we reran the MCMC on {mc_sbc['n_datasets']} of these simulated datasets, with one chain of 30,000 evaluations each. Pooled 95% coverage was {F(mc_sbc['coverage_95']):.2f} and 90% coverage {F(mc_sbc['coverage_90']):.2f} over {12*int(mc_sbc['n_datasets'])} ranks; this guards only against gross miscalibration.
+
+Table S4 compares the neural posterior with the MCMC posterior. The full comparison is in the project repository (`output/calibration/npe_vs_mcmc/report.md`).
 
 **Table S4. Single round NPE compared with the MCMC posterior.**
 
-| Prior sampling | Prior simulations (valid) | Worst absolute mean difference (posterior SD) | Worst 95% endpoint difference (posterior SD) | 95% interval width ratio, mean (range) | Parameters passing all checks | Worst policy median error | Worst joint pass probability error (percentage points) |
+| Method | Prior simulations (valid) | Worst absolute mean difference (posterior SD) | Worst 95% endpoint difference (posterior SD) | 95% interval width ratio, mean (range) | Parameters passing all checks | Worst policy median error | Worst joint pass probability error (percentage points) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 {chr(10).join(bench_rows)}
 
-Checks: absolute mean difference at most 0.1 SD, 95% interval endpoints within 0.2 SD and width ratio between 0.9 and 1.1. Policy errors use 1,000 posterior states per method. The joint pass probability errors are comparable to their Monte Carlo error of about 1.5 percentage points.
+Checks: absolute mean difference at most 0.1 SD, 95% interval endpoints within 0.2 SD and width ratio between 0.9 and 1.1. Policy errors compare 1,000 neural posterior states with the {ndraw:,} MCMC states used for the scenarios.
 
 ## 2.6 Posterior distribution and model fit
 
-Table S5 gives the posterior of each parameter. For θ6, θ9 and θ12 the posterior standard deviation was close to the prior standard deviation, so these parameters remain mostly informed by the prior.
+Table S5 gives the posterior of each parameter. For {pd_txt} the posterior standard deviation was more than 0.8 times the prior standard deviation, so these parameters remain mostly informed by the prior.
 
-**Table S5. Nelder Mead best fit and posterior median (95% interval) of the log scale parameters.**
+**Table S5. Nelder Mead best fit, prior centre and posterior median (95% interval) of the log scale parameters.**
 
-| Parameter | Description | Nelder Mead best fit | Posterior median (95% interval) | Posterior SD | Posterior SD / prior SD |
-| --- | --- | --- | --- | --- | --- |
+| Parameter | Description | Nelder Mead best fit | Prior centre | Posterior median (95% interval) | Posterior SD | Posterior SD / prior SD |
+| --- | --- | --- | --- | --- | --- | --- |
 {chr(10).join(post_rows)}
 
-Table S6 compares the targets with the best deterministic fit and the 95% posterior predictive interval. All 12 predictive intervals overlapped the target intervals. Fig S1 shows the fit.
+Table S6 compares the targets with the best deterministic fit and the 95% posterior predictive interval. {"All 12" if n_ovl == 12 else f"{n_ovl} of 12"} predictive intervals overlapped the target intervals{miss_txt}. Fig S1 shows the fit. The model overstated seroprevalence at age 60+ ({100*F(calib[-1]['seroprevalence_hat']):.1f}% at the best fit against a target of {100*F(calib[-1]['seroprevalence_target']):.1f}%). Because re-arrest is a composite rate, first arrests depend little on the entry scale, so no parameter value removes this misfit.
 
 **Table S6. Calibration targets and model fit, 2015.**
 
@@ -605,7 +625,7 @@ The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCM
 - **Event counts.** Outcomes are annual event counts in the modelled population. They are not rates per person.
 - **Costs.** Prices are public list prices and an older drug price. Many programme costs are not included.
 - **Uncertainty.** The UIs reflect calibrated parameters only. Fixed natural history parameters, uptake and price were not varied.
-- **Prior.** The prior was centred on a deterministic fit to the same 12 observations. For θ6, θ9 and θ12 the posterior standard deviation was 85% to 98% of the prior standard deviation, so the 0.20 prior width partly sets their uncertainty.
+- **Prior.** The prior was centred on a deterministic fit to the same 12 observations. For {pd_txt} the posterior standard deviation was {100*min(r for r in sd_ratio if r > 0.8):.0f}% to {100*max(sd_ratio):.0f}% of the prior standard deviation, so the 0.20 prior width partly sets their uncertainty.
 
 # 7. CHEERS 2022 checklist
 
