@@ -133,3 +133,26 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - Flags: protected `docs/AGENTS.md` still says SNPE is primary and MCMC a fallback; `docs/NPE_vs_MCMC_benchmark.md`
   (user's protocol) kept; `problems.md`/`回答.md` are historical logs that name deleted folders;
   `tests/integration/.ipynb_checkpoints/` is a generated copy; `output/*_rate_fit.rds` are not read by the model.
+
+## Reference-MCMC ablation (2026-10-12/13, `docs/ablation_check.md`)
+- The plan's §3 baseline (NPE-initialised `am_mcmc`, monthly step, coda R-hat) described already-removed code;
+  the current reference MCMC already used the daily step and rank-normalised R-hat / bulk-tail ESS / MCSE.
+- Code (commits `094c8af`, `8ce1cb9`): `arwm_budget` records adaptation drift (relative Frobenius change),
+  condition numbers, jump sizes, CPU time and accepts a fixed start; `run_mcmc_reference.R` gains
+  `--adapt-start/--adapt-every/--thin/--start-file/--cov-file/--cov-scale/--save-unthinned` and writes trace plots,
+  per-chain summaries, drift/eigen/jump CSVs and autocorrelation times. **New defaults:** warmup 10,000,
+  adapt-start 5,000, thin 10 (storage only). Stored production run = `--n-warmup 4999 --adapt-start 200 --thin 1`.
+- Driver `scripts/ablation_check.R` → `output/ablation_check/ab_20261012/` (report: `ablation_report.md`).
+  Arms (same target, daily dt, 4 chains × 30,000 evaluations): A_mean/A_disp/A_tail (NPE covariance; mean,
+  dispersed, tail starts), B_pilot (pilot covariance), C_map (inverse Hessian at fit best; 314 evals), D_prior
+  (production prior-scaled covariance, random NPE starts); plus dt_daily vs dt_monthly short chains and a
+  500-draw deterministic step comparison.
+- Results: all arms R-hat ≤ 1.005, bulk ESS 1,422–1,846, tail ESS ≥ 2,319, acceptance 0.24–0.28, starts
+  irrelevant (all within 1.9 combined MCSE of production). Posterior-shaped proposals give ~5–30% more ESS than
+  prior-scaled; NPE vs pilot vs Hessian not distinguishable (±10% ESS noise, one run each). All condition numbers
+  ~100 (no near-singularity). NPE SD/MCMC SD 0.93–0.99 (slightly narrow, not collapsed). Predeclared drift
+  tolerance 0.01 **not met** (last update change 0.011–0.021) although the kernel is frozen before retention.
+  Thinning 1000 fails (tail ESS 91); thin 10 keeps ≥95% ESS. Monthly vs daily: prevalence ≤0.18 pp, populations
+  <0.7%, posterior means within 0.11 SD; monthly is ~18× cheaper.
+- Suggested follow-ups (not run): scale the inverse Hessian by 2.38²/d; refresh adaptation every 500 proposals or
+  use an ESS-scaled drift tolerance; replicate arms to rank NPE/pilot/Hessian.

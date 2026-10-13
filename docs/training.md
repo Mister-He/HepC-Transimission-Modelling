@@ -36,12 +36,36 @@ Rscript scripts/run_calibration.R --run-id r_20261010_agepop \
 Rscript scripts/run_mcmc_reference.R --fit output/calibration/r_20261010_agepop/fit.rds   # about 3.8 hours
 ```
 
-- **Defaults:** 4 chains from independent prior draws; 1 + 4,999 warmup + 45,000 retained proposals
-  per chain; seed 20261101; output to `output/calibration/mcmc_reference/`.
+- **Defaults:** 4 chains from independent prior draws; warmup 10,000 with adaptation from proposal
+  5,000; 50,000 evaluations per chain; draws stored every 10th iteration (`--thin`); seed 20261101;
+  output to `output/calibration/mcmc_reference/`.
+- **Reproducing the stored production run:** pass `--n-warmup 4999 --adapt-start 200 --thin 1`.
+- **Ablation options:** `--start-file`, `--cov-file` with `--cov-scale`, `--dt` and `--adapt-every`.
+- **Diagnostics written:** trace plots, per-chain summaries, adaptation drift, covariance eigenvalues,
+  jump sizes and autocorrelation times.
 - **Sampler:** adaptive random-walk Metropolis (`arwm_budget` in `scripts/calibration/mcmc.R`).
 - **Result:** R-hat ≤ 1.002, bulk ESS 3,433–4,600, and MCSE of the mean ≤ 0.017 posterior SD.
 - **Provenance:** the stored run was produced on 2026-10-10 under the script's earlier name and moved
   here unchanged.
+
+## Reference-MCMC ablation
+
+```bash
+nohup Rscript scripts/ablation_check.R --run-id ab_20261012 > output/ablation_check/ab_20261012/driver.log 2>&1 &
+```
+
+- **Runtime:** about 6 hours on 16 cores.
+- **Arms:** six covariance and initialisation arms, plus a daily-versus-monthly step check.
+- **Main findings** (`output/ablation_check/ab_20261012/ablation_report.md`):
+  - every arm converges (R-hat ≤ 1.005, bulk ESS ≥ 1,422) and agrees with the production posterior
+    within Monte Carlo error;
+  - starts do not matter;
+  - posterior-shaped proposals (NPE, pilot, Hessian) give about 5–30% more ESS than the prior-scaled
+    proposal;
+  - the predeclared adaptation-drift tolerance (0.01) was not met, although adaptation is frozen
+    before retention;
+  - thinning by 10 is enough;
+  - the monthly step shifts the posterior far less than its width.
 
 ## Single-round NPE (50,000 LHS prior simulations)
 
