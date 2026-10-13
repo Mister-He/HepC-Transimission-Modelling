@@ -1,2 +1,0 @@
-Posterior draws: 1000 random draws from each posterior file (valid: file 1: 1000); sampling seed 20261010. Medians and 95% UIs (2.5th-97.5th percentiles) across draws.
-Sources: /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/policy/npe_lhs/policy_input_states.csv

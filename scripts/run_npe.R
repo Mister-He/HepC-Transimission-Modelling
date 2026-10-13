@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# run_npe.R — single-round NPE calibration: draws prior parameter sets (Latin
-# hypercube by default), simulates the 2015 targets, and trains NPE via npe_train.py.
+# run_npe.R — single-round NPE cross-validation: draws Latin hypercube prior parameter
+# sets, simulates the 2015 targets, and trains NPE via npe_train.py. Not used by the
+# production path (Nelder-Mead -> reference MCMC -> scenarios).
 #
 # Steps: data (prior simulations), train (Python), evaluate (posterior-spread gate,
 # plus SBC coverage when --n-sbc > 0). A simulation counts only if it is finite and
@@ -19,7 +20,6 @@ FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_2
 OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration/npe_lhs"))
 PYTHON     <- arg("--python", Sys.which("python3"))
 N_SIMS     <- as.integer(arg("--n-sims", "50000"))
-SAMPLING   <- arg("--sampling", "lhs")                       # lhs or random
 N_DRAWS    <- as.integer(arg("--n-draws", "20000")); N_CORES <- as.integer(arg("--n-cores", "4"))
 MAX_EPOCHS <- as.integer(arg("--max-epochs", "250"))
 SEED       <- as.integer(arg("--seed", "20261012"))          # prior design; training uses --train-seed
@@ -28,7 +28,6 @@ N_SBC      <- as.integer(arg("--n-sbc", "0"))
 THREADS    <- as.integer(arg("--threads", "4"))
 CONTACT_SD <- as.numeric(arg("--npe-contact-sd", "0.20")); BETA_SD <- as.numeric(arg("--npe-beta-sd", "0.20"))
 HIDDEN     <- as.integer(arg("--npe-hidden-features", "50")); TRANSFORMS <- as.integer(arg("--npe-num-transforms", "5"))
-stopifnot(SAMPLING %in% c("lhs", "random"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 Sys.setenv(OMP_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1", VECLIB_MAXIMUM_THREADS = "1")
 
@@ -52,9 +51,6 @@ log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite 
                     workers = N_CORES, time = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"))
   write.table(row, f, sep = ",", row.names = FALSE, col.names = !file.exists(f), append = file.exists(f))
 }
-
-sample_prior <- function(n, seed)
-  if (SAMPLING == "lhs") sample_prior_lhs(n, center, prior_sd, seed) else sample_prior_random(n, center, prior_sd, seed)
 
 # Returns c(p_sero, N_hat) or a failure code: "nonfinite" or "equilibrium".
 simulate <- function(theta) {
@@ -92,7 +88,7 @@ write_pairs <- function(theta, sim, theta_file, x_file) {
 step_data <- function() {
   old_gates <- file.path(OUT, c("NPE_OK.txt", "NPE_NOT_OK.txt"))
   file.remove(old_gates[file.exists(old_gates)])
-  th <- sample_prior(N_SIMS, SEED)
+  th <- sample_prior_lhs(N_SIMS, center, prior_sd, SEED)
   sim <- simulate_many(th, "prior_simulation")
   write_pairs(th, sim, "theta_train.csv", "x_train.csv")
   # Every attempted parameter set with its outcome, so exclusions can be audited.
@@ -107,7 +103,7 @@ step_data <- function() {
   write.csv(setNames(as.data.frame(t(x)), c(paste0("p", 1:6), paste0("N", 1:6))),
             file.path(OUT, "x_obs.csv"), row.names = FALSE)
   jsonlite::write_json(list(
-    sampling = if (SAMPLING == "lhs") "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter" else "independent random draws",
+    sampling = "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
     prior = sprintf("independent Normal(fit$best$theta, sd = %s/%s) on log-scale theta", CONTACT_SD, BETA_SD),
     prior_centre = center, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
     n_excluded_nonfinite = sum(sim$code == "nonfinite"), n_excluded_equilibrium = sum(sim$code == "equilibrium"),
@@ -125,7 +121,7 @@ step_train <- function() {
          "--beta-anchor", paste(exp(center[7:12]), collapse = ","), "--contact-sd", CONTACT_SD,
          "--beta-sd", BETA_SD, "--hidden-features", HIDDEN, "--num-transforms", TRANSFORMS,
          "--population-sigma-log", targets$population_sigma_log, "--max-epochs", MAX_EPOCHS,
-         "--threads", THREADS, "--sampling-label", SAMPLING)
+         "--threads", THREADS, "--sampling-label", "lhs")
   if (N_SBC > 0) a <- c(a, "--n-sbc", N_SBC, "--theta-sbc", file.path(OUT, "theta_sbc.csv"),
                         "--x-sbc", file.path(OUT, "x_sbc.csv"))
   t0 <- proc.time()[["elapsed"]]

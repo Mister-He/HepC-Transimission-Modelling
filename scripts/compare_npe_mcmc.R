@@ -1,12 +1,15 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# compare_npe_mcmc.R — compares single-round NPE posteriors (50,000 LHS; previous
-# random-sampling replicates) with the reference MCMC posterior: parameters, joint
-# structure and policy outcomes, written to output/calibration/npe_vs_mcmc/.
+# compare_npe_mcmc.R — independent cross-validation: compares the single-round NPE
+# posterior (50,000 LHS prior simulations) with the reference MCMC posterior for
+# parameters, joint structure and policy outcomes; writes output/calibration/npe_vs_mcmc/.
 #
 # Tolerances (fixed before comparison): |standardised mean difference| <= 0.1,
 # |standardised 95% endpoint difference| <= 0.2, 95% width ratio in [0.9, 1.1].
-# Policy runs use 1,000 posterior states; the NPE-LHS run is generated if missing.
+# The NPE policy run (1,000 posterior states) is generated if policy/npe_lhs/ is missing and
+# is compared with the production scenario draws in output/scenarios_2026/. Delete
+# policy/npe_lhs/ to rerun it after the posterior or scenarios change. Nothing here feeds
+# the production path.
 # Usage: Rscript scripts/compare_npe_mcmc.R [--root .] [--policy-cores 14]
 # =============================================================================
 suppressPackageStartupMessages({library(ggplot2); library(patchwork)})
@@ -24,12 +27,7 @@ ref <- as.matrix(read.csv(file.path(CAL, "mcmc_reference/mcmc_draws.csv"))[, TH]
 ref_diag <- read.csv(file.path(CAL, "mcmc_reference/mcmc_diagnostics.csv"))
 ref_diag <- ref_diag[ref_diag$subset == "all_retained", ]
 samples <- list(npe_lhs = as.matrix(read.csv(file.path(CAL, "npe_lhs/posterior_samples_npe.csv"))[, TH]))
-for (r in 1:3) {
-  f <- file.path(OUT, "previous_random_npe", paste0("rep", r), "posterior_samples_npe.csv")
-  if (file.exists(f)) samples[[paste0("npe_random_rep", r)]] <- as.matrix(read.csv(f)[, TH])
-}
-label <- function(k) ifelse(k == "npe_lhs", "Single-round NPE, 50,000 LHS prior simulations",
-                            sub("npe_random_rep", "Single-round NPE, 26,000 random prior simulations, replicate ", k))
+label <- function(k) "Single-round NPE, 50,000 LHS prior simulations"
 
 stats_of <- function(m) { s <- t(apply(m, 2, function(v) c(mean(v), sd(v), quantile(v, probs, names = FALSE))))
   colnames(s) <- c("mean", "sd", paste0("q", c("025", "05", "25", "50", "75", "95", "975"))); s }
@@ -70,17 +68,11 @@ summary_tab <- merge(summary_tab, joint, by = "run", sort = FALSE)
 # ---------------- costs ----------------
 read_json <- function(f) if (file.exists(f)) jsonlite::fromJSON(f) else list()
 cost <- function(k) {
-  if (k == "npe_lhs") {
-    t <- read.csv(file.path(CAL, "npe_lhs/r_timings.csv")); p <- read_json(file.path(CAL, "npe_lhs/npe_timing.json"))
-    ss <- read_json(file.path(CAL, "npe_lhs/simulation_summary.json"))
-    return(data.frame(run = k, forward_runs = ss$n_attempted, valid_simulations = ss$n_valid,
-                      simulation_sec = sum(t$seconds[t$stage == "prior_simulation"]), simulation_workers = t$workers[1],
-                      training_sec = p$train_sec %||% NA))
-  }
-  d <- file.path(OUT, "previous_random_npe", sub("npe_random_", "", k))
-  t <- read.csv(file.path(d, "prior_simulation_timing.csv"))
-  data.frame(run = k, forward_runs = sum(t$n_attempted), valid_simulations = sum(t$n_ok),
-             simulation_sec = sum(t$seconds), simulation_workers = t$workers[1], training_sec = NA)
+  t <- read.csv(file.path(CAL, "npe_lhs/r_timings.csv")); p <- read_json(file.path(CAL, "npe_lhs/npe_timing.json"))
+  ss <- read_json(file.path(CAL, "npe_lhs/simulation_summary.json"))
+  data.frame(run = k, forward_runs = ss$n_attempted, valid_simulations = ss$n_valid,
+             simulation_sec = sum(t$seconds[t$stage == "prior_simulation"]), simulation_workers = t$workers[1],
+             training_sec = p$train_sec %||% NA)
 }
 summary_tab <- merge(summary_tab, do.call(rbind, lapply(names(samples), cost)), by = "run", sort = FALSE)
 write.csv(summary_tab, file.path(OUT, "accuracy_summary.csv"), row.names = FALSE)
@@ -96,13 +88,14 @@ if (!file.exists(file.path(pol_in, "scenario_2030_draws.csv"))) {
                              "--no-figures", "true", "--sample-seed", 20261010, "--min-valid-share", 0),
                 stdout = file.path(pol_in, "run.log"), stderr = file.path(pol_in, "run.log"))
   if (st != 0) stop("NPE-LHS policy run failed; see ", file.path(pol_in, "run.log"))
+  # Keep only what this comparison reads; the production scenario set is output/scenarios_2026/.
+  unlink(file.path(pol_in, setdiff(list.files(pol_in), c("scenario_2030_draws.csv", "draw_validity.txt",
+                                                         "policy_input_states.csv", "calibration_source.txt", "run.log"))))
 }
 key <- data.frame(scenario = c("J_only", "J_only", "S5000_F25", "S5000_F25", "S8000_F25", "S8000_F75", "S8000_F25"),
                   outcome = c("incidence_reduction", "mortality_reduction", "mortality_reduction", "joint_pass_probability",
                               "mortality_reduction", "mortality_reduction", "total_discounted_cost_2026_2030_sgd"))
-pol_dirs <- c(npe_lhs = pol_in, setNames(file.path(OUT, "previous_random_npe", paste0("rep", 1:3), "policy"),
-                                          paste0("npe_random_rep", 1:3)))
-pol_dirs <- pol_dirs[file.exists(file.path(pol_dirs, "scenario_2030_draws.csv"))]
+pol_dirs <- c(npe_lhs = pol_in)
 read_pol <- function(d) list(draws = read.csv(file.path(d, "scenario_2030_draws.csv")),
                              valid = read.delim(file.path(d, "draw_validity.txt"), sep = " ", header = FALSE)$V2)
 summ_out <- function(dr, sc, oc, idx = NULL) {
@@ -112,7 +105,7 @@ summ_out <- function(dr, sc, oc, idx = NULL) {
 }
 boot_se <- function(dr, sc, oc, B = 200) { n <- sum(dr$scenario_id == sc); set.seed(1)
   apply(replicate(B, summ_out(dr, sc, oc, sample.int(n, n, TRUE))), 1, sd, na.rm = TRUE) }
-R0 <- read_pol(file.path(OUT, "policy", "reference"))
+R0 <- read_pol("output/scenarios_2026")
 pol <- do.call(rbind, lapply(names(pol_dirs), function(k) { P <- read_pol(pol_dirs[[k]])
   do.call(rbind, lapply(seq_len(nrow(key)), function(i) {
     sc <- key$scenario[i]; oc <- key$outcome[i]; a <- summ_out(P$draws, sc, oc); b <- summ_out(R0$draws, sc, oc)
@@ -132,18 +125,15 @@ write.csv(pol, file.path(OUT, "policy_comparison.csv"), row.names = FALSE)
 # ---------------- figures ----------------
 long <- function(m, lab) data.frame(value = as.vector(m), parameter = factor(rep(TH, each = nrow(m)), TH), source = lab)
 set.seed(1); ref_long <- long(ref[sample.int(nrow(ref), 20000), ], "Reference MCMC")
-dd <- rbind(long(samples$npe_lhs, "NPE, 50,000 LHS"),
-            do.call(rbind, lapply(grep("random", names(samples), value = TRUE), function(k)
-              long(samples[[k]], paste("NPE, random, rep", sub("npe_random_rep", "", k))))))
+dd <- long(samples$npe_lhs, "NPE, 50,000 LHS")
 p <- ggplot() + geom_density(data = ref_long, aes(value), fill = "grey80", colour = NA) +
-  geom_density(data = dd, aes(value, colour = source, linetype = source == "NPE, 50,000 LHS"), linewidth = .5) +
-  scale_linetype_manual(values = c(`TRUE` = 1, `FALSE` = 3), guide = "none") +
+  geom_density(data = dd, aes(value, colour = source), linewidth = .5) +
   facet_wrap(~parameter, scales = "free", ncol = 4) +
   labs(title = "Single-round NPE versus reference MCMC posterior", x = "theta (log scale)", y = "Density", colour = NULL) +
   theme_classic(base_size = 9) + theme(legend.position = "bottom")
 ggsave(file.path(OUT, "figures", "marginals.png"), p, width = 10, height = 7, dpi = 200)
 acc <- pc; acc$parameter <- factor(acc$parameter, rev(TH))
-acc$source <- ifelse(acc$run == "npe_lhs", "NPE, 50,000 LHS", paste("NPE, random, rep", sub("npe_random_rep", "", acc$run)))
+acc$source <- "NPE, 50,000 LHS"
 p1 <- ggplot(acc, aes(parameter, smd, colour = source)) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = -.1, ymax = .1, alpha = .15) +
   geom_point(position = position_dodge(width = .6)) + coord_flip() +
   labs(y = "Standardised mean difference vs reference", x = NULL, colour = NULL) + theme_classic(base_size = 9)
