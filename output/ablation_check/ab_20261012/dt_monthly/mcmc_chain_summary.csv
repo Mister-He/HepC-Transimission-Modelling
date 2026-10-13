@@ -1,0 +1,5 @@
+"chain","status","start_source","init_tries","warmup_acceptance","retained_total","acceptance","acceptance_flag","mean_jump_retained","total_evals","total_ode","warmup_sec","total_sec","cpu_sec"
+1,"ok","given",1,0.2855,3999,0.290072518129532,FALSE,0.288140650375232,6000,6000,35.761,107.949,105.838
+2,"ok","given",1,0.294,3999,0.269567391847962,FALSE,0.300256613989576,6000,6000,35.9,107.91,105.898
+3,"ok","given",1,0.267,3999,0.294073518379595,FALSE,0.294261506571779,6000,6000,35.595,107.667,105.651
+4,"ok","given",1,0.277,3999,0.282820705176294,FALSE,0.300514502601527,6000,6000,35.887,108,105.903

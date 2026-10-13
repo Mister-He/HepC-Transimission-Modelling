@@ -1,0 +1,46 @@
+2026-10-12 20:38:29 prepared inputs and predeclared config 
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+2026-10-12 20:39:52 hessian done: 314 evaluations 
+2026-10-12 20:39:52 start A_mean 
+2026-10-12 20:39:52 start A_disp 
+2026-10-12 20:39:52 start A_tail 
+2026-10-12 20:39:52 start D_prior 
+2026-10-12 23:47:53 finished A_mean, A_disp, A_tail, D_prior 
+2026-10-12 23:47:53 start B_pilot_stage1 
+2026-10-13 00:01:32 start B_pilot 
+2026-10-13 00:01:32 start C_map 
+2026-10-13 00:01:32 start dt_daily 
+2026-10-13 00:01:32 start dt_monthly 
+2026-10-13 02:27:33 finished B_pilot, C_map, dt_daily, dt_monthly 
+      arm max_rhat min_ess_bulk min_ess_tail ess_bulk_per_cpu_hour
+1  A_mean 1.003670     1681.986     3100.582              142.3982
+2  A_disp 1.003310     1685.273     2983.287              141.8602
+3  A_tail 1.005034     1845.860     3197.003              155.8513
+4 B_pilot 1.004708     1493.624     2810.198              154.5053
+5   C_map 1.004903     1796.605     2869.617              185.2643
+6 D_prior 1.004634     1422.300     2318.732              119.6720
+  acceptance_min acceptance_max final_warmup_drift_max max_abs_smd_vs_reference
+1      0.2517626      0.2574629             0.01766134               0.04495109
+2      0.2455623      0.2664633             0.02086472               0.05336780
+3      0.2503625      0.2590630             0.01052023               0.05044548
+4      0.2596623      0.2641920             0.01291323               0.05093700
+5      0.2368118      0.2558128             0.01250060               0.03793604
+6      0.2738637      0.2797640             0.01215866               0.04474322
+  start_sensitivity_ok pass_all
+1                 TRUE    FALSE
+2                 TRUE    FALSE
+3                 TRUE    FALSE
+4                 TRUE    FALSE
+5                 TRUE    FALSE
+6                 TRUE    FALSE
+2026-10-13 02:28:01 analysis written to output/ablation_check/ab_20261012 

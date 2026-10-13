@@ -1,0 +1,1 @@
+Rscript scripts/run_mcmc_reference.R --fit output/calibration/r_20261010_agepop/fit.rds --out-dir output/ablation_check/ab_20261012/B_pilot_stage1 --cores 4 --n-chains 4 --n-warmup 1500 --adapt-start 500 --adapt-every 50 --max-evals 3000 --thin 1 --seed 20261115 --start-file output/ablation_check/ab_20261012/inputs/starts_pilot.csv
