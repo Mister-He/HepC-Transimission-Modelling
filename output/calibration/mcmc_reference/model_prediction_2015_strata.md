@@ -1,16 +1,16 @@
 # Model prediction at 2015
 
-Posterior medians and equal-tailed 95% Bayesian credible intervals from 4000 posterior draws (output/calibration/mcmc_reference/mcmc_draws.csv).
+Posterior medians and equal-tailed 95% Bayesian credible intervals from 4000 posterior draws (/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/mcmc_reference/mcmc_draws.csv).
 Active HCV cases are a+c+t (viremic states); recovered r is antibody-reactive but not active.
 
 | Group | Total population | Active HCV cases |
 |---|---:|---:|
-| D | 1401 (1290–1521) | 226 (204–250) |
-| J | 3365 (3085–3661) | 951 (866–1047) |
-| F | 1532 (1393–1681) | 568 (517–624) |
-| X | 14917 (13428–16590) | 2537 (2281–2828) |
-| Current PWID (D+F) | 2932 (2684–3200) | 793 (723–873) |
-| Ever-PWID (D+J+F+X) | 21224 (19226–23437) | 4280 (3873–4733) |
+| D | 1164 (927–1476) | 204 (128–324) |
+| J | 3429 (3141–3733) | 997 (904–1094) |
+| F | 1551 (1412–1707) | 659 (600–722) |
+| X | 15016 (13502–16714) | 2618 (2341–2925) |
+| Current PWID (D+F) | 2717 (2398–3105) | 865 (760–999) |
+| Ever-PWID (D+J+F+X) | 21169 (19152–23399) | 4486 (4037–4960) |
 
 Finite posterior draws: 4000 / 4000; equilibrium-pass draws used: 4000.
-Posterior sources: reference.
+Posterior sources: mcmc_reference.
