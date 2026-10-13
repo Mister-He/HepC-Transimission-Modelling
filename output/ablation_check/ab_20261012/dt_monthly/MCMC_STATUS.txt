@@ -1,1 +1,0 @@
-OK: all chains produced retained output; see mcmc_diagnostics.csv
