@@ -29,3 +29,9 @@ are model-specific PWID-network proxies, not national estimates: incidence is
 new infection flow into acute infection, while HCV-related mortality is the
 DC/HCC disease-specific mortality component. Results are policy comparisons
 within the modelled PWID network.
+
+Calibration limits: the fitted model overstates 60+ seroprevalence (about 0.51
+against a target of 0.43). With the composite re-arrest rate this is structural,
+not a fitting failure. The 60+ contact and beta scales are prior-dominated. The
+production posterior is the reference MCMC; single-round NPE is used only as an
+independent cross-check.

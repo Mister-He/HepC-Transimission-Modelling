@@ -4,13 +4,12 @@ Generated results; reruns overwrite these folders. Do not create new run folders
 parallel results are requested.
 
 - `calibration/`: calibration results. See `calibration/README.md`.
-  - `r_20261010_agepop/`: Nelder–Mead fit (prior centre).
+  - `r_20261013_agepop/`: Nelder–Mead fit (prior centre).
   - `mcmc_reference/`: reference MCMC posterior (production).
-  - `npe_lhs/`: single-round NPE from 50,000 LHS prior simulations.
-  - `npe_vs_mcmc/`: NPE versus reference MCMC comparison.
-- `ablation_check/`: reference-MCMC ablation runs (initialisation, proposal covariance, step size, thinning,
-  adaptation drift). See `ablation_check/README.md` and `ablation_check/ab_20261012/ablation_report.md`.
+  - `npe_lhs/`: single-round NPE from 50,000 LHS prior simulations, with SBC (cross-validation only).
+  - `npe_vs_mcmc/`: NPE versus reference MCMC comparison and the direct MCMC SBC (cross-validation only).
 - `scenarios_2026/`: 2026–2030 policy scenarios and manuscript figures, run from the reference MCMC
   posterior. See `scenarios_2026/README.md`.
 - `release_rate_fit.rds`, `rearrest_rate_fit.rds`: Stan fits of prison release and re-arrest written by
-  `scripts/model/preprocess.R`. The simulator does not read them; they are kept for provenance.
+  `scripts/model/preprocess.R`. `scripts/model/update_rate_params.R` copies their summaries into
+  `scripts/model/setup.R`; the simulator itself does not read them.

@@ -61,7 +61,7 @@ Seven predeclared outcomes compare 1,000 NPE posterior states with the productio
 | J only, incidence reduction | 59.5% (46.4–69.1) | 59.2% (46.4–69.0) | 0.57% |
 | J only, mortality reduction | 41.7% (40.9–42.7) | 41.8% (40.9–42.8) | 0.08% |
 | 5,000/yr F 25%, mortality reduction | 63.9% (62.5–65.4) | 64.0% (62.5–65.6) | 0.17% |
-| 5,000/yr F 25%, joint pass probability | 8.7% | 11.3% | 2.6 pp (combined MCSE ≈ 1.1 pp) |
+| 5,000/yr F 25%, joint pass probability | 8.7% | 11.25% | 2.55 pp (combined MCSE ≈ 1.1 pp) |
 | 8,000/yr F 25%, mortality reduction | 69.5% (68.3–70.6) | 69.6% (68.3–70.8) | 0.15% |
 | 8,000/yr F 75%, mortality reduction | 56.4% (55.0–57.8) | 56.5% (55.0–58.1) | 0.20% |
 | 8,000/yr F 25%, discounted cost | S$78.2m (72.2–84.9) | S$77.9m (71.3–84.7) | 0.35% |
@@ -78,7 +78,7 @@ Seven predeclared outcomes compare 1,000 NPE posterior states with the productio
   continuous policy outcomes within 1%.
 - **Spread:** its intervals are about 4% narrower, which is consistent with its SBC coverage.
 - **Joint-pass probability:** this tail probability near a threshold is the most sensitive quantity.
-  NPE gives 8.7% against 11.3%.
+  NPE gives 8.7% against 11.25%.
 - **Production posterior:** the reference MCMC is the production posterior because it samples the
   exact target.
 - **Role of NPE:** independent cross-validation. It costs about 27 minutes of simulation on 11 workers

@@ -80,7 +80,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
   technical PDF and the `setup.R:34` comment. Arrest/release rates in `setup.R:150-153` are labelled "GUESS";
   confirm their provenance with the author.
 
-## Recalibration + NPE vs MCMC benchmark (2026-10-10/11) — superseded by the cleanup below; `benchmark/` was removed
+## Recalibration + NPE vs MCMC benchmark (2026-10-10/11) — superseded; see "Final review" at the end
 - Equilibrium check is now 10 years (user commit `5e3bf80`). Old outputs still pass it (checked), but were superseded.
 - Nelder–Mead rerun: `output/calibration/r_20261010_agepop` (8 parallel starts, `--sd-perturb 0.9`, maxit 3000,
   `--cores`). Best objective 19.01 (`perturb_1`, converged), RMSE 0.0044, MAPE 2.3%. It is only the prior centre.
@@ -111,7 +111,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
   `plot_calibration.R` now takes `--mcmc-file/--npe-file`; `predict_2015_posterior.R` takes `--posterior-files/--max-draws`.
   Incidence threshold is 80% (user confirmed 2026-10-11; the earlier 90% note in `review.md`/`codex.md` is withdrawn).
 
-## Inference cleanup + LHS NPE (2026-10-11, `docs/calibration_update.md`)
+## Inference cleanup + LHS NPE (2026-10-11) — superseded; see "Final review" at the end
 - Kept only **single-round NPE** and the **reference MCMC**. Removed multi-round APT/SNPE (round-2/proposal/atomic-loss
   code in `npe_train.py`/`run_npe.R`), short-chain MCMC (deadline/time-matched logic; dead `am_mcmc`, `make_priors`,
   `log_prior`, `log_posterior`, `predictive_intervals` in `mcmc.R`), the `benchmark/` folder (driver, config, report,
@@ -134,7 +134,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
   (user's protocol) kept; `problems.md`/`回答.md` are historical logs that name deleted folders;
   `tests/integration/.ipynb_checkpoints/` is a generated copy; `output/*_rate_fit.rds` are not read by the model.
 
-## Reference-MCMC ablation (2026-10-12/13, `docs/ablation_check.md`)
+## Reference-MCMC ablation (2026-10-12/13) — removed per `docs/final_review.md`; code, outputs and doc deleted
 - The plan's §3 baseline (NPE-initialised `am_mcmc`, monthly step, coda R-hat) described already-removed code;
   the current reference MCMC already used the daily step and rank-normalised R-hat / bulk-tail ESS / MCSE.
 - Code (commits `094c8af`, `8ce1cb9`): `arwm_budget` records adaptation drift (relative Frobenius change),
@@ -156,3 +156,20 @@ outputs were backed up to the session scratchpad only (not in the repo).
   <0.7%, posterior means within 0.11 SD; monthly is ~18× cheaper.
 - Suggested follow-ups (not run): scale the inverse Hessian by 2.38²/d; refresh adaptation every 500 proposals or
   use an ESS-scaled drift tolerance; replicate arms to rank NPE/pilot/Hessian.
+
+## Final review (2026-10-13/14, `docs/final_review.md`) — current state
+- Production path: Nelder–Mead (`output/calibration/r_20261013_agepop`, objective 22.58) → `prior_centre()` (moves
+  any coordinate to ≥5 prior SD inside the bounds; only θ6, the 60+ contact scale, moves) → reference MCMC
+  (`output/calibration/mcmc_reference`, defaults warmup 10,000 / adapt-start 5,000 / thin 10; R-hat ≤ 1.002, bulk
+  ESS ≥ 2,824) → scenarios (`output/scenarios_2026`, 2,000 draws). Commands in `docs/training.md`.
+- Cross-validation only: `npe_lhs` (50,000 LHS, all valid, 5-network MAF ensemble; SBC n=1,000 gate PASS),
+  `npe_vs_mcmc` (12/12 parameters pass, policy within 0.6%), `npe_vs_mcmc/mcmc_sbc` (8 datasets).
+- Removed: ablation, MAP+Hessian, pilot, multi-round NPE, `--sampling`, `--start-file/--cov-file/--cov-scale/
+  --save-unthinned`, `previous_random_npe/`, `r_20261010_agepop/`, `probe_beta_constraint.R`, generated binaries.
+- Model change in user commit `7c3dad3` (`lambda1 = lambda3*c_composite/beta_scale`, `psi_DC` 0.5) moved results:
+  J-only incidence −59.2% (46.4–69.0), mortality −41.8%; only 8,000/yr F25% (100% of draws) and no-cap pass.
+- `scripts/model/update_rate_params.R` copies Stan rate-fit summaries into `setup.R` (idempotent on stored fits;
+  refitting needs `data/sps.csv`, not in the repo).
+- Flags: 60+ seroprevalence misfit is structural (0.508 vs 0.429); θ6/θ12 prior-dominated; the two
+  `preprocess.R` copies differ scientifically (left as is); long runs must be launched from a copy of the
+  script (Rscript reads lazily).
