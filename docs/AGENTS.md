@@ -38,10 +38,13 @@ All executable model and calibration code is under `scripts/`:
 
 - `scripts/model/`: `sim.cpp`, `setup.R`, model helpers, and rate files.
 - `scripts/calibration/`: JSON target loader, metrics, likelihood, equilibrium,
-  deterministic calibration, NPE support, and scenario definitions.
-- `scripts/run_calibration.R`: deterministic multi-start fit.
-- `scripts/run_npe.R`: NPE data generation, training, and quality gate.
-- `scripts/npe_train.py`: `sbi`/PyTorch NPE-C trainer.
+  deterministic calibration, the exact log posterior and adaptive Metropolis
+  sampler, and LHS prior sampling for the NPE cross-validation.
+- `scripts/run_calibration.R`: deterministic multi-start fit (prior centre).
+- `scripts/run_mcmc_reference.R`: reference MCMC, the production posterior.
+- `scripts/run_npe.R`, `scripts/npe_train.py`, `scripts/compare_npe_mcmc.R`:
+  single-round NPE with SBC and its comparison with the reference MCMC; an
+  independent cross-validation only.
 - `scripts/post_calibration_analysis.R`: the single post-calibration analysis
   entry point. It is not run by training.
 - `tests/`: unit tests for targets, indexing, likelihood, and equilibrium;
@@ -64,16 +67,16 @@ All executable model and calibration code is under `scripts/`:
   Nelder-Mead, recording starts, objectives, and equilibrium diagnostics.
   Every objective evaluation runs model years 0--150 and checks the final
   five-year equilibrium window; model year 150 is the 2015 snapshot.
-- NPE-C/SNPE is primary. Use the regularized best-fit-centred priors documented
-  in `training.md`, observation-noise augmentation, and multiple seeds. A
-  sequential round is preferred, but a one-round robustness check is allowed
-  when the proposal collapses around a model-data conflict.
-- Accept NPE only when SBC coverage is compatible with nominal coverage and
-  posterior standard deviations are not collapsed. A passing NPE is the
-  reported posterior; do not run MCMC merely as a ritual validation.
-- If the NPE quality gate fails, record the failure before considering the
-  optional MCMC-like fallback. Laplace approximation is not part of this
-  repository.
+- The production posterior is the reference MCMC: adaptive random-walk
+  Metropolis on the exact posterior with the independent Normal(best fit, 0.20)
+  prior documented in `training.md`, chains started from prior draws and a
+  prior-scaled initial proposal covariance. Report its convergence diagnostics
+  (R-hat, bulk/tail ESS, MCSE, acceptance, adaptation drift) with the results.
+- Single-round NPE trained on LHS prior simulations, with simulation-based
+  calibration (SBC), is the only cross-validation. It must not feed the prior
+  centre, proposal covariance, starting points or scenarios. Multi-round NPE,
+  MAP/Hessian and pilot proposals are not part of this repository, nor is a
+  Laplace approximation.
 - From the 2015 snapshot, 2016--2025 inflow uses the official SingStat/CNB
   age-specific new-drug-abuser series in `data/singstat_new_drug_abusers.csv`;
   the latest observed year is held constant through 2030. The same calibrated
