@@ -301,9 +301,9 @@ All model code, inputs and generated results are in the project repository [repo
 """
 
 # ---------------- Supplementary Information ----------------
-calib = rd("output/calibration/r_20261010_agepop/predictions.csv")
-nm_cfg = json.load(open(os.path.join(ROOT, "output/calibration/r_20261010_agepop/run_config.json")))
-nm_sol = rd("output/calibration/r_20261010_agepop/solutions.csv")
+calib = rd("output/calibration/r_20261013_agepop/predictions.csv")
+nm_cfg = json.load(open(os.path.join(ROOT, "output/calibration/r_20261013_agepop/run_config.json")))
+nm_sol = rd("output/calibration/r_20261013_agepop/solutions.csv")
 nm_best = min(nm_sol, key=lambda r: F(r["objective"]))
 ovl = rd("figures/calibration_interval_overlap.csv")
 REF = "output/calibration/mcmc_reference"

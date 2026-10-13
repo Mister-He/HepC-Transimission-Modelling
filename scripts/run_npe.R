@@ -16,7 +16,7 @@ arg        <- function(name, default = NULL) {
 }
 STEP       <- arg("--step", "all")
 ROOT       <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261010_agepop/fit.rds")), mustWork = TRUE)
+FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261013_agepop/fit.rds")), mustWork = TRUE)
 OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration/npe_lhs"))
 PYTHON     <- arg("--python", Sys.which("python3"))
 N_SIMS     <- as.integer(arg("--n-sims", "50000"))

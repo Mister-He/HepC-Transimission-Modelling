@@ -21,7 +21,7 @@ arg <- function(name, default = NULL) {
 T_SCRIPT0 <- proc.time()[["elapsed"]]
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20261010_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261013_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 N_CHAINS <- as.integer(arg("--n-chains", "4"))
 CORES <- as.integer(arg("--cores", "4"))
