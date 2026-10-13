@@ -9,7 +9,7 @@
 # prior-started chains, 10,000 warmup proposals with adaptation from proposal 5,000,
 # 50,000 evaluations per chain, draws stored every 10th iteration (--thin; all
 # diagnostics use every retained draw). The stored production run
-# (output/calibration/mcmc_reference) used --n-warmup 4999 --adapt-start 200 --thin 1.
+# (output/calibration/mcmc_reference) used these defaults with --cores 4.
 # Starts and the initial proposal covariance come from the prior only.
 # =============================================================================
 
@@ -51,6 +51,7 @@ for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "mcmc.R"))
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
 base_params <- setup_env$params
+stopifnot(isTRUE(all.equal(fit$base_params, base_params)))  # fit made with the current model
 data <- setup_env$data
 data$t_start <- 0
 data$t_end <- targets$equilibrium_horizon_years
