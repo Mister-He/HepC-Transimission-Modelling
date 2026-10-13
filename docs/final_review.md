@@ -224,23 +224,66 @@ Requirements:
 - Remove any code path that lets NPE, MAP+Hessian, or Pilot seed the prior mean,
   the initial covariance, or the starting points.
 
+### 6.1 Harmonize rearrest-rate parameters and refresh dependent results
+
+This parameterization update is an explicit, scoped change to the scientific
+model. It supersedes the no-model-change and unchanged-results guardrails above
+for rearrest rates and every calibration or scenario result that depends on
+them. Keep the remaining model contract and inference workflow intact.
+
+1. **Use one name for the composite parameter.** In both the active files under
+   `scripts/model/` and the legacy top-level copies, rename the Stan/preprocessing
+   parameter `c` to `c_composite`. It is the same age-specific baseline
+   calibration quantity represented by `c_composite` in `setup.R` and consumed
+   by `sim.cpp`, not a second independent parameter. Keep Stan initialization,
+   summaries, saved draws, and downstream extraction on the same name.
+2. **Automate the rate-fit handoff.** Add a script that reads the relevant
+   `output/*_rate_fit.rds` files and updates only the corresponding rate and
+   composite-parameter entries in `scripts/model/setup.R`: map the release fit's
+   log-rate summary to `lambda2`, and the rearrest fit summaries to `lambda3`,
+   `pi_recid`, and `c_composite`. Preserve the current summary conventions
+   (including exponentiating the posterior mean of the log-rate where used),
+   validate vector lengths, parameter domains, and finite values, and fail
+   without writing if an expected parameter or unique setup block is missing.
+   Write the updated file only after validation; this replaces manual copying
+   of fitted values.
+3. **Enforce the composite relation in calibration.** Define
+   `c_composite = c * beta_scale`, so the effective age-specific scaling is
+   `c = c_composite / beta_scale`. Derive the first-arrest rate in the simulator
+   as `lambda1 = lambda3 * c`; every calibration proposal must satisfy the
+   composite relation by construction. Treat the Stan estimate as the
+   `beta_scale = 1` baseline composite, and apply the calibrated beta scale
+   consistently to inflows and the derived first-arrest rate.
+4. **Regenerate model-dependent results after cleanup.** Once the obsolete
+   methods and outputs in Part 1 are removed and the parameter handoff is in
+   place, rerun the release/rearrest rate fits, update `setup.R` through the new
+   script, then rerun the deterministic calibration, reference MCMC, retained
+   single-round NPE/SBC cross-validation, and scenarios in dependency order.
+   Replace stale calibration and scenario outputs with results from this model
+   version, record their provenance, and update the reports. Do not describe
+   old results as unchanged or reproducible under the new parameterization.
+
 ## 7. Part 4 — Verify calibration and scenarios
 
 After Parts 1–3, run and report:
 
+For outputs affected by §6.1, verification means successfully regenerating and
+validating the new model-version outputs; equality with the old retained fit,
+posterior, or scenarios is not expected. The existing reproducibility checks
+below apply to the newly generated artifacts.
+
 - `Rscript scripts/run_tests.R --scope all` — all retained tests pass.
-- The retained deterministic fit is reproducible or unchanged:
-  `Rscript scripts/run_calibration.R --run-id <id> ...`, and `fit.rds` matches
-  the retained `r_20261010_agepop` within numerical tolerance.
-- The retained reference MCMC posterior is reproducible or unchanged:
-  `Rscript scripts/run_mcmc_reference.R --fit ...` with the new defaults, and the
-  diagnostics show every chain passing.
-- The retained scenarios are reproducible or unchanged:
-  `Rscript scripts/scenarios_2026.R --root .`.
-- The single-round NPE cross-validation still reproduces: `Rscript
-  scripts/run_npe.R ...` and `Rscript scripts/compare_npe_mcmc.R`, and the
-  comparison report matches the retained `npe_vs_mcmc/`.
-- SBC still reproduces: `Rscript scripts/run_npe.R --step all ... --n-sbc <N>`,
+- Rerun deterministic calibration with `Rscript scripts/run_calibration.R
+  --run-id <id> ...`; retain the new `fit.rds` and its equilibrium diagnostics.
+- Rerun reference MCMC with `Rscript scripts/run_mcmc_reference.R --fit ...`
+  and the new defaults; retain the new posterior and confirm every chain passes
+  its diagnostics.
+- Rerun scenarios with `Rscript scripts/scenarios_2026.R --root .` from the new
+  fit and posterior, and verify their provenance.
+- Rerun the single-round NPE cross-validation with `Rscript
+  scripts/run_npe.R ...` and `Rscript scripts/compare_npe_mcmc.R`; update the
+  comparison report for the new model version.
+- Rerun SBC with `Rscript scripts/run_npe.R --step all ... --n-sbc <N>`,
   with every parameter passing the coverage gate and no systematically skewed
   rank histogram. Report the achieved `N` and the per-parameter coverage.
 - Static checks: no retained file references a deleted method, script, or
