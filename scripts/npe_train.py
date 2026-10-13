@@ -11,7 +11,8 @@
 # Binomial prevalence and log-normal population noise are added here so training
 # pairs follow the calibration observation model. Outputs in --out:
 # posterior_samples_npe.csv, npe_config.json, npe_timing.json, loss_curve.csv,
-# npe_inference.pkl and, when --n-sbc > 0, sbc_summary.csv / sbc_ranks.npy.
+# npe_inference.pkl and, when --n-sbc > 0, sbc_summary.csv / sbc_ranks.npy /
+# sbc_rank_histograms.png.
 # =============================================================================
 import argparse
 import csv
@@ -71,7 +72,22 @@ def transform_x(x, n_prev):
     return np.hstack([np.log(p / (1.0 - p)), np.log(x[:, 6:12])])
 
 
+def rank_shape(r, n, chisq_p):
+    """Predeclared skew rule: outer-10% rank share or mean rank more than 3 binomial SE off,
+    else any deviation with a Bonferroni-corrected (12 parameters) chi-square p < 0.001."""
+    outer = np.mean((r < 0.05) | (r > 0.95))
+    se_outer, se_mean = math.sqrt(0.1 * 0.9 / n), math.sqrt(1 / 12 / n)
+    if outer > 0.1 + 3 * se_outer:
+        return "U-shaped"
+    if outer < 0.1 - 3 * se_outer:
+        return "modal"
+    if abs(r.mean() - 0.5) > 3 * se_mean:
+        return "biased_high" if r.mean() > 0.5 else "biased_low"
+    return "nonuniform" if chisq_p < 0.001 / 12 else "uniform"
+
+
 def run_sbc(posterior, args, n_prev, rng):
+    from scipy import stats
     theta = read_numeric_csv(args.theta_sbc)
     x = transform_x(add_observation_noise(read_numeric_csv(args.x_sbc), n_prev,
                                           args.population_sigma_log, rng), n_prev)
@@ -83,12 +99,31 @@ def run_sbc(posterior, args, n_prev, rng):
         ranks[j] = (d < theta[j]).mean(axis=0)
     cov95 = ((ranks >= 0.025) & (ranks <= 0.975)).mean(axis=0)
     cov90 = ((ranks >= 0.05) & (ranks <= 0.95)).mean(axis=0)
+    n_bins = 20
     with open(os.path.join(args.out, "sbc_summary.csv"), "w", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(["parameter", "coverage_95", "coverage_90", "mean_rank", "sd_rank"])
+        w.writerow(["parameter", "n_sbc", "coverage_95", "coverage_95_se", "coverage_90", "coverage_90_se",
+                    "mean_rank", "sd_rank", "outer10_share", "chisq20_p", "ks_p", "rank_shape"])
         for i in range(12):
-            w.writerow([f"theta{i + 1}", cov95[i], cov90[i], ranks[:, i].mean(), ranks[:, i].std()])
+            r = ranks[:, i]
+            chisq_p = stats.chisquare(np.histogram(r, bins=n_bins, range=(0, 1))[0]).pvalue
+            w.writerow([f"theta{i + 1}", n, cov95[i], math.sqrt(cov95[i] * (1 - cov95[i]) / n),
+                        cov90[i], math.sqrt(cov90[i] * (1 - cov90[i]) / n), r.mean(), r.std(),
+                        np.mean((r < 0.05) | (r > 0.95)), chisq_p,
+                        stats.kstest(r, "uniform").pvalue, rank_shape(r, n, chisq_p)])
     np.save(os.path.join(args.out, "sbc_ranks.npy"), ranks)
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(3, 4, figsize=(10, 7), sharex=True)
+    lo, hi = stats.binom.ppf([0.005, 0.995], n, 1 / n_bins)
+    for i, ax in enumerate(axes.flat):
+        ax.hist(ranks[:, i], bins=n_bins, range=(0, 1), color="0.6", edgecolor="white")
+        ax.axhspan(lo, hi, color="tab:blue", alpha=0.15, lw=0)
+        ax.set_title(f"theta{i + 1}", fontsize=9)
+    fig.supxlabel("Normalised rank of the true parameter (band: 99% range under uniformity)")
+    fig.tight_layout()
+    fig.savefig(os.path.join(args.out, "sbc_rank_histograms.png"), dpi=150)
 
 
 def main():

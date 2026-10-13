@@ -5,9 +5,9 @@
 # production path (Nelder-Mead -> reference MCMC -> scenarios).
 #
 # Steps: data (prior simulations), train (Python), evaluate (posterior-spread gate,
-# plus SBC coverage when --n-sbc > 0). A simulation counts only if it is finite and
-# passes check_equilibrium() (the same restriction as the reference MCMC target);
-# failures are dropped and counted by reason, never replaced.
+# plus, when --n-sbc > 0, SBC coverage and a rank-histogram skew check). A simulation
+# counts only if it is finite and passes check_equilibrium() (the same restriction as
+# the reference MCMC target); failures are dropped and counted by reason, never replaced.
 # =============================================================================
 
 args       <- commandArgs(trailingOnly = TRUE)
@@ -134,15 +134,18 @@ step_evaluate <- function() {
   post <- read.csv(file.path(OUT, "posterior_samples_npe.csv"))
   sd <- apply(post[paste0("theta", 1:12)], 2, stats::sd)
   q <- data.frame(parameter = paste0("theta", 1:12), posterior_sd = sd, posterior_broad_ok = sd >= 0.05,
-                  coverage_95 = NA_real_, coverage_90 = NA_real_, coverage_ok = NA)
+                  coverage_95 = NA_real_, coverage_90 = NA_real_, coverage_ok = NA,
+                  rank_shape = NA_character_, rank_shape_ok = NA)
   sbc_file <- file.path(OUT, "sbc_summary.csv")
   if (file.exists(sbc_file)) {
     sbc <- read.csv(sbc_file)
     q$coverage_95 <- sbc$coverage_95; q$coverage_90 <- sbc$coverage_90
     q$coverage_ok <- sbc$coverage_95 >= 0.85 & sbc$coverage_95 <= 1 & sbc$coverage_90 >= 0.75 & sbc$coverage_90 <= 1
+    q$rank_shape <- sbc$rank_shape; q$rank_shape_ok <- sbc$rank_shape == "uniform"
   }
   write.csv(q, file.path(OUT, "npe_evaluation.csv"), row.names = FALSE)
-  ok <- all(q$posterior_broad_ok) && all(is.na(q$coverage_ok) | q$coverage_ok) && all(is.finite(as.matrix(post)))
+  ok <- all(q$posterior_broad_ok) && all(is.na(q$coverage_ok) | q$coverage_ok) &&
+    all(is.na(q$rank_shape_ok) | q$rank_shape_ok) && all(is.finite(as.matrix(post)))
   note <- if (file.exists(sbc_file)) "" else
     " (SBC not run; accuracy is checked against the reference MCMC in output/calibration/npe_vs_mcmc/)"
   writeLines(paste0(if (ok) "PASS: NPE posterior accepted." else
