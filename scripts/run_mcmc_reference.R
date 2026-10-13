@@ -40,7 +40,8 @@ dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 Sys.setenv(OMP_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1", VECLIB_MAXIMUM_THREADS = "1")
 
 source(file.path(ROOT, "scripts/calibration/targets.R"))
-targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
+TARGETS <- normalizePath(arg("--targets", file.path(ROOT, "data/calibration_targets.json")), mustWork = TRUE)
+targets <- read_targets(TARGETS)  # --targets: synthetic data for the MCMC-based SBC
 old <- setwd(file.path(ROOT, "scripts/model"))
 setup_env <- new.env(parent = globalenv())
 sys.source("setup.R", setup_env)
@@ -188,7 +189,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 }
 
 jsonlite::write_json(list(
-  fit = FIT, sampler = "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
+  fit = FIT, targets = TARGETS, sampler = "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
   n_chains = N_CHAINS, cores = CORES, n_warmup = N_WARMUP, max_evals_per_chain = MAX_EVALS,
   adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY, safety_p = 0.05, adaptive_scale = "2.38^2/d",
   thin_storage = THIN, init_scale = INIT_SCALE, n_prior_var_draws = N_PRIOR_VAR,
