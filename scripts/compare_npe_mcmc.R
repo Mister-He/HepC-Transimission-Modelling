@@ -124,7 +124,7 @@ write.csv(pol, file.path(OUT, "policy_comparison.csv"), row.names = FALSE)
 
 # ---------------- figures ----------------
 long <- function(m, lab) data.frame(value = as.vector(m), parameter = factor(rep(TH, each = nrow(m)), TH), source = lab)
-set.seed(1); ref_long <- long(ref[sample.int(nrow(ref), 20000), ], "Reference MCMC")
+set.seed(1); ref_long <- long(ref[sample.int(nrow(ref), min(nrow(ref), 20000)), ], "Reference MCMC")
 dd <- long(samples$npe_lhs, "NPE, 50,000 LHS")
 p <- ggplot() + geom_density(data = ref_long, aes(value), fill = "grey80", colour = NA) +
   geom_density(data = dd, aes(value, colour = source), linewidth = .5) +
