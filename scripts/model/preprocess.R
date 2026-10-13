@@ -503,3 +503,6 @@ rearrest_fit$summary(variables = c(
 # mcmc_trace(rearrest_fit$draws(variables = c(
 #     "pi_raw", "log_lambda", "c_composite"
 # )))
+
+# Copy the fitted rates into setup.R (replaces manual copying):
+#   Rscript scripts/model/update_rate_params.R
