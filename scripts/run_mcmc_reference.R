@@ -10,8 +10,7 @@
 # 50,000 evaluations per chain, draws stored every 10th iteration (--thin; all
 # diagnostics use every retained draw). The stored production run
 # (output/calibration/mcmc_reference) used --n-warmup 4999 --adapt-start 200 --thin 1.
-# Options for the ablation: --start-file (one row of theta per chain), --cov-file
-# (12 x 12 proposal covariance, multiplied by --cov-scale), --dt, --adapt-every.
+# Starts and the initial proposal covariance come from the prior only.
 # =============================================================================
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -36,14 +35,9 @@ PRIOR_SD <- as.numeric(arg("--prior-sd", "0.20"))
 INIT_SCALE <- as.numeric(arg("--init-scale", "0.1"))
 N_PRIOR_VAR <- as.integer(arg("--n-prior-var", "2048"))
 DT <- as.numeric(arg("--dt", as.character(1 / 365)))
-START_FILE <- arg("--start-file")
-COV_FILE <- arg("--cov-file")
-COV_SCALE <- as.numeric(arg("--cov-scale", "1"))
-SAVE_FULL <- identical(arg("--save-unthinned", "false"), "true")
 if (ADAPT_START >= N_WARMUP) warning("--adapt-start >= --n-warmup: the proposal never adapts")
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 Sys.setenv(OMP_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1", VECLIB_MAXIMUM_THREADS = "1")
-rel <- function(p) if (is.null(p)) NULL else if (grepl("^/", p)) p else file.path(ROOT, p)
 
 source(file.path(ROOT, "scripts/calibration/targets.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
@@ -76,11 +70,7 @@ prior_draws <- sweep(matrix(rnorm(N_PRIOR_VAR * 12), N_PRIOR_VAR, 12), 2, prior_
   matrix(prior_mean, N_PRIOR_VAR, 12, byrow = TRUE)
 prior_var <- apply(prior_draws, 2, stats::var)
 reg <- diag(1e-6 * prior_var)
-Sigma_init <- if (is.null(COV_FILE)) diag(INIT_SCALE^2 * prior_var) else
-  COV_SCALE * unname(as.matrix(read.csv(rel(COV_FILE))))
-stopifnot(all(dim(Sigma_init) == 12), isSymmetric(Sigma_init, tol = 1e-8))
-starts <- if (is.null(START_FILE)) NULL else as.matrix(read.csv(rel(START_FILE))[, TH])
-if (!is.null(starts)) stopifnot(nrow(starts) >= N_CHAINS)
+Sigma_init <- diag(INIT_SCALE^2 * prior_var)
 pre_chain_sec <- proc.time()[["elapsed"]] - T_METHOD0
 
 run_chain <- function(i) {
@@ -88,8 +78,7 @@ run_chain <- function(i) {
   draw_prior <- function() rnorm(12, prior_mean, prior_sd)
   res <- arwm_budget(logpost, draw_prior, Sigma_init, reg, n_warmup = N_WARMUP,
                      max_evals = MAX_EVALS, adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY,
-                     seed = SEED + 1000 + i, t_offset = pre_chain_sec,
-                     theta_init = if (is.null(starts)) NULL else starts[i, ])
+                     seed = SEED + 1000 + i, t_offset = pre_chain_sec)
   res$chain <- i
   res
 }
@@ -126,7 +115,6 @@ draws <- do.call(rbind, lapply(chains, function(ch) {
 }))
 keep_rows <- (draws$iteration - 1L) %% THIN == 0L
 write.csv(draws[keep_rows, ], file.path(OUT, "mcmc_draws.csv"), row.names = FALSE)
-if (SAVE_FULL) write.csv(draws, gzfile(file.path(OUT, "mcmc_draws_unthinned.csv.gz")), row.names = FALSE)
 warm <- do.call(rbind, lapply(chains, function(ch) {
   x <- as.data.frame(ch$warmup); names(x) <- TH
   cbind(data.frame(chain = ch$chain, warmup_iteration = seq_len(nrow(x)) - 1L), x)
@@ -204,8 +192,7 @@ jsonlite::write_json(list(
   n_chains = N_CHAINS, cores = CORES, n_warmup = N_WARMUP, max_evals_per_chain = MAX_EVALS,
   adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY, safety_p = 0.05, adaptive_scale = "2.38^2/d",
   thin_storage = THIN, init_scale = INIT_SCALE, n_prior_var_draws = N_PRIOR_VAR,
-  initial_covariance = if (is.null(COV_FILE)) "init_scale^2 * diag(prior variance)" else paste(COV_FILE, "x", COV_SCALE),
-  starts = if (is.null(START_FILE)) "independent prior draws" else START_FILE,
+  initial_covariance = "init_scale^2 * diag(prior variance)", starts = "independent prior draws",
   regularisation = "1e-6 * diag(prior variance)",
   prior = sprintf("independent Normal(fit$best$theta, %s) on theta", PRIOR_SD),
   target = "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",

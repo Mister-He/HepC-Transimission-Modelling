@@ -30,14 +30,12 @@ log_posterior_exact <- function(theta, base_params, data, prior_mean, prior_sd) 
 #   adapt_every proposals. Adaptation is frozen before the first retained proposal.
 # - sampling: retained proposals until evaluations reach max_evals. Every retained row
 #   stores cumulative evaluations, ODE calls, elapsed time and proposal jump size.
-# - theta_init: optional fixed start (one budgeted evaluation); if it is not finite the
-#   chain falls back to prior draws.
 # Diagnostics returned: adaptation trace (relative Frobenius change of the adapted
 # covariance between updates and its condition number), warmup jump sizes, CPU time.
 arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
                         max_evals = 50000L, adapt_start = 200L,
                         adapt_every = 50L, safety_p = 0.05, seed = 1L,
-                        t_offset = 0, max_init_tries = 100L, theta_init = NULL) {
+                        t_offset = 0, max_init_tries = 100L) {
   set.seed(seed)
   cpu0 <- sum(proc.time()[c("user.self", "sys.self")])
   t0 <- proc.time()[["elapsed"]] - t_offset
@@ -47,12 +45,8 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
   evals <- 0L; ode <- 0L
   ev <- function(th) { r <- logpost(th); evals <<- evals + 1L; ode <<- ode + r$ode; r$lp }
 
-  # Initialisation: the given start, else prior draws (all budgeted).
+  # Initialisation: prior draws until the target is finite (all budgeted).
   lp <- -Inf; tries <- 0L; start_source <- "prior"
-  if (!is.null(theta_init)) {
-    theta <- as.numeric(theta_init); lp <- ev(theta); tries <- 1L; start_source <- "given"
-    if (!is.finite(lp)) start_source <- "given_invalid_then_prior"
-  }
   while (!is.finite(lp) && tries < max_init_tries && evals < max_evals) {
     theta <- draw_prior(); lp <- ev(theta); tries <- tries + 1L
   }
