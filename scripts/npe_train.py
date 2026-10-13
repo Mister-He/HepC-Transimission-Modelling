@@ -89,7 +89,9 @@ class Ensemble:
 
 def rank_shape(r, n, chisq_p):
     """Predeclared skew rule: outer-10% rank share or mean rank more than 3 binomial SE off,
-    else any deviation with a Bonferroni-corrected (12 parameters) chi-square p < 0.001."""
+    else any deviation with a Bonferroni-corrected (12 parameters) chi-square p < 0.001.
+    The two 3-SE checks are per parameter, so a calibrated posterior still fails the
+    all-12-uniform gate about 6% of the time; a failure should be confirmed on fresh data."""
     outer = np.mean((r < 0.05) | (r > 0.95))
     se_outer, se_mean = math.sqrt(0.1 * 0.9 / n), math.sqrt(1 / 12 / n)
     if outer > 0.1 + 3 * se_outer:

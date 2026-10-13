@@ -25,6 +25,9 @@ dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 theta <- as.matrix(read.csv(file.path(NPE, "theta_sbc.csv"))[seq_len(K), TH])
 x <- as.matrix(read.csv(file.path(NPE, "x_sbc.csv"))[seq_len(K), ])
 stopifnot(nrow(theta) == K, nrow(x) == K)
+source("scripts/calibration/likelihood.R")
+stopifnot(isTRUE(all.equal(jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))$prior_centre,
+                           prior_centre(readRDS(FIT)$best$theta))))  # same prior as the NPE SBC set
 base <- jsonlite::fromJSON("data/calibration_targets.json")
 set.seed(SEED)
 for (k in seq_len(K)) {

@@ -38,7 +38,11 @@ rate_params$beta_scale <- rep(2, 6)
 rate_scaled <- run_sim(rate_params, rate_data)
 check_true(rate_base[nrow(rate_base), idx(1, 1, 0, 0)] >
              rate_scaled[nrow(rate_scaled), idx(1, 1, 0, 0)],
-           "first-arrest rate is lambda3*c_composite/beta_scale")
+           "first-arrest rate falls when beta_scale rises")
+rate_params$c_composite <- rep(2, 6)
+rate_both <- run_sim(rate_params, rate_data)
+check_equal(rate_both[nrow(rate_both), ], rate_base[nrow(rate_base), ], tol = 1e-12,
+            "first-arrest rate is lambda3*c_composite/beta_scale (doubling both leaves it unchanged)")
 
 simulate_seed <- function(state, scale = 1) {
   d <- short_data; d$y0 <- rep(0, 480)

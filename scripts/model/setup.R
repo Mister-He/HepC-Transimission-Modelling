@@ -31,7 +31,7 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   phi_*     — van Meer (2012); Morgan et al. (2013)
 #   mu_DC/HCC — Lim et al. (2018)
 #   psi_*     — Premkumar (2024); Dang et al. (2020)
-#   pi_recid  — fitted to SPS data (0.65)
+#   pi_recid  — fitted to SPS data (0.59; scripts/model/update_rate_params.R)
 #   lambda*   — CALIBRATED to SPS data (guesses used here)
 #   mu        — CALIBRATED to SingStat life tables (guesses used here)
 #   c_contact — CALIBRATED to HCV prevalence trajectory (guess used here)
@@ -268,8 +268,3 @@ for (ss in 0:3) {
 }
 stopifnot(length(col_names) == 481)
 
-# =============================================================================
-# BASELINE LAMBDA1
-# lambda1 is the first-arrest rate (D -> J) and is used unchanged.
-# =============================================================================
-params_s1 <- modifyList(params_s1, list(lambda1 = params$lambda1))

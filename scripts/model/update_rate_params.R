@@ -46,7 +46,7 @@ if (!is.finite(new$pi_recid) || new$pi_recid <= 0 || new$pi_recid >= 1) stop("pi
 
 lines <- readLines(SETUP)
 fmt <- function(v) if (length(v) == 1) format(signif(v, 3)) else
-  paste0("c(", paste(format(signif(v, 3), trim = TRUE, drop0trailing = TRUE), collapse = ", "), ")")
+  paste0("c(", paste(as.character(signif(v, 3)), collapse = ", "), ")")
 for (nm in names(new)) {
   pat <- if (nm == "pi_recid") "^(\\s*pi_recid\\s*=\\s*)[0-9.eE+-]+" else
     paste0("^(\\s*", nm, "\\s*=\\s*)c\\([^)]*\\)")

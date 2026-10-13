@@ -43,6 +43,8 @@ fit <- readRDS(FIT); base_params <- setup_env$params; data <- setup_env$data
 data$t_start <- 0; data$t_end <- targets$equilibrium_horizon_years
 prior_sd <- c(rep(CONTACT_SD, 6), rep(BETA_SD, 6)); N_PARAM <- 12L
 center <- prior_centre(as.numeric(fit$best$theta), prior_sd)
+# fit$base_params is what the scenarios use; a setup.R edit without a refit must not slip through.
+stopifnot(isTRUE(all.equal(fit$base_params, base_params)))
 
 log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite = NA,
                        n_equilibrium_fail = NA, n_out_of_bounds = NA) {
@@ -121,6 +123,8 @@ step_data <- function() {
 }
 
 step_train <- function() {
+  stale <- file.path(OUT, c("sbc_summary.csv", "sbc_ranks.npy", "sbc_rank_histograms.png"))
+  file.remove(stale[file.exists(stale)])  # SBC belongs to the network trained here
   py <- file.path(ROOT, "scripts/npe_train.py")
   a <- c(py, "--theta", file.path(OUT, "theta_train.csv"), "--x", file.path(OUT, "x_train.csv"),
          "--x-obs", file.path(OUT, "x_obs.csv"), "--out", OUT, "--seed", TRAIN_SEED, "--n-draws", N_DRAWS,

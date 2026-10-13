@@ -79,6 +79,8 @@ make_start_set <- function(n_perturbed = 5, sd_perturb = 0.4, seed_base = 101) {
 # for D_i and J_i given the prison population targets, including ageing
 # flows (10-year bands -> 1/10 per year). Returns a length-12 log-scale theta.
 informed_theta0 <- function(base_params, targets) {
+  # shortcut: assumes beta_scale = 1 in lambda1 = lambda3 * c_composite / beta_scale; it only
+  # seeds one start, so Nelder-Mead corrects it. Upgrade to a fixed-point pass if that start matters.
   lambda1 <- base_params$lambda3 * base_params$c_composite
   lambda2 <- base_params$lambda2
   mu_eff  <- base_params$mu * base_params$omega
