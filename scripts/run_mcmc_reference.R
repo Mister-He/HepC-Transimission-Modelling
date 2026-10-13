@@ -75,7 +75,6 @@ Sigma_init <- diag(INIT_SCALE^2 * prior_var)
 pre_chain_sec <- proc.time()[["elapsed"]] - T_METHOD0
 
 run_chain <- function(i) {
-  set.seed(SEED + 2000 + i)
   draw_prior <- function() rnorm(12, prior_mean, prior_sd)
   res <- arwm_budget(logpost, draw_prior, Sigma_init, reg, n_warmup = N_WARMUP,
                      max_evals = MAX_EVALS, adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY,
@@ -198,7 +197,7 @@ jsonlite::write_json(list(
   prior = sprintf("independent Normal(fit$best$theta, %s) on theta", PRIOR_SD),
   target = "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
   integration_dt = DT, seed = SEED,
-  seeds = list(prior_variance = SEED + 3000, chain_init = "SEED+2000+i", chain = "SEED+1000+i"),
+  seeds = list(prior_variance = SEED + 3000, chain = "SEED+1000+i (initial prior draws and sampling)"),
   startup_sec = startup_sec, pre_chain_sec = pre_chain_sec, method_sec = method_sec,
   cpu_sec_total = sum(chain_summary$cpu_sec), r_version = R.version.string
 ), file.path(OUT, "mcmc_run_config.json"), pretty = TRUE, auto_unbox = TRUE, digits = NA)

@@ -24,8 +24,6 @@ def ui(m, lo, hi, scale=1, d=1, pre="", suf=""):
     return f"{f(m)} (95% UI: {f(lo)}–{f(hi)})"
 def col(row, c, **k): return ui(row[c], row[c + "_lo"], row[c + "_hi"], **k)
 def pct(row, c, d=1): return col(row, c, scale=100, d=d, suf="%")
-def red_from_ratio(row, c, d=1):  # reduction = 1 - ratio; swap bounds
-    return ui(1 - F(row[c]), 1 - F(row[c + "_hi"]), 1 - F(row[c + "_lo"]), scale=100, d=d, suf="%")
 def ratio_pct(row, c, d=1): return col(row, c, scale=100, d=d, suf="%")
 def tr(sid, yr): return next(r for r in traj if r["scenario_id"] == sid and int(F(r["year"])) == yr)
 def ntr(yr): return next(r for r in nt if int(F(r["year"])) == yr)

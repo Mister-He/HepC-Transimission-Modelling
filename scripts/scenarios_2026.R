@@ -39,8 +39,6 @@ draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
 }))
 
 idx0 <- function(s, k, h, i) s * 120 + (k - 1) * 30 + h * 6 + i + 2L
-all_idx <- function(strata, states = 0:4) as.vector(sapply(strata, function(s)
-  sapply(1:4, function(k) sapply(states, function(h) sapply(0:5, function(i) idx0(s, k, h, i))))))
 rate_components <- function(state, time, pm) {
   y <- as.numeric(state); idxs <- function(s, k, h, age) idx0(s, k, h, age) - 1L
   incidence <- 0; fx_incidence <- 0
@@ -371,7 +369,7 @@ if (any(errors)) stop("Draw failed: ",conditionMessage(results[[which(errors)[1]
 valid <- !vapply(results,is.null,logical(1))
 cat("Valid draws:",sum(valid),"of",length(valid),"(equilibrium failures:",sum(!valid),")\n")
 draw_seed <- draw_table$seed[valid]; results <- results[valid]
-MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))  # benchmark policy runs pass 0
+MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))  # the NPE cross-validation policy run passes 0
 stopifnot(length(results)>=MIN_VALID_SHARE*length(valid))
 writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid))), file.path(OUT,"draw_validity.txt"))
 collect <- function(name) lapply(results,`[[`,name)
@@ -413,7 +411,7 @@ endpoint$discount_rate <- config$discount_rate
 endpoint$discount_base_year <- config$discount_base_year
 endpoint$price_year <- config$price_year
 endpoint$price_basis <- config$price_basis
-# Per-seed medians show whether the NPE seeds agree.
+# Per-file medians show whether the posterior files agree.
 by_seed <- do.call(rbind,lapply(sort(unique(draw_seed)),function(k) {
   e <- agg_draws(endpoint_draws[draw_seed==k],"scenario_id")
   e <- e[,c("scenario_id","incidence_reduction","incidence_reduction_lo","incidence_reduction_hi",
@@ -432,8 +430,7 @@ endpoint$mortality_reduction_text <- ui_text("mortality_reduction",100,1,suffix=
 endpoint$total_cost_text <- ui_text("total_discounted_cost_2026_2030_sgd",1e-6,2,prefix="S$",suffix="m")
 endpoint$incremental_cost_text <- ui_text("incremental_discounted_cost_vs_j_only_sgd",1e-6,2,prefix="S$",suffix="m")
 endpoint$fx_starts_text <- ui_text("fx_treatment_starts",1,0)
-endpoint$j_starts_text <- local({ j <- subset(process,stratum=="J")
-  s <- aggregate(cbind(treatment_starts,treatment_starts_lo,treatment_starts_hi)~scenario_id,j,sum)
+endpoint$j_starts_text <- local({
   # J starts: use per-draw sums for the interval.
   jd <- agg_draws(lapply(collect("process"),function(p) {
     a <- aggregate(treatment_starts~scenario_id,subset(p,stratum=="J"),sum)
@@ -735,7 +732,6 @@ pie_title <- function(id) {
   name <- if (id=="J_only") "Status quo (J only)" else if (id=="SInf")
     "No screening cap" else sprintf("%s/year · F %s%%",row$screening_total,
       round(100*row$f_share))
-  total <- item_totals[match(id,item_totals$scenario_id),]
   sprintf("%s\nS$%.2fm",name,endpoint$total_discounted_cost_2026_2030_sgd[match(id,endpoint$scenario_id)]/1e6)
 }
 pie_titles <- setNames(vapply(pie_ids,pie_title,character(1)),pie_ids)

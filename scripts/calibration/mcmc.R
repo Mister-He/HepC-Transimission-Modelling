@@ -105,7 +105,6 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
 }
 
 posterior_summaries <- function(samples, theta_names = paste0("theta", 1:12)) {
-  d <- ncol(samples)
   data.frame(
     parameter = theta_names,
     median = apply(samples, 2, median),
