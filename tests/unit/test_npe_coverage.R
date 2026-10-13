@@ -1,6 +1,6 @@
 # =============================================================================
 # tests/unit/test_npe_coverage.R — checks the LHS prior sampler and the current
-# single-round NPE output (simulation accounting, posterior spread, quality gate).
+# single-round NPE output (simulation accounting, posterior spread, quality gate, SBC).
 # =============================================================================
 args0 <- commandArgs(FALSE)
 file_arg <- sub("^--file=", "", args0[grepl("^--file=", args0)])
@@ -28,7 +28,8 @@ if (file.exists(post_path)) {
   ss <- jsonlite::fromJSON(file.path(npe_dir, "simulation_summary.json"))
   theta <- as.matrix(post[, paste0("theta", 1:12)])
   check_identical(as.integer(ss$n_attempted), 50000L, "NPE uses 50,000 attempted LHS prior simulations")
-  check_identical(as.integer(ss$n_valid + ss$n_excluded_nonfinite + ss$n_excluded_equilibrium),
+  check_identical(as.integer(ss$n_valid + ss$n_excluded_nonfinite + ss$n_excluded_equilibrium +
+                             ss$n_excluded_bounds),
                   as.integer(ss$n_attempted), "valid plus excluded simulations equal attempted simulations")
   check_identical(nrow(read.csv(file.path(npe_dir, "theta_train.csv"))), as.integer(ss$n_valid),
                   "training set contains exactly the valid simulations (no replacements)")
@@ -36,6 +37,17 @@ if (file.exists(post_path)) {
   check_true(all(eval$posterior_sd >= 0.05), "NPE posterior standard deviations are not collapsed")
   check_true(file.exists(file.path(npe_dir, "NPE_OK.txt")) && !file.exists(file.path(npe_dir, "NPE_NOT_OK.txt")),
              "NPE quality gate is accepted without a stale failure marker")
+  sbc_path <- file.path(npe_dir, "sbc_summary.csv")
+  check_true(file.exists(sbc_path) && file.exists(file.path(npe_dir, "sbc_ranks.npy")),
+             "SBC summary and ranks are retained")
+  if (file.exists(sbc_path)) {
+    sbc <- read.csv(sbc_path)
+    check_identical(sbc$parameter, paste0("theta", 1:12), "SBC covers all 12 parameters")
+    check_true(all(sbc$n_sbc >= 500), "SBC uses at least 500 synthetic datasets")
+    check_true(all(sbc$coverage_95 >= 0.85 & sbc$coverage_90 >= 0.75),
+               "SBC coverage passes the 95% and 90% gates for every parameter")
+    check_true(all(sbc$rank_shape == "uniform"), "no SBC rank histogram is systematically skewed")
+  }
 } else cat("SKIP: single-round NPE output is not present\n")
 
 n_fail <- test_report("tests/unit/test_npe_coverage.R")

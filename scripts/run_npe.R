@@ -6,8 +6,9 @@
 #
 # Steps: data (prior simulations), train (Python), evaluate (posterior-spread gate,
 # plus, when --n-sbc > 0, SBC coverage and a rank-histogram skew check). A simulation
-# counts only if it is finite and passes check_equilibrium() (the same restriction as
-# the reference MCMC target); failures are dropped and counted by reason, never replaced.
+# counts only if theta is within the parameter bounds and the run is finite and passes
+# check_equilibrium() (the same support as the reference MCMC target); failures are
+# dropped and counted by reason, never replaced.
 # =============================================================================
 
 args       <- commandArgs(trailingOnly = TRUE)
@@ -44,16 +45,19 @@ center <- as.numeric(fit$best$theta); N_PARAM <- 12L
 prior_sd <- c(rep(CONTACT_SD, 6), rep(BETA_SD, 6))
 
 log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite = NA,
-                       n_equilibrium_fail = NA) {
+                       n_equilibrium_fail = NA, n_out_of_bounds = NA) {
   f <- file.path(OUT, "r_timings.csv")
   row <- data.frame(stage = stage, seconds = seconds, n_attempted = n_attempted, n_ok = n_ok,
                     n_nonfinite = n_nonfinite, n_equilibrium_fail = n_equilibrium_fail,
+                    n_out_of_bounds = n_out_of_bounds,
                     workers = N_CORES, time = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"))
   write.table(row, f, sep = ",", row.names = FALSE, col.names = !file.exists(f), append = file.exists(f))
 }
 
-# Returns c(p_sero, N_hat) or a failure code: "nonfinite" or "equilibrium".
+# Returns c(p_sero, N_hat) or a failure code: "bounds", "nonfinite" or "equilibrium".
+# Out-of-bounds draws are dropped because the MCMC target gives them -Inf (same support).
 simulate <- function(theta) {
+  if (!within_bounds(theta)) return("bounds")
   pm <- tryCatch(build_params(theta, base_params), error = function(e) NULL)
   if (is.null(pm)) return("nonfinite")
   out <- tryCatch(run_sim(pm, data), error = function(e) NULL)
@@ -74,7 +78,7 @@ simulate_many <- function(theta, stage) {
   ok <- vapply(ans, is.numeric, logical(1))
   code <- vapply(ans, function(a) if (is.numeric(a)) "ok" else as.character(a)[1], character(1))
   log_timing(stage, proc.time()[["elapsed"]] - t0, nrow(theta), sum(ok),
-             sum(code == "nonfinite"), sum(code == "equilibrium"))
+             sum(code == "nonfinite"), sum(code == "equilibrium"), sum(code == "bounds"))
   list(x = do.call(rbind, ans[ok]), ok = ok, code = code)
 }
 
@@ -86,8 +90,9 @@ write_pairs <- function(theta, sim, theta_file, x_file) {
 }
 
 step_data <- function() {
-  old_gates <- file.path(OUT, c("NPE_OK.txt", "NPE_NOT_OK.txt"))
-  file.remove(old_gates[file.exists(old_gates)])
+  stale <- file.path(OUT, c("NPE_OK.txt", "NPE_NOT_OK.txt", "sbc_summary.csv", "sbc_ranks.npy",
+                           "sbc_rank_histograms.png", "theta_sbc.csv", "x_sbc.csv"))
+  file.remove(stale[file.exists(stale)])  # a later --n-sbc 0 run must not reuse old SBC results
   th <- sample_prior_lhs(N_SIMS, center, prior_sd, SEED)
   sim <- simulate_many(th, "prior_simulation")
   write_pairs(th, sim, "theta_train.csv", "x_train.csv")
@@ -107,10 +112,12 @@ step_data <- function() {
     prior = sprintf("independent Normal(fit$best$theta, sd = %s/%s) on log-scale theta", CONTACT_SD, BETA_SD),
     prior_centre = center, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
     n_excluded_nonfinite = sum(sim$code == "nonfinite"), n_excluded_equilibrium = sum(sim$code == "equilibrium"),
-    exclusion_rule = "drop simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",
+    n_excluded_bounds = sum(sim$code == "bounds"),
+    exclusion_rule = "drop draws outside the parameter bounds (within_bounds) and simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",
     fit = FIT), file.path(OUT, "simulation_summary.json"), pretty = TRUE, auto_unbox = TRUE, digits = NA)
   cat("valid prior simulations:", sum(sim$ok), "/", N_SIMS,
-      "| non-finite:", sum(sim$code == "nonfinite"), "| equilibrium failures:", sum(sim$code == "equilibrium"), "\n")
+      "| non-finite:", sum(sim$code == "nonfinite"), "| equilibrium failures:", sum(sim$code == "equilibrium"),
+      "| out of bounds:", sum(sim$code == "bounds"), "\n")
 }
 
 step_train <- function() {
