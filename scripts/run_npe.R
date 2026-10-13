@@ -41,8 +41,8 @@ for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "prior_sampling.
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT); base_params <- setup_env$params; data <- setup_env$data
 data$t_start <- 0; data$t_end <- targets$equilibrium_horizon_years
-center <- as.numeric(fit$best$theta); N_PARAM <- 12L
-prior_sd <- c(rep(CONTACT_SD, 6), rep(BETA_SD, 6))
+prior_sd <- c(rep(CONTACT_SD, 6), rep(BETA_SD, 6)); N_PARAM <- 12L
+center <- prior_centre(as.numeric(fit$best$theta), prior_sd)
 
 log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite = NA,
                        n_equilibrium_fail = NA, n_out_of_bounds = NA) {
@@ -109,7 +109,7 @@ step_data <- function() {
             file.path(OUT, "x_obs.csv"), row.names = FALSE)
   jsonlite::write_json(list(
     sampling = "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
-    prior = sprintf("independent Normal(fit$best$theta, sd = %s/%s) on log-scale theta", CONTACT_SD, BETA_SD),
+    prior = sprintf("independent Normal(prior_centre(fit$best$theta), sd = %s/%s) on log-scale theta", CONTACT_SD, BETA_SD),
     prior_centre = center, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
     n_excluded_nonfinite = sum(sim$code == "nonfinite"), n_excluded_equilibrium = sum(sim$code == "equilibrium"),
     n_excluded_bounds = sum(sim$code == "bounds"),

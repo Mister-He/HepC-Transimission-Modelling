@@ -12,6 +12,15 @@ PLAUSIBILITY_FACTOR <- 1e-2
 CONTACT_LO <- rep(0.01, 6); CONTACT_HI <- rep(1000, 6)
 BETA_LO <- rep(0.01, 6); BETA_HI <- rep(1e6, 6)
 
+# Prior centre shared by the reference MCMC and NPE: the Nelder-Mead best fit, moved to at
+# least PRIOR_MARGIN_SD prior SDs inside the bounds. The fit can end on a bound where the
+# likelihood is flat (the 60+ contact scale), which would put half the prior out of bounds.
+PRIOR_MARGIN_SD <- 5
+prior_centre <- function(theta, sd = 0.20) {
+  m <- PRIOR_MARGIN_SD * sd
+  pmin(pmax(theta, log(c(CONTACT_LO, BETA_LO)) + m), log(c(CONTACT_HI, BETA_HI)) - m)
+}
+
 within_bounds <- function(theta) {
   cs <- exp(theta[1:6]); bs <- exp(theta[7:12])
   all(cs >= CONTACT_LO & cs <= CONTACT_HI & bs >= BETA_LO & bs <= BETA_HI)

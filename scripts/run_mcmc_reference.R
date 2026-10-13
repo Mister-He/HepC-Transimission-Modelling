@@ -3,7 +3,7 @@
 # run_mcmc_reference.R — reference MCMC calibration: adaptive random-walk Metropolis
 # on the exact posterior, with convergence, adaptation and proposal diagnostics.
 #
-# Target (shared with single-round NPE): independent Normal(fit$best$theta, prior_sd)
+# Target (shared with single-round NPE): independent Normal(prior_centre(fit$best$theta), prior_sd)
 # prior on the 12 log-scale parameters, Binomial prevalence + log-normal population
 # likelihood, and the 2015 equilibrium check as a hard restriction. Defaults: 4
 # prior-started chains, 10,000 warmup proposals with adaptation from proposal 5,000,
@@ -60,8 +60,8 @@ TH <- paste0("theta", 1:12)
 
 # ---- sampling ----
 T_METHOD0 <- proc.time()[["elapsed"]]
-prior_mean <- as.numeric(fit$best$theta)
 prior_sd <- rep(PRIOR_SD, 12)
+prior_mean <- prior_centre(as.numeric(fit$best$theta), prior_sd)
 logpost <- function(theta) log_posterior_exact(theta, base_params, data, prior_mean, prior_sd)
 
 # Transformed-prior variances from prior draws (no ODE solves). theta is already
@@ -194,7 +194,8 @@ jsonlite::write_json(list(
   thin_storage = THIN, init_scale = INIT_SCALE, n_prior_var_draws = N_PRIOR_VAR,
   initial_covariance = "init_scale^2 * diag(prior variance)", starts = "independent prior draws",
   regularisation = "1e-6 * diag(prior variance)",
-  prior = sprintf("independent Normal(fit$best$theta, %s) on theta", PRIOR_SD),
+  prior = sprintf("independent Normal(prior_centre(fit$best$theta), %s) on theta", PRIOR_SD),
+  prior_centre = prior_mean,
   target = "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
   integration_dt = DT, seed = SEED,
   seeds = list(prior_variance = SEED + 3000, chain = "SEED+1000+i (initial prior draws and sampling)"),

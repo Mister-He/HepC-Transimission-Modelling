@@ -80,5 +80,14 @@ check_true(pattern_penalty(pm_bad, th_bad) > 0,
 check_error(build_params(rep(0, 11), base_params),
             "build_params rejects length-11 theta")
 
+# Prior centre: interior fits are unchanged; a fit on a bound moves 5 prior SDs inside it.
+th_in <- log(c(rep(1, 6), rep(2, 6)))
+check_equal(prior_centre(th_in), th_in, "prior centre equals an interior best fit")
+th_pin <- th_in; th_pin[6] <- log(CONTACT_LO[6])
+pc <- prior_centre(th_pin)
+check_equal(pc[6], log(CONTACT_LO[6]) + 1, "a bound-pinned fit is moved 5 prior SDs inside the bound")
+check_equal(pc[-6], th_pin[-6], "only the pinned coordinate moves")
+check_true(pnorm(log(CONTACT_LO[6]), pc[6], 0.20) < 1e-6, "almost no prior mass falls outside the bound")
+
 n_fail <- test_report("tests/unit/test_likelihood.R")
 if (n_fail > 0) quit(status = 1)
