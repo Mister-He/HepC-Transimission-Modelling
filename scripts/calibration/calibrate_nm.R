@@ -86,7 +86,7 @@ make_start_set <- function(n_perturbed = 5, sd_perturb = 0.4, seed_base = 101) {
 # for D_i and J_i given the prison population targets, including ageing
 # flows (10-year bands -> 1/10 per year). Returns a length-12 log-scale theta.
 informed_theta0 <- function(base_params, targets) {
-  lambda1 <- base_params$lambda1
+  lambda1 <- base_params$lambda3 * base_params$c_composite
   lambda2 <- base_params$lambda2
   mu_eff  <- base_params$mu * base_params$omega
   pi      <- base_params$pi_recid

@@ -27,6 +27,19 @@ check_true(all(J_summary_at(out, nrow(out))$p_sero >= 0 &
                J_summary_at(out, nrow(out))$p_sero <= 1),
            "J seroprevalence remains in [0,1]")
 
+rate_data <- short_data; rate_data$y0 <- rep(0, 480)
+rate_data$y0[idx(0, 1, 0, 0) - 1L] <- 100
+rate_params <- e$params; rate_params$q <- 0; rate_params$beta <- rep(0, 6)
+rate_params$mu <- rep(0, 6); rate_params$mu_DC <- rate_params$mu_HCC <- 0
+rate_params$lambda2 <- rep(0, 6); rate_params$lambda3 <- rep(0.5, 6)
+rate_params$c_composite <- rep(1, 6); rate_params$beta_scale <- rep(1, 6)
+rate_base <- run_sim(rate_params, rate_data)
+rate_params$beta_scale <- rep(2, 6)
+rate_scaled <- run_sim(rate_params, rate_data)
+check_true(rate_base[nrow(rate_base), idx(1, 1, 0, 0)] >
+             rate_scaled[nrow(rate_scaled), idx(1, 1, 0, 0)],
+           "first-arrest rate is lambda3*c_composite/beta_scale")
+
 simulate_seed <- function(state, scale = 1) {
   d <- short_data; d$y0 <- rep(0, 480)
   d$y0[idx(0, 1, state, 2) - 1L] <- 100 * scale
@@ -102,7 +115,7 @@ cap_data$y0 <- rep(0,480)
 for (s in 1:3) cap_data$y0[idx(s,1,2,2)-1L] <- 100
 cap_data$treatment_capacity <- c(Inf,Inf,5,10)
 cap_pm <- e$params; cap_pm$q <- 0; cap_pm$beta <- rep(0,6)
-cap_pm$lambda1 <- cap_pm$lambda2 <- cap_pm$lambda3 <- rep(0,6)
+cap_pm$lambda2 <- cap_pm$lambda3 <- rep(0,6)
 cap_pm$tau_by_stratum <- c(rep(0,4),rep(10,12))
 cap_pm$tau_min_age <- 1; cap_pm$tau_max_age <- 6
 cap_out <- run_sim(cap_pm,cap_data)

@@ -44,7 +44,7 @@ parameters {
   //equilibrium calibration
   real<lower=0> j_total;  // total jail population
   simplex[n_age] j_props; // age distribution of jail population
-  vector<lower=0>[n_age] c; // age-specific scaling for first-arrest rates
+  vector<lower=0>[n_age] c_composite; // baseline composite scaling for first-arrest rates
 }
 
 transformed parameters {
@@ -75,7 +75,7 @@ transformed parameters {
   r_pop[n_age] = softplus((pi * release[n_age] * j_pop[n_age] + a * r_pop[n_age - 1])) / (lambda[n_age] + mu[n_age]);
   f_pop[n_age] = softplus((release[n_age] + mu[n_age]) * j_pop[n_age] - lambda[n_age] * r_pop[n_age] - a * j_pop[n_age - 1]);
   for(i in 1:n_age){
-    i_pop[i] = softplus(f_pop[i] / c[i] / lambda[i]);
+    i_pop[i] = softplus(f_pop[i] / c_composite[i] / lambda[i]);
   }
 
   real<lower=0> f_total = sum(f_pop);
@@ -101,6 +101,6 @@ model {
   J ~ multinomial(j_props);
   F0_total ~ multinomial(f_props);
 
-  c ~ normal(1, 1);
+  c_composite ~ normal(1, 1);
   tot_in ~ poisson(i_pop);
 }

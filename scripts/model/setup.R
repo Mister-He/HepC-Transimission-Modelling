@@ -142,12 +142,13 @@ params <- list(
   mu_HCC  = 0.430,  # additional mortality in HCC                     (Lim 2018)
 
   # ── SVR mortality modifiers ────────────────────────────────────────────────
-  psi_DC  = 0.45,   # relative mortality risk DC after SVR  (Premkumar 2024)
+  psi_DC  = 0.5,    # relative mortality risk DC after SVR  (Premkumar 2024)
   psi_HCC = 0.37,   # relative mortality risk HCC after SVR (Dang 2020)
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  lambda1 = c(0.597, 0.57, 0.58, 0.607, 0.555, 0.33),  # baseline first-arrest rate lambda_i^(1) — GUESS
+  # c_composite = c * beta_scale
+  beta_scale = rep(1, 6),
   c_composite = c(0.624, 1.96, 2.31, 4.15, 3.86, 3.07),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
   lambda2 = c(0.462, 0.636, 0.454, 0.337, 0.325, 0.394),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
   lambda3 = c(0.597, 0.57, 0.58, 0.607, 0.555, 0.33),  # re-arrest rate      lambda_i^(3) — GUESS

@@ -31,7 +31,7 @@ struct Params {
     double ptu_CC_DC, ptu_CC_HCC, ptu_DC_HCC;
     std::vector<double> mu;
     double omega, mu_DC, mu_HCC, psi_DC, psi_HCC;
-    std::vector<double> lambda1, lambda2, lambda3;
+    std::vector<double> c_composite, beta_scale, lambda2, lambda3;
     double pi_recid;
     arma::mat C_contact;
     std::vector<double> beta;
@@ -106,7 +106,8 @@ std::vector<double> rhs(double time, const std::vector<double>& y,
     for (int age = 0; age < N_AGES; ++age) {
         const double gam = transmission_multiplier(time, p) *
             force_of_infection(age, y, p);
-        const double l1 = p.lambda1[age], l2 = p.lambda2[age];
+        const double l1 = p.lambda3[age] * p.c_composite[age] / p.beta_scale[age];
+        const double l2 = p.lambda2[age];
         const double l3 = p.lambda3[age], pi = p.pi_recid;
         auto treatment_rate = [&](int s, int k) {
             if (age + 1 < p.tau_min_age || age + 1 > p.tau_max_age) return 0.0;
@@ -340,8 +341,19 @@ NumericMatrix run_sim(List params_r, List data_r) {
     p.m_max = params_r.containsElementNamed("m_max") ? as<double>(params_r["m_max"]) : 1.0;
     p.t0 = params_r.containsElementNamed("m_t0") ? as<double>(params_r["m_t0"]) : 25.0;
     p.m_slope = params_r.containsElementNamed("m_tau") ? as<double>(params_r["m_tau"]) : 3.0;
-    NumericVector l1 = as<NumericVector>(params_r["lambda1"]), l2 = as<NumericVector>(params_r["lambda2"]), l3 = as<NumericVector>(params_r["lambda3"]);
-    p.lambda1.assign(l1.begin(), l1.end()); p.lambda2.assign(l2.begin(), l2.end()); p.lambda3.assign(l3.begin(), l3.end());
+    NumericVector c_composite = as<NumericVector>(params_r["c_composite"]);
+    NumericVector beta_scale = as<NumericVector>(params_r["beta_scale"]);
+    NumericVector l2 = as<NumericVector>(params_r["lambda2"]), l3 = as<NumericVector>(params_r["lambda3"]);
+    if (c_composite.size() != N_AGES || beta_scale.size() != N_AGES ||
+        l2.size() != N_AGES || l3.size() != N_AGES)
+        stop("c_composite, beta_scale, lambda2 and lambda3 must have length 6");
+    for (int age = 0; age < N_AGES; ++age)
+        if (!std::isfinite(c_composite[age]) || c_composite[age] < 0.0 ||
+            !std::isfinite(beta_scale[age]) || beta_scale[age] <= 0.0)
+            stop("c_composite must be non-negative and beta_scale must be positive");
+    p.c_composite.assign(c_composite.begin(), c_composite.end());
+    p.beta_scale.assign(beta_scale.begin(), beta_scale.end());
+    p.lambda2.assign(l2.begin(), l2.end()); p.lambda3.assign(l3.begin(), l3.end());
     p.pi_recid = as<double>(params_r["pi_recid"]);
     NumericMatrix C = as<NumericMatrix>(params_r["C_contact"]); p.C_contact = arma::mat(C.begin(), N_AGES, N_AGES, false);
     NumericVector beta = as<NumericVector>(params_r["beta"]); p.beta.assign(beta.begin(), beta.end());

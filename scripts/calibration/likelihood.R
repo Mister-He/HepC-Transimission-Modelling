@@ -40,6 +40,7 @@ build_params <- function(theta, base_params) {
   pm$C_contact <- base_params$C_contact * cs
   pm$beta <- base_params$beta * bs
   pm$beta_base <- base_params$beta
+  pm$beta_scale <- bs
   pm
 }
 

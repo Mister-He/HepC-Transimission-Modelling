@@ -489,7 +489,7 @@ rearrest_fit <- model$sample(
     iter_warmup = N_BURNIN,
     iter_sampling = N_ITER - N_BURNIN,
     parallel_chains = N_CHAINS,
-    init = function() list(c = rep(1, n_age)),  # c is now length-n_age; start near 1
+    init = function() list(c_composite = rep(1, n_age)),
     save_cmdstan_config = T
 )
 
@@ -498,16 +498,16 @@ rearrest_fit <- model$sample(
 # rearrest_fit$summary()
 list(
     rearrest_fit$summary(variables = c(
-        "pi_raw", "log_lambda", "c"
+        "pi_raw", "log_lambda", "c_composite"
     )),
     rearrest_fit$draws(variables = c(
-        "pi_raw", "log_lambda", "c"
+        "pi_raw", "log_lambda", "c_composite"
     ))
 ) %>% 
 saveRDS("../output/rearrest_rate_fit.rds")
 
 rearrest_fit$summary(variables = c(
-    "pi", "lambda", "c"
+    "pi", "lambda", "c_composite"
 ))
 
 # # Draw traceplots using bayesplot
@@ -515,10 +515,10 @@ rearrest_fit$summary(variables = c(
 # label_parsed <- function(labels) {
 #     labels$variable <- gsub("pi_raw", "pi[raw]", labels$variable)
 #     labels$variable <- gsub("log_lambda", "log(lambda)", labels$variable)
-#     labels$variable <- gsub("c", "c", labels$variable)
+#     labels$variable <- gsub("c_composite", "c[composite]", labels$variable)
 #     return(labels)
 # }
 # # Traceplots for pi_raw
 # mcmc_trace(rearrest_fit$draws(variables = c(
-#     "pi_raw", "log_lambda", "c"
+#     "pi_raw", "log_lambda", "c_composite"
 # )))
