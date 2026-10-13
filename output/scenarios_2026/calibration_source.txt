@@ -1,2 +1,2 @@
-Posterior draws: 2000 random draws from the reference MCMC posterior (valid: 2000); sampling seed 20261005. Medians and 95% UIs (2.5th-97.5th percentiles) across draws.
-Sources: output/calibration/mcmc_reference/mcmc_draws.csv (adaptive random-walk Metropolis, 4 chains x 45,000 draws; prior centred on output/calibration/r_20261010_agepop/fit.rds)
+Posterior draws: 2000 random draws from each posterior file (valid: file 1: 2000); sampling seed 20261005. Medians and 95% UIs (2.5th-97.5th percentiles) across draws.
+Sources: /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/mcmc_reference/mcmc_draws.csv
