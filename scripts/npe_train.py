@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # =============================================================================
 # npe_train.py — trains single-round NPE (sbi NPE_C, standard NLL loss) on R-generated
-# prior simulations and writes posterior draws for the HCV calibration parameters.
+# prior simulations and writes posterior draws for the HCV calibration parameters. The
+# posterior is an equal-weight ensemble of --n-ensemble (default 5) networks that differ
+# only in their torch seed.
 #
 # Network and training: MAF with 50 hidden features and 5 transforms, batch 256,
 # Adam lr 5e-4, validation fraction 0.10, early stopping after 20 epochs, at most
@@ -72,6 +74,19 @@ def transform_x(x, n_prev):
     return np.hstack([np.log(p / (1.0 - p)), np.log(x[:, 6:12])])
 
 
+class Ensemble:
+    """Equal-weight mixture of independently trained posteriors (n/K draws from each)."""
+    def __init__(self, members):
+        self.members = members
+
+    def sample(self, shape, x=None, show_progress_bars=False):
+        k = len(self.members)
+        if shape[0] % k:
+            raise ValueError(f"draw count {shape[0]} must be a multiple of the ensemble size {k}")
+        return torch.cat([m.sample((shape[0] // k,), x=x, show_progress_bars=show_progress_bars)
+                          for m in self.members])
+
+
 def rank_shape(r, n, chisq_p):
     """Predeclared skew rule: outer-10% rank share or mean rank more than 3 binomial SE off,
     else any deviation with a Bonferroni-corrected (12 parameters) chi-square p < 0.001."""
@@ -137,6 +152,7 @@ def main():
     ap.add_argument("--seed", type=int, default=20261012)
     ap.add_argument("--n-draws", type=int, default=20000)
     ap.add_argument("--n-sbc", type=int, default=0)
+    ap.add_argument("--n-ensemble", type=int, default=5)
     ap.add_argument("--sbc-draws", type=int, default=1000)
     ap.add_argument("--contact-anchor", required=True)
     ap.add_argument("--beta-anchor", required=True)
@@ -173,28 +189,34 @@ def main():
     theta = read_numeric_csv(args.theta)
     x = transform_x(add_observation_noise(read_numeric_csv(args.x), n_prev,
                                           args.population_sigma_log, noise_rng), n_prev)
-    torch.manual_seed(torch_train_seed)
-    inference = NPE_C(prior=prior, device=args.device,
-                      density_estimator=posterior_nn("maf", hidden_features=args.hidden_features,
-                                                     num_transforms=args.num_transforms,
-                                                     z_score_theta="independent", z_score_x="independent"))
-    inference.append_simulations(torch.as_tensor(theta, dtype=torch.float32),
-                                 torch.as_tensor(x, dtype=torch.float32))
     timing["load_sec"] = time.time() - t0
     t1 = time.time()
-    # Single round on prior simulations: sbi uses the standard NLL loss.
-    estimator = inference.train(training_batch_size=args.batch_size, learning_rate=args.learning_rate,
-                                validation_fraction=args.validation_fraction,
-                                stop_after_epochs=args.stop_after_epochs, max_num_epochs=args.max_epochs,
-                                clip_max_norm=args.clip_max_norm, show_train_summary=False)
+    # Single round on prior simulations (standard NLL loss). Each ensemble member differs only in
+    # its network initialisation and batch order (torch seed); a single trained flow has small
+    # seed-specific location errors that the equal-weight mixture averages out.
+    members, summaries = [], []
+    for k in range(args.n_ensemble):
+        torch.manual_seed(torch_train_seed + k)
+        inference = NPE_C(prior=prior, device=args.device,
+                          density_estimator=posterior_nn("maf", hidden_features=args.hidden_features,
+                                                         num_transforms=args.num_transforms,
+                                                         z_score_theta="independent", z_score_x="independent"))
+        inference.append_simulations(torch.as_tensor(theta, dtype=torch.float32),
+                                     torch.as_tensor(x, dtype=torch.float32))
+        estimator = inference.train(training_batch_size=args.batch_size, learning_rate=args.learning_rate,
+                                    validation_fraction=args.validation_fraction,
+                                    stop_after_epochs=args.stop_after_epochs, max_num_epochs=args.max_epochs,
+                                    clip_max_norm=args.clip_max_norm, show_train_summary=False)
+        members.append(inference.build_posterior(estimator).set_default_x(x_obs))
+        summaries.append(inference._summary)
     timing["train_sec"] = time.time() - t1
+    posterior = Ensemble(members)
     with open(os.path.join(args.out, "npe_inference.pkl"), "wb") as fh:
-        pickle.dump(inference, fh)
+        pickle.dump(posterior, fh)
 
-    posterior = inference.build_posterior(estimator).set_default_x(x_obs)
     t2 = time.time()
     torch.manual_seed(torch_sample_seed)
-    draws = posterior.sample((args.n_draws,), show_progress_bars=False).numpy()
+    draws = posterior.sample((args.n_draws,), x=x_obs, show_progress_bars=False).numpy()
     write_numeric_csv(os.path.join(args.out, "posterior_samples_npe.csv"), draws,
                       [f"theta{i}" for i in range(1, 13)])
     timing["sample_sec"] = time.time() - t2
@@ -204,21 +226,21 @@ def main():
         timing["sbc_sec"] = time.time() - t3
     timing["total_sec"] = time.time() - t0 + T_IMPORT
 
-    summary = inference._summary
     with open(os.path.join(args.out, "loss_curve.csv"), "w", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(["epoch", "train_loss", "val_loss", "epoch_seconds"])
-        tl, vl, es = (summary.get("training_loss", []), summary.get("validation_loss", []),
-                      summary.get("epoch_durations_sec", []))
-        for i in range(len(tl)):
-            w.writerow([i + 1, tl[i], vl[i] if i < len(vl) else "", es[i] if i < len(es) else ""])
+        w.writerow(["member", "epoch", "train_loss", "val_loss", "epoch_seconds"])
+        for k, summary in enumerate(summaries, 1):
+            tl, vl, es = (summary.get("training_loss", []), summary.get("validation_loss", []),
+                          summary.get("epoch_durations_sec", []))
+            for i in range(len(tl)):
+                w.writerow([k, i + 1, tl[i], vl[i] if i < len(vl) else "", es[i] if i < len(es) else ""])
 
     cfg = {
         "algorithm": "single-round NPE (sbi NPE_C, standard NLL loss)",
         "prior_sampling": args.sampling_label,
         "sbi_version": sbi.__version__, "torch_version": torch.__version__,
         "device": args.device, "torch_threads": torch.get_num_threads(),
-        "density_estimator": "maf", "hidden_features": args.hidden_features,
+        "density_estimator": "maf", "n_ensemble": args.n_ensemble, "hidden_features": args.hidden_features,
         "num_transforms": args.num_transforms, "z_score_theta": "independent", "z_score_x": "independent",
         "batch_size": args.batch_size, "learning_rate": args.learning_rate, "optimizer": "Adam",
         "validation_fraction": args.validation_fraction, "stop_after_epochs": args.stop_after_epochs,
@@ -230,16 +252,17 @@ def main():
                   "contact_sd": args.contact_sd, "beta_sd": args.beta_sd,
                   "form": "independent Normal on log scales"},
         "n_train": len(theta), "n_draws": args.n_draws, "seed": args.seed,
-        "seeds": {"noise": [args.seed, 11], "torch_train": torch_train_seed, "torch_sample": torch_sample_seed},
-        "epochs_trained": summary.get("epochs_trained"),
-        "best_validation_loss": summary.get("best_validation_loss"),
+        "seeds": {"noise": [args.seed, 11], "torch_train": [torch_train_seed + k for k in range(args.n_ensemble)],
+                  "torch_sample": torch_sample_seed},
+        "epochs_trained": [sm.get("epochs_trained") for sm in summaries],
+        "best_validation_loss": [sm.get("best_validation_loss") for sm in summaries],
     }
     with open(os.path.join(args.out, "npe_config.json"), "w") as fh:
         json.dump(cfg, fh, indent=2)
     with open(os.path.join(args.out, "npe_timing.json"), "w") as fh:
         json.dump(timing, fh, indent=2)
     print(f"[npe] trained on {len(theta)} simulations in {timing['train_sec']:.1f}s, "
-          f"epochs {summary.get('epochs_trained')}")
+          f"{args.n_ensemble} members, epochs {[sm.get('epochs_trained') for sm in summaries]}")
 
 
 if __name__ == "__main__":
