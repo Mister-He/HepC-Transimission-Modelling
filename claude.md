@@ -157,7 +157,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - Suggested follow-ups (not run): scale the inverse Hessian by 2.38²/d; refresh adaptation every 500 proposals or
   use an ESS-scaled drift tolerance; replicate arms to rank NPE/pilot/Hessian.
 
-## Final review (2026-10-13/14, `docs/final_review.md`) — current state
+## Final review (2026-10-13/14, `docs/final_review.md`) — superseded; see "First-arrest handoff" below
 - Production path: Nelder–Mead (`output/calibration/r_20261013_agepop`, objective 22.58) → `prior_centre()` (moves
   any coordinate to ≥5 prior SD inside the bounds; only θ6, the 60+ contact scale, moves) → reference MCMC
   (`output/calibration/mcmc_reference`, defaults warmup 10,000 / adapt-start 5,000 / thin 10; R-hat ≤ 1.002, bulk
@@ -173,3 +173,45 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - Flags: 60+ seroprevalence misfit is structural (0.508 vs 0.429); θ6/θ12 prior-dominated; the two
   `preprocess.R` copies differ scientifically (left as is); long runs must be launched from a copy of the
   script (Rscript reads lazily).
+
+## First-arrest handoff + viraemic mortality (2026-10-14/15, `docs/first_arrest_mortality_update.md`) — current state
+- **Rates:**
+  - `scripts/model/preprocess.R` is the single preprocessing script; the top-level copies were removed.
+  - Release, re-arrest and `pi` (0.720) come from all consumption records.
+  - The 2015 prison counts and first offenders come from the screened subset, which the user
+    defined as the PWID. The counts equal the targets.
+  - Stan's prison steady state uses ageing 0.1 and `mu*omega`. It gives `f_first` (32, 304, 102,
+    75.9, 66.1, 19.6 per year), and `update_rate_params.R` writes it.
+- **Model:**
+  - `sim.cpp` derives `lambda1` from `f_first` through the HCV-free D steady state
+    (`first_arrest_rate()`).
+  - Chronic viraemic people (state c) have non-liver mortality × `hr_viraemic` = 1.47
+    (Lee 2012, Table 3).
+  - `omega` is rescaled with the frozen `viraemic_share_ref` = 0.205 (fixed point).
+- **Calibration:**
+  - θ7–θ12 are log excess-entry scales (`entry_scales()`), so every θ is feasible.
+  - New likelihood term `nll_entry`: the 2015 entry against the CNB counts, log-normal SD 1.0 (user
+    decision). It is needed because D was unidentified (38k–1.7M PWID at the same objective).
+  - Nelder–Mead uses `--nm-restarts 5`. Result: objective 21.44; 60+ seroprevalence 0.455 against
+    0.429 (0.65 SE); 2015 PWID 18,314.
+  - HR sensitivity (`output/calibration/hr_sensitivity/`): 60+ is 0.494 at HR 1 and 0.439 at HR 1.77.
+- **Cross-validation:** NPE has 48,918 of 50,000 valid (1,082 equilibrium failures), with 18
+  summaries (adds the 2015 entry). SBC n = 973: cov95 0.936–0.958, all ranks uniform; gate PASS.
+- **Reference MCMC:** R-hat ≤ 1.003, bulk ESS ≥ 2,319, 4.5 h. Eight parameters are
+  prior-dominated (θ5, θ6, θ7–θ12).
+- **2015 PWID:** ever-PWID 18,453 (17,799–19,380). All 12 predictive intervals overlap the
+  targets. NPE agrees: 12/12 parameters, policy within 1.2%. MCMC SBC (8 datasets): cov95 0.93.
+- **Scenarios (2,000 draws):**
+  - J only: incidence −47.6% (36.5–57.5) and mortality −47.4% (44.7–48.8).
+  - No scenario meets the incidence target. No cap gives −57.3%, because 59% of 2030 infections
+    are in D (never imprisoned).
+  - Mortality is met at the median only at 8,000/yr F25% (67.2%; 87% of draws), F50% (65.4%;
+    60%) and no cap.
+  - The joint-pass probability is 0 everywhere.
+- **Manuscript:** the narrative was rewritten for these results. `build_paper.py` asserts the
+  claims it relies on and stops if the results change.
+- **Flags:**
+  - The 2015 prison counts both inform `f` and are targets.
+  - The HR comes from a general-population cohort.
+  - The first-arrest flow is realised within 2.7% (HCV deaths in D).
+  - The NPE cross-validation counts equilibrium failures as exclusions.

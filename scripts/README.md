@@ -4,8 +4,7 @@ Executable model and analysis code. Each script starts with a short description.
 
 - **`model/`**: the simulator (`sim.cpp`), parameters and initial state (`setup.R`), prison-record
   preprocessing (`preprocess.R`) and its Stan models, and the rate-fit handoff into `setup.R`
-  (`update_rate_params.R`). The top-level `preprocess.R` and `*.stan` files
-  are an older copy that uses `../` paths.
+  (`update_rate_params.R`).
 - **`calibration/`**: shared functions:
   - targets, J-stratum summaries and the equilibrium check;
   - the likelihood;

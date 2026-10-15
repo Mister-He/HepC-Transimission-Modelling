@@ -17,20 +17,27 @@ or below 20% of the 2015 baseline (an 80% reduction), and HCV-related mortality 
 65% reduction). Ever-PWID viraemic prevalence at or below 1% is a secondary diagnostic only. It is
 not evidence of national elimination.
 
-## Current run (2026-10-14)
+## Current run (2026-10-15)
 
 ### Deterministic calibration
 
-`output/calibration/r_20261013_agepop/` gives the prior centre:
-- best objective 22.58 (`perturb_5`);
-- seroprevalence RMSE 0.033 and population MAPE 5.3%;
+`output/calibration/r_20261014_agepop/` gives the prior centre:
+- best objective 21.44 (`population_informed`, with Nelder–Mead restarts);
+- seroprevalence RMSE 0.012 and population MAPE 5.7%;
 - the equilibrium gate passes.
 
-The 60+ seroprevalence is 0.508 against a target of 0.429. This is a structural misfit: with the
-composite re-arrest rate, first arrests barely depend on `beta_scale`.
+**60+ seroprevalence:** 0.455 against a target of 0.429 (SE 0.041). The earlier misfit was
+0.508 under `c_composite`.
+- With the CNB entry anchor, the chronic viraemic HR is what closes most of the gap: 60+ is
+  0.494 at HR 1, 0.481 at 1.23, 0.455 at 1.47 and 0.439 at 1.77
+  (`output/calibration/hr_sensitivity/`).
 
-The prior centre is `prior_centre(best fit)`. It moves θ6 (the 60+ contact scale, at its lower
-bound in the fit) to 5 prior SDs inside the bound.
+**First-arrest flow:** at the best fit, the model's 2015 first-arrest flow is within 0.04–2.7% of
+Stan's `f_first`. The shortfall, from HCV-related deaths in D, is within Stan's posterior SD
+(3–19%).
+
+**Prior centre:** `prior_centre(best fit)` moves θ3 and θ6 (the 30–39 and 60+ contact scales,
+near their lower bound) to 5 prior SDs inside the bound.
 
 ### Production posterior
 
@@ -39,31 +46,43 @@ bound in the fit) to 5 prior SDs inside the bound.
   - Warmup is 10,000 proposals, with adaptation from proposal 5,000.
   - Every 10th of the 40,000 retained iterations is stored.
 - **Prior:** Normal(prior centre, 0.20) on the 12 log-scale parameters, within the bounds.
-- **Likelihood:** Binomial prevalence and log-normal population.
+- **Likelihood:** Binomial prevalence, log-normal population and log-normal 2015 entry against
+  the CNB counts (σ = 1.0).
 - **Equilibrium:** a hard restriction.
-- **Diagnostics:** rank-normalised R-hat ≤ 1.002, bulk ESS 2,824–4,259, tail ESS ≥ 5,119, MCSE of the
-  mean ≤ 0.019 posterior SD, and acceptance 0.26–0.30.
-- **Prior-dominated parameters:** θ6 and θ12 (posterior SD ≈ prior SD).
+- **Diagnostics:** rank-normalised R-hat ≤ 1.003, bulk ESS 2,319–3,495, tail ESS ≥ 2,728, MCSE of the
+  mean ≤ 0.021 posterior SD, and acceptance 0.25–0.27.
+- **Prior-dominated parameters:** eight parameters have posterior SD above 0.8 × the prior SD: θ5,
+  θ6 and θ7–θ12. The prison data mainly inform the contact scales of ages 20–49.
 - **2015 predictions** (4,000 draws, `model_prediction_2015_strata.*`):
-  - ever-PWID 21,169 (95% interval: 19,152–23,399);
-  - F 1,551 and X 15,016.
+  - ever-PWID 18,453 (95% interval: 17,799–19,380);
+  - D 3,433, J 3,253, F 2,157 and X 9,608.
 
 ### Cross-validation (does not feed the production path)
 
 `output/calibration/npe_lhs/` holds single-round NPE:
-- **Training data:** 50,000 Latin hypercube prior simulations, all valid (0 out of bounds, 0
-  equilibrium failures).
+- **Training data:** 50,000 Latin hypercube prior simulations, of which 48,918 are valid (1,082
+  equilibrium failures, 0 out of bounds). There are 18 summaries, including the 2015 entry.
 - **Network:** an equal-weight ensemble of 5 MAFs (50×5).
-- **SBC** (1,000 datasets): cov95 0.931–0.958, cov90 0.873–0.910, all rank histograms uniform.
+- **SBC** (973 datasets): cov95 0.936–0.958, cov90 0.879–0.918, all rank histograms uniform.
   - The gate (cov95 in [0.85, 1], cov90 in [0.75, 1], no skewed histogram) passes: `NPE_OK.txt`.
 - **Accuracy against the reference** (`output/calibration/npe_vs_mcmc/report.md`):
-  - all posterior means are within 0.05 SD;
-  - 95% intervals are about 4% narrower, and all 12 parameters pass all checks;
-  - continuous policy outcomes are within 0.6%;
-  - the 5,000/yr F25% joint-pass probability is 8.7% against 11.25%.
+  - all posterior means are within 0.08 SD;
+  - 95% intervals match within 4% (mean ratio 0.99), and all 12 parameters pass all checks;
+  - continuous policy outcomes are within 1.2%;
+  - joint-pass probabilities are 0 in both posteriors.
 
-**Direct MCMC SBC** (`output/calibration/npe_vs_mcmc/mcmc_sbc/`, 8 datasets): pooled cov95 1.00 and
-cov90 0.95. This is a gross-failure check only.
+**Direct MCMC SBC** (`output/calibration/npe_vs_mcmc/mcmc_sbc/`, 8 datasets): pooled cov95 0.93,
+cov90 0.83 and mean rank 0.51. This is a gross-failure check only.
+
+### Scenarios (`output/scenarios_2026/`, 2,000 reference draws)
+
+- **J only:** incidence −47.6% (95% UI 36.5–57.5) and mortality −47.4% (44.7–48.8).
+- **No scenario meets the incidence target.** Even the no-cap reference gives −57.3%
+  (44.4–68.4). In 2030, 59% of its new infections are in D (never imprisoned), which prison and
+  F/X screening do not reach.
+- **The mortality target is met at the median** at 8,000/yr F25% (67.2%; 87% of draws), 8,000/yr
+  F50% (65.4%; 60%) and no cap (67.4%; 89%). 5,000/yr F25% gives 64.9% (47% of draws).
+- **No-treatment counterfactual (2030 vs 2015):** incidence 101.9% and deaths 100.1%.
 
 ### Calibration figure
 
