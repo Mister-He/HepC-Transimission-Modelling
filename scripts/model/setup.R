@@ -32,7 +32,7 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   mu_DC/HCC — Lim et al. (2018)
 #   psi_*     — Premkumar (2024); Dang et al. (2020)
 #   pi_recid  — fitted to SPS data (0.59; scripts/model/update_rate_params.R)
-#   lambda*   — CALIBRATED to SPS data (guesses used here)
+#   lambda*, f_first — fitted to SPS data (scripts/model/update_rate_params.R)
 #   mu        — CALIBRATED to SingStat life tables (guesses used here)
 #   c_contact — CALIBRATED to HCV prevalence trajectory (guess used here)
 #   beta      — CALIBRATED to PWID population size (guess used here)
@@ -121,9 +121,16 @@ params <- list(
   # mu[i] * omega in sim.cpp.
   omega = 14.68,
 
-  # ── Seropositive (cleared / post-SVR) background mortality multiplier ─────
-  # (mu[i]*omega*eta_s[i]). No excess-mortality multiplier is used: all 1.
-  eta_s = c(1, 1, 1, 1, 1, 1),
+  # ── Excess non-liver mortality of chronic viraemic HCV (state c) ──────────
+  # Extrahepatic-death HR for detectable HCV RNA vs anti-HCV negative: 1.47
+  # (1.23-1.77), Lee et al. 2012 J Infect Dis 206:469, Table 3 (RNA undetectable:
+  # 0.90). sim.cpp applies it to the background rate mu*omega only (liver deaths are
+  # mu_DC/mu_HCC) and divides omega by 1 + (hr - 1) * viraemic_share_ref so the PWID
+  # average stays at omega. The share is the chronic viraemic share of all PWID at the
+  # 2015 snapshot of the Nelder-Mead best fit, frozen. Fixed point 0.242 -> 0.205 -> 0.199,
+  # stopped when the implied omega_0 moved < 0.5% (the last step: 0.26%).
+  hr_viraemic = 1.47,
+  viraemic_share_ref = 0.205,
 
   # ── Transmission multiplier: CONSTANT (fixed, not fitted) ────────────────
   # This revision does NOT fit m_min/m_max. Transmission is constant over
@@ -146,13 +153,13 @@ params <- list(
   psi_HCC = 0.37,   # relative mortality risk HCC after SVR (Dang 2020)
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
-  # CALIBRATED: placeholder values — replace with SPS-fitted rates
-  # c_composite = c * beta_scale
-  beta_scale = rep(1, 6),
-  c_composite = c(0.624, 1.96, 2.31, 4.15, 3.86, 3.07),  # c_composite[k] = tot_in_scaling_fct[k] * c_true[k]
-  lambda2 = c(0.462, 0.636, 0.454, 0.337, 0.325, 0.394),  # release rate        lambda_i^(2) — GUESS (0.5yr avg)
-  lambda3 = c(0.597, 0.57, 0.58, 0.607, 0.555, 0.33),  # re-arrest rate      lambda_i^(3) — GUESS
-  pi_recid = 0.59,          # recidivism probability (fitted to SPS; Assumption)
+  # Fitted to SPS records by preprocess.R and written by update_rate_params.R.
+  # f_first: 2015 steady-state first-arrest flow (people/year) from rearrest_rate.stan;
+  # sim.cpp derives the first-arrest rate lambda1 from it (first_arrest_rate()).
+  f_first = c(32, 304, 102, 75.9, 66.1, 19.6),
+  lambda2 = c(0.462, 0.636, 0.454, 0.337, 0.325, 0.394),  # release rate lambda_i^(2) (SPS fit)
+  lambda3 = c(0.546, 0.488, 0.472, 0.472, 0.386, 0.266),  # re-arrest rate lambda_i^(3) (SPS fit)
+  pi_recid = 0.72,          # share of released who return to injecting (SPS fit)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.

@@ -13,6 +13,7 @@ constexpr int N_STAGES = 4;
 constexpr int N_STATES = 5;
 constexpr int N_AGES = 6;
 constexpr int N_COMP = N_STRATA * N_STAGES * N_STATES * N_AGES;
+constexpr double AGE_RATE = 0.1;  // 10-year bands: 1/10 per year moves up one band
 
 inline int idx(int s, int k, int h, int i) {
     return s * N_STAGES * N_STATES * N_AGES +
@@ -30,8 +31,8 @@ struct Params {
     double phi_CC_DC, phi_CC_HCC, phi_DC_HCC;
     double ptu_CC_DC, ptu_CC_HCC, ptu_DC_HCC;
     std::vector<double> mu;
-    double omega, mu_DC, mu_HCC, psi_DC, psi_HCC;
-    std::vector<double> c_composite, beta_scale, lambda2, lambda3;
+    double omega, omega_neg, hr_viraemic, mu_DC, mu_HCC, psi_DC, psi_HCC;
+    std::vector<double> lambda1, lambda2, lambda3;
     double pi_recid;
     arma::mat C_contact;
     std::vector<double> beta;
@@ -84,7 +85,8 @@ std::vector<double> rhs(double time, const std::vector<double>& y,
         return p.alpha_HCC;
     };
     auto mortality = [&](int k, int h, int age) {
-        double base = p.mu[age] * p.omega;
+        // Chronic viraemic (h = c) carry the extrahepatic HR on the background rate only.
+        double base = p.mu[age] * p.omega_neg * (h == 2 ? p.hr_viraemic : 1.0);
         if (k == 3) return ((h == 3 || h == 4) ? p.psi_DC : 1.0) * (p.mu_DC + base);
         if (k == 4) return ((h == 3 || h == 4) ? p.psi_HCC : 1.0) * (p.mu_HCC + base);
         return base;
@@ -106,7 +108,7 @@ std::vector<double> rhs(double time, const std::vector<double>& y,
     for (int age = 0; age < N_AGES; ++age) {
         const double gam = transmission_multiplier(time, p) *
             force_of_infection(age, y, p);
-        const double l1 = p.lambda3[age] * p.c_composite[age] / p.beta_scale[age];
+        const double l1 = p.lambda1[age];
         const double l2 = p.lambda2[age];
         const double l3 = p.lambda3[age], pi = p.pi_recid;
         auto treatment_rate = [&](int s, int k) {
@@ -299,6 +301,36 @@ PolicyStep rk4_policy_step(double time, double dt,
     return out;
 }
 
+// First-arrest rate from the 2015 steady-state first-arrest flow f (rearrest_rate.stan):
+// the HCV-free balance of D gives D_i = (beta_i + a*D_{i-1} - f_i) / (mu_i*omega + a_i),
+// with no ageing out of 60+, and lambda1_i = f_i / D_i. A non-positive D_i means the
+// entry flow cannot supply the first arrests, so the parameter set is infeasible.
+std::vector<double> first_arrest_rates(List params_r) {
+    NumericVector f = as<NumericVector>(params_r["f_first"]), beta = as<NumericVector>(params_r["beta"]);
+    NumericVector mu = as<NumericVector>(params_r["mu"]);
+    const double omega = as<double>(params_r["omega"]);
+    if (f.size() != N_AGES || beta.size() != N_AGES || mu.size() != N_AGES)
+        stop("f_first, beta and mu must have length 6");
+    std::vector<double> l1(N_AGES);
+    double d_prev = 0.0;
+    for (int age = 0; age < N_AGES; ++age) {
+        if (!std::isfinite(f[age]) || f[age] < 0.0) stop("f_first must be finite and non-negative");
+        const double a_out = age + 1 < N_AGES ? AGE_RATE : 0.0;
+        const double d = (beta[age] + AGE_RATE * d_prev - f[age]) / (mu[age] * omega + a_out);
+        if (f[age] == 0.0) { l1[age] = 0.0; d_prev = std::max(d, 0.0); continue; }
+        if (!(d > 0.0)) stop("infeasible first-arrest flow: entry cannot supply f_first");
+        l1[age] = f[age] / d;
+        d_prev = d;
+    }
+    return l1;
+}
+
+// [[Rcpp::export]]
+NumericVector first_arrest_rate(List params_r) {
+    std::vector<double> l1 = first_arrest_rates(params_r);
+    return NumericVector(l1.begin(), l1.end());
+}
+
 // [[Rcpp::export]]
 NumericMatrix run_sim(List params_r, List data_r) {
     Params p;
@@ -341,19 +373,15 @@ NumericMatrix run_sim(List params_r, List data_r) {
     p.m_max = params_r.containsElementNamed("m_max") ? as<double>(params_r["m_max"]) : 1.0;
     p.t0 = params_r.containsElementNamed("m_t0") ? as<double>(params_r["m_t0"]) : 25.0;
     p.m_slope = params_r.containsElementNamed("m_tau") ? as<double>(params_r["m_tau"]) : 3.0;
-    NumericVector c_composite = as<NumericVector>(params_r["c_composite"]);
-    NumericVector beta_scale = as<NumericVector>(params_r["beta_scale"]);
     NumericVector l2 = as<NumericVector>(params_r["lambda2"]), l3 = as<NumericVector>(params_r["lambda3"]);
-    if (c_composite.size() != N_AGES || beta_scale.size() != N_AGES ||
-        l2.size() != N_AGES || l3.size() != N_AGES)
-        stop("c_composite, beta_scale, lambda2 and lambda3 must have length 6");
-    for (int age = 0; age < N_AGES; ++age)
-        if (!std::isfinite(c_composite[age]) || c_composite[age] < 0.0 ||
-            !std::isfinite(beta_scale[age]) || beta_scale[age] <= 0.0)
-            stop("c_composite must be non-negative and beta_scale must be positive");
-    p.c_composite.assign(c_composite.begin(), c_composite.end());
-    p.beta_scale.assign(beta_scale.begin(), beta_scale.end());
+    if (l2.size() != N_AGES || l3.size() != N_AGES) stop("lambda2 and lambda3 must have length 6");
+    p.lambda1 = first_arrest_rates(params_r);
     p.lambda2.assign(l2.begin(), l2.end()); p.lambda3.assign(l3.begin(), l3.end());
+    p.hr_viraemic = as<double>(params_r["hr_viraemic"]);
+    const double v_ref = as<double>(params_r["viraemic_share_ref"]);
+    if (!std::isfinite(p.hr_viraemic) || p.hr_viraemic <= 0.0 || !(v_ref >= 0.0 && v_ref < 1.0))
+        stop("hr_viraemic must be positive and viraemic_share_ref in [0, 1)");
+    p.omega_neg = p.omega / (1.0 + (p.hr_viraemic - 1.0) * v_ref);  // keeps the PWID average at omega
     p.pi_recid = as<double>(params_r["pi_recid"]);
     NumericMatrix C = as<NumericMatrix>(params_r["C_contact"]); p.C_contact = arma::mat(C.begin(), N_AGES, N_AGES, false);
     NumericVector beta = as<NumericVector>(params_r["beta"]); p.beta.assign(beta.begin(), beta.end());
@@ -428,7 +456,7 @@ NumericMatrix run_sim(List params_r, List data_r) {
         std::vector<double> aged = y;
         for (int s = 0; s < N_STRATA; ++s) for (int k = 1; k <= N_STAGES; ++k)
             for (int h = 0; h < N_STATES; ++h) for (int age = 0; age < N_AGES-1; ++age) {
-                double moved = y[idx(s,k,h,age)] / 10.0 * dt;
+                double moved = y[idx(s,k,h,age)] * AGE_RATE * dt;
                 aged[idx(s,k,h,age)] -= moved; aged[idx(s,k,h,age+1)] += moved;
             }
         y.swap(aged); out(step,0) = time;

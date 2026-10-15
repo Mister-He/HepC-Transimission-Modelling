@@ -12,10 +12,11 @@ targets <- read_targets(file.path(root, "data", "calibration_targets.json"))
 source(file.path(root, "scripts", "calibration", "likelihood.R"))
 
 # Synthetic base parameters: the unit test exercises the parameterisation
-# (exp transforms, bounds, likelihoods), not the fitted values.
+# (exp transforms, bounds, likelihoods), not the fitted values. With no first arrests the
+# excess-entry scale is the entry scale.
 base_params <- list(
   C_contact = matrix(1, nrow = 6, ncol = 6),
-  beta = rep(1, 6), beta_base = rep(1, 6)
+  beta = rep(1, 6), beta_base = rep(1, 6), f_first = rep(0, 6), mu = rep(0.01, 6), omega = 1
 )
 
 check_equal(N_THETA, 12, "exactly 12 fitted parameters")
@@ -54,6 +55,10 @@ check_true(nll_prev(targets$p_prev_binom) <
 check_true(is.finite(nll_prev(targets$p_prev_binom)),
            "NLL is finite at the target prevalence")
 
+# Entry observation: zero at the CNB counts, larger 10-fold away
+check_equal(nll_entry(targets$entry), 0, "nll_entry is 0 at the CNB entry counts")
+check_true(nll_entry(10 * targets$entry) > nll_entry(2 * targets$entry), "nll_entry grows with log distance")
+
 # Population likelihood: exact match gives zero contribution
 check_equal(nll_pop(targets$population), 0,
             "nll_pop is 0 when N_hat == N_obs")
@@ -63,7 +68,7 @@ check_equal(nll_pop(targets$population), 0,
 diag_ok <- base_params$C_contact
 diag_ok[1, 1] <- 0.3; diag_ok[2, 2] <- 0.8; diag_ok[3, 3] <- 1.0
 diag_ok[4, 4] <- 0.6; diag_ok[5, 5] <- 0.3; diag_ok[6, 6] <- 0.2
-pm_ok <- base_params; pm_ok$C_contact <- diag_ok
+pm_ok <- base_params; pm_ok$C_contact <- diag_ok; pm_ok$beta <- seq(1, 3, length.out = 6)
 th_ok <- log(c(rep(1, 6), seq(1, 3, length.out = 6)))
 check_true(pattern_penalty(pm_ok, th_ok) == 0,
            "pattern penalty is 0 for a realistic contact/beta pattern")
@@ -71,10 +76,22 @@ check_true(pattern_penalty(pm_ok, th_ok) == 0,
 # Mis-specified shape must attract a penalty
 diag_bad <- diag_ok
 diag_bad[3, 3] <- 0.2   # 30-39 below the 40-49 value
-pm_bad <- base_params; pm_bad$C_contact <- diag_bad
+pm_bad <- base_params; pm_bad$C_contact <- diag_bad; pm_bad$beta <- seq(3, 1, length.out = 6)
 th_bad <- log(c(rep(1, 6), seq(3, 1, length.out = 6)))  # decreasing beta
 check_true(pattern_penalty(pm_bad, th_bad) > 0,
            "pattern penalty is positive for an implausible pattern")
+
+# Excess-entry scale: entry = minimum that supplies the first-arrest flow + exp(theta) * beta,
+# so the never-arrested pool stays positive for every theta; excess_theta() inverts it.
+fp <- modifyList(base_params, list(beta = c(10, 300, 100, 50, 20, 1), f_first = c(30, 300, 100, 70, 60, 20),
+                                   mu = c(2, 2.5, 4.5, 12, 33, 220) * 1e-4, omega = 14.68))
+th_neg <- c(rep(0, 6), rep(-8, 6))
+bs <- entry_scales(th_neg, fp); D <- numeric(6); dp <- 0
+for (i in 1:6) { D[i] <- (bs[i] * fp$beta[i] + 0.1 * dp - fp$f_first[i]) /
+  (fp$mu[i] * fp$omega + if (i < 6) 0.1 else 0); dp <- D[i] }
+check_true(all(bs > 0) && all(D > 0), "every excess-entry theta keeps entry and the never-arrested pool positive")
+th_rt <- c(rep(0, 6), log(c(0.5, 2, 1, 3, 1, 4)))
+check_equal(excess_theta(entry_scales(th_rt, fp), fp), th_rt[7:12], "excess_theta inverts entry_scales")
 
 # build_params rejects the wrong number of parameters
 check_error(build_params(rep(0, 11), base_params),
@@ -88,6 +105,14 @@ pc <- prior_centre(th_pin)
 check_equal(pc[6], log(CONTACT_LO[6]) + 1, "a bound-pinned fit is moved 5 prior SDs inside the bound")
 check_equal(pc[-6], th_pin[-6], "only the pinned coordinate moves")
 check_true(pnorm(log(CONTACT_LO[6]), pc[6], 0.20) < 1e-6, "almost no prior mass falls outside the bound")
+
+# Nelder-Mead restarts never end worse and count every evaluation in the history.
+source(file.path(root, "scripts", "calibration", "calibrate_nm.R"))
+rosen <- function(x) sum(100 * (x[-1] - x[-12]^2)^2 + (1 - x[-12])^2)
+nm0 <- run_nm_start(rep(-1, 12), rosen, maxit = 500)
+nm3 <- run_nm_start(rep(-1, 12), rosen, maxit = 500, restarts = 3)
+check_true(nm3$objective <= nm0$objective && nm3$fn_evaluations == nrow(nm3$history),
+           "Nelder-Mead restarts do not worsen the fit and log every evaluation")
 
 n_fail <- test_report("tests/unit/test_likelihood.R")
 if (n_fail > 0) quit(status = 1)

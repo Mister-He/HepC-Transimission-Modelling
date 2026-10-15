@@ -5,7 +5,8 @@
 #
 # lambda2 = exp(posterior mean of the release fit's log_lambda) (preprocess.R convention);
 # lambda3 = posterior mean of exp(log_lambda), pi_recid = posterior mean of
-# inv_logit(pi_raw) and c_composite = posterior mean of c_composite, all from the
+# inv_logit(pi_raw) and f_first = posterior mean of f_pop (the 2015 steady-state
+# first-arrest flow, people/year; sim.cpp derives lambda1 from it), all from the
 # re-arrest fit draws. Values are written to 3 significant figures, the precision of the
 # existing entries. Every value is validated (six finite positive ages, pi in (0, 1)) and
 # every target line must occur exactly once before the file is rewritten; otherwise
@@ -27,7 +28,6 @@ d <- rearrest[[2]]
 draws <- matrix(d, ncol = dim(d)[3], dimnames = list(NULL, dimnames(d)[[3]]))
 cols <- function(prefix) {
   j <- grep(paste0("^", prefix, "\\["), colnames(draws))
-  if (prefix == "c_composite" && !length(j)) j <- grep("^c\\[", colnames(draws))  # fits saved before the rename
   if (!length(j)) stop("rearrest fit has no ", prefix, " draws")
   draws[, j, drop = FALSE]
 }
@@ -36,10 +36,10 @@ if (!"pi_raw" %in% colnames(draws)) stop("rearrest fit has no pi_raw draws")
 new <- list(
   lambda2 = exp(rel_sum$mean[order(as.integer(sub(".*\\[(\\d+)\\]", "\\1", rel_sum$variable)))]),
   lambda3 = unname(colMeans(exp(cols("log_lambda")))),
-  c_composite = unname(colMeans(cols("c_composite"))),
+  f_first = unname(colMeans(cols("f_pop"))),
   pi_recid = mean(plogis(draws[, "pi_raw"]))
 )
-for (nm in c("lambda2", "lambda3", "c_composite"))
+for (nm in c("lambda2", "lambda3", "f_first"))
   if (length(new[[nm]]) != 6 || any(!is.finite(new[[nm]])) || any(new[[nm]] <= 0))
     stop(nm, " must be six finite positive values")
 if (!is.finite(new$pi_recid) || new$pi_recid <= 0 || new$pi_recid >= 1) stop("pi_recid must lie in (0, 1)")

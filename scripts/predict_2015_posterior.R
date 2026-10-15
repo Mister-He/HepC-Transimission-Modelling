@@ -12,7 +12,7 @@ arg <- function(name, default = NULL) {
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20261013_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261014_agepop/fit.rds")), mustWork = TRUE)
 CORES <- as.integer(arg("--cores", "4"))
 MAX_DRAWS <- as.integer(arg("--max-draws", "4000"))   # 0 = use all draws
 TARGET_YEAR <- as.integer(arg("--year", "2015"))

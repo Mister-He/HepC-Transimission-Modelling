@@ -6,10 +6,9 @@
 #
 # Tolerances (fixed before comparison): |standardised mean difference| <= 0.1,
 # |standardised 95% endpoint difference| <= 0.2, 95% width ratio in [0.9, 1.1].
-# The NPE policy run (1,000 posterior states) is generated if policy/npe_lhs/ is missing and
-# is compared with the production scenario draws in output/scenarios_2026/. Delete
-# policy/npe_lhs/ to rerun it after the posterior or scenarios change. Nothing here feeds
-# the production path.
+# The NPE policy run (1,000 posterior states) is generated if policy/npe_lhs/ is missing or
+# older than the NPE posterior or the production scenario draws, and is compared with the
+# production scenario draws in output/scenarios_2026/. Nothing here feeds the production path.
 # Usage: Rscript scripts/compare_npe_mcmc.R [--root .] [--policy-cores 14]
 # =============================================================================
 suppressPackageStartupMessages({library(ggplot2); library(patchwork)})
@@ -79,7 +78,11 @@ write.csv(summary_tab, file.path(OUT, "accuracy_summary.csv"), row.names = FALSE
 
 # ---------------- policy outcomes ----------------
 pol_in <- file.path(OUT, "policy", "npe_lhs")
-if (!file.exists(file.path(pol_in, "scenario_2030_draws.csv"))) {
+pol_draws <- file.path(pol_in, "scenario_2030_draws.csv")
+# Rerun when the cache is missing or older than the NPE posterior or the production scenarios.
+deps <- file.path(ROOT, c("output/calibration/npe_lhs/posterior_samples_npe.csv",
+                          "output/scenarios_2026/scenario_2030_draws.csv"))
+if (!file.exists(pol_draws) || any(file.mtime(deps) > file.mtime(pol_draws))) {
   dir.create(pol_in, recursive = TRUE, showWarnings = FALSE)
   set.seed(20261014); f_in <- file.path(pol_in, "policy_input_states.csv")
   write.csv(samples$npe_lhs[sample.int(nrow(samples$npe_lhs), 1000), ], f_in, row.names = FALSE)

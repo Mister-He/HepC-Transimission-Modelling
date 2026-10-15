@@ -24,6 +24,13 @@ J_summary_at <- function(out, row) {
              p_viremic = viremic / N)
 }
 
+# Chronic viraemic (state c) share of all PWID (D, J, F, X; every stage and age) at a row:
+# the fixed point that setup.R freezes as viraemic_share_ref.
+viraemic_share <- function(out, row = nrow(out)) {
+  y <- out[row, 2:481]
+  sum(y[as.vector(outer(0:3 * 120, outer((0:3) * 30 + 2 * 6, 1:6, `+`), `+`))]) / sum(y)
+}
+
 summary_row <- function(out, time = tail(out[, 1], 1))
   which.min(abs(out[, 1] - time))
 

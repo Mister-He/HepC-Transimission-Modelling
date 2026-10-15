@@ -21,13 +21,23 @@ make_logged_objective <- function(fn) {
   logged
 }
 
+# Restarts rerun Nelder-Mead from its own solution (a fresh simplex) while the objective still
+# falls by more than 1e-3: the simplex can collapse early on this objective.
 run_nm_start <- function(theta0, objective_fn, start_id = "start",
-                        maxit = 3000, reltol = 1e-8, seed = NULL) {
+                        maxit = 3000, reltol = 1e-8, seed = NULL, restarts = 0) {
   if (!is.null(seed)) set.seed(seed)
   logged <- make_logged_objective(objective_fn)
   t0 <- proc.time()
-  fit <- optim(par = theta0, fn = logged, method = "Nelder-Mead",
-               control = list(maxit = maxit, reltol = reltol, trace = 0))
+  nm <- function(par) optim(par = par, fn = logged, method = "Nelder-Mead",
+                            control = list(maxit = maxit, reltol = reltol, trace = 0))
+  fit <- nm(theta0); evals <- fit$counts[["function"]]
+  for (k in seq_len(restarts)) {
+    nxt <- nm(fit$par); evals <- evals + nxt$counts[["function"]]
+    better <- nxt$value < fit$value - 1e-3
+    if (nxt$value <= fit$value) fit <- nxt
+    if (!better) break
+  }
+  fit$counts[["function"]] <- evals
   elapsed <- as.numeric((proc.time() - t0)["elapsed"])
   list(
     start_id       = start_id,
@@ -75,34 +85,13 @@ make_start_set <- function(n_perturbed = 5, sd_perturb = 0.4, seed_base = 101) {
   starts
 }
 
-# Deterministic population-informed start: sequential steady-state balance
-# for D_i and J_i given the prison population targets, including ageing
-# flows (10-year bands -> 1/10 per year). Returns a length-12 log-scale theta.
-informed_theta0 <- function(base_params, targets) {
-  # shortcut: assumes beta_scale = 1 in lambda1 = lambda3 * c_composite / beta_scale; it only
-  # seeds one start, so Nelder-Mead corrects it. Upgrade to a fixed-point pass if that start matters.
-  lambda1 <- base_params$lambda3 * base_params$c_composite
-  lambda2 <- base_params$lambda2
-  mu_eff  <- base_params$mu * base_params$omega
-  pi      <- base_params$pi_recid
-  J_target <- targets$population
-
-  D <- numeric(6)
-  J <- numeric(6)
-  beta_need <- numeric(6)
-  for (i in 1:6) {
-    J[i] <- J_target[i]
-    j_in <- if (i == 1) 0 else J[i - 1] / 10
-    j_out_rate <- if (i == 6) 0 else 1 / 10
-    d_in <- if (i == 1) 0 else D[i - 1] / 10
-    d_out_rate <- if (i == 6) 0 else 1 / 10
-
-    D[i] <- ((lambda2[i] + mu_eff[i] + j_out_rate) * J[i] - j_in) / lambda1[i]
-    D[i] <- max(D[i], 1e-3)
-    beta_need[i] <- (lambda1[i] + mu_eff[i] + d_out_rate) * D[i] -
-                    pi * lambda2[i] * J[i] - d_in
-  }
-  beta_scale <- beta_need / base_params$beta
-  beta_scale <- pmax(beta_scale, 1e-3)
-  c(log(rep(1, 6)), log(beta_scale))
+# Population-informed start: contact scales 1 and the entry that keeps each never-arrested
+# pool at D_i = f_first_i / lambda3_i in steady state. Returns a length-12 theta.
+informed_theta0 <- function(base_params) {
+  # shortcut: assumes first arrest is as fast as re-arrest (lambda1 = lambda3); it only seeds
+  # one start, so Nelder-Mead corrects it.
+  D <- base_params$f_first / base_params$lambda3
+  out <- base_params$mu * base_params$omega + c(rep(AGE_RATE, 5), 0)
+  entry <- out * D + base_params$f_first - AGE_RATE * c(0, D[-6])
+  c(rep(0, 6), excess_theta(pmax(entry, 0) / base_params$beta, base_params))
 }

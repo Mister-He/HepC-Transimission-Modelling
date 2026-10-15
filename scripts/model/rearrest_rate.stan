@@ -20,9 +20,9 @@ data {
   array[n_age] int J;                // observed number of ppl in Jail in 2015
   int f_obs;                         // observed number of years with first arrest distribution
   array[f_obs, n_age] int F0;        // observed first offender into Jail by year (2014-2016)
-  vector[n_age] mu;                  // death rate
+  vector[n_age] mu;                  // death rate (the ODE's mu * omega)
   vector[n_age] release;             // release rate
-  array[n_age] int tot_in;           // age-specific inflow population size
+  real<lower=0> a;                   // ageing rate between bands (the ODE's 1/10)
 }
 
 transformed data {
@@ -44,7 +44,6 @@ parameters {
   //equilibrium calibration
   real<lower=0> j_total;  // total jail population
   simplex[n_age] j_props; // age distribution of jail population
-  vector<lower=0>[n_age] c_composite; // baseline composite scaling for first-arrest rates
 }
 
 transformed parameters {
@@ -55,8 +54,7 @@ transformed parameters {
 
   // equilibrium calibration
   vector[n_age] r_pop;
-  vector[n_age] f_pop;
-  vector[n_age] i_pop;
+  vector[n_age] f_pop;    // first-arrest flow (people/year) at the 2015 steady state; handed to setup.R
   vector[n_age] j_pop = j_total * to_vector(j_props);
   
   for(i in 1:N){
@@ -65,7 +63,6 @@ transformed parameters {
   }
 
   // equilibrium calibration
-  real a = 0.2; 
   r_pop[1] = softplus(pi * release[1] * j_pop[1]  / (lambda[1] + mu[1] + a));
   f_pop[1] = softplus((release[1] + mu[1] + a) * j_pop[1] - lambda[1] * r_pop[1]);
   for(i in 2:(n_age-1)){
@@ -74,9 +71,6 @@ transformed parameters {
   }
   r_pop[n_age] = softplus((pi * release[n_age] * j_pop[n_age] + a * r_pop[n_age - 1])) / (lambda[n_age] + mu[n_age]);
   f_pop[n_age] = softplus((release[n_age] + mu[n_age]) * j_pop[n_age] - lambda[n_age] * r_pop[n_age] - a * j_pop[n_age - 1]);
-  for(i in 1:n_age){
-    i_pop[i] = softplus(f_pop[i] / c_composite[i] / lambda[i]);
-  }
 
   real<lower=0> f_total = sum(f_pop);
   simplex[n_age] f_props = f_pop / f_total;
@@ -101,6 +95,4 @@ model {
   J ~ multinomial(j_props);
   F0_total ~ multinomial(f_props);
 
-  c_composite ~ normal(1, 1);
-  tot_in ~ poisson(i_pop);
 }

@@ -18,6 +18,9 @@ check_true(all(targets$x_prev >= 0 & targets$x_prev <= targets$population),
            "reconstructed binomial counts are valid")
 check_true(!"release_sero_2017_target" %in% names(targets),
            "the former 47 percent target is absent")
+inflow <- read.csv(file.path(root, "data/singstat_new_drug_abusers.csv"))
+check_equal(targets$entry, inflow$new_drug_abusers[inflow$year == 2015],
+            "entry observation is the 2015 SingStat/CNB new-drug-abuser count")
 check_true(file.exists(file.path(root, "data/singstat_new_drug_abusers.csv")),
            "SingStat inflow data are versioned in the repository")
 

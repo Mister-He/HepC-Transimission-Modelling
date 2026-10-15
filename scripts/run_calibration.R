@@ -5,7 +5,8 @@
 #
 # Each objective evaluation runs model years 0–150; the final row is the equilibrium-checked
 # 2015 snapshot. Starts: plausible_anchor (earlier anchor), perturb_1..n (anchor + log-normal
-# noise, SD --sd-perturb) and population_informed (steady-state balance).
+# noise, SD --sd-perturb) and population_informed (steady-state balance). --hr-viraemic
+# overrides the viraemic mortality HR for sensitivity fits.
 # =============================================================================
 
 # Read arguments from CommandLine
@@ -18,6 +19,7 @@ RUN_ID     <- arg("--run-id", format(Sys.time(), "%Y%m%dT%H%M%S"))
 OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration"), RUN_ID)
 SEED       <- as.integer(arg("--seed", "20260929"))
 MAXIT      <- as.integer(arg("--maxit", "1000"))
+RESTARTS   <- as.integer(arg("--nm-restarts", "0"))     # Nelder-Mead restarts per start
 N_STARTS   <- as.integer(arg("--n-starts", "8"))
 PERTURB_SD <- as.numeric(arg("--sd-perturb", "0.9"))   # log-scale SD of perturbed starts (was 0.7)
 N_CORES    <- as.integer(arg("--cores", "1"))         # starts run in parallel when > 1
@@ -31,6 +33,8 @@ setup_env  <- new.env(parent = globalenv()); sys.source("setup.R", setup_env); s
 # Read simulation logic from cpp
 Rcpp::sourceCpp(file.path(ROOT, "scripts", "model", "sim.cpp"))
 base_params  <- setup_env$params
+HR <- arg("--hr-viraemic")  # sensitivity only: overrides setup.R hr_viraemic
+if (!is.null(HR)) base_params$hr_viraemic <- as.numeric(HR)
 data         <- setup_env$data
 data$t_start <- 0
 data$t_end   <- targets$equilibrium_horizon_years
@@ -43,8 +47,11 @@ file.copy(file.path(ROOT, "data", "calibration_targets.json"),
           file.path(OUT, "targets.json"), overwrite = TRUE)
 
 starts <- make_start_set(max(0, N_STARTS - 1), PERTURB_SD, SEED)
+# Anchors and perturbations are entry scales; theta[7:12] is the excess-entry scale.
+for (j in seq_along(starts))
+  starts[[j]]$theta0[7:12] <- excess_theta(exp(starts[[j]]$theta0[7:12]), base_params)
 starts[[length(starts) + 1L]] <- list(
-  id = "population_informed", theta0 = clip_to_bounds(informed_theta0(base_params, targets)),
+  id = "population_informed", theta0 = clip_to_bounds(informed_theta0(base_params)),
   seed = SEED + 2000
 )
 objective <- make_objective(base_params, data)
@@ -55,7 +62,7 @@ cat("snapshot: model year", targets$equilibrium_horizon_years,
 # Starts are independent, so they can run in parallel (forked workers; not on Windows).
 run_start <- function(st) {
   cat("start", st$id, "\n")
-  run_nm_start(st$theta0, objective, st$id, MAXIT, seed = st$seed)
+  run_nm_start(st$theta0, objective, st$id, MAXIT, seed = st$seed, restarts = RESTARTS)
 }
 runs <- if (N_CORES > 1 && .Platform$OS.type != "windows") {
   parallel::mclapply(starts, run_start, mc.cores = min(N_CORES, length(starts)),
@@ -81,7 +88,7 @@ summarise_run <- function(r) {
              prevalence_rmse = m$prevalence_rmse, population_mape = m$population_mape,
              setNames(as.list(r$theta), paste0("theta", 1:N_THETA)),
              setNames(as.list(exp(r$theta[1:6])), paste0("contact_scale", 1:6)),
-             setNames(as.list(exp(r$theta[7:12])), paste0("beta_scale", 1:6)))
+             setNames(as.list(entry_scales(r$theta, base_params)), paste0("beta_scale", 1:6)))
 }
 solutions <- do.call(rbind, lapply(runs, summarise_run))
 write.csv(solutions, file.path(OUT, "solutions.csv"), row.names = FALSE)
@@ -113,6 +120,7 @@ config <- list(
   run_id = RUN_ID, 
   seed = SEED, 
   maxit = MAXIT, 
+  nm_restarts = RESTARTS,
   sd_perturb = PERTURB_SD,
   convergence = vapply(runs, `[[`, numeric(1), "convergence"),
   n_starts = length(starts),
@@ -125,6 +133,8 @@ config <- list(
   inflow_rule = "2015 baseline; 2016--2025 SingStat age-specific counts; latest year held constant through 2030; all multiplied by calibrated beta scale",
   best_objective = best$objective, 
   equilibrium_pass = eq_best$pass,
+  viraemic_share_2015 = viraemic_share(out_best),  # fixed point for setup.R viraemic_share_ref
+  viraemic_share_ref = base_params$viraemic_share_ref,
   git_sha = system("git rev-parse HEAD", intern = TRUE),
   setup_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/setup.R"))),
   sim_cpp_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/sim.cpp")))
@@ -143,4 +153,5 @@ fit <- list(run_id = RUN_ID,
             base_params = base_params, 
             data = data)
 saveRDS(fit, file.path(OUT, "fit.rds"))
-cat("best objective:", best$objective, "| equilibrium:", eq_best$pass, "\n")
+cat("best objective:", best$objective, "| equilibrium:", eq_best$pass,
+    "| viraemic share 2015:", round(viraemic_share(out_best), 4), "(setup:", base_params$viraemic_share_ref, ")\n")

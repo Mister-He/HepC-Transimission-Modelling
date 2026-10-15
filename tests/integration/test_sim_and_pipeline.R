@@ -11,6 +11,9 @@ suppressMessages({ library(Rcpp); library(RcppArmadillo) })
 
 old <- setwd(file.path(root, "scripts", "model"))
 e <- new.env(parent = globalenv()); sys.source("setup.R", e); setwd(old)
+# Raw CNB counts are below the SPS first-arrest flow; any calibrated beta scale is larger, so
+# test the mechanics with a feasible entry scale of 10.
+e$params$beta <- e$params$beta * 10
 if (!exists("run_sim", envir = globalenv(), inherits = FALSE))
   Rcpp::sourceCpp(file.path(root, "scripts", "model", "sim.cpp"))
 run_sim <- get("run_sim", envir = globalenv(), inherits = FALSE)
@@ -27,22 +30,29 @@ check_true(all(J_summary_at(out, nrow(out))$p_sero >= 0 &
                J_summary_at(out, nrow(out))$p_sero <= 1),
            "J seroprevalence remains in [0,1]")
 
-rate_data <- short_data; rate_data$y0 <- rep(0, 480)
-rate_data$y0[idx(0, 1, 0, 0) - 1L] <- 100
-rate_params <- e$params; rate_params$q <- 0; rate_params$beta <- rep(0, 6)
-rate_params$mu <- rep(0, 6); rate_params$mu_DC <- rate_params$mu_HCC <- 0
-rate_params$lambda2 <- rep(0, 6); rate_params$lambda3 <- rep(0.5, 6)
-rate_params$c_composite <- rep(1, 6); rate_params$beta_scale <- rep(1, 6)
-rate_base <- run_sim(rate_params, rate_data)
-rate_params$beta_scale <- rep(2, 6)
-rate_scaled <- run_sim(rate_params, rate_data)
-check_true(rate_base[nrow(rate_base), idx(1, 1, 0, 0)] >
-             rate_scaled[nrow(rate_scaled), idx(1, 1, 0, 0)],
-           "first-arrest rate falls when beta_scale rises")
-rate_params$c_composite <- rep(2, 6)
-rate_both <- run_sim(rate_params, rate_data)
-check_equal(rate_both[nrow(rate_both), ], rate_base[nrow(rate_base), ], tol = 1e-12,
-            "first-arrest rate is lambda3*c_composite/beta_scale (doubling both leaves it unchanged)")
+# First-arrest rate: the HCV-free D steady state reproduces f_first exactly.
+fa <- modifyList(e$params, list(q = 0, hr_viraemic = 1))  # HCV-free demography
+l1 <- first_arrest_rate(fa)
+D <- numeric(6); for (i in 1:6) D[i] <- (fa$beta[i] + 0.1 * c(0, D)[i] - fa$f_first[i]) /
+  (fa$mu[i] * fa$omega + if (i < 6) 0.1 else 0)
+check_equal(l1 * D, fa$f_first, tol = 1e-10, "lambda1 * D equals f_first at the D steady state")
+fa_long <- e$data; fa_long$t_end <- 150; fa_long$y0 <- rep(0, 480)
+fa_out <- run_sim(fa, fa_long)
+D_sim <- vapply(0:5, function(a) sum(fa_out[nrow(fa_out), sapply(1:4, function(k)
+  sapply(0:4, function(h) idx(0, k, h, a)))]), numeric(1))
+check_equal(l1 * D_sim, fa$f_first, tol = 1e-3, "simulated first-arrest flow converges to f_first")
+check_error(first_arrest_rate(modifyList(fa, list(beta = rep(1e-3, 6)))),
+            "an entry flow too small for f_first is infeasible")
+raw <- modifyList(e$params, list(beta = e$params$beta / 10))  # setup.R entry counts
+set.seed(1); th_rand <- matrix(rnorm(20 * N_THETA, 0, 2), 20)
+check_true(all(apply(th_rand, 1, function(th)
+  !is.null(tryCatch(first_arrest_rate(build_params(th, raw)), error = function(e) NULL)))),
+  "every excess-entry theta is feasible for first_arrest_rate()")
+# Viraemic HR: 1 reproduces the old mortality; >1 lowers 60+ seroprevalence at the same theta.
+hr1 <- modifyList(e$params, list(hr_viraemic = 1)); eq_data <- e$data; eq_data$t_end <- 60
+s1 <- J_summary_final(run_sim(hr1, eq_data)); s2 <- J_summary_final(run_sim(e$params, eq_data))
+check_true(e$params$hr_viraemic > 1 && s2$p_sero[6] < s1$p_sero[6],
+           "viraemic excess mortality lowers 60+ seroprevalence")
 
 simulate_seed <- function(state, scale = 1) {
   d <- short_data; d$y0 <- rep(0, 480)
@@ -62,7 +72,7 @@ check_true(t_out[nrow(t_out), idx(0, 1, 4, 2)] > 0,
 age_data <- short_data; age_data$y0 <- rep(0, 480); age_data$y0[idx(0, 1, 2, 1) - 1L] <- 100
 age_data$y0[idx(0, 1, 2, 3) - 1L] <- 100
 age_params <- e$params
-age_params$q <- 0; age_params$beta <- rep(0, 6); age_params$beta_base <- e$params$beta
+age_params$q <- 0; age_params$beta <- age_params$f_first <- rep(0, 6); age_params$beta_base <- e$params$beta
 age_params$p_NC_CC <- 0; age_params$tau <- rep(1, 4); age_params$tau_stratum <- rep(1, 4)
 age_params$tau_min_age <- 2; age_params$tau_max_age <- 3
 age_params$tau_by_stratum <- as.vector(t(outer(age_params$tau_stratum, age_params$tau)))
@@ -94,7 +104,7 @@ check_true(reinf_out[nrow(reinf_out), idx(0, 1, 1, 2)] >
 # The post-2015 schedule is active and uses the calibrated beta scale.
 scheduled <- e$data; scheduled$t_start <- 150; scheduled$t_end <- 151
 scheduled$y0 <- rep(0, 480); scheduled$y0[idx(0, 1, 0, 2) - 1L] <- 1
-scheduled_params <- e$params; scheduled_params$beta <- rep(2, 6)
+scheduled_params <- e$params; scheduled_params$beta <- rep(2, 6); scheduled_params$f_first <- rep(0, 6)
 scheduled_params$beta_base <- e$params$beta
 scheduled_out <- run_sim(scheduled_params, scheduled)
 check_true(sum(scheduled_out[nrow(scheduled_out), -1]) > 1,
@@ -118,7 +128,7 @@ cap_data <- e$data; cap_data$t_start <- 160; cap_data$t_end <- 161
 cap_data$y0 <- rep(0,480)
 for (s in 1:3) cap_data$y0[idx(s,1,2,2)-1L] <- 100
 cap_data$treatment_capacity <- c(Inf,Inf,5,10)
-cap_pm <- e$params; cap_pm$q <- 0; cap_pm$beta <- rep(0,6)
+cap_pm <- e$params; cap_pm$q <- 0; cap_pm$beta <- cap_pm$f_first <- rep(0,6)
 cap_pm$lambda2 <- cap_pm$lambda3 <- rep(0,6)
 cap_pm$tau_by_stratum <- c(rep(0,4),rep(10,12))
 cap_pm$tau_min_age <- 1; cap_pm$tau_max_age <- 6
@@ -165,6 +175,16 @@ check_true(is.finite(obj(rep(0, N_THETA))), "likelihood is finite at theta zero"
 cal_out <- run_sim(build_params(rep(0, N_THETA), e$params), cal_data)
 check_true(check_equilibrium(cal_out)$pass,
            "base parameters satisfy the 10-year equilibrium gate")
+
+# The MCMC target carries the CNB entry term: moving the observed entry shifts the log
+# posterior by exactly the change in nll_entry.
+sys.source(file.path(root, "scripts", "calibration", "mcmc.R"), envir = environment())
+lp <- function() log_posterior_exact(rep(0, N_THETA), e$params, cal_data, rep(0, N_THETA), rep(1, N_THETA))$lp
+lp0 <- lp(); nll0 <- nll_entry(build_params(rep(0, N_THETA), e$params)$beta)
+targets$entry <- 2 * targets$entry
+check_equal(lp0 - lp(), nll_entry(build_params(rep(0, N_THETA), e$params)$beta) - nll0, tol = 1e-8,
+            "the MCMC log posterior includes the CNB entry likelihood")
+targets$entry <- targets$entry / 2
 
 n_fail <- test_report("tests/integration/test_sim_and_pipeline.R")
 if (n_fail > 0) quit(status = 1)
