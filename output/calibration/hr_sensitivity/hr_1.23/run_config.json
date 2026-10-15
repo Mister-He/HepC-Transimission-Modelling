@@ -1,10 +1,11 @@
 {
-  "run_id": "r_20261013_agepop",
+  "run_id": "hr_1.23",
   "seed": 20261001,
   "maxit": 3000,
+  "nm_restarts": 5,
   "sd_perturb": 0.9,
-  "convergence": [1, 1, 1, 1, 1, 0, 1, 1],
-  "n_starts": 8,
+  "convergence": [0, 0, 0],
+  "n_starts": 3,
   "horizon": 150,
   "target_year": 2015,
   "fitted_parameters": 12,
@@ -12,9 +13,11 @@
   "target_source": "data/calibration_targets.json",
   "inflow_source": "data/singstat_new_drug_abusers.csv",
   "inflow_rule": "2015 baseline; 2016--2025 SingStat age-specific counts; latest year held constant through 2030; all multiplied by calibrated beta scale",
-  "best_objective": 22.58,
+  "best_objective": 21.7522,
   "equilibrium_pass": true,
-  "git_sha": "0f9d09a5fd8072d46451b92b5acbba6754ab8c91",
-  "setup_md5": "2fabf8e837d952ce3f83c391293e3280",
-  "sim_cpp_md5": "5ba5aec14b918e5f9c7778d16a882238"
+  "viraemic_share_2015": 0.2396,
+  "viraemic_share_ref": 0.242,
+  "git_sha": "3b2bd94ae2b0024e9366c24c61817fc7b30fee54",
+  "setup_md5": "7fd91c5cdf703598bf658204d12df308",
+  "sim_cpp_md5": "2be7740815638ced21dd24025a905b95"
 }
