@@ -458,6 +458,9 @@ write.csv(endpoint,file.path(OUT,"scenario_2030_summary.csv"),row.names=FALSE)
 if (requireNamespace("writexl",quietly=TRUE)) writexl::write_xlsx(
   list(Definitions=scenario_table,Endpoint=endpoint,BySeed=by_seed,Annual=annual,Treatment=treatment),
   file.path(OUT,"scenario_results.xlsx"))
+# Medians of per-draw totals, for the cost figures in scripts/figures.py.
+write.csv(stratum_totals,file.path(OUT,"scenario_stratum_totals.csv"),row.names=FALSE)
+write.csv(item_totals,file.path(OUT,"scenario_item_totals.csv"),row.names=FALSE)
 
 if (identical(arg("--no-figures", "false"), "true")) {
   cat("Wrote", nrow(scenario_table), "policies to", OUT, "(figures skipped)\n"); quit(save = "no")

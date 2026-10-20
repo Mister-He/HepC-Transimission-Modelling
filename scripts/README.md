@@ -27,7 +27,10 @@ Workflow, in order:
 5. **Scenarios:** `scenarios_2026.R` runs every policy for each posterior draw.
    `post_calibration_analysis.R` is a thin entry point that runs it.
 6. **Manuscript:**
-   - `paper_figures.R`: the manuscript figures.
+   - `figures.py`: redraws every figure (manuscript, SI, calibration diagnostics) from the saved
+     outputs with the `scientific-visualization` skill, as PNG (300 dpi) plus editable SVG. Run it
+     last; the older ggplot drawings in `paper_figures.R` and the other R scripts write the same
+     file names.
    - `build_paper.py`: fills every number from the result files and runs pandoc to write
      `docs/main.docx` and `docs/Supplementary Information.docx`.
 7. **Tests:** `run_tests.R` runs everything under `tests/`.

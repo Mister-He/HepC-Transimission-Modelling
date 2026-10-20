@@ -200,6 +200,12 @@ Rscript scripts/scenarios_2026.R --root . --draws-per-seed 2000 --cores 14 --sam
 ## 7. Manuscript
 
 ```bash
-Rscript scripts/paper_figures.R .
+python scripts/figures.py .   # redraws every figure (PNG + editable SVG)
 python3 scripts/build_paper.py .
 ```
+
+`figures.py` redraws all figures from the saved outputs with the `scientific-visualization` skill
+(`~/.claude/skills/scientific-visualization`, or pass `--skill-dir`). It needs Python ≥ 3.11 with
+`matplotlib==3.11.2 pillow==12.3.0 pandas scipy`. `--only <name> ...` redraws selected figures.
+Run it after any step above that changes its inputs. The R scripts still draw their own ggplot
+versions of the same files, so run `figures.py` last.

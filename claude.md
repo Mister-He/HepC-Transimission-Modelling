@@ -215,3 +215,14 @@ outputs were backed up to the session scratchpad only (not in the repo).
   - The HR comes from a general-population cohort.
   - The first-arrest flow is realised within 2.7% (HCV deaths in D).
   - The NPE cross-validation counts equilibrium failures as exclusions.
+
+## Figures redrawn with the scientific-visualization skill (2026-10-19)
+- `scripts/figures.py` redraws all 21 figures from saved outputs (no re-simulation) with the user-level skill
+  `~/.claude/skills/scientific-visualization` (style "default", PLOS widths 190.5/132 mm, PNG 300 dpi + editable SVG).
+  Needs Python ≥ 3.11 with `matplotlib==3.11.2 pillow==12.3.0 pandas scipy`. Run it last (`docs/training.md` §7).
+- `scenarios_2026.R` now also writes `scenario_stratum_totals.csv` and `scenario_item_totals.csv` (cost figures).
+  Rerun with the production seed reproduced every other scenario CSV byte for byte.
+- The old ggplot/base/matplotlib plotting code in the R scripts and `npe_train.py` was left in place (removing it was
+  blocked by the auto-mode classifier); it writes the same PNG names, so running it after `figures.py` reverts them.
+- Data notes surfaced while redrawing: F/X treatment quota equals actual starts in every year (dashed quota lines are
+  hidden; capacity-utilisation figure is 100% everywhere); no scenario passes jointly, so Fig S6 shows only J only.
