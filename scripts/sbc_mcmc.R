@@ -7,8 +7,7 @@
 # True parameters and noise-free outputs are the first K rows of the NPE SBC set
 # (output/calibration/npe_lhs/theta_sbc.csv, x_sbc.csv: prior draws that pass the
 # equilibrium check). Observations follow the MCMC likelihood: N_obs = N * exp(0.10 z),
-# n = round(N_obs), seropositives ~ Binomial(n, p) and entry_obs = entry * exp(1.0 z) (the
-# CNB entry observation). Each dataset gets one chain with
+# n = round(N_obs) and seropositives ~ Binomial(n, p). Each dataset gets one chain with
 # the production sampler settings and --max-evals evaluations.
 # Usage: Rscript scripts/sbc_mcmc.R [--root .] [--n-datasets 8] [--max-evals 30000] [--cores 8]
 # =============================================================================
@@ -34,7 +33,6 @@ set.seed(SEED)
 for (k in seq_len(K)) {
   n <- pmax(1L, as.integer(round(x[k, 7:12] * exp(rnorm(6, 0, base$population_sigma_log)))))
   tg <- base; tg$population <- n; tg$seroprevalence <- rbinom(6, n, x[k, 1:6]) / n
-  tg$entry <- x[k, 13:18] * exp(rnorm(6, 0, base$entry_sigma_log))
   jsonlite::write_json(tg, file.path(OUT, sprintf("targets_ds%02d.json", k)), auto_unbox = TRUE, digits = NA,
                        pretty = TRUE)
 }

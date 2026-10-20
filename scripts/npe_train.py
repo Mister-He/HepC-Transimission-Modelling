@@ -10,7 +10,7 @@
 # 250 epochs, gradient clipping 5.0, per-feature z-scoring by sbi, CPU only.
 # Parameters are the 12 log-scale theta with an independent Normal(log anchor, sd)
 # prior. Data are x = [logit(p_1..6), log(N_1..6)] with p clipped to [0.5/n, 1-0.5/n];
-# Binomial prevalence and log-normal population and 2015-entry noise are added here so training
+# Binomial prevalence and log-normal population noise are added here so training
 # pairs follow the calibration observation model. Outputs in --out:
 # posterior_samples_npe.csv, npe_config.json, npe_timing.json, loss_curve.csv,
 # npe_inference.pkl and, when --n-sbc > 0, sbc_summary.csv / sbc_ranks.npy /
@@ -58,21 +58,20 @@ def build_prior(contact_anchor, beta_anchor, contact_sd, beta_sd):
     return Independent(Normal(loc, scale), 1)
 
 
-def add_observation_noise(x_raw, n_prev, sigma_log, sigma_entry, rng):
-    """Binomial counts for prevalence, log-normal noise for populations and 2015 entry."""
+def add_observation_noise(x_raw, n_prev, sigma_log, rng):
+    """Binomial counts for prevalence, log-normal noise for populations."""
     x = np.asarray(x_raw, dtype=np.float64).copy()
     p = np.clip(x[:, :6], 0.0, 1.0)
     x[:, :6] = rng.binomial(n_prev[None, :], p) / n_prev[None, :]
-    for cols, sd in ((slice(6, 12), sigma_log), (slice(12, 18), sigma_entry)):
-        x[:, cols] = np.exp(np.log(np.maximum(x[:, cols], 1e-8)) +
-                            rng.normal(0.0, sd, size=x[:, cols].shape))
+    x[:, 6:12] = np.exp(np.log(np.maximum(x[:, 6:12], 1e-8)) +
+                        rng.normal(0.0, sigma_log, size=x[:, 6:12].shape))
     return x
 
 
 def transform_x(x, n_prev):
     lo = 0.5 / n_prev
     p = np.clip(x[:, :6], lo[None, :], 1.0 - lo[None, :])
-    return np.hstack([np.log(p / (1.0 - p)), np.log(x[:, 6:18])])
+    return np.hstack([np.log(p / (1.0 - p)), np.log(x[:, 6:12])])
 
 
 class Ensemble:
@@ -108,7 +107,7 @@ def run_sbc(posterior, args, n_prev, rng):
     from scipy import stats
     theta = read_numeric_csv(args.theta_sbc)
     x = transform_x(add_observation_noise(read_numeric_csv(args.x_sbc), n_prev,
-                                          args.population_sigma_log, args.entry_sigma_log, rng), n_prev)
+                                          args.population_sigma_log, rng), n_prev)
     n = min(args.n_sbc, len(theta))
     ranks = np.zeros((n, 12))
     for j in range(n):
@@ -162,7 +161,6 @@ def main():
     ap.add_argument("--contact-sd", type=float, required=True)
     ap.add_argument("--beta-sd", type=float, required=True)
     ap.add_argument("--population-sigma-log", type=float, default=0.10)
-    ap.add_argument("--entry-sigma-log", type=float, default=1.0)
     ap.add_argument("--hidden-features", type=int, default=50)
     ap.add_argument("--num-transforms", type=int, default=5)
     ap.add_argument("--batch-size", type=int, default=256)
@@ -192,7 +190,7 @@ def main():
 
     theta = read_numeric_csv(args.theta)
     x = transform_x(add_observation_noise(read_numeric_csv(args.x), n_prev,
-                                          args.population_sigma_log, args.entry_sigma_log, noise_rng), n_prev)
+                                          args.population_sigma_log, noise_rng), n_prev)
     timing["load_sec"] = time.time() - t0
     t1 = time.time()
     # Single round on prior simulations (standard NLL loss). Each ensemble member differs only in
@@ -250,7 +248,7 @@ def main():
         "validation_fraction": args.validation_fraction, "stop_after_epochs": args.stop_after_epochs,
         "max_epochs": args.max_epochs, "clip_max_norm": args.clip_max_norm,
         "x_transform": "logit(p) with p clipped to [0.5/n, 1-0.5/n]; log(N)",
-        "observation_noise": f"Binomial(n_target, p); populations logNormal(sigma={args.population_sigma_log}); 2015 entry logNormal(sigma={args.entry_sigma_log})",
+        "observation_noise": f"Binomial(n_target, p); logNormal(sigma={args.population_sigma_log})",
         "prior": {"contact_anchor": parse_vector(args.contact_anchor, "c"),
                   "beta_anchor": parse_vector(args.beta_anchor, "b"),
                   "contact_sd": args.contact_sd, "beta_sd": args.beta_sd,

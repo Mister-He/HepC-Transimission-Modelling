@@ -31,8 +31,9 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   phi_*     — van Meer (2012); Morgan et al. (2013)
 #   mu_DC/HCC — Lim et al. (2018)
 #   psi_*     — Premkumar (2024); Dang et al. (2020)
-#   pi_recid  — fitted to SPS data (0.59; scripts/model/update_rate_params.R)
-#   lambda*, f_first — fitted to SPS data (scripts/model/update_rate_params.R)
+#   pi_recid  — fitted to SPS data (0.72; scripts/model/update_rate_params.R)
+#   lambda2/3 — fitted to SPS data (scripts/model/update_rate_params.R)
+#   lambda1   — ASSUMED equal to lambda3 (first arrest as fast as re-arrest)
 #   mu        — CALIBRATED to SingStat life tables (guesses used here)
 #   c_contact — CALIBRATED to HCV prevalence trajectory (guess used here)
 #   beta      — CALIBRATED to PWID population size (guess used here)
@@ -154,9 +155,9 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # Fitted to SPS records by preprocess.R and written by update_rate_params.R.
-  # f_first: 2015 steady-state first-arrest flow (people/year) from rearrest_rate.stan;
-  # sim.cpp derives the first-arrest rate lambda1 from it (first_arrest_rate()).
-  f_first = c(32, 304, 102, 75.9, 66.1, 19.6),
+  # lambda1 (first arrest, D -> J) is not identified by prison records (the never-arrested
+  # are never observed); it is ASSUMED equal to lambda3 and written with it.
+  lambda1 = c(0.546, 0.488, 0.472, 0.472, 0.386, 0.266),  # first-arrest rate lambda_i^(1) = lambda3
   lambda2 = c(0.462, 0.636, 0.454, 0.337, 0.325, 0.394),  # release rate lambda_i^(2) (SPS fit)
   lambda3 = c(0.546, 0.488, 0.472, 0.472, 0.386, 0.266),  # re-arrest rate lambda_i^(3) (SPS fit)
   pi_recid = 0.72,          # share of released who return to injecting (SPS fit)

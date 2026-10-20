@@ -47,11 +47,8 @@ file.copy(file.path(ROOT, "data", "calibration_targets.json"),
           file.path(OUT, "targets.json"), overwrite = TRUE)
 
 starts <- make_start_set(max(0, N_STARTS - 1), PERTURB_SD, SEED)
-# Anchors and perturbations are entry scales; theta[7:12] is the excess-entry scale.
-for (j in seq_along(starts))
-  starts[[j]]$theta0[7:12] <- excess_theta(exp(starts[[j]]$theta0[7:12]), base_params)
 starts[[length(starts) + 1L]] <- list(
-  id = "population_informed", theta0 = clip_to_bounds(informed_theta0(base_params)),
+  id = "population_informed", theta0 = clip_to_bounds(informed_theta0(base_params, targets)),
   seed = SEED + 2000
 )
 objective <- make_objective(base_params, data)
@@ -88,7 +85,7 @@ summarise_run <- function(r) {
              prevalence_rmse = m$prevalence_rmse, population_mape = m$population_mape,
              setNames(as.list(r$theta), paste0("theta", 1:N_THETA)),
              setNames(as.list(exp(r$theta[1:6])), paste0("contact_scale", 1:6)),
-             setNames(as.list(entry_scales(r$theta, base_params)), paste0("beta_scale", 1:6)))
+             setNames(as.list(exp(r$theta[7:12])), paste0("beta_scale", 1:6)))
 }
 solutions <- do.call(rbind, lapply(runs, summarise_run))
 write.csv(solutions, file.path(OUT, "solutions.csv"), row.names = FALSE)

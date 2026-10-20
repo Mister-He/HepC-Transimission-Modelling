@@ -12,11 +12,10 @@ targets <- read_targets(file.path(root, "data", "calibration_targets.json"))
 source(file.path(root, "scripts", "calibration", "likelihood.R"))
 
 # Synthetic base parameters: the unit test exercises the parameterisation
-# (exp transforms, bounds, likelihoods), not the fitted values. With no first arrests the
-# excess-entry scale is the entry scale.
+# (exp transforms, bounds, likelihoods), not the fitted values.
 base_params <- list(
   C_contact = matrix(1, nrow = 6, ncol = 6),
-  beta = rep(1, 6), beta_base = rep(1, 6), f_first = rep(0, 6), mu = rep(0.01, 6), omega = 1
+  beta = rep(1, 6), beta_base = rep(1, 6)
 )
 
 check_equal(N_THETA, 12, "exactly 12 fitted parameters")
@@ -55,10 +54,6 @@ check_true(nll_prev(targets$p_prev_binom) <
 check_true(is.finite(nll_prev(targets$p_prev_binom)),
            "NLL is finite at the target prevalence")
 
-# Entry observation: zero at the CNB counts, larger 10-fold away
-check_equal(nll_entry(targets$entry), 0, "nll_entry is 0 at the CNB entry counts")
-check_true(nll_entry(10 * targets$entry) > nll_entry(2 * targets$entry), "nll_entry grows with log distance")
-
 # Population likelihood: exact match gives zero contribution
 check_equal(nll_pop(targets$population), 0,
             "nll_pop is 0 when N_hat == N_obs")
@@ -81,17 +76,12 @@ th_bad <- log(c(rep(1, 6), seq(3, 1, length.out = 6)))  # decreasing beta
 check_true(pattern_penalty(pm_bad, th_bad) > 0,
            "pattern penalty is positive for an implausible pattern")
 
-# Excess-entry scale: entry = minimum that supplies the first-arrest flow + exp(theta) * beta,
-# so the never-arrested pool stays positive for every theta; excess_theta() inverts it.
-fp <- modifyList(base_params, list(beta = c(10, 300, 100, 50, 20, 1), f_first = c(30, 300, 100, 70, 60, 20),
-                                   mu = c(2, 2.5, 4.5, 12, 33, 220) * 1e-4, omega = 14.68))
-th_neg <- c(rep(0, 6), rep(-8, 6))
-bs <- entry_scales(th_neg, fp); D <- numeric(6); dp <- 0
-for (i in 1:6) { D[i] <- (bs[i] * fp$beta[i] + 0.1 * dp - fp$f_first[i]) /
-  (fp$mu[i] * fp$omega + if (i < 6) 0.1 else 0); dp <- D[i] }
-check_true(all(bs > 0) && all(D > 0), "every excess-entry theta keeps entry and the never-arrested pool positive")
+# Entry scale: theta[7:12] multiplies every entry group by exp(theta) and nothing else.
+fp <- modifyList(base_params, list(beta = c(10, 300, 100, 50, 20, 1)))
 th_rt <- c(rep(0, 6), log(c(0.5, 2, 1, 3, 1, 4)))
-check_equal(excess_theta(entry_scales(th_rt, fp), fp), th_rt[7:12], "excess_theta inverts entry_scales")
+check_equal(build_params(th_rt, fp)$beta, fp$beta * c(0.5, 2, 1, 3, 1, 4),
+            "build_params sets beta = beta_base * exp(theta[7:12])")
+check_true(!within_bounds(c(rep(0, 6), rep(log(0.005), 6))), "entry scales below 0.01 are out of bounds")
 
 # build_params rejects the wrong number of parameters
 check_error(build_params(rep(0, 11), base_params),

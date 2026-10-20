@@ -56,7 +56,7 @@ log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite 
   write.table(row, f, sep = ",", row.names = FALSE, col.names = !file.exists(f), append = file.exists(f))
 }
 
-# Returns c(p_sero, N_hat, entry) or a failure code: "bounds", "nonfinite" or "equilibrium".
+# Returns c(p_sero, N_hat) or a failure code: "bounds", "nonfinite" or "equilibrium".
 # Out-of-bounds draws are dropped because the MCMC target gives them -Inf (same support).
 simulate <- function(theta) {
   if (!within_bounds(theta)) return("bounds")
@@ -68,7 +68,7 @@ simulate <- function(theta) {
   if (any(!is.finite(s$p_sero)) || any(!is.finite(s$N_hat)) || any(s$N_hat <= 0)) return("nonfinite")
   eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
   if (is.null(eq) || !eq$pass) return("equilibrium")
-  c(s$p_sero, s$N_hat, pm$beta)  # pm$beta: 2015 entry into D, observed as targets$entry
+  c(s$p_sero, s$N_hat)
 }
 
 simulate_many <- function(theta, stage) {
@@ -87,7 +87,7 @@ simulate_many <- function(theta, stage) {
 write_pairs <- function(theta, sim, theta_file, x_file) {
   write.csv(setNames(as.data.frame(theta[sim$ok, , drop = FALSE]), paste0("theta", 1:12)),
             file.path(OUT, theta_file), row.names = FALSE)
-  write.csv(setNames(as.data.frame(sim$x), c(paste0("p", 1:6), paste0("N", 1:6), paste0("E", 1:6))),
+  write.csv(setNames(as.data.frame(sim$x), c(paste0("p", 1:6), paste0("N", 1:6))),
             file.path(OUT, x_file), row.names = FALSE)
 }
 
@@ -106,8 +106,8 @@ step_data <- function() {
     sbc <- simulate_many(th_sbc, "sbc_simulation")
     write_pairs(th_sbc, sbc, "theta_sbc.csv", "x_sbc.csv")
   }
-  x <- c(targets$p_prev_binom, targets$population, targets$entry)
-  write.csv(setNames(as.data.frame(t(x)), c(paste0("p", 1:6), paste0("N", 1:6), paste0("E", 1:6))),
+  x <- c(targets$p_prev_binom, targets$population)
+  write.csv(setNames(as.data.frame(t(x)), c(paste0("p", 1:6), paste0("N", 1:6))),
             file.path(OUT, "x_obs.csv"), row.names = FALSE)
   jsonlite::write_json(list(
     sampling = "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
@@ -131,8 +131,7 @@ step_train <- function() {
          "--contact-anchor", paste(exp(center[1:6]), collapse = ","),
          "--beta-anchor", paste(exp(center[7:12]), collapse = ","), "--contact-sd", CONTACT_SD,
          "--beta-sd", BETA_SD, "--hidden-features", HIDDEN, "--num-transforms", TRANSFORMS,
-         "--population-sigma-log", targets$population_sigma_log,
-         "--entry-sigma-log", targets$entry_sigma_log, "--max-epochs", MAX_EPOCHS,
+         "--population-sigma-log", targets$population_sigma_log, "--max-epochs", MAX_EPOCHS,
          "--threads", THREADS, "--sampling-label", "lhs")
   if (N_SBC > 0) a <- c(a, "--n-sbc", N_SBC, "--theta-sbc", file.path(OUT, "theta_sbc.csv"),
                         "--x-sbc", file.path(OUT, "x_sbc.csv"))

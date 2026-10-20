@@ -91,11 +91,10 @@ run_year <- function(y0, year, pm, cap=rep(Inf,4)) {
 # Entry-event proxy: antibody tests on antibody-positive prison entrants.
 # This avoids recharging the full J stock each year; re-entries can recur.
 j_positive_entries <- function(z, pm) {
-  lambda1 <- first_arrest_rate(pm)
   x <- vapply(seq_len(nrow(z)), function(i) {
     y <- z[i,2:481]; total <- 0
     for (age in 0:5) for (k in 1:4) for (h in c(1,2,4)) {
-      total <- total + lambda1[age+1]*y[idx0(0,k,h,age)-1] +
+      total <- total + pm$lambda1[age+1]*y[idx0(0,k,h,age)-1] +
         pm$lambda3[age+1]*y[idx0(2,k,h,age)-1]
     }
     total

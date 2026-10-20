@@ -301,36 +301,6 @@ PolicyStep rk4_policy_step(double time, double dt,
     return out;
 }
 
-// First-arrest rate from the 2015 steady-state first-arrest flow f (rearrest_rate.stan):
-// the HCV-free balance of D gives D_i = (beta_i + a*D_{i-1} - f_i) / (mu_i*omega + a_i),
-// with no ageing out of 60+, and lambda1_i = f_i / D_i. A non-positive D_i means the
-// entry flow cannot supply the first arrests, so the parameter set is infeasible.
-std::vector<double> first_arrest_rates(List params_r) {
-    NumericVector f = as<NumericVector>(params_r["f_first"]), beta = as<NumericVector>(params_r["beta"]);
-    NumericVector mu = as<NumericVector>(params_r["mu"]);
-    const double omega = as<double>(params_r["omega"]);
-    if (f.size() != N_AGES || beta.size() != N_AGES || mu.size() != N_AGES)
-        stop("f_first, beta and mu must have length 6");
-    std::vector<double> l1(N_AGES);
-    double d_prev = 0.0;
-    for (int age = 0; age < N_AGES; ++age) {
-        if (!std::isfinite(f[age]) || f[age] < 0.0) stop("f_first must be finite and non-negative");
-        const double a_out = age + 1 < N_AGES ? AGE_RATE : 0.0;
-        const double d = (beta[age] + AGE_RATE * d_prev - f[age]) / (mu[age] * omega + a_out);
-        if (f[age] == 0.0) { l1[age] = 0.0; d_prev = std::max(d, 0.0); continue; }
-        if (!(d > 0.0)) stop("infeasible first-arrest flow: entry cannot supply f_first");
-        l1[age] = f[age] / d;
-        d_prev = d;
-    }
-    return l1;
-}
-
-// [[Rcpp::export]]
-NumericVector first_arrest_rate(List params_r) {
-    std::vector<double> l1 = first_arrest_rates(params_r);
-    return NumericVector(l1.begin(), l1.end());
-}
-
 // [[Rcpp::export]]
 NumericMatrix run_sim(List params_r, List data_r) {
     Params p;
@@ -373,9 +343,13 @@ NumericMatrix run_sim(List params_r, List data_r) {
     p.m_max = params_r.containsElementNamed("m_max") ? as<double>(params_r["m_max"]) : 1.0;
     p.t0 = params_r.containsElementNamed("m_t0") ? as<double>(params_r["m_t0"]) : 25.0;
     p.m_slope = params_r.containsElementNamed("m_tau") ? as<double>(params_r["m_tau"]) : 3.0;
-    NumericVector l2 = as<NumericVector>(params_r["lambda2"]), l3 = as<NumericVector>(params_r["lambda3"]);
-    if (l2.size() != N_AGES || l3.size() != N_AGES) stop("lambda2 and lambda3 must have length 6");
-    p.lambda1 = first_arrest_rates(params_r);
+    NumericVector l1 = as<NumericVector>(params_r["lambda1"]), l2 = as<NumericVector>(params_r["lambda2"]),
+                  l3 = as<NumericVector>(params_r["lambda3"]);
+    if (l1.size() != N_AGES || l2.size() != N_AGES || l3.size() != N_AGES)
+        stop("lambda1, lambda2 and lambda3 must have length 6");
+    for (int age = 0; age < N_AGES; ++age)
+        if (!std::isfinite(l1[age]) || l1[age] < 0.0) stop("lambda1 must be finite and non-negative");
+    p.lambda1.assign(l1.begin(), l1.end());
     p.lambda2.assign(l2.begin(), l2.end()); p.lambda3.assign(l3.begin(), l3.end());
     p.hr_viraemic = as<double>(params_r["hr_viraemic"]);
     const double v_ref = as<double>(params_r["viraemic_share_ref"]);

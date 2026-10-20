@@ -85,13 +85,23 @@ make_start_set <- function(n_perturbed = 5, sd_perturb = 0.4, seed_base = 101) {
   starts
 }
 
-# Population-informed start: contact scales 1 and the entry that keeps each never-arrested
-# pool at D_i = f_first_i / lambda3_i in steady state. Returns a length-12 theta.
-informed_theta0 <- function(base_params) {
-  # shortcut: assumes first arrest is as fast as re-arrest (lambda1 = lambda3); it only seeds
-  # one start, so Nelder-Mead corrects it.
-  D <- base_params$f_first / base_params$lambda3
-  out <- base_params$mu * base_params$omega + c(rep(AGE_RATE, 5), 0)
-  entry <- out * D + base_params$f_first - AGE_RATE * c(0, D[-6])
-  c(rep(0, 6), excess_theta(pmax(entry, 0) / base_params$beta, base_params))
+# Population-informed start: contact scales 1 and the entry scales of the HCV-free steady state
+# that holds the prison at its 2015 targets. J_i gives F_i (pi*lambda2 releases plus ageing), the
+# first-arrest flow f_i = J outflow - ageing in - lambda3*F_i, D_i = f_i / lambda1_i, and the D
+# balance gives entry. Returns a length-12 theta; Nelder-Mead corrects the shortcut.
+informed_theta0 <- function(base_params, targets) {
+  l1 <- base_params$lambda1; l2 <- base_params$lambda2; l3 <- base_params$lambda3
+  m <- base_params$mu * base_params$omega; pi <- base_params$pi_recid; J <- targets$population
+  a <- c(rep(0.1, 5), 0)  # ageing out of each band (none out of 60+)
+  D <- Fp <- entry <- numeric(6)
+  for (i in 1:6) {
+    J_in <- if (i > 1) 0.1 * J[i - 1] else 0
+    F_in <- if (i > 1) 0.1 * Fp[i - 1] else 0
+    D_in <- if (i > 1) 0.1 * D[i - 1] else 0
+    Fp[i] <- (pi * l2[i] * J[i] + F_in) / (l3[i] + m[i] + a[i])
+    f <- max((l2[i] + m[i] + a[i]) * J[i] - J_in - l3[i] * Fp[i], 1e-3)
+    D[i] <- f / l1[i]
+    entry[i] <- (l1[i] + m[i] + a[i]) * D[i] - D_in
+  }
+  c(rep(0, 6), log(pmax(entry, 1e-3) / base_params$beta))
 }

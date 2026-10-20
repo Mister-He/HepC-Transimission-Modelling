@@ -5,9 +5,8 @@
 #
 # lambda2 = exp(posterior mean of the release fit's log_lambda) (preprocess.R convention);
 # lambda3 = posterior mean of exp(log_lambda), pi_recid = posterior mean of
-# inv_logit(pi_raw) and f_first = posterior mean of f_pop (the 2015 steady-state
-# first-arrest flow, people/year; sim.cpp derives lambda1 from it), all from the
-# re-arrest fit draws. Values are written to 3 significant figures, the precision of the
+# inv_logit(pi_raw), both from the re-arrest fit draws; lambda1 (first arrest) is not
+# identified by the prison records and is set equal to lambda3 by assumption. Values are written to 3 significant figures, the precision of the
 # existing entries. Every value is validated (six finite positive ages, pi in (0, 1)) and
 # every target line must occur exactly once before the file is rewritten; otherwise
 # nothing is written. Only the value on each line changes; comments are kept.
@@ -36,10 +35,10 @@ if (!"pi_raw" %in% colnames(draws)) stop("rearrest fit has no pi_raw draws")
 new <- list(
   lambda2 = exp(rel_sum$mean[order(as.integer(sub(".*\\[(\\d+)\\]", "\\1", rel_sum$variable)))]),
   lambda3 = unname(colMeans(exp(cols("log_lambda")))),
-  f_first = unname(colMeans(cols("f_pop"))),
   pi_recid = mean(plogis(draws[, "pi_raw"]))
 )
-for (nm in c("lambda2", "lambda3", "f_first"))
+new$lambda1 <- new$lambda3
+for (nm in c("lambda1", "lambda2", "lambda3"))
   if (length(new[[nm]]) != 6 || any(!is.finite(new[[nm]])) || any(new[[nm]] <= 0))
     stop(nm, " must be six finite positive values")
 if (!is.finite(new$pi_recid) || new$pi_recid <= 0 || new$pi_recid >= 1) stop("pi_recid must lie in (0, 1)")
