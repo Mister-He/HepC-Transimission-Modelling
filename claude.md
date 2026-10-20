@@ -174,7 +174,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
   `preprocess.R` copies differ scientifically (left as is); long runs must be launched from a copy of the
   script (Rscript reads lazily).
 
-## First-arrest handoff + viraemic mortality (2026-10-14/15, `docs/first_arrest_mortality_update.md`) — current state
+## First-arrest handoff + viraemic mortality (2026-10-14/15, `docs/first_arrest_mortality_update.md`) — superseded; see "lambda1 = lambda3" at the end
 - **Rates:**
   - `scripts/model/preprocess.R` is the single preprocessing script; the top-level copies were removed.
   - Release, re-arrest and `pi` (0.720) come from all consumption records.
@@ -226,3 +226,23 @@ outputs were backed up to the session scratchpad only (not in the repo).
   blocked by the auto-mode classifier); it writes the same PNG names, so running it after `figures.py` reverts them.
 - Data notes surfaced while redrawing: F/X treatment quota equals actual starts in every year (dashed quota lines are
   hidden; capacity-utilisation figure is 100% everywhere); no scenario passes jointly, so Fig S6 shows only J only.
+
+## lambda1 = lambda3, no entry anchor (2026-10-20/21, `docs/lambda1_revert.md`) — current state
+- **Model (user decision):** `lambda1` is hard-coded in `setup.R` equal to `lambda3` (0.546, 0.488, 0.472,
+  0.472, 0.386, 0.266). `f_first`, `first_arrest_rate()`, `entry_scales()`, `excess_theta()`, `nll_entry` and
+  the targets' `entry` are gone. θ7–θ12 are plain log entry scales on the CNB 2015 counts (bounds 0.01–10⁶).
+  Viraemic HR 1.47 kept; fixed point 0.205 → 0.196 moves `omega_0` by 0.38% (< 0.5%), so no refit.
+- **Fit** `output/calibration/r_20261020_agepop` (8 starts): objective 18.73, every target fitted almost exactly
+  (60+ 0.4286). Prior centre = best fit (nothing near a bound). HR sensitivity: 60+ 0.440 (HR 1) to 0.429 (1.77).
+- **MCMC:** R-hat ≤ 1.002, bulk ESS ≥ 3,053, 4.7 h. Prior-dominated: θ6, θ9, θ10, θ12. 2015 ever-PWID 17,226
+  (15,649–18,968); D only 1,356.
+- **Cross-validation:** NPE 49,278/50,000 valid, SBC (980) cov95 0.944–0.961, gate PASS; 11/12 parameters pass
+  (θ4 endpoint 0.22 SD), policy within 0.3%. MCMC SBC (8) cov95 0.95.
+- **Scenarios (2,000 draws):** J only incidence −81.1% (76.5–84.3; 71% of draws pass), mortality −50.5%.
+  Every finite scenario meets incidence. Mortality and joint pass (≥ 99.9% of draws): 5,000/yr F25%/F50%,
+  8,000/yr F25%/F50%, no cap. 8,000/yr F75% 64.9% (40%). F eligible pool ~2,330/yr.
+- **Manuscript** rewritten for these results (`build_paper.py` asserts them). Main caveat now stated: the
+  result rests on `lambda1 = lambda3` (the records cannot identify it); a lower first-arrest rate would leave
+  more injectors outside prison.
+- `docs/first_arrest_mortality_update.md` and `docs/final_review.md` are historical.
+

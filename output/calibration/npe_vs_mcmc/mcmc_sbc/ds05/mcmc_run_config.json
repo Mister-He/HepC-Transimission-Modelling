@@ -1,5 +1,5 @@
 {
-  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261014_agepop/fit.rds",
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261020_agepop/fit.rds",
   "targets": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/mcmc_sbc/targets_ds05.json",
   "sampler": "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
   "n_chains": 1,
@@ -17,7 +17,7 @@
   "starts": "independent prior draws",
   "regularisation": "1e-6 * diag(prior variance)",
   "prior": "independent Normal(prior_centre(fit$best$theta), 0.2) on theta",
-  "prior_centre": [0.640348974859805, -2.80678755956206, -3.60517018598809, -1.26751412146963, 1.11924040444863, -3.60517018598809, -0.83163339370916, -2.81479122743305, -1.12020259325007, -0.249114361719074, 0.140183407573584, 0.109024820508402],
+  "prior_centre": [1.66772480787546, -2.88638942865073, -3.53728932089509, -0.842653859089186, 1.99307650450797, 0.300594226663187, -2.00442190977732, -0.433992536432566, -2.59454490577114, -0.213521025344311, 1.40176325879167, 3.2822726770008],
   "target": "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
   "integration_dt": 0.00273972602739726,
   "seed": 20261206,
@@ -25,9 +25,9 @@
     "prior_variance": 20264206,
     "chain": "SEED+1000+i (initial prior draws and sampling)"
   },
-  "startup_sec": 3.465,
-  "pre_chain_sec": 0.00099999999999989,
-  "method_sec": 9764.74,
-  "cpu_sec_total": 9696.842,
+  "startup_sec": 5.448,
+  "pre_chain_sec": 0.00100000000000033,
+  "method_sec": 9483.06,
+  "cpu_sec_total": 9465.683,
   "r_version": "R version 4.5.1 (2025-06-13)"
 }

@@ -1,14 +1,13 @@
 {
   "sampling": "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
   "prior": "independent Normal(prior_centre(fit$best$theta), sd = 0.2/0.2) on log-scale theta",
-  "prior_centre": [0.640348974859805, -2.80678755956206, -3.60517018598809, -1.26751412146963, 1.11924040444863, -3.60517018598809, -0.83163339370916, -2.81479122743305, -1.12020259325007, -0.249114361719074, 0.140183407573584, 0.109024820508402],
+  "prior_centre": [1.66772480787546, -2.88638942865073, -3.53728932089509, -0.842653859089186, 1.99307650450797, 0.300594226663187, -2.00442190977732, -0.433992536432566, -2.59454490577114, -0.213521025344311, 1.40176325879167, 3.2822726770008],
   "design_seed": 20261012,
   "n_attempted": 50000,
-  "n_valid": 48918,
+  "n_valid": 49278,
   "n_excluded_nonfinite": 0,
-  "n_excluded_equilibrium": 1082,
+  "n_excluded_equilibrium": 722,
   "n_excluded_bounds": 0,
-  "n_excluded_infeasible": 0,
-  "exclusion_rule": "drop draws outside the parameter bounds (within_bounds), draws whose entry flow cannot supply the first-arrest flow (first_arrest_rate) and simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",
-  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261014_agepop/fit.rds"
+  "exclusion_rule": "drop draws outside the parameter bounds (within_bounds) and simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261020_agepop/fit.rds"
 }

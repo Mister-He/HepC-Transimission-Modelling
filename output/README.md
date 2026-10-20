@@ -4,7 +4,7 @@ Generated results; reruns overwrite these folders. Do not create new run folders
 parallel results are requested.
 
 - `calibration/`: calibration results. See `calibration/README.md`.
-  - `r_20261014_agepop/`: Nelder–Mead fit (prior centre).
+  - `r_20261020_agepop/`: Nelder–Mead fit (prior centre).
   - `hr_sensitivity/`: Nelder–Mead fits at other viraemic mortality HRs (sensitivity only).
   - `mcmc_reference/`: reference MCMC posterior (production).
   - `npe_lhs/`: single-round NPE from 50,000 LHS prior simulations, with SBC (cross-validation only).

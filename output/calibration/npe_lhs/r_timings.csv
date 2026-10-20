@@ -1,4 +1,4 @@
-"stage","seconds","n_attempted","n_ok","n_nonfinite","n_equilibrium_fail","n_infeasible","n_out_of_bounds","workers","time"
-"prior_simulation",1611.616,50000,48918,0,1082,0,0,12,"2026-10-15T17:52:29"
-"sbc_simulation",33.433,1000,973,0,27,0,0,12,"2026-10-15T17:53:03"
-"python_training",376.518,NA,NA,NA,NA,NA,NA,12,"2026-10-15T17:59:20"
+"stage","seconds","n_attempted","n_ok","n_nonfinite","n_equilibrium_fail","n_out_of_bounds","workers","time"
+"prior_simulation",1616.276,50000,49278,0,722,0,12,"2026-10-20T20:54:54"
+"sbc_simulation",33.48,1000,980,0,20,0,12,"2026-10-20T20:55:28"
+"python_training",313.243,NA,NA,NA,NA,NA,12,"2026-10-20T21:00:42"

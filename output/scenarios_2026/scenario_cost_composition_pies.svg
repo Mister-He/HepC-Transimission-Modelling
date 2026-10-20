@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="374.173228pt" height="212.598425pt" viewBox="0 0 374.173228 212.598425" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="540pt" height="212.598425pt" viewBox="0 0 540 212.598425" xmlns="http://www.w3.org/2000/svg" version="1.1">
  <metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-19T13:48:15.523373</dc:date>
+    <dc:date>2026-10-21T00:17:40.092661</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -22,8 +22,8 @@
  <g id="figure_1">
   <g id="patch_1">
    <path d="M 0 212.598425 
-L 374.173228 212.598425 
-L 374.173228 0 
+L 540 212.598425 
+L 540 0 
 L 0 0 
 z
 " style="fill: #ffffff"/>
@@ -32,105 +32,605 @@ z
    <g id="matplotlib.axis_1"/>
    <g id="matplotlib.axis_2"/>
    <g id="patch_2">
-    <path d="M 183.01953 64.593055 
-C 174.651248 65.121743 166.465785 67.277107 158.922326 70.938235 
-C 151.378866 74.599364 144.621154 79.696493 139.028281 85.943685 
-C 133.435408 92.190878 129.113949 99.469091 126.306327 107.370035 
-C 123.498705 115.270978 122.258421 123.644095 122.655052 132.019675 
-C 123.051683 140.395254 125.077671 148.613695 128.619363 156.213963 
-C 132.161055 163.81423 137.150962 170.651497 143.309162 176.34221 
-C 149.467363 182.032923 156.676509 186.468643 164.532186 189.400535 
-C 172.387862 192.332427 180.740375 193.704624 189.121169 193.440149 
-C 197.501962 193.175673 205.751336 191.279565 213.40652 187.858191 
-C 221.061705 184.436817 227.976826 179.555374 233.763963 173.487698 
-C 239.5511 167.420022 244.099976 160.281736 247.155409 152.47328 
-C 250.210843 144.664825 251.714612 136.334995 251.582357 127.951072 
-C 251.450103 119.56715 249.684346 111.288895 246.384142 103.580699 
-C 243.083937 95.872502 238.312171 88.881247 232.336529 82.999126 
-C 226.360887 77.117004 219.295238 72.456104 211.535947 69.277889 
-C 203.776655 66.099675 195.47158 64.464709 187.086614 64.464709 
-L 187.086614 128.968476 
+    <path d="M 95.787128 83.501888 
+C 92.687539 83.710482 89.658089 84.521071 86.868501 85.888244 
+C 84.078913 87.255417 81.582274 89.153156 79.518455 91.475141 
+C 77.454636 93.797126 75.862913 96.49917 74.832461 99.429892 
+C 73.802009 102.360614 73.352438 105.464242 73.508934 108.566898 
+C 73.665431 111.669554 74.425016 114.712193 75.745137 117.524353 
+C 77.065257 120.336513 78.920789 122.864679 81.207778 124.967212 
+C 83.494767 127.069745 86.169692 128.706632 89.082691 129.78617 
+C 91.99569 130.865707 95.091328 131.36735 98.196175 131.262994 
+C 101.301022 131.158639 104.355991 130.450271 107.18993 129.177576 
+C 110.023869 127.904881 112.582848 126.092079 114.723501 123.840731 
+C 116.864154 121.589384 118.545745 118.942333 119.674063 116.047879 
+C 120.80238 113.153426 121.355954 110.066651 121.303769 106.960489 
+C 121.251583 103.854328 120.594633 100.78789 119.369723 97.932972 
+C 118.144813 95.078054 116.375253 92.488984 114.160181 90.310815 
+C 111.94511 88.132645 109.326681 86.406826 106.451589 85.230046 
+C 103.576497 84.053266 100.499457 83.447919 97.392857 83.447919 
+L 97.392857 107.362205 
 z
 " style="fill: #0072b2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_3">
-    <path d="M 183.791333 64.548936 
-C 183.662656 64.555518 183.534 64.562486 183.405365 64.569839 
-C 183.276731 64.577193 183.148118 64.584931 183.01953 64.593055 
-L 187.086614 128.968476 
+    <path d="M 96.171961 83.479105 
+C 96.107793 83.482385 96.043639 83.485924 95.979499 83.489721 
+C 95.915359 83.493518 95.851235 83.497574 95.787128 83.501888 
+L 97.392857 107.362205 
 z
 " style="fill: #d55e00; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
-    <path d="M 186.838368 64.465186 
-C 186.330288 64.467142 185.822248 64.4751 185.314356 64.48906 
-C 184.806463 64.50302 184.298753 64.52298 183.791333 64.548936 
-L 187.086614 128.968476 
+    <path d="M 97.300882 83.448096 
+C 97.11264 83.44882 96.924412 83.451766 96.736239 83.456935 
+C 96.548066 83.462104 96.35996 83.469494 96.171961 83.479105 
+L 97.392857 107.362205 
 z
 " style="fill: #009e73; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
-    <path d="M 187.086614 64.464709 
-C 187.04524 64.464709 187.003865 64.464749 186.962491 64.464828 
-C 186.921116 64.464908 186.879742 64.465027 186.838368 64.465186 
-L 187.086614 128.968476 
+    <path d="M 97.392857 83.447919 
+C 97.377528 83.447919 97.362199 83.447934 97.34687 83.447963 
+C 97.331541 83.447993 97.316211 83.448037 97.300882 83.448096 
+L 97.392857 107.362205 
 z
 " style="fill: #cc79a7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="text_1">
-    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(153.739114 33.202048)">Status quo (J only)</text>
-    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(168.853489 42.338767)">S$26.20m</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(64.045357 62.332629)">Status quo (J only)</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(79.159732 71.469348)">S$15.23m</text>
    </g>
    <g id="legend_1">
     <g id="patch_6">
-     <path d="M 274.016323 115.67791 
-L 288.016323 115.67791 
-L 288.016323 110.77791 
-L 274.016323 110.77791 
+     <path d="M 133.585714 94.071638 
+L 147.585714 94.071638 
+L 147.585714 89.171638 
+L 133.585714 89.171638 
 z
 " style="fill: #0072b2"/>
     </g>
     <g id="text_2">
-     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="293.616323" y="115.67791" transform="rotate(-0 293.616323 115.67791)">SOF/VEL 99.00%</text>
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="153.185714" y="94.071638" transform="rotate(-0 153.185714 94.071638)">SOF/VEL 98.93%</text>
     </g>
     <g id="patch_7">
-     <path d="M 274.016323 125.747246 
-L 288.016323 125.747246 
-L 288.016323 120.847246 
-L 274.016323 120.847246 
+     <path d="M 133.585714 104.140974 
+L 147.585714 104.140974 
+L 147.585714 99.240974 
+L 133.585714 99.240974 
 z
 " style="fill: #d55e00"/>
     </g>
     <g id="text_3">
-     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="293.616323" y="125.747246" transform="rotate(-0 293.616323 125.747246)">HCV antibody 0.19%</text>
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="153.185714" y="104.140974" transform="rotate(-0 153.185714 104.140974)">HCV antibody 0.26%</text>
     </g>
     <g id="patch_8">
-     <path d="M 274.016323 135.816718 
-L 288.016323 135.816718 
-L 288.016323 130.916718 
-L 274.016323 130.916718 
+     <path d="M 133.585714 114.210447 
+L 147.585714 114.210447 
+L 147.585714 109.310447 
+L 133.585714 109.310447 
 z
 " style="fill: #009e73"/>
     </g>
     <g id="text_4">
-     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="293.616323" y="135.816718" transform="rotate(-0 293.616323 135.816718)">HCV RNA 0.75%</text>
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="153.185714" y="114.210447" transform="rotate(-0 153.185714 114.210447)">HCV RNA 0.75%</text>
     </g>
     <g id="patch_9">
-     <path d="M 274.016323 145.886054 
-L 288.016323 145.886054 
-L 288.016323 140.986054 
-L 274.016323 140.986054 
+     <path d="M 133.585714 124.279783 
+L 147.585714 124.279783 
+L 147.585714 119.379783 
+L 133.585714 119.379783 
 z
 " style="fill: #cc79a7"/>
     </g>
     <g id="text_5">
-     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="293.616323" y="145.886054" transform="rotate(-0 293.616323 145.886054)">Consultation 0.06%</text>
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="153.185714" y="124.279783" transform="rotate(-0 153.185714 124.279783)">Consultation 0.06%</text>
     </g>
    </g>
   </g>
-  <g id="text_6">
-   <text style="font-weight: 700; font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(110.402239 9.424068)">2026–2030 discounted cost composition</text>
-   <text style="font-weight: 700; font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(109.724114 18.494381)">(2026 S$, 3%/yr; shares of item medians)</text>
+  <g id="axes_2">
+   <g id="matplotlib.axis_3"/>
+   <g id="matplotlib.axis_4"/>
+   <g id="patch_10">
+    <path d="M 161.971293 84.54633 
+C 159.121085 85.441325 156.463658 86.862528 154.136859 88.736218 
+C 151.81006 90.609907 149.854829 92.903116 148.372588 95.496891 
+C 146.890348 98.090666 145.907177 100.93937 145.474075 103.895233 
+C 145.040973 106.851097 145.165561 109.862112 145.841376 112.772091 
+C 146.517191 115.682071 147.732342 118.439813 149.423796 120.902269 
+C 151.11525 123.364725 153.253247 125.488567 155.726884 127.163627 
+C 158.200521 128.838688 160.966274 130.035493 163.880679 130.691964 
+C 166.795083 131.348434 169.806859 131.453019 172.759781 131.000293 
+C 175.712702 130.547566 178.554812 129.545495 181.138684 128.046058 
+C 183.722556 126.546621 186.002727 124.5762 187.86092 122.237007 
+C 189.719112 119.897814 191.122632 117.231005 191.998675 114.374914 
+C 192.874718 111.518823 193.20787 108.523703 192.980851 105.544917 
+C 192.753831 102.56613 191.970634 99.656089 190.671885 96.965744 
+C 189.373137 94.275399 187.581688 91.852085 185.390466 89.821506 
+C 183.199244 87.790927 180.646802 86.188811 177.865542 85.098261 
+C 175.084282 84.007712 172.123139 83.447919 169.135714 83.447919 
+L 169.135714 107.362205 
+z
+" style="fill: #0072b2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 163.832043 84.043454 
+C 163.518697 84.114722 163.206819 84.192299 162.8966 84.276137 
+C 162.58638 84.359975 162.277882 84.450058 161.971293 84.54633 
+L 169.135714 107.362205 
+z
+" style="fill: #d55e00; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 169.047247 83.448083 
+C 168.17042 83.451326 167.294435 83.502792 166.423261 83.602246 
+C 165.552086 83.7017 164.68704 83.848991 163.832043 84.043454 
+L 169.135714 107.362205 
+z
+" style="fill: #009e73; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 169.135714 83.447919 
+C 169.12097 83.447919 169.106225 83.447933 169.091481 83.44796 
+C 169.076736 83.447987 169.061992 83.448028 169.047247 83.448083 
+L 169.135714 107.362205 
+z
+" style="fill: #cc79a7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(145.344464 62.332785)">5000 / F 25%</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(150.902589 71.469348)">S$49.36m</text>
+   </g>
+   <g id="legend_2">
+    <g id="patch_14">
+     <path d="M 205.328571 94.071638 
+L 219.328571 94.071638 
+L 219.328571 89.171638 
+L 205.328571 89.171638 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <g id="text_7">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="224.928571" y="94.071638" transform="rotate(-0 224.928571 94.071638)">SOF/VEL 95.16%</text>
+    </g>
+    <g id="patch_15">
+     <path d="M 205.328571 104.140974 
+L 219.328571 104.140974 
+L 219.328571 99.240974 
+L 205.328571 99.240974 
+z
+" style="fill: #d55e00"/>
+    </g>
+    <g id="text_8">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="224.928571" y="104.140974" transform="rotate(-0 224.928571 104.140974)">HCV antibody 1.28%</text>
+    </g>
+    <g id="patch_16">
+     <path d="M 205.328571 114.210447 
+L 219.328571 114.210447 
+L 219.328571 109.310447 
+L 205.328571 109.310447 
+z
+" style="fill: #009e73"/>
+    </g>
+    <g id="text_9">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="224.928571" y="114.210447" transform="rotate(-0 224.928571 114.210447)">HCV RNA 3.50%</text>
+    </g>
+    <g id="patch_17">
+     <path d="M 205.328571 124.279783 
+L 219.328571 124.279783 
+L 219.328571 119.379783 
+L 205.328571 119.379783 
+z
+" style="fill: #cc79a7"/>
+    </g>
+    <g id="text_10">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="224.928571" y="124.279783" transform="rotate(-0 224.928571 124.279783)">Consultation 0.06%</text>
+    </g>
+   </g>
+  </g>
+  <g id="axes_3">
+   <g id="matplotlib.axis_5"/>
+   <g id="matplotlib.axis_6"/>
+   <g id="patch_18">
+    <path d="M 231.117005 85.530922 
+C 228.443098 86.726524 226.01146 88.403268 223.943412 90.477495 
+C 221.875364 92.551722 220.205882 94.988353 219.018263 97.665815 
+C 217.830644 100.343277 217.144973 103.216288 216.995461 106.141504 
+C 216.845949 109.066719 217.235124 111.994667 218.143569 114.779262 
+C 219.052014 117.563857 220.464365 120.158005 222.310155 122.432274 
+C 224.155945 124.706543 226.403957 126.622471 228.942031 128.084465 
+C 231.480104 129.546458 234.265313 130.529792 237.158695 130.985405 
+C 240.052077 131.441017 243.004697 131.361202 245.86924 130.749943 
+C 248.733782 130.138683 251.4618 129.006316 253.917184 127.40934 
+C 256.372567 125.812364 258.51379 123.777788 260.234019 121.407122 
+C 261.954248 119.036457 263.22439 116.369797 263.981072 113.540191 
+C 264.737755 110.710584 264.968182 107.765887 264.660856 104.853021 
+C 264.35353 101.940154 263.513648 99.108381 262.183116 96.49899 
+C 260.852584 93.889598 259.053903 91.546718 256.876817 89.587245 
+C 254.69973 87.627771 252.181058 86.084844 249.446465 85.035443 
+C 246.711871 83.986043 243.807606 83.447919 240.878571 83.447919 
+L 240.878571 107.362205 
+z
+" style="fill: #0072b2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 233.609363 84.579499 
+C 233.185525 84.714732 232.765543 84.861766 232.349907 85.020429 
+C 231.934271 85.179092 231.523144 85.349323 231.117005 85.530922 
+L 240.878571 107.362205 
+z
+" style="fill: #d55e00; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 240.791824 83.448076 
+C 239.574687 83.452491 238.359661 83.549822 237.157342 83.739218 
+C 235.955023 83.928614 234.768915 84.209524 233.609363 84.579499 
+L 240.878571 107.362205 
+z
+" style="fill: #009e73; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 240.878571 83.447919 
+C 240.864113 83.447919 240.849656 83.447932 240.835198 83.447958 
+C 240.82074 83.447985 240.806282 83.448024 240.791824 83.448076 
+L 240.878571 107.362205 
+z
+" style="fill: #cc79a7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(217.087321 62.332785)">8000 / F 25%</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(222.645446 71.469348)">S$55.78m</text>
+   </g>
+   <g id="legend_3">
+    <g id="patch_22">
+     <path d="M 277.071429 94.071638 
+L 291.071429 94.071638 
+L 291.071429 89.171638 
+L 277.071429 89.171638 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <g id="text_12">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="296.671429" y="94.071638" transform="rotate(-0 296.671429 94.071638)">SOF/VEL 93.31%</text>
+    </g>
+    <g id="patch_23">
+     <path d="M 277.071429 104.140974 
+L 291.071429 104.140974 
+L 291.071429 99.240974 
+L 277.071429 99.240974 
+z
+" style="fill: #d55e00"/>
+    </g>
+    <g id="text_13">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="296.671429" y="104.140974" transform="rotate(-0 296.671429 104.140974)">HCV antibody 1.78%</text>
+    </g>
+    <g id="patch_24">
+     <path d="M 277.071429 114.210447 
+L 291.071429 114.210447 
+L 291.071429 109.310447 
+L 277.071429 109.310447 
+z
+" style="fill: #009e73"/>
+    </g>
+    <g id="text_14">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="296.671429" y="114.210447" transform="rotate(-0 296.671429 114.210447)">HCV RNA 4.86%</text>
+    </g>
+    <g id="patch_25">
+     <path d="M 277.071429 124.279783 
+L 291.071429 124.279783 
+L 291.071429 119.379783 
+L 277.071429 119.379783 
+z
+" style="fill: #cc79a7"/>
+    </g>
+    <g id="text_15">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="296.671429" y="124.279783" transform="rotate(-0 296.671429 124.279783)">Consultation 0.06%</text>
+    </g>
+   </g>
+  </g>
+  <g id="axes_4">
+   <g id="matplotlib.axis_7"/>
+   <g id="matplotlib.axis_8"/>
+   <g id="patch_26">
+    <path d="M 304.25515 84.959115 
+C 301.481525 85.994906 298.92422 87.536832 296.713563 89.506313 
+C 294.502906 91.475793 292.677099 93.838794 291.32919 96.474889 
+C 289.981281 99.110985 289.134563 101.974621 288.832187 104.919859 
+C 288.529811 107.865097 288.777003 110.841041 289.561165 113.696027 
+C 290.345327 116.551014 291.652908 119.235707 293.41727 121.613287 
+C 295.181631 123.990867 297.372284 126.020246 299.877587 127.598004 
+C 302.382889 129.175761 305.159547 130.27463 308.066055 130.838611 
+C 310.972562 131.402591 313.958691 131.421936 316.872262 130.895659 
+C 319.785832 130.369383 322.576494 129.30658 325.102027 127.761413 
+C 327.627561 126.216247 329.844322 124.215419 331.63934 121.860898 
+C 333.434357 119.506377 334.776611 116.83885 335.597696 113.994263 
+C 336.418781 111.149675 336.704508 108.177184 336.440316 105.228276 
+C 336.176124 102.279367 335.366578 99.405001 334.052935 96.751664 
+C 332.739292 94.098326 330.944253 91.711869 328.759298 89.713912 
+C 326.574343 87.715956 324.03723 86.141027 321.277258 85.069388 
+C 318.517285 83.997749 315.582148 83.447919 312.621429 83.447919 
+L 312.621429 107.362205 
+z
+" style="fill: #0072b2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_27">
+    <path d="M 306.320036 84.293058 
+C 305.971072 84.388379 305.624316 84.491605 305.280036 84.602657 
+C 304.935755 84.713709 304.594038 84.832559 304.25515 84.959115 
+L 312.621429 107.362205 
+z
+" style="fill: #d55e00; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_28">
+    <path d="M 312.533748 83.44808 
+C 311.48521 83.451924 310.438058 83.524726 309.399075 83.666013 
+C 308.360093 83.8073 307.331526 84.016768 306.320036 84.293058 
+L 312.621429 107.362205 
+z
+" style="fill: #009e73; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_29">
+    <path d="M 312.621429 83.447919 
+C 312.606815 83.447919 312.592202 83.447932 312.577588 83.447959 
+C 312.562975 83.447986 312.548361 83.448026 312.533748 83.44808 
+L 312.621429 107.362205 
+z
+" style="fill: #cc79a7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(288.830179 62.332785)">5000 / F 50%</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(294.388304 71.469348)">S$42.26m</text>
+   </g>
+   <g id="legend_4">
+    <g id="patch_30">
+     <path d="M 348.814286 94.071638 
+L 362.814286 94.071638 
+L 362.814286 89.171638 
+L 348.814286 89.171638 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <g id="text_17">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="368.414286" y="94.071638" transform="rotate(-0 368.414286 94.071638)">SOF/VEL 94.31%</text>
+    </g>
+    <g id="patch_31">
+     <path d="M 348.814286 104.140974 
+L 362.814286 104.140974 
+L 362.814286 99.240974 
+L 348.814286 99.240974 
+z
+" style="fill: #d55e00"/>
+    </g>
+    <g id="text_18">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="368.414286" y="104.140974" transform="rotate(-0 368.414286 104.140974)">HCV antibody 1.44%</text>
+    </g>
+    <g id="patch_32">
+     <path d="M 348.814286 114.210447 
+L 362.814286 114.210447 
+L 362.814286 109.310447 
+L 348.814286 109.310447 
+z
+" style="fill: #009e73"/>
+    </g>
+    <g id="text_19">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="368.414286" y="114.210447" transform="rotate(-0 368.414286 114.210447)">HCV RNA 4.19%</text>
+    </g>
+    <g id="patch_33">
+     <path d="M 348.814286 124.279783 
+L 362.814286 124.279783 
+L 362.814286 119.379783 
+L 348.814286 119.379783 
+z
+" style="fill: #cc79a7"/>
+    </g>
+    <g id="text_20">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="368.414286" y="124.279783" transform="rotate(-0 368.414286 124.279783)">Consultation 0.06%</text>
+    </g>
+   </g>
+  </g>
+  <g id="axes_5">
+   <g id="matplotlib.axis_9"/>
+   <g id="matplotlib.axis_10"/>
+   <g id="patch_34">
+    <path d="M 375.458184 85.168187 
+C 372.721731 86.266282 370.211816 87.86106 368.055317 89.871904 
+C 365.898818 91.882749 364.132695 94.275196 362.846228 96.928305 
+C 361.559761 99.581413 360.774999 102.449712 360.531611 105.388206 
+C 360.288223 108.3267 360.590382 111.285026 361.422812 114.113638 
+C 362.255242 116.942249 363.603678 119.592667 365.399953 121.930909 
+C 367.196229 124.269152 369.409558 126.255144 371.928055 127.788492 
+C 374.446552 129.32184 377.227052 130.376264 380.128999 130.898462 
+C 383.030945 131.42066 386.004601 131.401681 388.899646 130.842485 
+C 391.794691 130.283289 394.561506 129.193461 397.060226 127.628091 
+C 399.558946 126.062722 401.746746 124.04864 403.513029 121.687661 
+C 405.279313 119.326681 406.593808 116.659267 407.390066 113.820261 
+C 408.186324 110.981255 408.450698 108.019313 408.169823 105.084165 
+C 407.888948 102.149017 407.067638 99.290969 405.747411 96.654497 
+C 404.427184 94.018025 402.630668 91.648316 400.448678 89.665161 
+C 398.266688 87.682005 395.736622 86.119394 392.986376 85.056317 
+C 390.23613 83.993241 387.312842 83.447919 384.364286 83.447919 
+L 384.364286 107.362205 
+z
+" style="fill: #0072b2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_35">
+    <path d="M 377.694778 84.39678 
+C 377.315935 84.506802 376.939872 84.626181 376.566935 84.754808 
+C 376.193998 84.883435 375.824302 85.02127 375.458184 85.168187 
+L 384.364286 107.362205 
+z
+" style="fill: #d55e00; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_36">
+    <path d="M 384.276963 83.448078 
+C 383.16455 83.45214 382.053775 83.533817 380.952732 83.692512 
+C 379.851689 83.851207 378.76306 84.086535 377.694778 84.39678 
+L 384.364286 107.362205 
+z
+" style="fill: #009e73; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_37">
+    <path d="M 384.364286 83.447919 
+C 384.349732 83.447919 384.335178 83.447932 384.320624 83.447959 
+C 384.306071 83.447985 384.291517 83.448025 384.276963 83.448078 
+L 384.364286 107.362205 
+z
+" style="fill: #cc79a7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_21">
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(360.573036 62.332785)">8000 / F 50%</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(366.131161 71.469348)">S$50.13m</text>
+   </g>
+   <g id="legend_5">
+    <g id="patch_38">
+     <path d="M 420.557143 94.071638 
+L 434.557143 94.071638 
+L 434.557143 89.171638 
+L 420.557143 89.171638 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <g id="text_22">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="440.157143" y="94.071638" transform="rotate(-0 440.157143 94.071638)">SOF/VEL 93.93%</text>
+    </g>
+    <g id="patch_39">
+     <path d="M 420.557143 104.140974 
+L 434.557143 104.140974 
+L 434.557143 99.240974 
+L 420.557143 99.240974 
+z
+" style="fill: #d55e00"/>
+    </g>
+    <g id="text_23">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="440.157143" y="104.140974" transform="rotate(-0 440.157143 104.140974)">HCV antibody 1.58%</text>
+    </g>
+    <g id="patch_40">
+     <path d="M 420.557143 114.210447 
+L 434.557143 114.210447 
+L 434.557143 109.310447 
+L 420.557143 109.310447 
+z
+" style="fill: #009e73"/>
+    </g>
+    <g id="text_24">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="440.157143" y="114.210447" transform="rotate(-0 440.157143 114.210447)">HCV RNA 4.44%</text>
+    </g>
+    <g id="patch_41">
+     <path d="M 420.557143 124.279783 
+L 434.557143 124.279783 
+L 434.557143 119.379783 
+L 420.557143 119.379783 
+z
+" style="fill: #cc79a7"/>
+    </g>
+    <g id="text_25">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="440.157143" y="124.279783" transform="rotate(-0 440.157143 124.279783)">Consultation 0.06%</text>
+    </g>
+   </g>
+  </g>
+  <g id="axes_6">
+   <g id="matplotlib.axis_11"/>
+   <g id="matplotlib.axis_12"/>
+   <g id="patch_42">
+    <path d="M 442.877642 87.440524 
+C 440.506969 89.01483 438.43623 90.999735 436.763032 93.301677 
+C 435.089834 95.60362 433.840886 98.185854 433.075059 100.926664 
+C 432.309232 103.667474 432.038751 106.523108 432.276364 109.358963 
+C 432.513978 112.194817 433.255893 114.965624 434.46714 117.540776 
+C 435.678386 120.115929 437.339629 122.454322 439.372562 124.445731 
+C 441.405496 126.437141 443.77767 128.049778 446.377268 129.20763 
+C 448.976866 130.365481 451.762391 131.050065 454.602545 131.229112 
+C 457.442698 131.408158 460.292143 131.07881 463.016567 130.256591 
+C 465.740991 129.434372 468.296905 128.132407 470.563832 126.412066 
+C 472.830759 124.691725 474.772512 122.580469 476.297566 120.177816 
+C 477.822619 117.775163 478.906628 115.119465 479.498496 112.335902 
+C 480.090364 109.552339 480.180644 106.685345 479.76508 103.870058 
+C 479.349516 101.054772 478.434741 98.336134 477.063875 95.84229 
+C 475.693009 93.348446 473.887935 91.119206 471.733737 89.259646 
+C 469.579539 87.400087 467.110604 85.939893 464.443308 84.947892 
+C 461.776013 83.955891 458.952935 83.447919 456.107143 83.447919 
+L 456.107143 107.362205 
+z
+" style="fill: #0072b2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_43">
+    <path d="M 446.172066 85.609336 
+C 445.599984 85.87062 445.038433 86.15437 444.488721 86.459924 
+C 443.939009 86.765479 443.401565 87.0926 442.877642 87.440524 
+L 456.107143 107.362205 
+z
+" style="fill: #d55e00; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_44">
+    <path d="M 456.022848 83.448068 
+C 454.327708 83.454043 452.637998 83.64024 450.982231 84.003516 
+C 449.326463 84.366793 447.714005 84.905094 446.172066 85.609336 
+L 456.107143 107.362205 
+z
+" style="fill: #009e73; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_45">
+    <path d="M 456.107143 83.447919 
+C 456.093094 83.447919 456.079044 83.447931 456.064995 83.447956 
+C 456.050946 83.447981 456.036897 83.448018 456.022848 83.448068 
+L 456.107143 107.362205 
+z
+" style="fill: #cc79a7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_26">
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(423.203393 62.332785)">No cap [reference]</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(437.874018 71.469348)">S$61.08m</text>
+   </g>
+   <g id="legend_6">
+    <g id="patch_46">
+     <path d="M 492.3 94.071638 
+L 506.3 94.071638 
+L 506.3 89.171638 
+L 492.3 89.171638 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <g id="text_27">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="511.9" y="94.071638" transform="rotate(-0 511.9 94.071638)">SOF/VEL 90.67%</text>
+    </g>
+    <g id="patch_47">
+     <path d="M 492.3 104.140974 
+L 506.3 104.140974 
+L 506.3 99.240974 
+L 492.3 99.240974 
+z
+" style="fill: #d55e00"/>
+    </g>
+    <g id="text_28">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="511.9" y="104.140974" transform="rotate(-0 511.9 104.140974)">HCV antibody 2.51%</text>
+    </g>
+    <g id="patch_48">
+     <path d="M 492.3 114.210447 
+L 506.3 114.210447 
+L 506.3 109.310447 
+L 492.3 109.310447 
+z
+" style="fill: #009e73"/>
+    </g>
+    <g id="text_29">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="511.9" y="114.210447" transform="rotate(-0 511.9 114.210447)">HCV RNA 6.76%</text>
+    </g>
+    <g id="patch_49">
+     <path d="M 492.3 124.279783 
+L 506.3 124.279783 
+L 506.3 119.379783 
+L 492.3 119.379783 
+z
+" style="fill: #cc79a7"/>
+    </g>
+    <g id="text_30">
+     <text style="font-size: 7px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="511.9" y="124.279783" transform="rotate(-0 511.9 124.279783)">Consultation 0.06%</text>
+    </g>
+   </g>
+  </g>
+  <g id="text_31">
+   <text style="font-weight: 700; font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(193.315625 9.424068)">2026–2030 discounted cost composition</text>
+   <text style="font-weight: 700; font-size: 8px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(192.6375 18.494381)">(2026 S$, 3%/yr; shares of item medians)</text>
   </g>
  </g>
 </svg>

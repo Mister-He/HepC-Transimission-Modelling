@@ -6,7 +6,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i+1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261014_agepop/fit.rds")), mustWork = TRUE)
+FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261020_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/scenarios_2026"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 config <- jsonlite::fromJSON(file.path(ROOT, "data/scenario_policy_config.json"))

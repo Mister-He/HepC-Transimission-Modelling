@@ -26,14 +26,5 @@
   ],
   "population_sigma_log": 0.1,
   "equilibrium_horizon_years": 150,
-  "equilibrium_lag_years": 5,
-  "entry": [
-    257,
-    644,
-    292,
-    94,
-    21,
-    1
-  ],
-  "entry_sigma_log": 1.0
+  "equilibrium_lag_years": 5
 }

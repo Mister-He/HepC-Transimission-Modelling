@@ -17,7 +17,7 @@ arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) de
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE); setwd(ROOT)
 K <- as.integer(arg("--n-datasets", "8")); MAX_EVALS <- as.integer(arg("--max-evals", "30000"))
 CORES <- as.integer(arg("--cores", "8")); SEED <- as.integer(arg("--seed", "20261201"))
-FIT <- arg("--fit", "output/calibration/r_20261014_agepop/fit.rds")
+FIT <- arg("--fit", "output/calibration/r_20261020_agepop/fit.rds")
 NPE <- "output/calibration/npe_lhs"; OUT <- "output/calibration/npe_vs_mcmc/mcmc_sbc"
 TH <- paste0("theta", 1:12)
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)

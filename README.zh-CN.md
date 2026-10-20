@@ -21,11 +21,11 @@ seroprevalence 和 population count；年龄 target 不乘 `0.74`，也不再使
 47% halfway-house/release-cohort target。
 
 ```bash
-Rscript scripts/run_calibration.R --run-id r_20261014_agepop \
+Rscript scripts/run_calibration.R --run-id r_20261020_agepop \
   --maxit 3000 --nm-restarts 5 --n-starts 7 --sd-perturb 0.9 --seed 20261001 --cores 8
 ```
 
-监狱率参数：`Rscript scripts/model/preprocess.R`（需要 `data/sps.csv`）用 Stan 拟合释放率、再逮捕率和回到注射的比例 `pi`（全部药物使用记录），并由 2015 年监狱稳态（筛查人群的监狱人数，老化 0.1、死亡率 `mu*omega` 与模型一致）给出首次逮捕流 `f_pop`；`Rscript scripts/model/update_rate_params.R` 写入 `setup.R`。`sim.cpp` 由 `f_first` 推出首次逮捕率 `lambda1`。慢性病毒血症者的非肝病死亡率乘以 HR 1.47（Lee 2012），`omega` 按冻结的病毒血症比例重标定，使 PWID 平均死亡率不变。
+监狱率参数：`Rscript scripts/model/preprocess.R`（需要 `data/sps.csv`）用 Stan 拟合释放率、再逮捕率和回到注射的比例 `pi`（全部药物使用记录），再逮捕模型中的 2015 年监狱稳态（老化 0.1、死亡率 `mu*omega` 与模型一致）只用于估计 `lambda3`；`Rscript scripts/model/update_rate_params.R` 写入 `setup.R`。监狱记录观察不到从未被捕的人，因此首次逮捕率 `lambda1` 假设等于再逮捕率 `lambda3`，直接写在 `setup.R` 中。θ7–θ12 是进入率相对 CNB 2015 新吸毒者人数的对数倍数，似然中没有进入项。慢性病毒血症者的非肝病死亡率乘以 HR 1.47（Lee 2012），`omega` 按冻结的病毒血症比例重标定，使 PWID 平均死亡率不变。
 
 生产路径：Nelder–Mead 多起点拟合给出先验中心（`prior_centre()` 把最优解移到参数边界内至少 5 个先验 SD）→ 参考 MCMC（自适应随机游走 Metropolis，4 条链，每条 50,000 次评估，warmup 10,000，从第 5,000 次开始自适应，thin 10）给出生产后验 → scenario。单轮 NPE（50,000 个 LHS 先验模拟，5 个网络的集成）与 SBC 只做交叉验证，不进入生产路径：
 

@@ -9,4 +9,4 @@ The following objects are masked from ‘package:base’:
 
     intersect, setdiff, setequal, union
 
-MCMC done in 9765 s; outputs in /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/mcmc_sbc/ds05 
+MCMC done in 9483 s; outputs in /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/mcmc_sbc/ds05 

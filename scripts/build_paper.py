@@ -6,7 +6,7 @@
 # Usage: python3 scripts/build_paper.py [ROOT]. Needs output/scenarios_2026/, output/calibration/,
 # docs/references.bib, docs/plos.csl and pandoc. Edit prose here, not in Word.
 # =============================================================================
-import csv, json, re, sys, os, subprocess, tempfile
+import csv, json, math, re, sys, os, subprocess, tempfile
 ROOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
 TMP = tempfile.mkdtemp()
 S = os.path.join(ROOT, "output/scenarios_2026")
@@ -16,7 +16,7 @@ def setup_val(name):  # numeric value(s) of a `name = ...` entry in setup.R
     v = re.search(rf"^\s*{name}\s*=\s*(c\([^)]*\)|[0-9.eE+-]+)", SETUP, re.M).group(1)
     return [float(x) for x in re.findall(r"[0-9.]+(?:[eE][+-]?[0-9]+)?", v)]
 PI, HR, VREF, PSI_DC = (setup_val(n)[0] for n in ("pi_recid", "hr_viraemic", "viraemic_share_ref", "psi_DC"))
-F_FIRST = setup_val("f_first")
+LAMBDA1 = setup_val("lambda1")
 summ = {r["scenario_id"]: r for r in rd("output/scenarios_2026/scenario_2030_summary.csv")}
 traj = rd("output/scenarios_2026/scenario_trajectories.csv")
 nt = rd("output/scenarios_2026/no_treatment_trajectory.csv")
@@ -74,9 +74,10 @@ sinf_inc = 100 * F(summ["SInf"]["incidence_reduction"])
 max_inc = max(100 * F(summ[k]["incidence_reduction"]) for k in finite)
 d_inc_share = 1 - F(summ["SInf"]["fx_incidence"]) / F(summ["SInf"]["incidence"])  # D share of 2030 infections
 # The narrative below is written for these results; stop the build if they change.
-assert n_joint == 0 and n_inc == 0 and sinf_inc < 80 and mort_finite, "results changed: revise the narrative"
-assert abs(j_inc - j_mort) < 10, "prison treatment no longer cuts infections and deaths alike: revise the narrative"
+assert n_inc == 15 and j_inc >= 80 and j_mort < 65 and mort_finite and n_joint == len(mort_finite), "results changed: revise the narrative"
+assert j_inc - j_mort > 20, "prison treatment no longer cuts infections much faster than deaths: revise the narrative"
 def mprob(sid): return f"{100*F(summ[sid]['who_mortality_pass_prob']):.0f}%"
+def iprob(sid): return f"{100*F(summ[sid]['who_incidence_pass_prob']):.0f}%"
 pass_caps = sorted({int(F(summ[k]["screening_total"])) for k in mort_finite})
 cap_txt = (f"{pass_caps[0]:,} tests a year" if len(pass_caps) == 1 else f"{pass_caps[0]:,} to {pass_caps[-1]:,} tests a year")
 mult_txt = (f"about {round(pass_caps[0] / 600)} times" if len(pass_caps) == 1 else f"{round(pass_caps[0] / 600)} to {round(pass_caps[-1] / 600)} times")
@@ -111,9 +112,12 @@ def stx(m, full=True):
     r = strata[m]
     return (f"{F(r['median']):,.0f} (95% interval: {F(r['lower_95']):,.0f}–{F(r['upper_95']):,.0f})" if full
             else f"{F(r['median']):,.0f} ({F(r['lower_95']):,.0f}–{F(r['upper_95']):,.0f})")
-assert summ["S5000_F25"]["who_mortality_pass"] != "TRUE", "S5000_F25 now meets the mortality target: revise the narrative"
-s5_txt = (f"At 5,000 tests a year with 25% to F, the median mortality reduction was {red('S5000_F25', 'mortality_reduction')}, "
-          f"just below the target. The mortality target was met in {mprob('S5000_F25')} of draws, so this scenario sits on the threshold.")
+assert summ["S8000_F75"]["who_mortality_pass"] != "TRUE" and "S5000_F25" in mort_finite, "threshold scenarios changed: revise the narrative"
+s8_txt = (f"At 8,000 tests a year with 75% to F, the median mortality reduction was {red('S8000_F75', 'mortality_reduction')}, "
+          f"just below the target. The mortality target was met in {mprob('S8000_F75')} of draws, so this scenario sits on the threshold.")
+_mj = min(F(summ[k]['joint_pass_probability']) for k in mort_finite)
+min_joint_txt = "every draw" if _mj == 1 else f"at least {math.floor(1000*_mj)/10:.1f}% of draws"
+assert max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S600_F75']) - F(j['mortality_reduction']) < 0.05, "600/yr gain is no longer under 5 points"
 def inc_per_pp(sid):
     d = (F(summ[sid]["mortality_reduction"]) - F(j["mortality_reduction"])) * 100
     return F(summ[sid]["incremental_discounted_cost_vs_j_only_sgd"]) / 1e6 / d
@@ -151,11 +155,11 @@ Hepatitis C virus (HCV) infection in Singapore is concentrated among people who 
 
 ## Methods and findings
 
-We built an age structured HCV model with four groups: active PWID never imprisoned (D), people in prison (J), and released people who still inject (F) or have stopped (X). We calibrated it to 2015 prison data with Bayesian methods. We assumed treatment in prison from 2019. From 2026 we compared 15 community screening scenarios of 600 to 8,000 tests a year, with 25%, 50% or 75% for F and the rest for X. Results are medians with 95% uncertainty intervals (UI) across {ndraw:,} posterior draws. Without treatment, new infections in 2030 were {ratio_pct(nt30, 'incidence_ratio_2015')} of the 2015 level. With prison treatment alone, new infections fell by {red('J_only', 'incidence_reduction')} by 2030 and HCV deaths by {red('J_only', 'mortality_reduction')}. In 2026, {100*xshare:.0f}% of chronic infections among released people were in X. No scenario met the incidence target: even screening everyone eligible after release cut new infections by only {sinf_inc:.0f}%, because {100*d_inc_share:.0f}% of new infections in 2030 occurred among people who had never been imprisoned. The mortality target was met at the median only at {scen_phrase(mort_finite)}. At 8,000 tests a year, the incidence reduction was {inc8_txt} for every split, while the mortality reduction fell from {med('S8000_F25','mortality_reduction')}% to {med('S8000_F75','mortality_reduction')}% as the F share rose from 25% to 75%. The model covers only PWID and assumes ideal linkage to treatment.
+We built an age structured HCV model with four groups: active PWID never imprisoned (D), people in prison (J), and released people who still inject (F) or have stopped (X). We calibrated it to 2015 prison data with Bayesian methods. We assumed treatment in prison from 2019. From 2026 we compared 15 community screening scenarios of 600 to 8,000 tests a year, with 25%, 50% or 75% for F and the rest for X. Results are medians with 95% uncertainty intervals (UI) across {ndraw:,} posterior draws. Without treatment, new infections in 2030 were {ratio_pct(nt30, 'incidence_ratio_2015')} of the 2015 level. With prison treatment alone, new infections fell by {red('J_only', 'incidence_reduction')} by 2030, meeting the incidence target in {iprob('J_only')} of draws, but HCV deaths fell by only {red('J_only', 'mortality_reduction')}. In 2026, {100*xshare:.0f}% of chronic infections among released people were in X, and {100*fx_death_share_2026:.0f}% of HCV deaths occurred in F and X. Every screening scenario met the incidence target. The mortality target was met at the median only at {scen_phrase(mort_finite)}, and these scenarios met both targets in {min_joint_txt}. At 8,000 tests a year, the incidence reduction was {inc8_txt} for every split, while the mortality reduction fell from {med('S8000_F25','mortality_reduction')}% to {med('S8000_F75','mortality_reduction')}% as the F share rose from 25% to 75%. The model covers only PWID and assumes ideal linkage to treatment.
 
 ## Conclusions
 
-In this model, prison treatment alone roughly halves new HCV infections and HCV deaths by 2030, short of both targets. Most remaining deaths occur among released people who no longer inject, so large scale community screening is needed to reach the mortality target. The F group is small, so screening beyond its size adds no benefit, and most community capacity should go to X. The incidence target cannot be met through prison and post release services, because most new infections occur in people who have never been imprisoned.
+In this model, prison treatment alone cuts new HCV infections by about four fifths by 2030 but halves HCV deaths, short of the mortality target. Most remaining deaths occur among released people who no longer inject, so large scale community screening is needed to reach the mortality target. The F group is small, so screening beyond its size adds no benefit, and most community capacity should go to X. The result rests on the assumption that people who inject are first arrested as often as released people are re-arrested, so most reach prison within a few years.
 
 # Author summary
 
@@ -168,13 +172,13 @@ In this model, prison treatment alone roughly halves new HCV infections and HCV 
 ## What did the researchers do and find?
 
 - We built a model of hepatitis C transmission and liver disease among people with a history of injecting drugs in Singapore. We calibrated it to prison data and carried uncertainty in all model parameters through to the results.
-- Prison treatment alone reduced new infections by {j_inc:.0f}% and hepatitis C deaths by {j_mort:.0f}% by 2030, short of the WHO targets of 80% and 65%.
+- Prison treatment alone reduced new infections by {j_inc:.0f}% and hepatitis C deaths by {j_mort:.0f}% by 2030. It met the WHO target of 80% for infections but not the target of 65% for deaths.
 - By 2026, nearly all chronic infections and deaths among released people were in those who had stopped injecting. Shifting screening towards people who still inject did not improve infections once that small group was covered. It did reduce the fall in deaths.
-- No strategy met the target for new infections. Most new infections occurred among people who inject but have never been imprisoned, whom prison and post release services do not reach.
+- Community screening of {cap_txt} met both targets, if most tests went to people who had stopped injecting.
 
 ## What do these findings mean?
 
-- Prison treatment reaches only people who are imprisoned. Cutting new infections further needs testing and prevention for people who inject before they are ever imprisoned.
+- Prison treatment works well against transmission because most people who inject pass through prison. Deaths come from liver disease that built up over decades and fall more slowly.
 - Reaching the mortality target needs large scale community screening, mainly among people who have stopped injecting.
 - These results come from a model with ideal links from testing to treatment. Real programmes will need data on uptake, referral and cost before they set targets.
 
@@ -198,13 +202,13 @@ This is a modelling study. It used published and aggregate data only, so ethics 
 
 We built a deterministic compartmental model of HCV transmission and liver disease (Fig 1). The population includes everyone with a history of injecting drugs in Singapore. It is split into four groups. Active PWID who have never been imprisoned form group D. People in prison form group J. Released people who still inject form group F. Released people who have stopped injecting form group X. People enter D through new drug use. They move to J on first arrest. On release they move to F or X. People in F can be arrested again. The model has six age groups and four liver stages. The stages are no cirrhosis, compensated cirrhosis, decompensated cirrhosis and hepatocellular carcinoma. Each person is susceptible, acutely infected, chronically infected, on treatment, or recovered.
 
-Transmission occurs only among active injectors in D and F. People in J and X are not exposed. Recovery does not give immunity, so recovered people in D and F can be reinfected. Liver disease progresses at rates taken from the literature [@thein2008; @lim2018; @kanwal2014]. Cure stops progression before cirrhosis and reduces it after cirrhosis [@morgan2013; @vandermeer2012]. Treatment is 12 weeks of sofosbuvir and velpatasvir. Cure rates depend on genotype and liver stage [@pawlotsky2020; @xiao2025]. People with HCV have higher death rates from decompensated cirrhosis and liver cancer [@lim2018; @mathers2013]. People with chronic infection also die {HR:.2f} times as fast from other causes [@lee2012]. Release and re-arrest rates and the yearly number of first arrests came from Singapore Prison Service records, and the first arrest rate was set so that the model reproduces that number. S1 Text gives all equations, parameter values and sources.
+Transmission occurs only among active injectors in D and F. People in J and X are not exposed. Recovery does not give immunity, so recovered people in D and F can be reinfected. Liver disease progresses at rates taken from the literature [@thein2008; @lim2018; @kanwal2014]. Cure stops progression before cirrhosis and reduces it after cirrhosis [@morgan2013; @vandermeer2012]. Treatment is 12 weeks of sofosbuvir and velpatasvir. Cure rates depend on genotype and liver stage [@pawlotsky2020; @xiao2025]. People with HCV have higher death rates from decompensated cirrhosis and liver cancer [@lim2018; @mathers2013]. People with chronic infection also die {HR:.2f} times as fast from other causes [@lee2012]. Release and re-arrest rates came from Singapore Prison Service records. These records do not observe people who have never been arrested, so we assumed that the first arrest rate equals the re-arrest rate. S1 Text gives all equations, parameter values and sources.
 
 ## Data and calibration
 
-We fitted the model to 2015 data from the Singapore Prison Service. These were seroprevalence and prison population counts in six age groups. We estimated 12 parameters. Six scaled the contact rates by age. Six set the rate of entry into injecting by age, as an excess above the minimum entry that supplies the observed first arrests. Each model run started in model year 0 and ran for 150 years to reach equilibrium. The end of that period represents 2015. From 2016, entry into injecting followed the official annual number of new drug users by age [@singstat_drug]. The 2025 value was held constant to 2030.
+We fitted the model to 2015 data from the Singapore Prison Service. These were seroprevalence and prison population counts in six age groups. We estimated 12 parameters. Six scaled the contact rates by age. Six scaled the rate of entry into injecting by age. Each model run started in model year 0 and ran for 150 years to reach equilibrium. The end of that period represents 2015. From 2016, entry into injecting followed the official annual number of new drug users by age [@singstat_drug]. The 2025 value was held constant to 2030.
 
-A multi start Nelder Mead fit gave the best fitting parameter values. We used them as the centre of a normal prior with standard deviation 0.20 on the log scale. Any best fit value closer than five prior standard deviations to a parameter bound was moved inward to that distance, so that the prior lies within the bounds. The likelihood was binomial for the prevalence counts and log normal for the population counts and for the 2015 entry into injecting, compared with the official count of new drug users. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran four chains from independent prior draws, with 50,000 model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. Simulation based calibration on {int(npe_sbc[0]['n_sbc']):,} simulated datasets showed well calibrated neural posteriors (95% coverage {rng('coverage_95')}). Policy results agreed within {100*npe_pol:.1f}%. The neural posterior's 95% intervals were {w_txt} those from MCMC. We used MCMC, which samples the exact posterior and whose error falls with longer runs. S1 Text, Section 2 gives details.
+A multi start Nelder Mead fit gave the best fitting parameter values. We used them as the centre of a normal prior with standard deviation 0.20 on the log scale. Any best fit value closer than five prior standard deviations to a parameter bound was moved inward to that distance, so that the prior lies within the bounds. The likelihood was binomial for the prevalence counts and log normal for the population counts. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran four chains from independent prior draws, with 50,000 model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. Simulation based calibration on {int(npe_sbc[0]['n_sbc']):,} simulated datasets showed well calibrated neural posteriors (95% coverage {rng('coverage_95')}). Policy results agreed within {100*npe_pol:.1f}%. The neural posterior's 95% intervals were {w_txt} those from MCMC. We used MCMC, which samples the exact posterior and whose error falls with longer runs. S1 Text, Section 2 gives details.
 
 ## Treatment and screening scenarios
 
@@ -230,19 +234,21 @@ We drew {ndraw:,} parameter sets at random from the MCMC posterior. For each dra
 
 The model reproduced the age specific seroprevalence and population targets. All 95% predictive intervals overlapped the target intervals (S1 Text, Section 2). In 2015, the model estimated {stx('population_ever_PWID')} people with a history of injecting drugs. Of these, {stx('population_F', False)} were in F and {stx('population_X', False)} were in X.
 
-## Prison treatment alone met neither target
+## Prison treatment alone met the incidence target but not the mortality target
 
 Without any treatment, new infections rose after 2015 as entry into injecting increased. They remained high to 2030 (Fig 2). In 2030 annual new infections were {ratio_pct(nt30, 'incidence_ratio_2015')} of the 2015 level. HCV deaths were {ratio_pct(nt30, 'mortality_ratio_2015')} of the 2015 level.
 
-Prison treatment from 2019 changed the course of new infections. By 2025 they were {ratio_pct(j25, 'incidence_ratio_2015')} of the 2015 level. By 2030 they had fallen by {red('J_only', 'incidence_reduction')}. {"This was close to" if j_inc >= 70 else "This was well short of"} the 80% target. Deaths fell at a similar pace. By 2025 they were {ratio_pct(j25, 'mortality_ratio_2015')} of the 2015 level. By 2030 the reduction was {red('J_only', 'mortality_reduction')}, well short of the 65% target.
+Prison treatment from 2019 changed the course of new infections. By 2025 they were {ratio_pct(j25, 'incidence_ratio_2015')} of the 2015 level. By 2030 they had fallen by {red('J_only', 'incidence_reduction')}, which met the 80% target at the median and in {iprob('J_only')} of draws. Deaths fell more slowly. By 2025 they were {ratio_pct(j25, 'mortality_ratio_2015')} of the 2015 level. By 2030 the reduction was {red('J_only', 'mortality_reduction')}, well short of the 65% target.
+
+Prison treatment reached most of the transmission network because, in the model, people who inject do not stay out of prison for long. In 2015, {stx('population_D', False)} of the {stx('population_current_PWID', False)} people currently injecting had never been imprisoned, but at the assumed first arrest rate ({min(LAMBDA1):.2f} to {max(LAMBDA1):.2f} a year by age) they were first arrested after about {1/LAMBDA1[1]:.0f} years on average at age 20 to 29. This follows from the assumption that first arrest is as frequent as re-arrest (S1 Text, Section 1).
 
 The reason lies in where infection and disease sit after release. In 2026, F held {col(cF, 'chronic_stock_start', d=0)} people with chronic infection. X held {col(cX, 'chronic_stock_start', d=0)}. X thus held {100*xshare:.0f}% of chronic infections among released people. In the J only scenario, {100*fx_death_share_2026:.0f}% of HCV deaths in 2026 occurred in F and X. By 2030 this share was {100*fx_death_share_2030:.0f}%. People in X do not inject and do not transmit. Prison treatment does not reach them after release.
 
-## Community screening can meet the mortality target but not the incidence target
+## Community screening can meet both targets
 
-Adding community screening increased both reductions (Table 1). No scenario met the incidence target. The largest reduction in a finite scenario was {max_inc:.1f}%, and screening everyone eligible in F and X every year gave {red('SInf', 'incidence_reduction')}. In that ideal reference, {100*d_inc_share:.0f}% of new infections in 2030 occurred in D, among people who inject but have never been imprisoned. Neither prison treatment nor screening after release reaches them, and no draw met the incidence target in any scenario.
+Adding community screening increased both reductions (Table 1). Every scenario met the incidence target at the median, including 600 tests a year ({red('S600_F25', 'incidence_reduction')} with 25% to F; target met in {iprob('S600_F25')} of draws). Screening everyone eligible in F and X every year gave {red('SInf', 'incidence_reduction')}. In that ideal reference, {100*d_inc_share:.0f}% of the few remaining new infections in 2030 occurred in D, among people who inject but have never been imprisoned.
 
-The mortality target was met at the median in {n_mort} of 15 scenarios: {scen_phrase(mort_finite)}. At 8,000 tests a year with 25% to F, the mortality target was met in {mprob('S8000_F25')} of draws. With 50% to F, the share was {mprob('S8000_F50')}. {s5_txt} The ideal reference reduced mortality by {red('SInf', 'mortality_reduction')}.
+The mortality target was met at the median in {n_mort} of 15 scenarios: {scen_phrase(mort_finite)}. Each met both targets in {min_joint_txt}. {s8_txt} The ideal reference reduced mortality by {red('SInf', 'mortality_reduction')}.
 
 At 600 tests a year, the planned size of the current community programme, the mortality reduction was at most {max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S600_F75'])*100:.1f}%. This was a gain of under 5 percentage points over prison treatment alone.
 
@@ -252,7 +258,7 @@ The split between F and X changed the results in a consistent way (Fig 3). More 
 
 The F group is small. In 2026 about {round(f_pool,-1):,.0f} people in F were eligible for screening each year. Once the F quota exceeded this number, extra tests could not be used (S1 Text, Fig S5). At 8,000 tests a year with 25% to F, {100*fq_8025:.0f}% of the F quota was used. With 75% to F, only {100*fq_8075:.0f}% was used. In all three splits at this capacity, the incidence reduction was {inc8_txt}. The extra F tests were idle, while the X tests they replaced were lost. The mortality reduction fell from {red('S8000_F25','mortality_reduction')} with 25% to F to {red('S8000_F75','mortality_reduction')} with 75% to F.
 
-At lower capacities there was a real trade off. At 2,000 tests a year, moving from 25% to 75% for F raised the incidence reduction from {med('S2000_F25','incidence_reduction')}% to {med('S2000_F75','incidence_reduction')}%. It lowered the mortality reduction from {med('S2000_F25','mortality_reduction')}% to {med('S2000_F75','mortality_reduction')}%. A simple rule follows. F should receive enough tests to cover its eligible group each year, about 1,550. All remaining capacity should go to X.
+At lower capacities there was a real trade off. At 2,000 tests a year, moving from 25% to 75% for F raised the incidence reduction from {med('S2000_F25','incidence_reduction')}% to {med('S2000_F75','incidence_reduction')}%. It lowered the mortality reduction from {med('S2000_F25','mortality_reduction')}% to {med('S2000_F75','mortality_reduction')}%. A simple rule follows. F should receive enough tests to cover its eligible group each year, about {round(f_pool,-1):,.0f}. All remaining capacity should go to X.
 
 ## Treatment volume and cost
 
@@ -264,23 +270,23 @@ Treatment starts in F and X over 2026 to 2030 ranged from {summ['S600_F75']['fx_
 | --- | --- | --- | --- | --- | --- |
 {chr(10).join(t1row(s) for s in table1_ids)}
 
-Reductions compare 2030 with 2015. Values are medians (95% UI) across {ndraw:,} posterior draws. Targets are at least 80% for incidence and at least 65% for mortality. No draw met the incidence target in any scenario. Costs are in 2026 Singapore dollars, discounted at 3% a year, and include prison treatment costs from 2026. Treatment starts count courses, not people. S1 Text, Table S9 gives all 17 scenarios.
+Reductions compare 2030 with 2015. Values are medians (95% UI) across {ndraw:,} posterior draws. Targets are at least 80% for incidence and at least 65% for mortality. Every scenario met the incidence target at the median. Costs are in 2026 Singapore dollars, discounted at 3% a year, and include prison treatment costs from 2026. Treatment starts count courses, not people. S1 Text, Table S9 gives all 17 scenarios.
 
 # Discussion
 
-In this model, prison treatment from 2019 cut new HCV infections among people who inject drugs in Singapore by {j_inc:.0f}% and HCV deaths by {j_mort:.0f}% by 2030. By 2026, nearly all chronic infections and HCV deaths among released people were in those who had stopped injecting. Community screening was needed to meet the mortality target. The split of screening between released people who still inject and those who have stopped mattered as much as the total amount. No strategy we modelled met the incidence target, because most new infections occurred in people who had not yet been imprisoned.
+In this model, prison treatment from 2019 cut new HCV infections among people who inject drugs in Singapore by {j_inc:.0f}% and HCV deaths by {j_mort:.0f}% by 2030. This met the incidence target but not the mortality target. By 2026, nearly all chronic infections and HCV deaths among released people were in those who had stopped injecting. Community screening was needed to meet the mortality target. The split of screening between released people who still inject and those who have stopped mattered as much as the total amount.
 
-Prison treatment works on transmission among people who pass through prison. Curing them before release removes infection from that part of the injecting network, which matches earlier work on treatment as prevention [@martin2013; @lim2018]. But people inject for years before their first arrest, and in this model they acquired {100*d_inc_share:.0f}% of new infections in 2030 even when everyone eligible after release was screened. Reducing these infections needs testing and prevention in the community before imprisonment. Deaths follow a different path. They arise from cirrhosis and liver cancer that built up over many years. Most of this burden sits in people who stopped injecting long ago. They are rarely in prison and do not transmit. Cure also does not remove all risk in people who already have cirrhosis [@morgan2013; @vandermeer2012].
+Prison treatment works on transmission among people who pass through prison. Curing them before release removes infection from that part of the injecting network, which matches earlier work on treatment as prevention [@martin2013; @lim2018]. In this model most people who inject are arrested within a few years of starting, so prison reaches most of the network. That rests on our assumption that the first arrest rate equals the re-arrest rate, which the prison records cannot test. If people inject for longer before their first arrest, more infections would occur out of reach of prison and the incidence result would be weaker; even with screening of everyone eligible after release, {100*d_inc_share:.0f}% of the remaining infections in 2030 occurred in people never imprisoned. Deaths follow a different path. They arise from cirrhosis and liver cancer that built up over many years. Most of this burden sits in people who stopped injecting long ago. They are rarely in prison and do not transmit. Cure also does not remove all risk in people who already have cirrhosis [@morgan2013; @vandermeer2012].
 
 Our findings on the F and X split have direct use for planning. A programme that targets people who still inject may seem the best choice for elimination. Our results show this holds only up to a point. The F group is small and quickly covered. After that, extra tests for F add nothing. The same tests given to X would prevent deaths. Planners should therefore set the F quota by the size of the eligible F group. They should direct the rest to people who have stopped injecting. These people may be harder to reach. They may not use drug services and may not see themselves as at risk. Outreach through primary care, addiction services and records of past imprisonment may be needed.
 
-The scale required is large. The scenarios that met the mortality target needed {cap_txt}. That is {mult_txt} the planned capacity of the current community programme [@moh2025ett]. Even 5,000 tests a year with 25% to F met the mortality target in only {mprob('S5000_F25')} of draws. All scenarios also assumed that every person identified starts treatment. Real linkage is weaker. In a Singapore trial among halfway house residents, only 12.6% of people with antibodies started treatment [@hsiang2022]. Care navigation and simpler models of care can raise uptake [@clink2022; @eckhardt2022]. Even then, real programmes will likely need more screening than our model suggests.
+The scale required is large. The scenarios that met the mortality target needed {cap_txt}. That is {mult_txt} the planned capacity of the current community programme [@moh2025ett]. At 8,000 tests a year, putting 75% of tests to F missed the mortality target in most draws. All scenarios also assumed that every person identified starts treatment. Real linkage is weaker. In a Singapore trial among halfway house residents, only 12.6% of people with antibodies started treatment [@hsiang2022]. Care navigation and simpler models of care can raise uptake [@clink2022; @eckhardt2022]. Even then, real programmes will likely need more screening than our model suggests.
 
 Our study has several strengths. We propagated parameter uncertainty through every scenario using {ndraw:,} draws from a well converged MCMC posterior. We checked the posterior against an independent method, neural posterior estimation. We modelled screening capacity explicitly, so treatment depends on how many people are found. We separated released people by injecting status, which earlier work did not do [@chaillon2021].
 
-The study also has limitations. First, the model covers only people with a history of injecting drugs. It cannot show elimination in the whole population [@who2023validation]. Second, we calibrated the model to one year of prison data. We did not fit it to observed treatment numbers after 2019. The prison treatment assumption may therefore overstate or understate what happened. Third, we assumed perfect linkage from screening to treatment and no loss to follow up. Fourth, people in X cannot be reinfected or return to injecting. Some do relapse, which would add transmission. Fifth, entry into injecting uses counts of new drug users from law enforcement as a proxy, and the same counts anchor the number of people who inject without ever being imprisoned. That number sets the incidence result that prison and post release services cannot reach. Sixth, costs use list prices and an older drug price. Actual payer costs are not public. Seventh, our uncertainty intervals cover model parameters only. The prior was centred on a fit to the same data, and for {n_dom_words} parameters the data narrowed the prior little.
+The study also has limitations. First, the model covers only people with a history of injecting drugs. It cannot show elimination in the whole population [@who2023validation]. Second, we calibrated the model to one year of prison data. We did not fit it to observed treatment numbers after 2019. The prison treatment assumption may therefore overstate or understate what happened. Third, we assumed perfect linkage from screening to treatment and no loss to follow up. Fourth, people in X cannot be reinfected or return to injecting. Some do relapse, which would add transmission. Fifth, the first arrest rate of people who have never been imprisoned is not observed. We set it equal to the re-arrest rate. A lower rate would leave more people who inject outside prison and weaken the effect of prison treatment on new infections. Entry into injecting uses counts of new drug users from law enforcement as a proxy. Sixth, costs use list prices and an older drug price. Actual payer costs are not public. Seventh, our uncertainty intervals cover model parameters only. The prior was centred on a fit to the same data, and for {n_dom_words} parameters the data narrowed the prior little.
 
-In conclusion, prison treatment has done much to reduce HCV among people who inject drugs in Singapore, but by itself it will not meet either WHO target by 2030. Large scale community screening after release can meet the mortality target, if most of it reaches people who have stopped injecting after enough is set aside for those who still inject. Meeting the incidence target needs testing and prevention that reach people who inject before they are ever imprisoned.
+In conclusion, prison treatment has done much to reduce HCV among people who inject drugs in Singapore. In this model it meets the WHO incidence target by 2030 but not the mortality target. Large scale community screening after release can meet both targets, if most of it reaches people who have stopped injecting after enough is set aside for those who still inject.
 
 # Supporting information
 
@@ -324,11 +330,11 @@ All model code, inputs and generated results are in the project repository [repo
 """
 
 # ---------------- Supplementary Information ----------------
-calib = rd("output/calibration/r_20261014_agepop/predictions.csv")
+calib = rd("output/calibration/r_20261020_agepop/predictions.csv")
 hr1 = rd("output/calibration/hr_sensitivity/hr_1/predictions.csv")
 hr_sens = [rd(f"output/calibration/hr_sensitivity/hr_{h}/predictions.csv") for h in ("1.11", "1.23", "1.77")]
-nm_cfg = json.load(open(os.path.join(ROOT, "output/calibration/r_20261014_agepop/run_config.json")))
-nm_sol = rd("output/calibration/r_20261014_agepop/solutions.csv")
+nm_cfg = json.load(open(os.path.join(ROOT, "output/calibration/r_20261020_agepop/run_config.json")))
+nm_sol = rd("output/calibration/r_20261020_agepop/solutions.csv")
 nm_best = min(nm_sol, key=lambda r: F(r["objective"]))
 ovl = rd("figures/calibration_interval_overlap.csv")
 REF = "output/calibration/mcmc_reference"
@@ -345,7 +351,7 @@ def quant(xs, p):
     return xs[lo] + (xs[hi] - xs[lo]) * (i - lo)
 ref_draws = rd(REF + "/mcmc_draws.csv")
 theta_names = ([f"Contact scale, age {a}" for a in ["<20", "20–29", "30–39", "40–49", "50–59", "60+"]] +
-               [f"Excess entry scale, age {a}" for a in ["<20", "20–29", "30–39", "40–49", "50–59", "60+"]])
+               [f"Entry scale, age {a}" for a in ["<20", "20–29", "30–39", "40–49", "50–59", "60+"]])
 def qtxt(xs, d=3): return f"{quant(xs,.5):.{d}f} ({quant(xs,.025):.{d}f} to {quant(xs,.975):.{d}f})"
 post_rows = []; sd_ratio = []
 for i in range(12):
@@ -356,7 +362,9 @@ for i in range(12):
     sd_ratio.append(sd / 0.20)
 moved = [f"θ{i+1}" for i in range(12) if abs(ref_cfg['prior_centre'][i] - F(nm_best[f"theta{i+1}"])) > 1e-9]
 prior_dom = [f"θ{i+1}" for i in range(12) if sd_ratio[i] > 0.8]
-assert moved and prior_dom
+assert prior_dom
+moved_txt = (f"This changed only {', '.join(moved)}, which the best fit placed near its bound, where the likelihood is flat (Table S5)." if moved
+             else "No parameter of the best fit was that close to a bound, so the prior centre is the best fit (Table S5).")
 pd_txt = ", ".join(prior_dom[:-1]) + " and " + prior_dom[-1] if len(prior_dom) > 1 else prior_dom[0]
 diag_rows = [f"| θ{i+1} | {F(d['rhat']):.4f} | {F(d['ess_bulk']):,.0f} | {F(d['ess_tail']):,.0f} | {F(d['mcse_mean'])/F(d['sd']):.3f} |" for i, d in enumerate(ref_diag)]
 def bench_row(k):
@@ -411,7 +419,7 @@ The model is a deterministic system of ordinary differential equations. It has 4
 
 People enter D in the susceptible state and stage 1 at an age specific rate $\\beta_i(t)$. People in D move to J at the first arrest rate $\\lambda^{{(1)}}_i$. People in J are released at rate $\\lambda^{{(2)}}_i$. A share $\\pi = {PI:.2f}$ return to injecting and enter F. The rest enter X. People in F return to J at the re-arrest rate $\\lambda^{{(3)}}_i$. People in X stay in X.
 
-Release and re-arrest rates and $\\pi$ were fitted with Stan to Singapore Prison Service records of everyone held for drug consumption. The modelled population is the people with a known HCV screening result, who were assumed to be the PWID; their 2015 prison counts are the calibration targets. The re-arrest model includes the 2015 prison steady state, with the same ageing (0.1 per year) and background mortality as the model. It gives the yearly first arrest flow $f_i$ ({', '.join(f'{x:g}' for x in F_FIRST)} people by age). The first arrest rate is derived from it: in the HCV free steady state of D, $D_i = (\\beta_i + 0.1 D_{{i-1}} - f_i)/(\\omega\\mu_i + a_i)$, with ageing $a_i = 0.1$ ($a_6 = 0$), and $\\lambda^{{(1)}}_i = f_i / D_i$. Entry is parameterised as the minimum that supplies $f_i$ plus a positive excess (Section 2.3), so every parameter set can supply the first arrests.
+Release and re-arrest rates and $\\pi$ were fitted with Stan to Singapore Prison Service records of everyone held for drug consumption. The modelled population is the people with a known HCV screening result, who were assumed to be the PWID; their 2015 prison counts are the calibration targets. The re-arrest model includes the 2015 prison steady state, with the same ageing (0.1 per year) and background mortality as the model. The prison records observe only people who have been arrested, so they do not identify the first arrest rate of people who have never been imprisoned. We assumed that it equals the re-arrest rate, $\\lambda^{{(1)}}_i = \\lambda^{{(3)}}_i$ ({', '.join(f'{x:.3f}' for x in LAMBDA1)} per year by age).
 
 ## 1.2 Transmission
 
@@ -472,7 +480,7 @@ The other 479 equations follow the same pattern. The full set is in the project 
 | $v$ | Chronic viraemic share of PWID, 2015 (fixed point) | {VREF:.3f} | Model fit |
 | $\\psi^{{HCC}}$ | Relative excess mortality after treatment, stage 4 | 0.37 | [@dang2020] |
 | $\\pi$ | Share returning to injecting after release | {PI:.2f} | Fitted to prison records |
-| $f_i$ | First arrests per year, by age | {', '.join(f'{x:g}' for x in F_FIRST)} | Fitted to prison records |
+| $\\lambda^{{(1)}}_i$ | First arrest rate (per year), by age | {', '.join(f'{x:.3f}' for x in LAMBDA1)} | Assumed equal to $\\lambda^{{(3)}}_i$ |
 
 Genotype specific cure rates were 0.976 (genotype 3) and 0.988 (other) in stages 1 and 2. In stage 3 they were 0.45 and 0.90 without ribavirin and 0.87 and 0.92 with ribavirin [@pawlotsky2020; @xiao2025]. Liver cancer used the stage 3 cure rate because no specific trial data exist.
 
@@ -503,11 +511,11 @@ From 2016 to 2025, entry into D followed the annual number of new drug users by 
 
 ## 2.3 Calibrated parameters and priors
 
-We estimated 12 parameters on the log scale. Parameters θ1 to θ6 multiply the contact rates of the six age groups. Parameters θ7 to θ12 set the entry rates of the six age groups. Entry into age group $i$ is the minimum that supplies its first arrests, $\\max(0, f_i - 0.1 D_{{i-1}})$, plus an excess $e^{{\\theta_{{6+i}}}}\\beta_i$, so every parameter set can supply the first arrest flow. Where first arrests use up the entry, the excess sets the size of the never imprisoned group D; at age 60+, where people ageing in supply the first arrests, it is the whole entry. A deterministic Nelder Mead fit with {len(nm_sol)} starts gave the centre of the prior. The starts were an earlier anchor, {len(nm_sol)-2} random perturbations of it (standard deviation {nm_cfg['sd_perturb']} on the log scale) and a population informed start. Each start ran for up to {nm_cfg['maxit']:,} iterations and was then restarted from its own solution, up to {nm_cfg['nm_restarts']} times, while the objective still fell by more than 0.001. The best fit had an objective of {F(nm_best['objective']):.2f}, a prevalence root mean square error of {F(nm_best['prevalence_rmse']):.4f} and a population mean absolute percentage error of {100*F(nm_best['population_mape']):.1f}%. Every model evaluation ran from model year 0 to 150. The last ten years had to be at equilibrium. The prior for each parameter was normal on the log scale with standard deviation 0.20. Its centre was the best fit, except that any value closer than five prior standard deviations (1.0 on the log scale) to a parameter bound was moved inward to that distance. This changed only {', '.join(moved)}, which the best fit placed at its lower bound, where the likelihood is flat (Table S5). Without this step about half of the prior mass for that parameter would lie outside the bounds. Contact scales were bounded to 0.01 to 1,000 and entry scales to 0.01 to 10⁶.
+We estimated 12 parameters on the log scale. Parameters θ1 to θ6 multiply the contact rates of the six age groups. Parameters θ7 to θ12 multiply the entry rates of the six age groups: entry into age group $i$ in 2015 is $e^{{\\theta_{{6+i}}}}\\beta_i$, where $\\beta_i$ is the official 2015 count of new drug users. A deterministic Nelder Mead fit with {len(nm_sol)} starts gave the centre of the prior. The starts were an earlier anchor, {len(nm_sol)-2} random perturbations of it (standard deviation {nm_cfg['sd_perturb']} on the log scale) and a population informed start. Each start ran for up to {nm_cfg['maxit']:,} iterations and was then restarted from its own solution, up to {nm_cfg['nm_restarts']} times, while the objective still fell by more than 0.001. The best fit had an objective of {F(nm_best['objective']):.2f}, a prevalence root mean square error of {F(nm_best['prevalence_rmse']):.4f} and a population mean absolute percentage error of {100*F(nm_best['population_mape']):.1f}%. Every model evaluation ran from model year 0 to 150. The last ten years had to be at equilibrium. The prior for each parameter was normal on the log scale with standard deviation 0.20. Its centre was the best fit, except that any value closer than five prior standard deviations (1.0 on the log scale) to a parameter bound was moved inward to that distance. {moved_txt} Contact scales were bounded to 0.01 to 1,000 and entry scales to 0.01 to 10⁶.
 
 ## 2.4 Posterior sampling
 
-The posterior combined the prior, a binomial likelihood for the six prevalence counts, a log normal likelihood (standard deviation 0.10) for the six population counts and a log normal likelihood (standard deviation 1.0) comparing the 2015 entry into D with the official count of new drug users [@singstat_drug]. Because first arrests are fixed by the prison records, the prison data alone do not determine how many people inject without ever being imprisoned; the entry term anchors that number to the official count, allowing roughly a sevenfold difference either way. Parameter sets outside the bounds or whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. Four chains started from independent prior draws. The initial proposal covariance was 0.01 times the prior variance. Adaptation began after {ref_cfg['adapt_start']:,} proposals, was refreshed every {ref_cfg['adapt_every']} proposals and was frozen after warmup. A 5% share of proposals always used the initial covariance. Each chain ran {ref_cfg['max_evals_per_chain']:,} model evaluations, of which {ref_cfg['n_warmup']:,} were warmup, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained iterations. Every {ref_cfg['thin_storage']}th iteration was stored ({len(ref_draws):,} draws), and diagnostics used all retained iterations. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
+The posterior combined the prior, a binomial likelihood for the six prevalence counts and a log normal likelihood (standard deviation 0.10) for the six population counts. Parameter sets outside the bounds or whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. Four chains started from independent prior draws. The initial proposal covariance was 0.01 times the prior variance. Adaptation began after {ref_cfg['adapt_start']:,} proposals, was refreshed every {ref_cfg['adapt_every']} proposals and was frozen after warmup. A 5% share of proposals always used the initial covariance. Each chain ran {ref_cfg['max_evals_per_chain']:,} model evaluations, of which {ref_cfg['n_warmup']:,} were warmup, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained iterations. Every {ref_cfg['thin_storage']}th iteration was stored ({len(ref_draws):,} draws), and diagnostics used all retained iterations. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
 
 **Table S3. Convergence diagnostics of the MCMC posterior.**
 
@@ -639,7 +647,7 @@ Table S11 scales all unit costs by 0.5, 1 and 1.5. Epidemiological results do no
 
 We sampled {ndraw:,} parameter sets at random without replacement from the {len(ref_draws):,} MCMC posterior draws, using sampling seed 20261005. For each set we ran the full pipeline. This included the 150 year equilibrium, the equilibrium check, the shared history from 2016 to 2025, the no treatment counterfactual and all 17 scenarios to 2030. All {ndraw:,} draws passed the equilibrium check. Derived quantities such as reductions, costs and incremental costs were computed within each draw before summarising. We report the median and the 2.5th and 97.5th percentiles. A scenario met a target if its median reduction met the threshold. We also report the share of draws meeting both targets.
 
-The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCMC ran in R. Neural posterior estimation used Python, PyTorch and sbi [@sbi2020]. The MCMC posterior took about 3.8 hours on four processor cores. The scenario analysis of {ndraw:,} draws took about 17 minutes on 14 cores. The project test suite (63 checks) passed.
+The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCMC ran in R. Neural posterior estimation used Python, PyTorch and sbi [@sbi2020]. The MCMC posterior took about {F(ref_cfg['method_sec'])/3600:.1f} hours on four processor cores. The scenario analysis of {ndraw:,} draws took about 30 minutes on eight cores. The project test suite (89 checks) passed.
 
 # 6. Further limitations
 
@@ -650,7 +658,7 @@ The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCM
 - **Event counts.** Outcomes are annual event counts in the modelled population. They are not rates per person.
 - **Costs.** Prices are public list prices and an older drug price. Many programme costs are not included.
 - **Excess mortality.** The hazard ratio for non-liver deaths comes from a general population cohort in Taiwan, not from PWID [@lee2012]. A cohort in Naples found 1.11 (0.82 to 1.49) [@piselli2021]. In a PWID cohort, all-cause mortality was lower with undetectable RNA (0.54), but the comparison group was self selected [@cepeda2022].
-- **Prison rates.** The first arrest flow comes from a steady state balance of the 2015 prison population. The same prison counts are calibration targets, so the population targets carry little extra information.
+- **First arrest rate.** The prison records cannot identify the first arrest rate of people who have never been imprisoned. We assumed that it equals the re-arrest rate. A lower first arrest rate would leave more people in D, who are never reached by prison treatment.
 - **Uncertainty.** The UIs reflect calibrated parameters only. Fixed natural history parameters, uptake and price were not varied.
 - **Prior.** The prior was centred on a deterministic fit to the same 12 observations. For {pd_txt} the posterior standard deviation was {100*min(r for r in sd_ratio if r > 0.8):.0f}% to {100*max(sd_ratio):.0f}% of the prior standard deviation, so the 0.20 prior width partly sets their uncertainty.
 
