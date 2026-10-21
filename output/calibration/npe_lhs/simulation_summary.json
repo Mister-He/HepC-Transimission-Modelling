@@ -1,13 +1,14 @@
 {
   "sampling": "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
-  "prior": "independent Normal(prior_centre(fit$best$theta), sd = 0.2/0.2) on log-scale theta",
-  "prior_centre": [1.66772480787546, -2.88638942865073, -3.53728932089509, -0.842653859089186, 1.99307650450797, 0.300594226663187, -2.00442190977732, -0.433992536432566, -2.59454490577114, -0.213521025344311, 1.40176325879167, 3.2822726770008],
+  "prior": "independent Normal(prior_mean, prior_sd) on theta, truncated to the bounds (likelihood.R)",
+  "prior_mean": [0, 0, 0, 0, 0, 0, 0],
+  "prior_sd": [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 0.5],
   "design_seed": 20261012,
   "n_attempted": 50000,
-  "n_valid": 49278,
-  "n_excluded_nonfinite": 0,
-  "n_excluded_equilibrium": 722,
+  "n_valid": 49945,
+  "n_excluded_nonfinite": 13,
+  "n_excluded_equilibrium": 42,
   "n_excluded_bounds": 0,
   "exclusion_rule": "drop draws outside the parameter bounds (within_bounds) and simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",
-  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261020_agepop/fit.rds"
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261021_agepop/fit.rds"
 }

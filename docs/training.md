@@ -1,7 +1,7 @@
 # Training
 
 Production calibration path:
-1. **Nelder–Mead multi-start** sets the prior centre.
+1. **Nelder–Mead multi-start** finds the posterior mode (fixed prior + seroprevalence likelihood).
 2. **Reference MCMC** gives the production posterior.
 3. **Scenarios** run on draws from that posterior.
 
@@ -10,92 +10,70 @@ Cross-validation only (nothing here feeds the production path): single-round NPE
 direct MCMC SBC.
 
 Outputs are in `output/calibration/` (see its `README.md`). Run the steps in this order; each step
-reads the previous step's output.
+reads the previous step's output. Model design: `docs/first_arrest_multiplier.md`.
 
-## 0. Rate fits and handoff (only after refitting the Stan rate models)
+## 0. Rate fits (only after refitting the Stan rate models)
 
 ```bash
 Rscript scripts/model/preprocess.R            # needs data/sps.csv (not tracked by git); ~15 min
-Rscript scripts/model/update_rate_params.R    # writes lambda2, lambda3, pi_recid and lambda1 (= lambda3) into setup.R
+Rscript scripts/model/update_rate_params.R    # writes lambda2, lambda3 and pi_recid into setup.R
 ```
 
-- **Population:** the modelled PWID population is everyone ever held for drug consumption with a
-  known HCV screening result. It gives the 2015 prison counts (equal to the calibration targets)
-  and the first offenders.
-- **Rates come from all consumption records.** Screening (Dec 2014–Feb 2016) selects people in
-  prison then, so in the screened subset every earlier release ends in re-arrest (re-arrest share
-  0.99, against 0.72 in all records).
-- **`rearrest_rate.stan`:** its 2015 prison steady state uses the ODE's ageing (0.1 per year) and
-  mortality (`mu·omega`). Its first-arrest flow `f_pop` informs `lambda3` there only; it is not
-  passed to the ODE (re-arrest share `pi` 0.720, R-hat 1.00).
-- **First-arrest rate:** the records never observe the never-arrested, so `lambda1` (D → J) is
-  assumed equal to `lambda3` and hard-coded in `setup.R` (0.546, 0.488, 0.472, 0.472, 0.386,
-  0.266 per year). `update_rate_params.R` writes it.
+- **Data:** everyone ever held for drug consumption. Screening (Dec 2014–Feb 2016) selects people
+  in prison then, so in the screened subset every earlier release ends in re-arrest; the rates
+  therefore use all consumption records.
+- **`release_rate.stan`:** age-specific release hazard (Lexis-split stays).
+- **`rearrest_rate.stan`:** cure-type survival model only (share `pi` who are ever re-arrested and
+  age-specific re-arrest hazard `lambda3`). There is no prison steady-state block and no
+  first-arrest flow. Fit 2026-10-21: `pi` 0.724, `lambda3` 0.548, 0.478, 0.469, 0.471, 0.384,
+  0.265 per year, R-hat 1.00.
+- **First arrest** is not estimated from the records (they cannot identify true first offenders):
+  `lambda1 = c_first × lambda3`, with `c_first` calibrated (θ7).
 - **Idempotent:** on the stored fits `update_rate_params.R` leaves `setup.R` unchanged (checked
   by `tests/unit/test_rate_params.R`). After a change, rerun every step below.
 
-## 1. Deterministic calibration (prior centre)
-
-```bash
-Rscript scripts/run_calibration.R --run-id r_20261020_agepop \
-  --maxit 3000 --nm-restarts 5 --n-starts 7 --sd-perturb 0.9 --seed 20261001 --cores 8   # ~2.5 h
-```
-
-- **Equilibrium:** every objective evaluation runs model time 0–150 and checks equilibrium over the
-  last 10 years.
-- **Starts:** the anchor, 6 perturbed starts and a population-informed start, run in parallel.
-- **Restarts:** each start reruns Nelder–Mead from its own solution while the objective still falls
-  by more than 0.001 (`--nm-restarts`, at most 5 restarts). Without restarts every start stopped
-  early (best 25.9).
-- **Result (2026-10-20):**
-  - best objective 18.73 (`perturb_2`); seven of the eight starts lie within 18.734–18.747 (the
-    plausible anchor stops at 35.8);
-  - seroprevalence RMSE 0.00004 and population MAPE 0.05%: every target, including 60+ (0.4286
-    against 0.4286), is fitted almost exactly;
-  - 2015 ever-PWID 17,187, of whom 1,352 are never arrested (point estimate);
-  - entry is 0.07–4.1× the CNB counts at ages < 60 and 27× at 60+ (CNB count 1).
-- **Viraemic share fixed point:**
-  - `run_config.json` records the chronic viraemic share of all PWID at the 2015 snapshot
-    (`viraemic_share_2015`), and `setup.R` freezes it as `viraemic_share_ref`.
-  - Under the current model (`lambda1 = lambda3`): 0.205 → 0.196.
-  - It stops when the implied background-mortality multiplier `omega_0` changes by less than
-    0.5%. This step changes it by 0.38%, so `viraemic_share_ref` stays 0.205 and no refit was needed.
-- **HR sensitivity** (`output/calibration/hr_sensitivity/`, 3 starts each, `--hr-viraemic`):
-
-  | HR | 60+ seroprevalence | Objective |
-  | --- | --- | --- |
-  | 1 | 0.440 | 18.91 |
-  | 1.11 | 0.436 | 18.79 |
-  | 1.23 | 0.431 | 18.74 |
-  | 1.47 (production) | 0.429 | 18.73 |
-  | 1.77 | 0.429 | 18.73 |
-
-  - With free entry scales, 60+ fits within 0.3 SE at every HR; the HR barely changes the fit.
-  - The earlier misfit was 0.508 under `c_composite`.
-
 ## Shared posterior target
 
-- **Parameters:** θ1–θ6 are log contact scales. θ7–θ12 are log entry scales: entry into age i
-  in 2015 is `exp(θ_{6+i})·β_i`, with `β` the CNB 2015 new-drug-abuser counts
+- **Parameters (7):** θ1–θ6 are log contact scales (relative to `C_contact` in `setup.R`); θ7 is
+  log `c`, the first-arrest multiplier. Entry into D is the CNB new-drug-abuser count, unscaled
   (`build_params()` in `scripts/calibration/likelihood.R`).
-- **Prior:** independent Normal(`prior_centre(fit$best$theta)`, 0.20) on the 12 log-scale parameters.
-  - `prior_centre()` (`scripts/calibration/likelihood.R`) moves each coordinate of the best fit to
-    at least 5 prior SDs (1.0 on the log scale) inside the parameter bounds.
-  - The best fit puts the 60+ contact scale at its lower bound (0.010), where the likelihood is
-    flat. Without the move, about half the prior mass would lie outside the bounds.
-  - With the move, 0 of 50,000 NPE prior draws fall outside the bounds.
-- **Likelihood:**
-  - Binomial prevalence counts.
-  - Log-normal populations (σ = 0.10).
-- **Support:** draws outside the bounds and equilibrium failures are excluded (MCMC gives −∞; NPE
-  drops the simulation and counts it).
+- **Bounds:** contact scales 0.01–1,000; `c` 0.5–100 (user decision: first arrest at least half
+  the re-arrest rate).
+- **Prior (fixed, not centred on any fit):** independent Normal, truncated to the bounds:
+  θ1–θ6 ~ N(0, 1.5), θ7 ~ N(0, 0.5) (`prior_spec()`).
+- **Likelihood:** seroprevalence only, no counts. Each age group's observed seroprevalence is
+  `Beta(p·φ, (1−p)·φ)` around the model's 2015 prison seroprevalence `p`, with fixed precision
+  φ = 100 (`beta_precision` in `data/calibration_targets.json`). Prison population size is not a
+  target.
+- **Support:** draws outside the bounds and equilibrium failures are excluded (MCMC gives −∞;
+  NPE drops the simulation and counts it).
 - **Solver:** RK4 with `dt = 1/365`.
+- **Mortality:** general-population `mu` × PWID SMR by state: 9.52 viraemic (a, c, t), 4.73
+  otherwise (van Santen 2014). The viraemic share varies over time (2015 best fit: 0.184).
 - **Details:** see `output/calibration/npe_vs_mcmc/model_audit.md`.
+
+## 1. Deterministic calibration (posterior mode)
+
+```bash
+Rscript scripts/run_calibration.R --run-id r_20261021_agepop \
+  --maxit 3000 --nm-restarts 5 --n-starts 8 --sd-perturb 0.9 --seed 20261001 --cores 8   # ~2 h
+```
+
+- **Objective:** negative log posterior (Beta likelihood + prior); every evaluation runs model
+  time 0–150 and checks equilibrium over the last 10 years.
+- **Starts (uninformative):** θ = 0 (contact scales 1, `c` = 1) and 7 Normal perturbations of it
+  (SD 0.9), clipped to the bounds, run in parallel.
+- **Restarts:** each start reruns Nelder–Mead from its own solution while the objective still
+  falls by more than 0.001 (`--nm-restarts`, at most 5 restarts).
+- **Result (2026-10-21):** all 8 starts reach the same mode (objective −7.83); seroprevalence
+  RMSE 0.013, largest error 0.022 (50–59); `c` 1.10.
+- **SMR sensitivity** (`output/calibration/smr_sensitivity/`, 3 starts each,
+  `--smr-viraemic`/`--smr-nonviraemic` at the CI bounds): `c` 1.097–1.100, RMSE 0.012–0.015.
 
 ## 2. Reference MCMC (production)
 
 ```bash
-Rscript scripts/run_mcmc_reference.R --cores 4   # about 4.3 hours
+Rscript scripts/run_mcmc_reference.R --cores 4   # about 4 hours
 ```
 
 - **Defaults:**
@@ -104,47 +82,47 @@ Rscript scripts/run_mcmc_reference.R --cores 4   # about 4.3 hours
   - 50,000 evaluations per chain;
   - draws stored every 10th iteration (`--thin`);
   - seed 20261101;
-  - fit `output/calibration/r_20261020_agepop/fit.rds`;
+  - fit `output/calibration/r_20261021_agepop/fit.rds` (used only to check that the model matches);
   - output to `output/calibration/mcmc_reference/`.
 - **Sampler:** adaptive random-walk Metropolis (`arwm_budget` in `scripts/calibration/mcmc.R`). The
   initial proposal is `0.1² × diag(prior variance)`.
-- **Diagnostics written:** trace plots, per-chain summaries, adaptation drift, covariance eigenvalues,
-  jump sizes and autocorrelation times.
-- **Result** (2026-10-20, these defaults, 4.7 hours):
-  - R-hat ≤ 1.002;
-  - bulk ESS 3,053–4,511 and tail ESS ≥ 5,335;
-  - MCMC standard error (MCSE) of the mean ≤ 0.018 posterior SD;
-  - acceptance 0.26–0.28.
-- **Prior-dominated parameters:** four parameters have posterior SD above 0.8 × the prior SD (0.20):
-  θ6 (the 60+ contact scale) and θ9, θ10, θ12 (the 30–39, 40–49 and 60+ entry scales).
+- **Result (2026-10-21, 4.0 hours):**
+  - R-hat ≤ 1.005;
+  - bulk ESS 1,798–3,168 and tail ESS ≥ 2,459;
+  - MCSE of the mean ≤ 0.024 posterior SD;
+  - acceptance 0.08–0.17 (two chains below the 0.15 flag; mixing is still adequate by R-hat and
+    ESS).
+- **Prior-dominated parameters:** posterior SD above 0.7 × prior SD: θ5, θ6 (50–59 and 60+ contact
+  scales) and θ7 (`c`; posterior median 1.21, 95% interval 0.55–3.15, SD ratio 0.90).
 - `--targets` swaps the target file. The MCMC SBC uses it.
 
 ## 3. Cross-validation: single-round NPE with SBC
 
 ```bash
 Rscript scripts/run_npe.R --step all --n-sims 50000 --seed 20261012 --train-seed 20261013 \
-  --n-sbc 1000 --n-cores 14 --threads 4 --python /path/to/python
+  --n-sbc 1000 --n-cores 10 --threads 4 --python /path/to/python
 ```
 
-- **LHS design** (`scripts/calibration/prior_sampling.R`): a 50,000 × 12 design with one point per
-  stratum, mapped through the Normal inverse CDF of each parameter's prior.
+- **LHS design** (`scripts/calibration/prior_sampling.R`): a 50,000 × 7 design with one point per
+  stratum, mapped through the truncated Normal inverse CDF of each parameter's prior.
 - **Simulations:** draws outside the bounds, non-finite results and equilibrium failures are dropped
-  and counted, never replaced. This run: 49,278 valid and 722 equilibrium failures
+  and counted, never replaced. This run: 49,945 valid, 42 equilibrium failures and 13 non-finite
   (`simulation_summary.json`).
-- **Summaries:** 12: prevalence and population.
+- **Summaries:** 6 seroprevalences, with Beta(φ = 100) observation noise, logit-transformed.
 - **Network:** an equal-weight ensemble of 5 MAFs (50×5), each with batch 256, Adam lr 5e-4,
-  validation fraction 0.10, patience 20, ≤ 250 epochs, gradient clipping 5.0, CPU only.
-  - A single network gave a rank bias of up to 0.03 on one parameter, and which parameter
-    depended on the seed. The ensemble removes it.
-  - Training takes about 4 minutes.
+  validation fraction 0.10, patience 20, ≤ 250 epochs, gradient clipping 5.0, CPU only. Posterior
+  draws outside the bounds are rejected. Training takes about 6 minutes.
 - **Output:** 20,000 posterior draws.
-- **SBC:** 1,000 independent prior datasets (980 pass equilibrium), with ranks of the true value in
+- **SBC:** 1,000 independent prior datasets (998 pass equilibrium), with ranks of the true value in
   1,000 posterior draws.
   - **Gate:** cov95 in [0.85, 1] and cov90 in [0.75, 1] for every parameter, and no systematically
-    skewed rank histogram (U-shaped, modal, biased or Bonferroni chi-square non-uniform).
-  - **Result:** cov95 0.944–0.961, cov90 0.891–0.918, all 12 rank shapes uniform; gate PASS
+    skewed rank histogram.
+  - **Result:** cov95 0.935–0.959, cov90 0.876–0.911, all 7 rank shapes uniform; gate PASS
     (`NPE_OK.txt`).
-- **Comparison with the reference MCMC:**
+- **Comparison with the reference MCMC:** at the observed data the NPE does not match the MCMC
+  (0 of 7 parameters pass all checks; 95% intervals on average 23% wider; worst mean difference
+  0.83 SD). Policy medians agree within 2.4% (cost 16%). See
+  `output/calibration/npe_vs_mcmc/report.md`.
 
   ```bash
   Rscript scripts/compare_npe_mcmc.R --policy-cores 14
@@ -153,12 +131,12 @@ Rscript scripts/run_npe.R --step all --n-sims 50000 --seed 20261012 --train-seed
 ## 4. Optional: direct MCMC SBC
 
 ```bash
-Rscript scripts/sbc_mcmc.R --n-datasets 8 --max-evals 30000 --cores 8   # about 3.5 hours
+Rscript scripts/sbc_mcmc.R --n-datasets 8 --max-evals 30000 --cores 8   # about 2.5 hours
 ```
 
-- The truths are the first 8 NPE SBC datasets, with synthetic observations drawn from the MCMC
+- The truths are the first 8 NPE SBC datasets, with synthetic seroprevalences drawn from the Beta
   likelihood. Each dataset gets one 30,000-evaluation chain.
-- **Result:** pooled cov95 0.95 and cov90 0.92 over 96 ranks; mean rank 0.498; max split R-hat 1.016.
+- **Result:** pooled cov95 0.96 and cov90 0.89 over 56 ranks; mean rank 0.47; max split R-hat 1.008.
 - **Limitation:** 8 datasets are a check against gross miscalibration only, not a full SBC.
 
 ## 5. 2015 predictions and calibration figure
@@ -168,23 +146,24 @@ Rscript scripts/predict_2015_posterior.R --max-draws 4000 --cores 14
 Rscript scripts/plot_calibration.R --cores 14 --max-draws 2000
 ```
 
-- **Prediction outputs:** `output/calibration/mcmc_reference/model_prediction_2015_strata.*`. The
-  ever-PWID estimate is 17,226 (95% interval: 15,649–18,968); 1,356 (1,247–1,471) are never arrested.
-- **Calibration figure:** `figures/calibration_agepop.png` compares the targets with the reference
-  MCMC posterior and the NPE (LHS).
+- **Prediction outputs:** `output/calibration/mcmc_reference/model_prediction_2015_strata.*`.
+  Ever-PWID 50,223 (95% interval: 49,512–50,900); D 2,224 (875–4,801); J 8,451 (8,275–8,523).
+  These sizes are not fitted: the observed 2015 prison count of screened PWID is 3,367.
+- **Calibration figure:** `figures/calibration_agepop.png` compares the seroprevalence targets
+  (with the 95% range of the Beta likelihood) with the reference MCMC posterior and the NPE (LHS).
 - **Overlap check:** `figures/calibration_interval_overlap.csv` records whether each 95% interval
-  overlaps its target.
+  overlaps its target (MCMC: 6 of 6).
 
 ## 6. 2026 treatment scenarios
 
 ```bash
-Rscript scripts/scenarios_2026.R --root . --draws-per-seed 2000 --cores 14 --sample-seed 20261005
+Rscript scripts/scenarios_2026.R --root . --draws-per-seed 2000 --cores 4 --sample-seed 20261005
 ```
 
 - **Draws:** 2,000 draws from the reference MCMC posterior (the default `--posterior-files`). The full
   analysis is run per draw, then summarised as the median and 95% UI.
 - **Options:**
-  - `--posterior-files` accepts any CSV with `theta1..theta12`;
+  - `--posterior-files` accepts any CSV with `theta1..theta7`;
   - `--no-figures true` skips the figures;
   - `--min-valid-share` sets the share of draws that must pass equilibrium.
 - **More detail:** see `output/scenarios_2026/README.md`.

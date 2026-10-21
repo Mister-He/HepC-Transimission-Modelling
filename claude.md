@@ -227,7 +227,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - Data notes surfaced while redrawing: F/X treatment quota equals actual starts in every year (dashed quota lines are
   hidden; capacity-utilisation figure is 100% everywhere); no scenario passes jointly, so Fig S6 shows only J only.
 
-## lambda1 = lambda3, no entry anchor (2026-10-20/21, `docs/lambda1_revert.md`) — current state
+## lambda1 = lambda3, no entry anchor (2026-10-20/21, `docs/lambda1_revert.md`) — superseded; see "First-arrest multiplier" at the end
 - **Model (user decision):** `lambda1` is hard-coded in `setup.R` equal to `lambda3` (0.546, 0.488, 0.472,
   0.472, 0.386, 0.266). `f_first`, `first_arrest_rate()`, `entry_scales()`, `excess_theta()`, `nll_entry` and
   the targets' `entry` are gone. θ7–θ12 are plain log entry scales on the CNB 2015 counts (bounds 0.01–10⁶).
@@ -245,4 +245,28 @@ outputs were backed up to the session scratchpad only (not in the repo).
   result rests on `lambda1 = lambda3` (the records cannot identify it); a lower first-arrest rate would leave
   more injectors outside prison.
 - `docs/first_arrest_mortality_update.md` and `docs/final_review.md` are historical.
+
+## First-arrest multiplier, seroprevalence-only fit (2026-10-21/22, `docs/first_arrest_multiplier.md`) — current state
+- **Rates:** `rearrest_rate.stan` is survival-only (no prison steady state, no `f_pop`); refit
+  `pi` 0.724, `lambda3` 0.548, 0.478, 0.469, 0.471, 0.384, 0.265; release unchanged.
+- **Model:** first arrest = `c_first` × `lambda3`; CNB entry unscaled; background mortality
+  `mu` × SMR by state (9.52 viraemic a/c/t, 4.73 u/r; van Santen 2014 Table 3, Amsterdam,
+  antibody-based); no `omega`, `hr_viraemic` or `viraemic_share_ref`.
+- **Calibration (user decisions):** 7 parameters (6 contact scales + log `c`, `c` 0.5–100);
+  seroprevalence only, Beta(p·φ, (1−p)·φ) with φ = 100, no counts (`population` removed from
+  the targets JSON); fixed prior contact N(0, 1.5), log `c` N(0, 0.5); Nelder–Mead = posterior
+  mode from uninformative starts. Two earlier attempts were discarded: CNB entry with the
+  population target fit at c = 0.034 (objective 119; prison 20–29 381 vs 1,001), then a binomial
+  with screened counts was rejected by the user.
+- **Fit** `output/calibration/r_20261021_agepop`: all 8 starts agree, RMSE 0.013, `c` 1.10.
+  SMR-bound fits in `smr_sensitivity/` (`c` 1.097–1.100).
+- **MCMC:** R-hat ≤ 1.005, bulk ESS ≥ 1,798, acceptance 0.08–0.17, 4.0 h; `c` 1.21 (0.55–3.15),
+  SD ratio 0.90 (prior-dominated, as are θ5, θ6). 2015 J 8,451 vs observed 3,367 (not fitted);
+  ever-PWID 50,223.
+- **Cross-validation:** NPE SBC gate PASS but NPE vs MCMC 0/7 parameters pass (intervals 23%
+  wider); policy reductions within 2.4%. MCMC SBC cov95 0.96.
+- **Scenarios:** J only incidence −85.6% (68.9–91.3), mortality −45.8%; all finite scenarios meet
+  incidence, none meet mortality (best 8,000/yr F25% 60.5%); only no cap meets both (99.8%).
+  More tests to X always lower deaths more (F eligible ~5,600/yr, 6% chronic; X 9%).
+- **Manuscript** rewritten for these results; `build_paper.py` asserts them.
 

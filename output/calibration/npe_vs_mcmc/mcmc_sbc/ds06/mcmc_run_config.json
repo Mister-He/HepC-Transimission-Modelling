@@ -1,5 +1,5 @@
 {
-  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261020_agepop/fit.rds",
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261021_agepop/fit.rds",
   "targets": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/mcmc_sbc/targets_ds06.json",
   "sampler": "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
   "n_chains": 1,
@@ -16,18 +16,21 @@
   "initial_covariance": "init_scale^2 * diag(prior variance)",
   "starts": "independent prior draws",
   "regularisation": "1e-6 * diag(prior variance)",
-  "prior": "independent Normal(prior_centre(fit$best$theta), 0.2) on theta",
-  "prior_centre": [1.66772480787546, -2.88638942865073, -3.53728932089509, -0.842653859089186, 1.99307650450797, 0.300594226663187, -2.00442190977732, -0.433992536432566, -2.59454490577114, -0.213521025344311, 1.40176325879167, 3.2822726770008],
-  "target": "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
+  "prior": "independent Normal(prior_mean, prior_sd) on theta, truncated to the bounds (likelihood.R)",
+  "prior_mean": [0, 0, 0, 0, 0, 0, 0],
+  "prior_sd": [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 0.5],
+  "theta_lo": [-4.60517018598809, -4.60517018598809, -4.60517018598809, -4.60517018598809, -4.60517018598809, -4.60517018598809, -0.693147180559945],
+  "theta_hi": [6.90775527898214, 6.90775527898214, 6.90775527898214, 6.90775527898214, 6.90775527898214, 6.90775527898214, 4.60517018598809],
+  "target": "Beta seroprevalence likelihood (fixed precision); equilibrium failure = -Inf",
   "integration_dt": 0.00273972602739726,
   "seed": 20261207,
   "seeds": {
     "prior_variance": 20264207,
     "chain": "SEED+1000+i (initial prior draws and sampling)"
   },
-  "startup_sec": 4.047,
-  "pre_chain_sec": 0.00100000000000033,
-  "method_sec": 9496.696,
-  "cpu_sec_total": 9478.601,
+  "startup_sec": 2.951,
+  "pre_chain_sec": 0,
+  "method_sec": 8805.532,
+  "cpu_sec_total": 8792.442,
   "r_version": "R version 4.5.1 (2025-06-13)"
 }

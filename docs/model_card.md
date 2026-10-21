@@ -31,13 +31,15 @@ DC/HCC disease-specific mortality component. Results are policy comparisons
 within the modelled PWID network.
 
 Calibration limits:
-- **2015 targets:** 60+ seroprevalence is 0.455 against 0.429 (0.65 SE); the other targets are
-  within 0.01. The CNB counts anchor the 2015 entry into D (log-normal, SD 1.0).
-- **Rate fits:** the first-arrest flow and the release and re-arrest rates come from SPS
-  records, under a steady-state prison balance. The modelled PWID population is the people with
-  a known screening result.
-- **Excess mortality:** non-liver deaths of chronic viraemic people use an HR of 1.47 from a
-  Taiwanese general-population cohort (Lee et al. 2012), not from PWID.
-- **Prior-dominated parameters:** the 60+ contact scale and the older entry scales. The
+- **Targets:** only the 2015 age-specific prison seroprevalence is fitted (Beta likelihood, φ =
+  100); all six are within 0.022. Population size is not fitted: the modelled 2015 prison
+  population (8,451) is 2.5 times the observed count of screened PWID (3,367).
+- **Rate fits:** release and re-arrest rates come from SPS survival models. First arrest is
+  `c` × re-arrest with `c` ≥ 0.5; seroprevalence barely informs `c`, whose posterior (1.21,
+  0.55–3.15) follows its prior.
+- **Entry:** the CNB new-drug-abuser counts enter D unscaled.
+- **Mortality:** non-liver deaths use all-cause PWID SMRs against the general population from an
+  Amsterdam cohort grouped by antibody status (9.52 HCV-positive, 4.73 negative; van Santen 2014).
+- **Prior-dominated parameters:** the 50–59 and 60+ contact scales and `c`. The
 production posterior is the reference MCMC; single-round NPE is used only as an
 independent cross-check.
