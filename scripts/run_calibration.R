@@ -1,12 +1,13 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# run_calibration.R — deterministic multi-start Nelder-Mead calibration of the 12
-# log-scale parameters; the best fit centres the NPE and MCMC prior.
+# run_calibration.R — deterministic multi-start Nelder-Mead calibration of the 7
+# log-scale parameters (six contact scales, first-arrest multiplier c); the best fit
+# is the posterior mode (Beta seroprevalence likelihood + fixed prior, likelihood.R).
 #
 # Each objective evaluation runs model years 0–150; the final row is the equilibrium-checked
-# 2015 snapshot. Starts: plausible_anchor (earlier anchor), perturb_1..n (anchor + log-normal
-# noise, SD --sd-perturb) and population_informed (steady-state balance). --hr-viraemic
-# overrides the viraemic mortality HR for sensitivity fits.
+# 2015 snapshot. Starts: uninformative (theta = 0: contact scales 1, c = 1) and perturb_1..n
+# (theta = 0 plus Normal noise, SD --sd-perturb). --smr-viraemic and
+# --smr-nonviraemic override the PWID mortality ratios for sensitivity fits.
 # =============================================================================
 
 # Read arguments from CommandLine
@@ -33,8 +34,10 @@ setup_env  <- new.env(parent = globalenv()); sys.source("setup.R", setup_env); s
 # Read simulation logic from cpp
 Rcpp::sourceCpp(file.path(ROOT, "scripts", "model", "sim.cpp"))
 base_params  <- setup_env$params
-HR <- arg("--hr-viraemic")  # sensitivity only: overrides setup.R hr_viraemic
-if (!is.null(HR)) base_params$hr_viraemic <- as.numeric(HR)
+for (nm in c("smr_viraemic", "smr_nonviraemic")) {  # sensitivity only: override setup.R
+  v <- arg(paste0("--", gsub("_", "-", nm)))
+  if (!is.null(v)) base_params[[nm]] <- as.numeric(v)
+}
 data         <- setup_env$data
 data$t_start <- 0
 data$t_end   <- targets$equilibrium_horizon_years
@@ -47,10 +50,6 @@ file.copy(file.path(ROOT, "data", "calibration_targets.json"),
           file.path(OUT, "targets.json"), overwrite = TRUE)
 
 starts <- make_start_set(max(0, N_STARTS - 1), PERTURB_SD, SEED)
-starts[[length(starts) + 1L]] <- list(
-  id = "population_informed", theta0 = clip_to_bounds(informed_theta0(base_params, targets)),
-  seed = SEED + 2000
-)
 objective <- make_objective(base_params, data)
 
 cat("== calibration", RUN_ID, "==\n")
@@ -82,10 +81,10 @@ summarise_run <- function(r) {
   data.frame(start_id = r$start_id, seed = r$seed, objective = r$objective,
              convergence = r$convergence, fn_evaluations = r$fn_evaluations,
              equilibrium_pass = eq$pass, equilibrium_violation = eq$violation,
-             prevalence_rmse = m$prevalence_rmse, population_mape = m$population_mape,
+             prevalence_rmse = m$prevalence_rmse, prevalence_max_abs_err = m$prevalence_max_abs_err,
              setNames(as.list(r$theta), paste0("theta", 1:N_THETA)),
              setNames(as.list(exp(r$theta[1:6])), paste0("contact_scale", 1:6)),
-             setNames(as.list(exp(r$theta[7:12])), paste0("beta_scale", 1:6)))
+             c_first = exp(r$theta[7]))
 }
 solutions <- do.call(rbind, lapply(runs, summarise_run))
 write.csv(solutions, file.path(OUT, "solutions.csv"), row.names = FALSE)
@@ -100,12 +99,10 @@ write.csv(data.frame(start_id = vapply(starts, `[[`, character(1), "id"),
                      seed = vapply(starts, `[[`, numeric(1), "seed")),
           file.path(OUT, "initial_values.csv"), row.names = FALSE)
 
-# predictions: Actual predictions of targets (including viremic prevalence)
+# predictions: seroprevalence target against the best fit (and model viraemic prevalence)
 predictions <- data.frame(
   age_group              = summary_best$age_group,
-  population_target      = targets$population,
-  population_hat         = summary_best$N_hat,
-  seroprevalence_target  = targets$p_prev_binom,
+  seroprevalence_target  = targets$seroprevalence,
   seroprevalence_hat     = summary_best$p_sero,
   viremic_prevalence_hat = summary_best$p_viremic
 )
@@ -123,15 +120,17 @@ config <- list(
   n_starts = length(starts),
   horizon = targets$equilibrium_horizon_years, 
   target_year = targets$target_year,
-  fitted_parameters = 12, 
+  fitted_parameters = N_THETA, 
   optimizer = "Nelder-Mead",
   target_source = "data/calibration_targets.json",
   inflow_source = "data/singstat_new_drug_abusers.csv",
-  inflow_rule = "2015 baseline; 2016--2025 SingStat age-specific counts; latest year held constant through 2030; all multiplied by calibrated beta scale",
+  inflow_rule = "2015 baseline; 2016--2025 SingStat age-specific counts; latest year held constant through 2030; unscaled",
   best_objective = best$objective, 
   equilibrium_pass = eq_best$pass,
-  viraemic_share_2015 = viraemic_share(out_best),  # fixed point for setup.R viraemic_share_ref
-  viraemic_share_ref = base_params$viraemic_share_ref,
+  viraemic_share_2015 = viraemic_share(out_best),  # reported only; it varies over time
+  smr_viraemic = base_params$smr_viraemic,
+  smr_nonviraemic = base_params$smr_nonviraemic,
+  c_first = exp(best$theta[7]),
   git_sha = system("git rev-parse HEAD", intern = TRUE),
   setup_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/setup.R"))),
   sim_cpp_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/sim.cpp")))
@@ -151,4 +150,4 @@ fit <- list(run_id = RUN_ID,
             data = data)
 saveRDS(fit, file.path(OUT, "fit.rds"))
 cat("best objective:", best$objective, "| equilibrium:", eq_best$pass,
-    "| viraemic share 2015:", round(viraemic_share(out_best), 4), "(setup:", base_params$viraemic_share_ref, ")\n")
+    "| c:", round(exp(best$theta[7]), 4), "| viraemic share 2015:", round(viraemic_share(out_best), 4), "\n")

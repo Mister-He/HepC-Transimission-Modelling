@@ -12,7 +12,7 @@ arg <- function(name, default = NULL) {
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20261020_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
 CORES <- as.integer(arg("--cores", "4"))
 MAX_DRAWS <- as.integer(arg("--max-draws", "4000"))   # 0 = use all draws
 TARGET_YEAR <- as.integer(arg("--year", "2015"))
@@ -38,7 +38,7 @@ if (length(sample_files) == 0) stop("No posterior samples found")
 draws <- do.call(rbind, lapply(names(sample_files), function(source) {
   x <- read.csv(sample_files[[source]]); x$posterior_source <- source; x
 }))
-theta_names <- paste0("theta", 1:12)
+theta_names <- paste0("theta", 1:N_THETA)
 if (MAX_DRAWS > 0 && nrow(draws) > MAX_DRAWS) {
   set.seed(20261011); draws <- draws[sample.int(nrow(draws), MAX_DRAWS), , drop = FALSE]
 }

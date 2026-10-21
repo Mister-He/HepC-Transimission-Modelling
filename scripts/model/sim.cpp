@@ -31,8 +31,9 @@ struct Params {
     double phi_CC_DC, phi_CC_HCC, phi_DC_HCC;
     double ptu_CC_DC, ptu_CC_HCC, ptu_DC_HCC;
     std::vector<double> mu;
-    double omega, omega_neg, hr_viraemic, mu_DC, mu_HCC, psi_DC, psi_HCC;
-    std::vector<double> lambda1, lambda2, lambda3;
+    double smr_viraemic, smr_nonviraemic, mu_DC, mu_HCC, psi_DC, psi_HCC;
+    double c_first;  // first-arrest multiplier: lambda1 = c_first * lambda3
+    std::vector<double> lambda2, lambda3;
     double pi_recid;
     arma::mat C_contact;
     std::vector<double> beta;
@@ -85,8 +86,9 @@ std::vector<double> rhs(double time, const std::vector<double>& y,
         return p.alpha_HCC;
     };
     auto mortality = [&](int k, int h, int age) {
-        // Chronic viraemic (h = c) carry the extrahepatic HR on the background rate only.
-        double base = p.mu[age] * p.omega_neg * (h == 2 ? p.hr_viraemic : 1.0);
+        // General-population rate times the PWID SMR of the state: viraemic (a, c, t) or
+        // non-viraemic (u, r). Liver deaths in DC/HCC are added on top.
+        double base = p.mu[age] * ((h >= 1 && h <= 3) ? p.smr_viraemic : p.smr_nonviraemic);
         if (k == 3) return ((h == 3 || h == 4) ? p.psi_DC : 1.0) * (p.mu_DC + base);
         if (k == 4) return ((h == 3 || h == 4) ? p.psi_HCC : 1.0) * (p.mu_HCC + base);
         return base;
@@ -108,7 +110,7 @@ std::vector<double> rhs(double time, const std::vector<double>& y,
     for (int age = 0; age < N_AGES; ++age) {
         const double gam = transmission_multiplier(time, p) *
             force_of_infection(age, y, p);
-        const double l1 = p.lambda1[age];
+        const double l1 = p.c_first * p.lambda3[age];
         const double l2 = p.lambda2[age];
         const double l3 = p.lambda3[age], pi = p.pi_recid;
         auto treatment_rate = [&](int s, int k) {
@@ -337,25 +339,22 @@ NumericMatrix run_sim(List params_r, List data_r) {
     p.phi_DC_HCC = as<double>(params_r["phi_DC_HCC"]);
     p.ptu_CC_DC = p.phi_CC_DC*p.ptc_CC_DC; p.ptu_CC_HCC = p.phi_CC_HCC*p.ptc_CC_HCC; p.ptu_DC_HCC = p.phi_DC_HCC*p.ptc_DC_HCC;
     NumericVector mu = as<NumericVector>(params_r["mu"]); p.mu.assign(mu.begin(), mu.end());
-    p.omega = as<double>(params_r["omega"]); p.mu_DC = as<double>(params_r["mu_DC"]); p.mu_HCC = as<double>(params_r["mu_HCC"]);
+    p.mu_DC = as<double>(params_r["mu_DC"]); p.mu_HCC = as<double>(params_r["mu_HCC"]);
     p.psi_DC = as<double>(params_r["psi_DC"]); p.psi_HCC = as<double>(params_r["psi_HCC"]);
     p.m_min = params_r.containsElementNamed("m_min") ? as<double>(params_r["m_min"]) : 1.0;
     p.m_max = params_r.containsElementNamed("m_max") ? as<double>(params_r["m_max"]) : 1.0;
     p.t0 = params_r.containsElementNamed("m_t0") ? as<double>(params_r["m_t0"]) : 25.0;
     p.m_slope = params_r.containsElementNamed("m_tau") ? as<double>(params_r["m_tau"]) : 3.0;
-    NumericVector l1 = as<NumericVector>(params_r["lambda1"]), l2 = as<NumericVector>(params_r["lambda2"]),
-                  l3 = as<NumericVector>(params_r["lambda3"]);
-    if (l1.size() != N_AGES || l2.size() != N_AGES || l3.size() != N_AGES)
-        stop("lambda1, lambda2 and lambda3 must have length 6");
-    for (int age = 0; age < N_AGES; ++age)
-        if (!std::isfinite(l1[age]) || l1[age] < 0.0) stop("lambda1 must be finite and non-negative");
-    p.lambda1.assign(l1.begin(), l1.end());
+    NumericVector l2 = as<NumericVector>(params_r["lambda2"]), l3 = as<NumericVector>(params_r["lambda3"]);
+    if (l2.size() != N_AGES || l3.size() != N_AGES) stop("lambda2 and lambda3 must have length 6");
     p.lambda2.assign(l2.begin(), l2.end()); p.lambda3.assign(l3.begin(), l3.end());
-    p.hr_viraemic = as<double>(params_r["hr_viraemic"]);
-    const double v_ref = as<double>(params_r["viraemic_share_ref"]);
-    if (!std::isfinite(p.hr_viraemic) || p.hr_viraemic <= 0.0 || !(v_ref >= 0.0 && v_ref < 1.0))
-        stop("hr_viraemic must be positive and viraemic_share_ref in [0, 1)");
-    p.omega_neg = p.omega / (1.0 + (p.hr_viraemic - 1.0) * v_ref);  // keeps the PWID average at omega
+    p.c_first = as<double>(params_r["c_first"]);
+    if (!std::isfinite(p.c_first) || p.c_first < 0.0) stop("c_first must be finite and non-negative");
+    p.smr_viraemic = as<double>(params_r["smr_viraemic"]);
+    p.smr_nonviraemic = as<double>(params_r["smr_nonviraemic"]);
+    if (!std::isfinite(p.smr_viraemic) || p.smr_viraemic <= 0.0 ||
+        !std::isfinite(p.smr_nonviraemic) || p.smr_nonviraemic <= 0.0)
+        stop("smr_viraemic and smr_nonviraemic must be positive");
     p.pi_recid = as<double>(params_r["pi_recid"]);
     NumericMatrix C = as<NumericMatrix>(params_r["C_contact"]); p.C_contact = arma::mat(C.begin(), N_AGES, N_AGES, false);
     NumericVector beta = as<NumericVector>(params_r["beta"]); p.beta.assign(beta.begin(), beta.end());

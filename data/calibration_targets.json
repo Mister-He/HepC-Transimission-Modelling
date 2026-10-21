@@ -16,15 +16,7 @@
     0.531418312387792,
     0.428571428571429
   ],
-  "population": [
-    102,
-    1001,
-    806,
-    754,
-    557,
-    147
-  ],
-  "population_sigma_log": 0.1,
+  "beta_precision": 100,
   "equilibrium_horizon_years": 150,
   "equilibrium_lag_years": 5
 }

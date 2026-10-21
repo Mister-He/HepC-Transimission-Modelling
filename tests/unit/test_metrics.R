@@ -39,8 +39,9 @@ check_equal(tau_by_stratum,
             "treatment-rate vector follows C++ stratum-major indexing")
 
 vs <- matrix(0, 1, 481)
-vs[1, c(idx(0, 1, 2, 0), idx(3, 4, 2, 5))] <- 1; vs[1, c(idx(1, 1, 1, 2), idx(2, 2, 4, 3))] <- 1
-check_equal(viraemic_share(vs), 0.5, "viraemic share counts chronic (c) states only, over all PWID")
+vs[1, c(idx(0, 1, 2, 0), idx(3, 4, 3, 5), idx(1, 1, 1, 2))] <- 1  # c, t, a: viraemic
+vs[1, c(idx(2, 2, 4, 3), idx(1, 3, 0, 1))] <- 1                    # r, u: not viraemic
+check_equal(viraemic_share(vs), 0.6, "viraemic share counts a, c and t states over all PWID")
 
 n_fail <- test_report("tests/unit/test_metrics.R")
 if (n_fail > 0) quit(status = 1)

@@ -6,7 +6,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i+1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261020_agepop/fit.rds")), mustWork = TRUE)
+FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/scenarios_2026"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 config <- jsonlite::fromJSON(file.path(ROOT, "data/scenario_policy_config.json"))
@@ -23,7 +23,7 @@ source(file.path(ROOT, "scripts/calibration/equilibrium.R"))
 source(file.path(ROOT, "scripts/calibration/likelihood.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
 fit <- readRDS(FIT)
-# --posterior-files: comma-separated CSVs with columns theta1..theta12; each file is one
+# --posterior-files: comma-separated CSVs with columns theta1..theta7; each file is one
 # sampling group. Default: the reference MCMC posterior.
 posterior_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
 posterior_files <- ifelse(grepl("^/", posterior_files), posterior_files, file.path(ROOT, posterior_files))
@@ -31,7 +31,7 @@ posterior_files <- normalizePath(posterior_files, mustWork = TRUE)
 # Equal numbers of draws are taken from every posterior file.
 DRAWS_PER_SEED <- as.integer(arg("--draws-per-seed", 2000)); N_CORES <- as.integer(arg("--cores", 8))
 SAMPLE_SEED <- as.integer(arg("--sample-seed", 20261005)); set.seed(SAMPLE_SEED)
-theta_cols <- paste0("theta", 1:12)
+theta_cols <- paste0("theta", 1:N_THETA)
 posterior_all <- lapply(posterior_files, function(f) read.csv(f)[, theta_cols, drop = FALSE])
 draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
   d <- posterior_all[[k]]; d <- d[sample.int(nrow(d), min(DRAWS_PER_SEED, nrow(d))), , drop = FALSE]
@@ -94,7 +94,7 @@ j_positive_entries <- function(z, pm) {
   x <- vapply(seq_len(nrow(z)), function(i) {
     y <- z[i,2:481]; total <- 0
     for (age in 0:5) for (k in 1:4) for (h in c(1,2,4)) {
-      total <- total + pm$lambda1[age+1]*y[idx0(0,k,h,age)-1] +
+      total <- total + pm$c_first*pm$lambda3[age+1]*y[idx0(0,k,h,age)-1] +
         pm$lambda3[age+1]*y[idx0(2,k,h,age)-1]
     }
     total

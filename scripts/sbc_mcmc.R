@@ -6,8 +6,8 @@
 #
 # True parameters and noise-free outputs are the first K rows of the NPE SBC set
 # (output/calibration/npe_lhs/theta_sbc.csv, x_sbc.csv: prior draws that pass the
-# equilibrium check). Observations follow the MCMC likelihood: N_obs = N * exp(0.10 z),
-# n = round(N_obs) and seropositives ~ Binomial(n, p). Each dataset gets one chain with
+# equilibrium check). Observations follow the MCMC likelihood: y ~ Beta(p * phi, (1 - p) * phi)
+# per age group, with the fixed precision phi of the targets file. Each dataset gets one chain with
 # the production sampler settings and --max-evals evaluations.
 # Usage: Rscript scripts/sbc_mcmc.R [--root .] [--n-datasets 8] [--max-evals 30000] [--cores 8]
 # =============================================================================
@@ -17,22 +17,22 @@ arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) de
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE); setwd(ROOT)
 K <- as.integer(arg("--n-datasets", "8")); MAX_EVALS <- as.integer(arg("--max-evals", "30000"))
 CORES <- as.integer(arg("--cores", "8")); SEED <- as.integer(arg("--seed", "20261201"))
-FIT <- arg("--fit", "output/calibration/r_20261020_agepop/fit.rds")
+FIT <- arg("--fit", "output/calibration/r_20261021_agepop/fit.rds")
 NPE <- "output/calibration/npe_lhs"; OUT <- "output/calibration/npe_vs_mcmc/mcmc_sbc"
-TH <- paste0("theta", 1:12)
+source("scripts/calibration/likelihood.R")
+TH <- paste0("theta", 1:N_THETA)
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 
 theta <- as.matrix(read.csv(file.path(NPE, "theta_sbc.csv"))[seq_len(K), TH])
 x <- as.matrix(read.csv(file.path(NPE, "x_sbc.csv"))[seq_len(K), ])
 stopifnot(nrow(theta) == K, nrow(x) == K)
-source("scripts/calibration/likelihood.R")
-stopifnot(isTRUE(all.equal(jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))$prior_centre,
-                           prior_centre(readRDS(FIT)$best$theta))))  # same prior as the NPE SBC set
+stopifnot(isTRUE(all.equal(jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))$prior_sd,
+                           prior_spec()$sd)))  # same prior as the NPE SBC set
 base <- jsonlite::fromJSON("data/calibration_targets.json")
 set.seed(SEED)
 for (k in seq_len(K)) {
-  n <- pmax(1L, as.integer(round(x[k, 7:12] * exp(rnorm(6, 0, base$population_sigma_log)))))
-  tg <- base; tg$population <- n; tg$seroprevalence <- rbinom(6, n, x[k, 1:6]) / n
+  phi <- base$beta_precision
+  tg <- base; tg$seroprevalence <- rbeta(6, x[k, 1:6] * phi, (1 - x[k, 1:6]) * phi)
   jsonlite::write_json(tg, file.path(OUT, sprintf("targets_ds%02d.json", k)), auto_unbox = TRUE, digits = NA,
                        pretty = TRUE)
 }
@@ -53,7 +53,7 @@ if (any(status != 0)) stop("MCMC SBC run(s) failed: ", paste(which(status != 0),
 ranks <- t(vapply(seq_len(K), function(k) {
   dr <- as.matrix(read.csv(file.path(OUT, sprintf("ds%02d", k), "mcmc_draws.csv"))[, TH])
   colMeans(sweep(dr, 2, theta[k, ], "<"))
-}, numeric(12)))
+}, numeric(N_THETA)))
 rhat <- vapply(seq_len(K), function(k)
   max(read.csv(file.path(OUT, sprintf("ds%02d", k), "mcmc_diagnostics.csv"))$rhat), numeric(1))
 write.csv(data.frame(dataset = seq_len(K), max_split_rhat = rhat, setNames(as.data.frame(ranks), TH)),

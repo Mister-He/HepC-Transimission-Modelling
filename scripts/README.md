@@ -14,7 +14,7 @@ Executable model and analysis code. Each script starts with a short description.
 
 Workflow, in order:
 
-1. **Prior centre:** `run_calibration.R`, a Nelder–Mead multi-start fit run in parallel with `--cores`.
+1. **Posterior mode:** `run_calibration.R`, a Nelder–Mead multi-start fit run in parallel with `--cores`.
 2. **Production posterior:** `run_mcmc_reference.R`, the reference MCMC.
 3. **Cross-validation only** (nothing here feeds the production path):
    - `run_npe.R` and `npe_train.py`: single-round NPE (5-network ensemble) trained on Latin hypercube

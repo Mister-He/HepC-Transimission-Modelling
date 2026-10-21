@@ -3,9 +3,9 @@
 # run_mcmc_reference.R — reference MCMC calibration: adaptive random-walk Metropolis
 # on the exact posterior, with convergence, adaptation and proposal diagnostics.
 #
-# Target (shared with single-round NPE): independent Normal(prior_centre(fit$best$theta), prior_sd)
-# prior on the 12 log-scale parameters, Binomial prevalence + log-normal population
-# likelihood, and the 2015 equilibrium check as a hard restriction. Defaults: 4
+# Target (shared with single-round NPE): the fixed truncated Normal prior of likelihood.R
+# (prior_spec()) on the 7 log-scale parameters, the Beta seroprevalence likelihood, and the
+# 2015 equilibrium check as a hard restriction. Defaults: 4
 # prior-started chains, 10,000 warmup proposals with adaptation from proposal 5,000,
 # 50,000 evaluations per chain, draws stored every 10th iteration (--thin; all
 # diagnostics use every retained draw). The stored production run
@@ -21,7 +21,7 @@ arg <- function(name, default = NULL) {
 T_SCRIPT0 <- proc.time()[["elapsed"]]
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20261020_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 N_CHAINS <- as.integer(arg("--n-chains", "4"))
 CORES <- as.integer(arg("--cores", "4"))
@@ -31,7 +31,6 @@ ADAPT_START <- as.integer(arg("--adapt-start", "5000"))
 ADAPT_EVERY <- as.integer(arg("--adapt-every", "50"))
 THIN <- as.integer(arg("--thin", "10"))
 SEED <- as.integer(arg("--seed", "20261101"))
-PRIOR_SD <- as.numeric(arg("--prior-sd", "0.20"))
 INIT_SCALE <- as.numeric(arg("--init-scale", "0.1"))
 N_PRIOR_VAR <- as.integer(arg("--n-prior-var", "2048"))
 DT <- as.numeric(arg("--dt", as.character(1 / 365)))
@@ -57,26 +56,26 @@ data$t_start <- 0
 data$t_end <- targets$equilibrium_horizon_years
 data$dt <- DT
 startup_sec <- proc.time()[["elapsed"]] - T_SCRIPT0
-TH <- paste0("theta", 1:12)
+TH <- paste0("theta", 1:N_THETA)
 
 # ---- sampling ----
 T_METHOD0 <- proc.time()[["elapsed"]]
-prior_sd <- rep(PRIOR_SD, 12)
-prior_mean <- prior_centre(as.numeric(fit$best$theta), prior_sd)
+prior <- prior_spec()
+prior_mean <- prior$mean; prior_sd <- prior$sd
 logpost <- function(theta) log_posterior_exact(theta, base_params, data, prior_mean, prior_sd)
 
 # Transformed-prior variances from prior draws (no ODE solves). theta is already
 # unconstrained and the prior is defined on theta, so no Jacobian is needed.
 set.seed(SEED + 3000)
-prior_draws <- sweep(matrix(rnorm(N_PRIOR_VAR * 12), N_PRIOR_VAR, 12), 2, prior_sd, "*") +
-  matrix(prior_mean, N_PRIOR_VAR, 12, byrow = TRUE)
+prior_draws <- sweep(matrix(rnorm(N_PRIOR_VAR * N_THETA), N_PRIOR_VAR, N_THETA), 2, prior_sd, "*") +
+  matrix(prior_mean, N_PRIOR_VAR, N_THETA, byrow = TRUE)
 prior_var <- apply(prior_draws, 2, stats::var)
 reg <- diag(1e-6 * prior_var)
 Sigma_init <- diag(INIT_SCALE^2 * prior_var)
 pre_chain_sec <- proc.time()[["elapsed"]] - T_METHOD0
 
 run_chain <- function(i) {
-  draw_prior <- function() rnorm(12, prior_mean, prior_sd)
+  draw_prior <- function() rnorm(N_THETA, prior_mean, prior_sd)
   res <- arwm_budget(logpost, draw_prior, Sigma_init, reg, n_warmup = N_WARMUP,
                      max_evals = MAX_EVALS, adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY,
                      seed = SEED + 1000 + i, t_offset = pre_chain_sec)
@@ -124,9 +123,9 @@ write.csv(warm[(warm$warmup_iteration %% THIN) == 0L, ], file.path(OUT, "mcmc_wa
 
 # ---- convergence: rank-normalised split R-hat, bulk/tail ESS, MCSE (all retained draws) ----
 n_min <- min(table(draws$chain))
-arr <- array(NA_real_, c(n_min, N_CHAINS, 12))
+arr <- array(NA_real_, c(n_min, N_CHAINS, N_THETA))
 for (k in seq_len(N_CHAINS)) arr[, k, ] <- as.matrix(draws[draws$chain == k, TH][seq_len(n_min), ])
-diagnostics <- do.call(rbind, lapply(1:12, function(j) {
+diagnostics <- do.call(rbind, lapply(1:N_THETA, function(j) {
   x <- arr[, , j]
   data.frame(subset = "all_retained", parameter = TH[j], draws_per_chain = n_min,
              mean = mean(x), sd = sd(as.vector(x)),
@@ -153,7 +152,7 @@ drift <- do.call(rbind, lapply(chains, function(ch) if (is.null(ch$adapt_trace))
 if (!is.null(drift)) write.csv(drift, file.path(OUT, "covariance_drift.csv"), row.names = FALSE)
 eig_row <- function(label, chain, S) {
   e <- eigen(S, symmetric = TRUE, only.values = TRUE)$values
-  data.frame(matrix_label = label, chain = chain, t(setNames(e, paste0("eigen", 1:12))),
+  data.frame(matrix_label = label, chain = chain, t(setNames(e, paste0("eigen", 1:N_THETA))),
              condition_number = max(e) / min(e), min_eigen = min(e))
 }
 eig <- rbind(eig_row("initial_proposal", NA, Sigma_init),
@@ -180,7 +179,7 @@ write.csv(jumps, file.path(OUT, "mcmc_jumps.csv"), row.names = FALSE)
 # ---- trace plots (stored draws) ----
 if (requireNamespace("ggplot2", quietly = TRUE)) {
   tp <- draws[keep_rows, c("chain", "iteration", TH)]
-  tl <- data.frame(chain = factor(rep(tp$chain, 12)), iteration = rep(tp$iteration, 12),
+  tl <- data.frame(chain = factor(rep(tp$chain, N_THETA)), iteration = rep(tp$iteration, N_THETA),
                    parameter = factor(rep(TH, each = nrow(tp)), TH), value = unlist(tp[, TH]))
   p <- ggplot2::ggplot(tl, ggplot2::aes(iteration, value, colour = chain)) +
     ggplot2::geom_line(linewidth = 0.15) + ggplot2::facet_wrap(~parameter, scales = "free_y", ncol = 3) +
@@ -195,9 +194,9 @@ jsonlite::write_json(list(
   thin_storage = THIN, init_scale = INIT_SCALE, n_prior_var_draws = N_PRIOR_VAR,
   initial_covariance = "init_scale^2 * diag(prior variance)", starts = "independent prior draws",
   regularisation = "1e-6 * diag(prior variance)",
-  prior = sprintf("independent Normal(prior_centre(fit$best$theta), %s) on theta", PRIOR_SD),
-  prior_centre = prior_mean,
-  target = "Binomial prevalence + log-normal population likelihood; equilibrium failure = -Inf",
+  prior = "independent Normal(prior_mean, prior_sd) on theta, truncated to the bounds (likelihood.R)",
+  prior_mean = prior_mean, prior_sd = prior_sd, theta_lo = THETA_LO, theta_hi = THETA_HI,
+  target = "Beta seroprevalence likelihood (fixed precision); equilibrium failure = -Inf",
   integration_dt = DT, seed = SEED,
   seeds = list(prior_variance = SEED + 3000, chain = "SEED+1000+i (initial prior draws and sampling)"),
   startup_sec = startup_sec, pre_chain_sec = pre_chain_sec, method_sec = method_sec,

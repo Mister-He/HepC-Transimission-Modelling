@@ -27,20 +27,25 @@ check_true(all(J_summary_at(out, nrow(out))$p_sero >= 0 &
                J_summary_at(out, nrow(out))$p_sero <= 1),
            "J seroprevalence remains in [0,1]")
 
-# First-arrest rate: lambda1 is assumed equal to lambda3, and run_sim moves D to J at lambda1.
-check_equal(e$params$lambda1, e$params$lambda3, "setup.R first-arrest rate equals the re-arrest rate")
+# First arrest: run_sim moves D to J at c_first * lambda3.
 fa_data <- short_data; fa_data$t_end <- 1; fa_data$y0 <- rep(0, 480); fa_data$y0[idx(0, 1, 0, 2) - 1L] <- 100
 fa <- modifyList(e$params, list(q = 0, beta = rep(0, 6)))
-fa1 <- run_sim(fa, fa_data); fa2 <- run_sim(modifyList(fa, list(lambda1 = 2 * fa$lambda1)), fa_data)
+fa1 <- run_sim(fa, fa_data); fa2 <- run_sim(modifyList(fa, list(c_first = 2 * fa$c_first)), fa_data)
 check_true(fa2[nrow(fa2), idx(0, 1, 0, 2)] < fa1[nrow(fa1), idx(0, 1, 0, 2)] &&
              fa2[nrow(fa2), idx(1, 1, 0, 2)] > fa1[nrow(fa1), idx(1, 1, 0, 2)],
-           "doubling lambda1 moves more of D into J")
-check_error(run_sim(modifyList(fa, list(lambda1 = rep(-1, 6))), fa_data), "a negative lambda1 is rejected")
-# Viraemic HR: 1 reproduces the old mortality; >1 lowers 60+ seroprevalence at the same theta.
-hr1 <- modifyList(e$params, list(hr_viraemic = 1)); eq_data <- e$data; eq_data$t_end <- 60
-s1 <- J_summary_final(run_sim(hr1, eq_data)); s2 <- J_summary_final(run_sim(e$params, eq_data))
-check_true(e$params$hr_viraemic > 1 && s2$p_sero[6] < s1$p_sero[6],
-           "viraemic excess mortality lowers 60+ seroprevalence")
+           "doubling c_first moves more of D into J")
+check_equal(fa1[nrow(fa1), idx(0, 1, 0, 2)], 100 * exp(-(fa$c_first * fa$lambda3[3] + fa$mu[3] * fa$smr_nonviraemic + 0.1)),
+            tol = 1e-4, "D leaves at c * lambda3 + mu * SMR + ageing")
+check_error(run_sim(modifyList(fa, list(c_first = -1)), fa_data), "a negative c_first is rejected")
+# PWID mortality: in J (no injecting, no release, no progression) an uninfected person leaves
+# at mu * smr_nonviraemic + ageing and a chronic one at mu * smr_viraemic + ageing.
+md <- fa_data; md$y0 <- rep(0, 480); md$y0[idx(1, 1, 0, 2) - 1L] <- 100; md$y0[idx(1, 1, 2, 3) - 1L] <- 100
+mp <- modifyList(fa, list(lambda2 = rep(0, 6), p_NC_CC = 0, mu = rep(0.01, 6)))
+mo <- run_sim(mp, md); last <- nrow(mo)
+check_equal(c(mo[last, idx(1, 1, 0, 2)], mo[last, idx(1, 1, 2, 3)]),
+            100 * exp(-0.01 * c(mp$smr_nonviraemic, mp$smr_viraemic) - 0.1),
+            tol = 1e-4, "J deaths follow mu * SMR by viraemic status")
+check_true(mp$smr_viraemic > mp$smr_nonviraemic, "viraemic people die faster than non-viraemic")
 
 simulate_seed <- function(state, scale = 1) {
   d <- short_data; d$y0 <- rep(0, 480)
@@ -117,7 +122,7 @@ cap_data$y0 <- rep(0,480)
 for (s in 1:3) cap_data$y0[idx(s,1,2,2)-1L] <- 100
 cap_data$treatment_capacity <- c(Inf,Inf,5,10)
 cap_pm <- e$params; cap_pm$q <- 0; cap_pm$beta <- rep(0,6)
-cap_pm$lambda1 <- cap_pm$lambda2 <- cap_pm$lambda3 <- rep(0,6)
+cap_pm$lambda2 <- cap_pm$lambda3 <- rep(0,6)
 cap_pm$tau_by_stratum <- c(rep(0,4),rep(10,12))
 cap_pm$tau_min_age <- 1; cap_pm$tau_max_age <- 6
 cap_out <- run_sim(cap_pm,cap_data)
@@ -164,12 +169,12 @@ cal_out <- run_sim(build_params(rep(0, N_THETA), e$params), cal_data)
 check_true(check_equilibrium(cal_out)$pass,
            "base parameters satisfy the 10-year equilibrium gate")
 
-# The MCMC target is prior + Binomial prevalence + log-normal population (no other terms).
+# The MCMC target is prior + Binomial prevalence (no other terms).
 sys.source(file.path(root, "scripts", "calibration", "mcmc.R"), envir = environment())
 lp0 <- log_posterior_exact(rep(0, N_THETA), e$params, cal_data, rep(0, N_THETA), rep(1, N_THETA))$lp
 s0 <- J_summary_final(cal_out)
-check_equal(lp0, sum(dnorm(rep(0, N_THETA), 0, 1, log = TRUE)) - nll_prev(s0$p_sero) - nll_pop(s0$N_hat),
-            tol = 1e-8, "the MCMC log posterior is prior + prevalence + population")
+check_equal(lp0, sum(dnorm(rep(0, N_THETA), 0, 1, log = TRUE)) - nll_prev(s0$p_sero),
+            tol = 1e-8, "the MCMC log posterior is prior + prevalence")
 
 n_fail <- test_report("tests/integration/test_sim_and_pipeline.R")
 if (n_fail > 0) quit(status = 1)

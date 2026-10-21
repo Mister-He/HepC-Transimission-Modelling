@@ -11,14 +11,15 @@ targets <- read_targets(file.path(root, "data/calibration_targets.json"))
 
 check_equal(targets$target_year, 2015, "targets describe the 2015 snapshot")
 check_equal(length(targets$age_groups), 6, "six age groups are loaded")
-check_true(all(abs(targets$seroprevalence - targets$p_prev_binom) <=
-                 0.5 / targets$population),
-           "age-specific seroprevalence is preserved up to count rounding")
-check_true(all(targets$x_prev >= 0 & targets$x_prev <= targets$population),
-           "reconstructed binomial counts are valid")
+check_true(all(targets$seroprevalence > 0 & targets$seroprevalence < 1),
+           "six seroprevalence targets in (0, 1)")
+check_true(targets$beta_precision > 0, "the Beta likelihood has a positive fixed precision")
+check_true(is.null(targets$population) && is.null(targets$x_prev),
+           "no population or count fields: seroprevalence is the only target")
 check_true(!"release_sero_2017_target" %in% names(targets),
            "the former 47 percent target is absent")
-check_true(is.null(targets$entry), "no entry observation: the likelihood uses prevalence and population only")
+check_true(is.null(targets$entry) && is.null(targets$population_sigma_log),
+           "no entry or population likelihood settings")
 check_true(file.exists(file.path(root, "data/singstat_new_drug_abusers.csv")),
            "SingStat inflow data are versioned in the repository")
 

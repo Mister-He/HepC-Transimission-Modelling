@@ -31,12 +31,13 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   phi_*     — van Meer (2012); Morgan et al. (2013)
 #   mu_DC/HCC — Lim et al. (2018)
 #   psi_*     — Premkumar (2024); Dang et al. (2020)
-#   pi_recid  — fitted to SPS data (0.72; scripts/model/update_rate_params.R)
+#   pi_recid  — fitted to SPS data (0.724; scripts/model/update_rate_params.R)
 #   lambda2/3 — fitted to SPS data (scripts/model/update_rate_params.R)
-#   lambda1   — ASSUMED equal to lambda3 (first arrest as fast as re-arrest)
+#   c_first   — CALIBRATED first-arrest multiplier (lambda1 = c_first * lambda3)
+#   smr_*     — van Santen et al. (2014)
 #   mu        — CALIBRATED to SingStat life tables (guesses used here)
 #   c_contact — CALIBRATED to HCV prevalence trajectory (guess used here)
-#   beta      — CALIBRATED to PWID population size (guess used here)
+#   beta      — SingStat/CNB 2015 new drug abusers (fixed, unscaled)
 # =============================================================================
 
 params <- list(
@@ -116,22 +117,14 @@ params <- list(
   # Age groups (example boundaries): <20, 20-29, 30-39, 40-49, 50-59, 60+
   mu = c(0.0002000000, 0.0002500000, 0.0004500000, 0.0012000000, 0.0033500000, 0.0218818000),
 
-  # ── Standardized Mortality rate of ever-PWIDs  ─────────────────────────────
-  # Pooled SMR for people who inject drugs (Mathers et al. 2013,
-  # Bull World Health Organ 91(2):102-123, PMID 23554523); applied as
-  # mu[i] * omega in sim.cpp.
-  omega = 14.68,
-
-  # ── Excess non-liver mortality of chronic viraemic HCV (state c) ──────────
-  # Extrahepatic-death HR for detectable HCV RNA vs anti-HCV negative: 1.47
-  # (1.23-1.77), Lee et al. 2012 J Infect Dis 206:469, Table 3 (RNA undetectable:
-  # 0.90). sim.cpp applies it to the background rate mu*omega only (liver deaths are
-  # mu_DC/mu_HCC) and divides omega by 1 + (hr - 1) * viraemic_share_ref so the PWID
-  # average stays at omega. The share is the chronic viraemic share of all PWID at the
-  # 2015 snapshot of the Nelder-Mead best fit, frozen. Fixed point 0.242 -> 0.205 -> 0.199,
-  # stopped when the implied omega_0 moved < 0.5% (the last step: 0.26%).
-  hr_viraemic = 1.47,
-  viraemic_share_ref = 0.205,
+  # ── PWID mortality ratios (background = mu[i] * SMR of the state) ───────
+  # All-cause SMRs vs the age-, sex- and period-matched general population, Amsterdam
+  # Cohort Studies 1985-2012 (van Santen et al. 2014, AIDS 28:2589, Table 3):
+  # HCV-monoinfected 9.52 (8.06-11.26) -> viraemic states a, c, t;
+  # HCV/HIV-uninfected 4.73 (3.47-6.45) -> non-viraemic states u, r.
+  # The viraemic share is not fixed: it follows the model state over time.
+  smr_viraemic = 9.52,
+  smr_nonviraemic = 4.73,
 
   # ── Transmission multiplier: CONSTANT (fixed, not fitted) ────────────────
   # This revision does NOT fit m_min/m_max. Transmission is constant over
@@ -155,12 +148,12 @@ params <- list(
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # Fitted to SPS records by preprocess.R and written by update_rate_params.R.
-  # lambda1 (first arrest, D -> J) is not identified by prison records (the never-arrested
-  # are never observed); it is ASSUMED equal to lambda3 and written with it.
-  lambda1 = c(0.546, 0.488, 0.472, 0.472, 0.386, 0.266),  # first-arrest rate lambda_i^(1) = lambda3
+  # First arrest (D -> J) is lambda1_i = c_first * lambda3_i; c_first is calibrated
+  # (theta7), so the value here is only a placeholder for uncalibrated runs.
+  c_first = 1,
   lambda2 = c(0.462, 0.636, 0.454, 0.337, 0.325, 0.394),  # release rate lambda_i^(2) (SPS fit)
-  lambda3 = c(0.546, 0.488, 0.472, 0.472, 0.386, 0.266),  # re-arrest rate lambda_i^(3) (SPS fit)
-  pi_recid = 0.72,          # share of released who return to injecting (SPS fit)
+  lambda3 = c(0.548, 0.478, 0.469, 0.471, 0.384, 0.265),  # re-arrest rate lambda_i^(3) (SPS fit)
+  pi_recid = 0.724,          # share of released who return to injecting (SPS fit)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
   # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
@@ -176,8 +169,8 @@ params <- list(
   
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
-  # SingStat/CNB 2015 new-drug-abuser counts. The calibrated beta scale is
-  # applied to these counts; 2016 onward uses the time series loaded below.
+  # SingStat/CNB 2015 new-drug-abuser counts, used as the entry into D without
+  # scaling; 2016 onward uses the time series loaded below.
   beta = c(
     257, # age group 1
     644, # age group 2

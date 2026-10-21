@@ -4,7 +4,7 @@
 # =============================================================================
 
 # Exact target shared with NPE: independent Normal prior on theta (log scales),
-# Binomial prevalence + log-normal population likelihood, and the 2015
+# Binomial prevalence likelihood (no population term), and the 2015
 # equilibrium check as a hard support restriction (failure -> -Inf, no penalty).
 # Returns list(lp, ode) so that ODE calls can be counted separately.
 log_posterior_exact <- function(theta, base_params, data, prior_mean, prior_sd) {
@@ -19,7 +19,7 @@ log_posterior_exact <- function(theta, base_params, data, prior_mean, prior_sd) 
     return(list(lp = -Inf, ode = 1L))
   eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
   if (is.null(eq) || !eq$pass) return(list(lp = -Inf, ode = 1L))
-  list(lp = lprior - nll_prev(s$p_sero) - nll_pop(s$N_hat), ode = 1L)
+  list(lp = lprior - nll_prev(s$p_sero), ode = 1L)
 }
 
 # Adaptive random-walk Metropolis with a fixed evaluation budget (Haario et al. 2001 style).
@@ -104,7 +104,7 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
        cpu_sec = sum(proc.time()[c("user.self", "sys.self")]) - cpu0)
 }
 
-posterior_summaries <- function(samples, theta_names = paste0("theta", 1:12)) {
+posterior_summaries <- function(samples, theta_names = paste0("theta", seq_len(ncol(samples)))) {
   data.frame(
     parameter = theta_names,
     median = apply(samples, 2, median),

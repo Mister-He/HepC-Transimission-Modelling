@@ -1,6 +1,6 @@
 # =============================================================================
-# model_metrics.R — J-stratum summaries (prison population, seroprevalence,
-# viraemic prevalence) at the 2015 snapshot and fit metrics against the targets.
+# model_metrics.R — J-stratum summaries (model prison size, seroprevalence, viraemic
+# prevalence) at the 2015 snapshot and fit metrics against the seroprevalence targets.
 # =============================================================================
 
 idx <- function(s, k, h, i)
@@ -24,11 +24,12 @@ J_summary_at <- function(out, row) {
              p_viremic = viremic / N)
 }
 
-# Chronic viraemic (state c) share of all PWID (D, J, F, X; every stage and age) at a row:
-# the fixed point that setup.R freezes as viraemic_share_ref.
+# Viraemic (states a, c, t) share of all PWID (D, J, F, X; every stage and age) at a row.
+# Reported only: mortality is set per state, so the share varies over time.
 viraemic_share <- function(out, row = nrow(out)) {
   y <- out[row, 2:481]
-  sum(y[as.vector(outer(0:3 * 120, outer((0:3) * 30 + 2 * 6, 1:6, `+`), `+`))]) / sum(y)
+  h <- outer((0:3) * 30, (1:3) * 6, `+`)
+  sum(y[as.vector(outer(0:3 * 120, outer(as.vector(h), 1:6, `+`), `+`))]) / sum(y)
 }
 
 summary_row <- function(out, time = tail(out[, 1], 1))
@@ -37,19 +38,10 @@ summary_row <- function(out, time = tail(out[, 1], 1))
 J_summary_final <- function(out) J_summary_at(out, summary_row(out))
 
 fit_metrics <- function(s) {
-  p <- s$p_sero
-  p_safe <- pmin(pmax(p, 1e-10), 1 - 1e-10)
-  log_resid <- log(s$N_hat) - log(targets$population)
+  p <- s$p_sero; y <- targets$seroprevalence
   data.frame(
-    prevalence_rmse = sqrt(mean((p - targets$p_prev_binom)^2)),
-    prevalence_max_abs_err = max(abs(p - targets$p_prev_binom)),
-    population_mape = mean(abs(s$N_hat - targets$population) / targets$population),
-    population_max_ape = max(abs(s$N_hat - targets$population) / targets$population),
-    binomial_prevalence_deviance = 2 * sum(
-      dbinom(targets$x_prev, targets$population, targets$p_prev_binom, log = TRUE) -
-        dbinom(targets$x_prev, targets$population, p_safe, log = TRUE)),
-    population_srss = sum((log_resid / targets$population_sigma_log)^2),
-    nll_prev = -sum(dbinom(targets$x_prev, targets$population, p_safe, log = TRUE)),
-    nll_pop = 0.5 * sum((log_resid / targets$population_sigma_log)^2)
+    prevalence_rmse = sqrt(mean((p - y)^2)),
+    prevalence_max_abs_err = max(abs(p - y)),
+    nll_prev = nll_prev(p)
   )
 }

@@ -41,11 +41,10 @@ data = sps %>%
         PERM_REL_DATE = as.Date(PERM_REL_DATE, format = "%Y/%m/%d")
     )
 
-# Keep everyone ever held for drug consumption. The modelled PWID population is the screened
-# subset (known HCV screening result; unscreened people are assumed not to be PWID): it gives
-# the 2015 prison counts and first offenders below. Release and re-arrest rates use all
-# consumption records, because screening (Dec 2014-Feb 2016) selects people in prison then,
-# whose earlier releases all ended in re-arrest (re-arrest share 0.99 in that subset).
+# Keep everyone ever held for drug consumption. Release and re-arrest rates use all
+# consumption records: screening (Dec 2014-Feb 2016) selects people in prison then, whose
+# earlier releases all ended in re-arrest (re-arrest share 0.99 in that subset). The records
+# cannot identify true first offenders, so no first-arrest quantity is estimated here.
 data = data %>% 
   left_join(
     data %>% 
@@ -387,61 +386,6 @@ rearrest_dat_lexis = lapply(
     }
 ) %>% do.call('rbind', .)
 
-# Other data for equailibrium calibration: the screened PWID population (see the filter above)
-screened = data %>% group_by(IDENTIFER) %>% filter(any(Screening_result != "Not Known")) %>% ungroup()
-J_pop = screened %>% 
-    filter(start <= as.Date('2015-12-31'), end >= as.Date('2015-12-31') | is.na(end)) %>% 
-    group_by(IDENTIFER) %>% 
-    slice(1) %>% 
-    ungroup() %>% 
-    mutate(current_age = 2015 - YEAR_OF_BIRTH) %>%
-    mutate(agegrp = cut(current_age, breaks = c(ageint, Inf), labels = seq_along(ageint), right = FALSE)) %>%
-    group_by(agegrp) %>%
-    reframe(n = n()) %>%
-    pull(n)
-
-# Label the first incarceration as first offender
-screened <- screened %>%
-    group_by(IDENTIFER) %>%
-    arrange(start) %>%
-    mutate(first_time = ifelse(row_number() == 1, 1, 0)) %>%
-    ungroup()
-
-# Overall first-arrest age grp distribution
-f_all_dist = screened %>% 
-    filter(first_time == 1) %>%
-    mutate(start = year(start) - YEAR_OF_BIRTH) %>% 
-    mutate(agegrp = cut(start, breaks = c(ageint, Inf), labels = seq_along(ageint), right = FALSE)) %>%
-    group_by(agegrp) %>%
-    reframe(n = n()) %>%
-    pull(n)
-
-# first-arrest age grp distribution by year (2014-2016)
-f_yr_dist = lapply(
-    2014:2016,
-    function(yr){
-        screened %>% 
-            filter(first_time == 1, year(start) == yr) %>%
-            mutate(start = year(start) - YEAR_OF_BIRTH) %>% 
-            mutate(agegrp = cut(start, breaks = c(ageint, Inf), labels = seq_along(ageint), right = FALSE)) %>%
-            group_by(agegrp) %>%
-            reframe(n = n()) %>%
-            pull(n)
-    }
-) %>% do.call('rbind', .) %>% as.matrix
-
-f_obs = nrow(f_yr_dist)
-
-# Death rate and ageing rate: the ODE's values, so this steady-state balance matches sim.cpp
-# (background mortality mu * omega; 1/10 per year between 10-year bands).
-setup_env = new.env(); old_wd = setwd('scripts/model'); sys.source('setup.R', setup_env); setwd(old_wd)
-mu = setup_env$params$mu * setup_env$params$omega
-a_age = 0.1
-
-# Fitted release rate from previous step
-release_fit = readRDS('output/release_rate_fit.rds')
-lambda1 = exp(release_fit$summary('log_lambda')$mean)
-
 ## HMC input parameters
 set.seed(114514)
 N_BURNIN <- 1e3
@@ -451,12 +395,6 @@ N_AGE_GRP <- length(unique(data$adm_age_grp))
 
 data_list <- list(
     n_age = n_age,
-    release = lambda1,
-    F0 = f_yr_dist,
-    f_obs = f_obs,
-    J = J_pop,
-    mu = mu,
-    a = a_age,
     N = nrow(rearrest_dat_lexis),
     t = rearrest_dat_lexis[ , 2 + 1:n_age],
     age_r = rearrest_dat_lexis[ , 1:2],
@@ -480,16 +418,16 @@ rearrest_fit <- model$sample(
 # rearrest_fit$summary()
 list(
     rearrest_fit$summary(variables = c(
-        "pi_raw", "log_lambda", "f_pop"
+        "pi_raw", "log_lambda"
     )),
     rearrest_fit$draws(variables = c(
-        "pi_raw", "log_lambda", "f_pop"
+        "pi_raw", "log_lambda"
     ))
 ) %>% 
 saveRDS("output/rearrest_rate_fit.rds")
 
 rearrest_fit$summary(variables = c(
-    "pi", "lambda", "f_pop"
+    "pi", "lambda"
 ))
 
 # # Draw traceplots using bayesplot
@@ -497,12 +435,11 @@ rearrest_fit$summary(variables = c(
 # label_parsed <- function(labels) {
 #     labels$variable <- gsub("pi_raw", "pi[raw]", labels$variable)
 #     labels$variable <- gsub("log_lambda", "log(lambda)", labels$variable)
-#     labels$variable <- gsub("f_pop", "f[pop]", labels$variable)
 #     return(labels)
 # }
 # # Traceplots for pi_raw
 # mcmc_trace(rearrest_fit$draws(variables = c(
-#     "pi_raw", "log_lambda", "f_pop"
+#     "pi_raw", "log_lambda"
 # )))
 
 # Copy the fitted rates into setup.R (replaces manual copying):

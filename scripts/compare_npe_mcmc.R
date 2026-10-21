@@ -18,7 +18,7 @@ ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE); setwd(ROOT)
 POLICY_CORES <- as.integer(arg("--policy-cores", "14"))
 CAL <- "output/calibration"; OUT <- file.path(CAL, "npe_vs_mcmc")
 dir.create(file.path(OUT, "figures"), recursive = TRUE, showWarnings = FALSE)
-TH <- paste0("theta", 1:12); probs <- c(.025, .05, .25, .5, .75, .95, .975)
+TH <- paste0("theta", 1:7); probs <- c(.025, .05, .25, .5, .75, .95, .975)
 TOL <- list(smd = 0.1, endpoint = 0.2, width = c(0.9, 1.1))
 
 # ---------------- posteriors ----------------
@@ -145,7 +145,7 @@ p2 <- ggplot(acc, aes(parameter, width95_ratio, colour = source)) + annotate("re
   labs(y = "95% interval width ratio vs reference", x = NULL, colour = NULL) + theme_classic(base_size = 9)
 ggsave(file.path(OUT, "figures", "accuracy.png"), (p1 | p2) + plot_layout(guides = "collect") & theme(legend.position = "bottom"),
        width = 11, height = 6, dpi = 200)
-pairs_of <- list(c("theta1", "theta7"), c("theta6", "theta12"), c("theta9", "theta10"), c("theta5", "theta11"))
+pairs_of <- list(c("theta1", "theta7"), c("theta6", "theta7"), c("theta2", "theta3"), c("theta4", "theta5"))
 pp <- lapply(pairs_of, function(pr) {
   set.seed(2); mk <- function(m, lab) data.frame(x = m[, pr[1]], y = m[, pr[2]], source = lab)
   d2 <- rbind(mk(ref[sample.int(nrow(ref), 5000), ], "Reference MCMC"),

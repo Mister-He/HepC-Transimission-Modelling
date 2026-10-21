@@ -20,13 +20,18 @@ check_true(max(abs(colMeans(th) - mu)) < 0.01 && all(abs(apply(th, 2, sd) - 0.2)
            "LHS draws reproduce the Normal(mean, 0.20) prior marginals")
 check_true(all(sapply(1:12, function(j) ks.test(th[, j], "pnorm", mu[j], 0.2)$p.value) > 0.01),
            "LHS marginals pass a Kolmogorov-Smirnov test against the prior")
+tt <- prior_from_unit(u[, 1:2], c(0, 0), 1, lo = c(log(0.5), -Inf), hi = c(log(100), Inf))
+check_true(min(tt[, 1]) >= log(0.5) && max(tt[, 1]) <= log(100) && min(tt[, 2]) < log(0.5),
+           "truncation keeps draws inside the bounds of truncated columns only")
+check_true(ks.test(tt[, 1], function(q) (pnorm(q) - pnorm(log(0.5))) / (pnorm(log(100)) - pnorm(log(0.5))))$p.value > 0.01,
+           "truncated LHS draws follow the truncated Normal")
 
 npe_dir <- file.path(root, "output", "calibration", "npe_lhs")
 post_path <- file.path(npe_dir, "posterior_samples_npe.csv")
 if (file.exists(post_path)) {
   post <- read.csv(post_path); eval <- read.csv(file.path(npe_dir, "npe_evaluation.csv"))
   ss <- jsonlite::fromJSON(file.path(npe_dir, "simulation_summary.json"))
-  theta <- as.matrix(post[, paste0("theta", 1:12)])
+  theta <- as.matrix(post[, paste0("theta", 1:7)])
   check_identical(as.integer(ss$n_attempted), 50000L, "NPE uses 50,000 attempted LHS prior simulations")
   check_identical(as.integer(ss$n_valid + ss$n_excluded_nonfinite + ss$n_excluded_equilibrium +
                              ss$n_excluded_bounds),
@@ -42,7 +47,7 @@ if (file.exists(post_path)) {
              "SBC summary and ranks are retained")
   if (file.exists(sbc_path)) {
     sbc <- read.csv(sbc_path)
-    check_identical(sbc$parameter, paste0("theta", 1:12), "SBC covers all 12 parameters")
+    check_identical(sbc$parameter, paste0("theta", 1:7), "SBC covers all 7 parameters")
     check_true(all(sbc$n_sbc >= 500), "SBC uses at least 500 synthetic datasets")
     check_true(all(sbc$coverage_95 >= 0.85 & sbc$coverage_90 >= 0.75),
                "SBC coverage passes the 95% and 90% gates for every parameter")

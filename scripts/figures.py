@@ -54,7 +54,7 @@ SHARE_LS = {0.25: "-", 0.5: (0, (4, 2)), 0.75: (0, (1, 1.5))}
 CAP_MARK = ["o", "s", "^", "D", "v"]
 pct = PercentFormatter(1.0, decimals=0)
 comma = FuncFormatter(lambda v, _: f"{v:,.0f}")
-TH = [f"theta{i}" for i in range(1, 13)]
+TH = [f"theta{i}" for i in range(1, 8)]  # six log contact scales + log c
 written = []
 
 
@@ -199,36 +199,31 @@ if want("paper_fig4_f_pool"):
 # ---------------------------------------------------------------- calibration
 if want("calibration_agepop"):
     tg = json.loads((ROOT / "data/calibration_targets.json").read_text())
-    ages = tg["age_groups"]; N = np.array(tg["population"], float)
-    x = np.round(np.array(tg["seroprevalence"]) * N)
-    z = stats.norm.ppf(0.975)
-    target = {"p": (x / N, stats.beta.ppf(0.025, x + .5, N - x + .5), stats.beta.ppf(0.975, x + .5, N - x + .5)),
-              "N": (N, N * np.exp(-z * tg["population_sigma_log"]), N * np.exp(z * tg["population_sigma_log"]))}
-    srcs = {"Target (95% interval)": (None, "black", "^"),
+    ages = tg["age_groups"]; y = np.array(tg["seroprevalence"]); phi = tg["beta_precision"]
+    # Seroprevalence is the only target; its interval is the 95% range of the Beta likelihood.
+    target = (y, stats.beta.ppf(0.025, y * phi, (1 - y) * phi), stats.beta.ppf(0.975, y * phi, (1 - y) * phi))
+    srcs = {"Target (Beta likelihood, 95% range)": (None, "black", "^"),
             "Reference MCMC (production)": (CAL / "mcmc_reference/model_prediction_2015_age_draws.csv", "#0072B2", "s"),
             "Single-round NPE (50,000 LHS)": (CAL / "npe_lhs/model_prediction_2015_age_draws.csv", "#D55E00", "o")}
     chk = pd.read_csv(ROOT / "figures/calibration_interval_overlap.csv")
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 85 * MM), layout="constrained")
-        for ax, (k, title, fmt) in zip(axes, [("p", "A  Age-specific HCV seroprevalence", pct),
-                                              ("N", "B  Age-specific prison population", comma)]):
-            for j, (name, (f, col, mk)) in enumerate(srcs.items()):
-                if f is None:
-                    est, lo, hi = target[k]
-                else:
-                    dr = pd.read_csv(f); dr = dr[dr.equilibrium_pass.astype(bool)]
-                    v = dr[[f"{k}{i}" for i in range(1, 7)]].to_numpy()
-                    est, lo, hi = np.median(v, 0), np.quantile(v, .025, 0), np.quantile(v, .975, 0)
-                    who = "MCMC" if "MCMC" in name else "NPE"
-                    meas = "seroprevalence" if k == "p" else "population"
-                    assert np.allclose(lo, chk[chk.measure == meas][f"{who}_lower"], rtol=1e-6), "interval drift"
-                xs = np.arange(6) + (j - 1) * 0.22
-                ax.errorbar(xs, est, yerr=[est - lo, hi - est], fmt=mk, color=col, ms=4.5, elinewidth=1,
-                            capsize=2, label=name)
-            ax.set(xticks=range(6), xticklabels=ages, xlabel="Age group (years)", ylim=(0, None))
-            ax.yaxis.set_major_formatter(fmt); panel_label(ax, title)
-        axes[0].set_ylabel("HCV seroprevalence"); axes[1].set_ylabel("Prison population")
-        fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=3)
+        fig, ax = plt.subplots(figsize=(COL * MM, 95 * MM), layout="constrained")
+        for j, (name, (f, col, mk)) in enumerate(srcs.items()):
+            if f is None:
+                est, lo, hi = target
+            else:
+                dr = pd.read_csv(f); dr = dr[dr.equilibrium_pass.astype(bool)]
+                v = dr[[f"p{i}" for i in range(1, 7)]].to_numpy()
+                est, lo, hi = np.median(v, 0), np.quantile(v, .025, 0), np.quantile(v, .975, 0)
+                who = "MCMC" if "MCMC" in name else "NPE"
+                assert np.allclose(lo, chk[f"{who}_lower"], rtol=1e-6), "interval drift"
+            xs = np.arange(6) + (j - 1) * 0.22
+            ax.errorbar(xs, est, yerr=[est - lo, hi - est], fmt=mk, color=col, ms=4.5, elinewidth=1,
+                        capsize=2, label=name)
+        ax.set(xticks=range(6), xticklabels=ages, xlabel="Age group (years)", ylim=(0, None),
+               ylabel="HCV seroprevalence in prison, 2015")
+        ax.yaxis.set_major_formatter(pct)
+        fig.legend(*ax.get_legend_handles_labels(), loc="outside lower center", ncols=1)
         save(fig, ROOT / "figures/calibration_agepop",
              ["data/calibration_targets.json", "*/model_prediction_2015_age_draws.csv (median, 2.5-97.5%)"])
 
@@ -438,7 +433,9 @@ if want("scenario_cost_composition_pies"):
 if want("mcmc_traceplots"):
     dr = pd.read_csv(CAL / "mcmc_reference/mcmc_draws.csv")
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(4, 3, figsize=(FULL * MM, 200 * MM), layout="constrained", sharex=True)
+        fig, axes = plt.subplots(3, 3, figsize=(FULL * MM, 150 * MM), layout="constrained", sharex=True)
+        for ax in axes.flat[len(TH):]:
+            ax.set_visible(False)
         chain_col = ["#0072B2", "#D55E00", "#009E73", "#CC79A7"]
         for ax, t in zip(axes.flat, TH):
             for i, (ch, g) in enumerate(dr.groupby("chain")):
@@ -470,8 +467,10 @@ if want("sbc_rank_histograms"):
     ranks = np.load(CAL / "npe_lhs/sbc_ranks.npy"); n, nb = len(ranks), 20
     lo, hi = stats.binom.ppf([0.005, 0.995], n, 1 / nb)
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(3, 4, figsize=(FULL * MM, 120 * MM), layout="constrained", sharex=True, sharey=True)
-        for i, ax in enumerate(axes.flat):
+        fig, axes = plt.subplots(2, 4, figsize=(FULL * MM, 85 * MM), layout="constrained", sharex=True, sharey=True)
+        for ax in axes.flat[ranks.shape[1]:]:
+            ax.set_visible(False)
+        for i, ax in zip(range(ranks.shape[1]), axes.flat):
             ax.axhspan(lo, hi, color="#56B4E9", alpha=0.3, lw=0)
             ax.hist(ranks[:, i], bins=nb, range=(0, 1), color="0.45", edgecolor="white", lw=0.5)
             ax.set_title(f"θ{i + 1}", fontsize=8)
@@ -489,7 +488,9 @@ if want("marginals") or want("pairs"):
 
 if want("marginals"):
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(3, 4, figsize=(FULL * MM, 125 * MM), layout="constrained")
+        fig, axes = plt.subplots(2, 4, figsize=(FULL * MM, 90 * MM), layout="constrained")
+        for ax in axes.flat[len(TH):]:
+            ax.set_visible(False)
         for ax, t in zip(axes.flat, TH):
             a, b = ref[t].to_numpy(), npe[t].to_numpy()
             g = np.linspace(min(a.min(), b.min()), max(a.max(), b.max()), 300)
@@ -508,17 +509,17 @@ if want("accuracy"):
         for ax, (c, band, xl) in zip(axes, [("smd", (-.1, .1), "Standardised mean difference vs reference"),
                                             ("width95_ratio", (.9, 1.1), "95% interval width ratio vs reference")]):
             ax.axvspan(*band, color="0.85", lw=0, label="Tolerance")
-            ax.plot(pc[c], range(12), "o", color="#D55E00", ms=4, label="NPE, 50,000 LHS")
+            ax.plot(pc[c], range(len(TH)), "o", color="#D55E00", ms=4, label="NPE, 50,000 LHS")
             ax.set_xlabel(xl)
-        axes[0].set(yticks=range(12), yticklabels=[f"θ{t[5:]}" for t in pc.index])
+        axes[0].set(yticks=range(len(TH)), yticklabels=[f"θ{t[5:]}" for t in pc.index])
         fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=2)
         save(fig, CMP / "accuracy", ["npe_vs_mcmc/parameter_comparison.csv"])
 
 if want("pairs"):
     with style_context("default", palette_name="okabe_ito_on_white"):
         fig, axes = plt.subplots(2, 2, figsize=(COL * MM, 125 * MM), layout="constrained")
-        for ax, (u, v) in zip(axes.flat, [("theta1", "theta7"), ("theta6", "theta12"), ("theta9", "theta10"),
-                                          ("theta5", "theta11")]):
+        for ax, (u, v) in zip(axes.flat, [("theta1", "theta7"), ("theta6", "theta7"), ("theta2", "theta3"),
+                                          ("theta4", "theta5")]):
             sets = [(ref, "0.2", "-"), (npe, "#D55E00", "--")]
             xy = [s[[u, v]].to_numpy()[rng.choice(len(s), 5000, replace=False)].T for s, _, _ in sets]
             allp = np.hstack(xy)

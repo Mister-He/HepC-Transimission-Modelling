@@ -17,7 +17,7 @@ arg        <- function(name, default = NULL) {
 }
 STEP       <- arg("--step", "all")
 ROOT       <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261020_agepop/fit.rds")), mustWork = TRUE)
+FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
 OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration/npe_lhs"))
 PYTHON     <- arg("--python", Sys.which("python3"))
 N_SIMS     <- as.integer(arg("--n-sims", "50000"))
@@ -27,7 +27,6 @@ SEED       <- as.integer(arg("--seed", "20261012"))          # prior design; tra
 TRAIN_SEED <- as.integer(arg("--train-seed", SEED + 1L))
 N_SBC      <- as.integer(arg("--n-sbc", "0"))
 THREADS    <- as.integer(arg("--threads", "4"))
-CONTACT_SD <- as.numeric(arg("--npe-contact-sd", "0.20")); BETA_SD <- as.numeric(arg("--npe-beta-sd", "0.20"))
 HIDDEN     <- as.integer(arg("--npe-hidden-features", "50")); TRANSFORMS <- as.integer(arg("--npe-num-transforms", "5"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 Sys.setenv(OMP_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1", VECLIB_MAXIMUM_THREADS = "1")
@@ -41,8 +40,8 @@ for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "prior_sampling.
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT); base_params <- setup_env$params; data <- setup_env$data
 data$t_start <- 0; data$t_end <- targets$equilibrium_horizon_years
-prior_sd <- c(rep(CONTACT_SD, 6), rep(BETA_SD, 6)); N_PARAM <- 12L
-center <- prior_centre(as.numeric(fit$best$theta), prior_sd)
+prior <- prior_spec()  # same fixed prior as Nelder-Mead and the reference MCMC
+center <- prior$mean; prior_sd <- prior$sd
 # fit$base_params is what the scenarios use; a setup.R edit without a refit must not slip through.
 stopifnot(isTRUE(all.equal(fit$base_params, base_params)))
 
@@ -56,7 +55,7 @@ log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite 
   write.table(row, f, sep = ",", row.names = FALSE, col.names = !file.exists(f), append = file.exists(f))
 }
 
-# Returns c(p_sero, N_hat) or a failure code: "bounds", "nonfinite" or "equilibrium".
+# Returns p_sero (the six calibration summaries) or a failure code: "bounds", "nonfinite" or "equilibrium".
 # Out-of-bounds draws are dropped because the MCMC target gives them -Inf (same support).
 simulate <- function(theta) {
   if (!within_bounds(theta)) return("bounds")
@@ -68,7 +67,7 @@ simulate <- function(theta) {
   if (any(!is.finite(s$p_sero)) || any(!is.finite(s$N_hat)) || any(s$N_hat <= 0)) return("nonfinite")
   eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
   if (is.null(eq) || !eq$pass) return("equilibrium")
-  c(s$p_sero, s$N_hat)
+  s$p_sero
 }
 
 simulate_many <- function(theta, stage) {
@@ -85,34 +84,32 @@ simulate_many <- function(theta, stage) {
 }
 
 write_pairs <- function(theta, sim, theta_file, x_file) {
-  write.csv(setNames(as.data.frame(theta[sim$ok, , drop = FALSE]), paste0("theta", 1:12)),
+  write.csv(setNames(as.data.frame(theta[sim$ok, , drop = FALSE]), paste0("theta", 1:N_THETA)),
             file.path(OUT, theta_file), row.names = FALSE)
-  write.csv(setNames(as.data.frame(sim$x), c(paste0("p", 1:6), paste0("N", 1:6))),
-            file.path(OUT, x_file), row.names = FALSE)
+  write.csv(setNames(as.data.frame(sim$x), paste0("p", 1:6)), file.path(OUT, x_file), row.names = FALSE)
 }
 
 step_data <- function() {
   stale <- file.path(OUT, c("NPE_OK.txt", "NPE_NOT_OK.txt", "sbc_summary.csv", "sbc_ranks.npy",
-                           "sbc_rank_histograms.png", "theta_sbc.csv", "x_sbc.csv"))
+                           "sbc_rank_histograms.png", "theta_sbc.csv", "x_sbc.csv", "r_timings.csv"))
   file.remove(stale[file.exists(stale)])  # a later --n-sbc 0 run must not reuse old SBC results
-  th <- sample_prior_lhs(N_SIMS, center, prior_sd, SEED)
+  th <- sample_prior_lhs(N_SIMS, center, prior_sd, SEED, THETA_LO, THETA_HI)
   sim <- simulate_many(th, "prior_simulation")
   write_pairs(th, sim, "theta_train.csv", "x_train.csv")
   # Every attempted parameter set with its outcome, so exclusions can be audited.
-  write.csv(data.frame(setNames(as.data.frame(th), paste0("theta", 1:12)), outcome = sim$code),
+  write.csv(data.frame(setNames(as.data.frame(th), paste0("theta", 1:N_THETA)), outcome = sim$code),
             file.path(OUT, "prior_design.csv"), row.names = FALSE)
   if (N_SBC > 0) {
-    th_sbc <- sample_prior_random(N_SBC, center, prior_sd, SEED + 1L)
+    th_sbc <- sample_prior_random(N_SBC, center, prior_sd, SEED + 1L, THETA_LO, THETA_HI)
     sbc <- simulate_many(th_sbc, "sbc_simulation")
     write_pairs(th_sbc, sbc, "theta_sbc.csv", "x_sbc.csv")
   }
-  x <- c(targets$p_prev_binom, targets$population)
-  write.csv(setNames(as.data.frame(t(x)), c(paste0("p", 1:6), paste0("N", 1:6))),
+  write.csv(setNames(as.data.frame(t(targets$seroprevalence)), paste0("p", 1:6)),
             file.path(OUT, "x_obs.csv"), row.names = FALSE)
   jsonlite::write_json(list(
     sampling = "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
-    prior = sprintf("independent Normal(prior_centre(fit$best$theta), sd = %s/%s) on log-scale theta", CONTACT_SD, BETA_SD),
-    prior_centre = center, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
+    prior = "independent Normal(prior_mean, prior_sd) on theta, truncated to the bounds (likelihood.R)",
+    prior_mean = center, prior_sd = prior_sd, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
     n_excluded_nonfinite = sum(sim$code == "nonfinite"), n_excluded_equilibrium = sum(sim$code == "equilibrium"),
     n_excluded_bounds = sum(sim$code == "bounds"),
     exclusion_rule = "drop draws outside the parameter bounds (within_bounds) and simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",
@@ -128,10 +125,10 @@ step_train <- function() {
   py <- file.path(ROOT, "scripts/npe_train.py")
   a <- c(py, "--theta", file.path(OUT, "theta_train.csv"), "--x", file.path(OUT, "x_train.csv"),
          "--x-obs", file.path(OUT, "x_obs.csv"), "--out", OUT, "--seed", TRAIN_SEED, "--n-draws", N_DRAWS,
-         "--contact-anchor", paste(exp(center[1:6]), collapse = ","),
-         "--beta-anchor", paste(exp(center[7:12]), collapse = ","), "--contact-sd", CONTACT_SD,
-         "--beta-sd", BETA_SD, "--hidden-features", HIDDEN, "--num-transforms", TRANSFORMS,
-         "--population-sigma-log", targets$population_sigma_log, "--max-epochs", MAX_EPOCHS,
+         paste0("--prior-mean=", paste(center, collapse = ",")), "--prior-sd", paste(prior_sd, collapse = ","),
+         "--hidden-features", HIDDEN, "--num-transforms", TRANSFORMS,
+         "--beta-precision", targets$beta_precision, paste0("--theta-lo=", paste(THETA_LO, collapse = ",")),
+         paste0("--theta-hi=", paste(THETA_HI, collapse = ",")), "--max-epochs", MAX_EPOCHS,
          "--threads", THREADS, "--sampling-label", "lhs")
   if (N_SBC > 0) a <- c(a, "--n-sbc", N_SBC, "--theta-sbc", file.path(OUT, "theta_sbc.csv"),
                         "--x-sbc", file.path(OUT, "x_sbc.csv"))
@@ -143,8 +140,8 @@ step_train <- function() {
 
 step_evaluate <- function() {
   post <- read.csv(file.path(OUT, "posterior_samples_npe.csv"))
-  sd <- apply(post[paste0("theta", 1:12)], 2, stats::sd)
-  q <- data.frame(parameter = paste0("theta", 1:12), posterior_sd = sd, posterior_broad_ok = sd >= 0.05,
+  sd <- apply(post[paste0("theta", 1:N_THETA)], 2, stats::sd)
+  q <- data.frame(parameter = paste0("theta", 1:N_THETA), posterior_sd = sd, posterior_broad_ok = sd >= 0.05,
                   coverage_95 = NA_real_, coverage_90 = NA_real_, coverage_ok = NA,
                   rank_shape = NA_character_, rank_shape_ok = NA)
   sbc_file <- file.path(OUT, "sbc_summary.csv")
