@@ -35,11 +35,12 @@ Calibration limits:
   100); all six are within 0.022. Population size is not fitted: the modelled 2015 prison
   population (8,451) is 2.5 times the observed count of screened PWID (3,367).
 - **Rate fits:** release and re-arrest rates come from SPS survival models. First arrest is
-  `c` × re-arrest with `c` ≥ 0.5; seroprevalence barely informs `c`, whose posterior (1.21,
-  0.55–3.15) follows its prior.
+  `c` × re-arrest with `c` ≥ 0.5; seroprevalence barely informs `c`, whose posterior (1.24,
+  0.57–3.13) follows its prior.
 - **Entry:** the CNB new-drug-abuser counts enter D unscaled.
 - **Mortality:** non-liver deaths use all-cause PWID SMRs against the general population from an
-  Amsterdam cohort grouped by antibody status (9.52 HCV-positive, 4.73 negative; van Santen 2014).
+  Amsterdam cohort grouped by antibody status (9.52 HCV-positive, 4.73 negative; van Santen 2014). HCV deaths include the viraemic excess,
+  which cure removes; any confounding in that excess overstates the benefit of treatment.
 - **Prior-dominated parameters:** the 50–59 and 60+ contact scales and `c`. The
 production posterior is the reference MCMC; single-round NPE is used only as an
 independent cross-check.

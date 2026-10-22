@@ -10,5 +10,5 @@ The following objects are masked from ‘package:base’:
     intersect, setdiff, setequal, union
 
 Running 17 policies x 1000 posterior draws ( 1000 per seed ) on 14 cores...
-Valid draws: 808 of 1000 (equilibrium failures: 192 )
+Valid draws: 1000 of 1000 (equilibrium failures: 0 )
 Wrote 17 policies to /Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/policy/npe_lhs (figures skipped)

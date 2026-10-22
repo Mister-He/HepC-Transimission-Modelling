@@ -17,6 +17,5 @@
     0.428571428571429
   ],
   "beta_precision": 100,
-  "equilibrium_horizon_years": 150,
-  "equilibrium_lag_years": 5
+  "equilibrium_horizon_years": 150
 }

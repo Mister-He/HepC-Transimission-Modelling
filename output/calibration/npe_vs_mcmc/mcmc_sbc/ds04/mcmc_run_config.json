@@ -28,9 +28,9 @@
     "prior_variance": 20264205,
     "chain": "SEED+1000+i (initial prior draws and sampling)"
   },
-  "startup_sec": 5.083,
-  "pre_chain_sec": 0.00100000000000033,
-  "method_sec": 8949.5,
-  "cpu_sec_total": 8936.307,
+  "startup_sec": 5.379,
+  "pre_chain_sec": 0.00600000000000023,
+  "method_sec": 8953.438,
+  "cpu_sec_total": 8942.972,
   "r_version": "R version 4.5.1 (2025-06-13)"
 }

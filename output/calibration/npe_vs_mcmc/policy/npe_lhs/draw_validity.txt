@@ -1,2 +1,2 @@
 draws_requested 1000
-draws_valid 808
+draws_valid 1000

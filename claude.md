@@ -246,27 +246,32 @@ outputs were backed up to the session scratchpad only (not in the repo).
   more injectors outside prison.
 - `docs/first_arrest_mortality_update.md` and `docs/final_review.md` are historical.
 
-## First-arrest multiplier, seroprevalence-only fit (2026-10-21/22, `docs/first_arrest_multiplier.md`) — current state
-- **Rates:** `rearrest_rate.stan` is survival-only (no prison steady state, no `f_pop`); refit
-  `pi` 0.724, `lambda3` 0.548, 0.478, 0.469, 0.471, 0.384, 0.265; release unchanged.
+## First-arrest multiplier, seroprevalence-only fit, audit fixes (2026-10-21/22, `docs/first_arrest_multiplier.md`) — current state
+- **Rates:** `rearrest_rate.stan` is survival-only (no prison steady state, no `f_pop`); `pi` 0.724,
+  `lambda3` 0.548, 0.478, 0.469, 0.471, 0.384, 0.265. Both fits saved as `list(summary, draws)`;
+  `lambda2`/`lambda3` = posterior mean of `exp(log_lambda)`. `preprocess.R` is vectorised (bit-identical
+  Stan inputs) and writes `output/prison_2015_counts.csv` (aggregates; 3,367 in prison).
 - **Model:** first arrest = `c_first` × `lambda3`; CNB entry unscaled; background mortality
-  `mu` × SMR by state (9.52 viraemic a/c/t, 4.73 u/r; van Santen 2014 Table 3, Amsterdam,
-  antibody-based); no `omega`, `hr_viraemic` or `viraemic_share_ref`.
+  `mu` × SMR by state (9.52 viraemic a/c/t, 4.73 u/r; van Santen 2014, antibody-based). `y0` now
+  starts in the right compartments (was shifted by one).
 - **Calibration (user decisions):** 7 parameters (6 contact scales + log `c`, `c` 0.5–100);
-  seroprevalence only, Beta(p·φ, (1−p)·φ) with φ = 100, no counts (`population` removed from
-  the targets JSON); fixed prior contact N(0, 1.5), log `c` N(0, 0.5); Nelder–Mead = posterior
-  mode from uninformative starts. Two earlier attempts were discarded: CNB entry with the
-  population target fit at c = 0.034 (objective 119; prison 20–29 381 vs 1,001), then a binomial
-  with screened counts was rejected by the user.
+  seroprevalence only, Beta(p·φ, (1−p)·φ), φ = 100, no counts; fixed prior contact N(0, 1.5),
+  log `c` N(0, 0.5), one density `nlp()` for Nelder–Mead, MCMC and NPE; uninformative NM starts.
+  Discarded attempts: CNB entry with the population target (c = 0.034, objective 119); binomial
+  with screened counts (rejected by the user).
 - **Fit** `output/calibration/r_20261021_agepop`: all 8 starts agree, RMSE 0.013, `c` 1.10.
   SMR-bound fits in `smr_sensitivity/` (`c` 1.097–1.100).
-- **MCMC:** R-hat ≤ 1.005, bulk ESS ≥ 1,798, acceptance 0.08–0.17, 4.0 h; `c` 1.21 (0.55–3.15),
-  SD ratio 0.90 (prior-dominated, as are θ5, θ6). 2015 J 8,451 vs observed 3,367 (not fitted);
-  ever-PWID 50,223.
-- **Cross-validation:** NPE SBC gate PASS but NPE vs MCMC 0/7 parameters pass (intervals 23%
-  wider); policy reductions within 2.4%. MCMC SBC cov95 0.96.
-- **Scenarios:** J only incidence −85.6% (68.9–91.3), mortality −45.8%; all finite scenarios meet
-  incidence, none meet mortality (best 8,000/yr F25% 60.5%); only no cap meets both (99.8%).
-  More tests to X always lower deaths more (F eligible ~5,600/yr, 6% chronic; X 9%).
-- **Manuscript** rewritten for these results; `build_paper.py` asserts them.
-
+- **MCMC** (adaptation on the recent half of warmup): R-hat ≤ 1.002, bulk ESS ≥ 3,250, acceptance
+  0.18–0.22, 4.0 h; `c` 1.24 (0.57–3.13), prior-dominated (as are θ5, θ6). 2015 J 8,451 vs observed
+  3,367 (not fitted); ever-PWID 50,218.
+- **Cross-validation:** NPE SBC gate PASS, but 33% of NPE draws fail equilibrium (dropped) and 0/7
+  parameters pass (intervals 28% wider); policy reductions within 0.3%, joint-pass 8 pp lower.
+  MCMC SBC cov95 0.96. NPE is not validated under this prior.
+- **Outcomes (audit fixes):** HCV deaths = DC/HCC liver deaths + viraemic non-liver excess
+  `mu(9.52 − 4.73)`; prison tests follow the F/X rule (antibody for entrants u/a/c/r, RNA for a/c/r).
+- **Scenarios:** J only incidence −85.7% (70.5–91.3), mortality −54.9%. All finite scenarios meet
+  incidence; mortality at the median at 5,000/8,000 per year with F 25%/50% (joint 97%, 57%, 98%,
+  99.6%); F 75% misses. No cap 87.1%. More tests to X always lower deaths more.
+- **Code:** `scenarios_2026.R` draws its old ggplot figures only with `--figures true`; prediction,
+  plot and scenario scripts stop if the fit does not match `setup.R`.
+- **Manuscript** rewritten; `build_paper.py` asserts every result claim it makes.

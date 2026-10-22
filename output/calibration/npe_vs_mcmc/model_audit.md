@@ -18,8 +18,9 @@ single-round NPE on 50,000 LHS prior simulations (cross-validation only).
     run in `mcmc_run_config.json`.
   - NPE implements it as a torch `Independent(Normal)` (`scripts/npe_train.py`, `build_prior`),
     with posterior draws outside the bounds rejected (`Ensemble`).
-  - MCMC implements it as `dnorm` in `log_posterior_exact` (`scripts/calibration/mcmc.R`); outside
-    the bounds the target is −∞. The truncation constant does not depend on θ.
+  - MCMC uses `-nlp(θ)` (the same function Nelder–Mead uses) in `log_posterior_exact`
+    (`scripts/calibration/mcmc.R`); outside the bounds the target is −∞. The truncation constant does
+    not depend on θ. Chain starts are truncated-prior draws.
 - **Support.** Both methods apply `within_bounds`: exp(θ) in [0.01, 1000] for contact scales and
   `c` in [0.5, 100].
 - **Transformations.** None. Both methods sample θ directly, so no Jacobian is needed.
@@ -59,8 +60,8 @@ single-round NPE on 50,000 LHS prior simulations (cross-validation only).
   equilibrium check}.
 - **MCMC.** `log_posterior_exact` returns −∞ for failures. There is no soft penalty.
 - **NPE.** `run_npe.R` (`simulate`) drops draws outside the bounds, non-finite simulations and
-  equilibrium failures, without replacing them. The current run has 49,945 valid draws, 42
-  equilibrium failures and 13 non-finite simulations. It records each outcome in
+  equilibrium failures, without replacing them. The current run has 49,945 valid draws, 43
+  equilibrium failures and 12 non-finite simulations. It records each outcome in
   `prior_design.csv` and the counts in `simulation_summary.json`.
 - **Nelder–Mead.** It minimises the same negative log posterior (with an equilibrium penalty in
   place of −∞) and only reports the posterior mode; neither method's target depends on it.
@@ -80,23 +81,25 @@ single-round NPE on 50,000 LHS prior simulations (cross-validation only).
   - training seed 20261013, which gives the noise stream [20261013, 11], torch training seeds
     2026101321–2026101325 (one per member) and torch sampling seed 2026101331.
 - **SBC.** 1,000 random prior datasets, of which 998 passed. Each was ranked in 1,000 posterior
-  draws. cov95 is 0.935–0.959, cov90 0.876–0.911, and all 7 rank histograms are uniform; gate PASS.
+  draws. cov95 is 0.933–0.960, cov90 0.872–0.911, and all 7 rank histograms are uniform; gate PASS.
+- **Support at the observed data.** The NPE posterior does not respect the equilibrium restriction:
+  33% of its draws fail the check. `compare_npe_mcmc.R` drops them before comparing.
 
 ## 6. Reference MCMC implementation
 
 - **Sampler.** Adaptive random-walk Metropolis (`arwm_budget`, `scripts/calibration/mcmc.R`) with
   4 chains started from independent prior draws.
 - **Initial proposal.** Covariance is 0.1² × the prior variance, estimated from 2,048 prior draws.
-- **Adaptation.** Begins after 5,000 proposals, refreshes every 50, and freezes after the
-  10,000-proposal warmup. A 5% safety mixture always uses the initial covariance.
+- **Adaptation.** Begins after 5,000 proposals, refreshes every 50 from the recent half of the
+  warmup states, and freezes after the 10,000-proposal warmup. A 5% safety mixture always uses the initial covariance.
 - **Run length.** 50,000 evaluations per chain (10,000 warmup, 40,000 retained), with every 10th
   retained draw stored; seed 20261101.
-- **Diagnostics.** These use every retained draw: rank-normalised R-hat ≤ 1.005, bulk ESS ≥ 1,798,
-  tail ESS ≥ 2,459, and MCSE of the mean ≤ 0.024 posterior SD. Acceptance 0.08–0.17.
-- **Script.** `scripts/run_mcmc_reference.R` with its defaults and `--cores 4`, run 2026-10-21
+- **Diagnostics.** These use every retained draw: rank-normalised R-hat ≤ 1.002, bulk ESS ≥ 3,250,
+  tail ESS ≥ 3,487, and MCSE of the mean ≤ 0.019 posterior SD. Acceptance 0.18–0.22.
+- **Script.** `scripts/run_mcmc_reference.R` with its defaults and `--cores 4`, run 2026-10-22
   (4.0 h).
 - **Direct SBC** (`scripts/sbc_mcmc.R`, `mcmc_sbc/`): 8 datasets, one 30,000-evaluation chain each.
-  - Pooled over 56 ranks: cov95 0.96, cov90 0.89 and mean rank 0.47; max split R-hat 1.008.
+  - Pooled over 56 ranks: cov95 0.96, cov90 0.89 and mean rank 0.48; max split R-hat 1.008.
   - This is a check against gross failure only. Ranks within a dataset are correlated.
 
 ## 7. Conclusion

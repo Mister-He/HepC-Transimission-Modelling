@@ -1,6 +1,6 @@
 # Single-round NPE (50,000 LHS) versus reference MCMC
 
-Written 2026-10-22 from the outputs of `scripts/compare_npe_mcmc.R` and `scripts/sbc_mcmc.R`.
+Written 2026-10-22 (after the audit fixes) from the outputs of `scripts/compare_npe_mcmc.R` and `scripts/sbc_mcmc.R`.
 **Cross-validation only:** the reference MCMC is the production posterior, and nothing here feeds
 the production path.
 
@@ -15,19 +15,19 @@ Both methods target the same posterior (`model_audit.md`):
 
 | Run | Cost | Notes |
 | --- | --- | --- |
-| Reference MCMC (`../mcmc_reference/`) | 4 × 50,000 likelihood evaluations, 4.0 h on 4 cores | Production posterior. Warmup 10,000, adaptation from 5,000, thin 10 (16,000 stored draws). R-hat ≤ 1.005, bulk ESS ≥ 1,798, tail ESS ≥ 2,459, MCSE ≤ 0.024 SD |
-| **NPE, LHS** (`../npe_lhs/`) | **50,000 prior simulations (49,945 valid)**, 1,784 s of simulation on 10 workers, 380 s of training | 42 equilibrium failures, 13 non-finite, 0 out of bounds. 6 summaries (logit seroprevalence with Beta noise). Design seed 20261012, training seed 20261013. Equal-weight ensemble of 5 MAFs (50×5), single-round `NPE_C` with the standard NLL loss; draws outside the bounds rejected |
+| Reference MCMC (`../mcmc_reference/`) | 4 × 50,000 likelihood evaluations, 4.0 h on 4 cores | Production posterior. Warmup 10,000, adaptation from 5,000 on the recent half of warmup, thin 10 (16,000 stored draws). R-hat ≤ 1.002, bulk ESS ≥ 3,250, tail ESS ≥ 3,487, MCSE ≤ 0.019 SD |
+| **NPE, LHS** (`../npe_lhs/`) | **50,000 prior simulations (49,945 valid)**, 1,733 s of simulation on 10 workers, 345 s of training | 43 equilibrium failures, 12 non-finite, 0 out of bounds. 6 summaries (logit seroprevalence with Beta noise). Design seed 20261012, training seed 20261013. Equal-weight ensemble of 5 MAFs (50×5), single-round `NPE_C` with the standard NLL loss; draws outside the bounds rejected |
 
 **Training settings:** batch 256, Adam with lr 5e-4, validation fraction 0.10, patience 20, at most
-250 epochs and gradient clipping 5.0. The members trained for 95–138 epochs. The run drew 20,000
+250 epochs and gradient clipping 5.0. The members trained for 90–117 epochs. The run drew 20,000
 posterior draws.
 
 ## Simulation-based calibration
 
 | Check | Datasets | 95% coverage | 90% coverage | Rank shape |
 | --- | --- | --- | --- | --- |
-| NPE (`../npe_lhs/sbc_summary.csv`) | 998 random prior draws (2 failed) | 0.935–0.959 per parameter | 0.876–0.911 per parameter | all 7 uniform |
-| Reference MCMC (`mcmc_sbc/`) | 8 (first 8 NPE SBC truths) | 0.96 pooled over 56 ranks | 0.89 pooled | mean rank 0.47 |
+| NPE (`../npe_lhs/sbc_summary.csv`) | 998 random prior draws (2 failed) | 0.933–0.960 per parameter | 0.872–0.911 per parameter | all 7 uniform |
+| Reference MCMC (`mcmc_sbc/`) | 8 (first 8 NPE SBC truths) | 0.96 pooled over 56 ranks | 0.89 pooled | mean rank 0.48 |
 
 - **Gate:** cov95 in [0.85, 1], cov90 in [0.75, 1] and no systematically skewed rank histogram.
   The NPE passes (`NPE_OK.txt`).
@@ -37,23 +37,25 @@ posterior draws.
 ## Parameter accuracy
 
 Tolerances: |SMD| ≤ 0.1, |95% endpoint| ≤ 0.2 SD and width ratio 0.9–1.1 (`accuracy_summary.csv`).
+The NPE draws are first restricted to the MCMC support: of 4,000 random NPE draws, 1,329 (33%) fail
+the 2015 equilibrium check and are dropped (`npe_support.txt`).
 
 | Parameter | SMD | 95% width ratio | Passes all |
 | --- | --- | --- | --- |
-| θ1 (<20 contact) | −0.83 | 1.19 | no |
-| θ2 (20–29) | −0.10 | 1.13 | no |
-| θ3 (30–39) | −0.38 | 1.33 | no |
-| θ4 (40–49) | −0.63 | 1.79 | no |
-| θ5 (50–59) | −0.07 | 1.06 | no |
-| θ6 (60+) | −0.20 | 1.03 | no |
-| θ7 (log `c`) | −0.10 | 1.08 | no |
+| θ1 (<20 contact) | −0.56 | 1.29 | no |
+| θ2 (20–29) | 0.08 | 1.20 | no |
+| θ3 (30–39) | −0.04 | 1.37 | no |
+| θ4 (40–49) | −0.14 | 1.89 | no |
+| θ5 (50–59) | −0.26 | 1.04 | no |
+| θ6 (60+) | −0.13 | 1.00 | no |
+| θ7 (log `c`) | 0.35 | 1.15 | no |
 
-- **Summary:** worst |SMD| 0.83, worst endpoint 2.10 SD (θ4), mean width ratio 1.23 (1.03–1.79),
-  0 of 7 parameters pass all checks; max |correlation difference| 0.33.
+- **Summary:** worst |SMD| 0.56, worst endpoint 2.12 SD, mean width ratio 1.28 (1.00–1.89),
+  0 of 7 parameters pass all checks; max |correlation difference| 0.30.
 - **Reading:** the NPE is calibrated on average over prior datasets (SBC) but not accurate at the
-  observed data: its posterior is wider and shifted for the young and middle-age contact scales,
-  and its predictive seroprevalence is biased low (`figures/calibration_agepop.png`). With six
-  noisy summaries and a wide prior, the flow spends its capacity across the whole prior range.
+  observed data: a third of its mass lies outside the model's equilibrium support, and the rest is
+  wider than the MCMC posterior. With six noisy summaries and a wide prior, almost no training
+  simulation lies near the observed data, so the flow extrapolates there.
 - **Prior-dominated parameters (MCMC):** θ5, θ6 and θ7 have posterior SD above 0.7 × the prior SD.
 
 ## Policy outcomes
@@ -63,22 +65,25 @@ Seven predeclared outcomes compare 1,000 NPE posterior states with the productio
 
 | Outcome | NPE: median (95% interval) | Reference | Error |
 | --- | --- | --- | --- |
-| J only, incidence reduction | 87.6% (44.1–95.0) | 85.6% (68.9–91.3) | 2.4% |
-| J only, mortality reduction | 46.1% (43.6–48.9) | 45.8% (44.2–47.4) | 0.68% |
-| 5,000/yr F 25%, mortality reduction | 56.2% (54.5–58.0) | 56.1% (54.9–57.2) | 0.15% |
-| 5,000/yr F 25%, joint pass probability | 0% | 0% | 0 pp |
-| 8,000/yr F 25%, mortality reduction | 60.5% (59.2–62.0) | 60.5% (59.5–61.3) | 0.01% |
-| 8,000/yr F 75%, mortality reduction | 52.4% (50.3–54.8) | 52.2% (50.8–53.6) | 0.38% |
-| 8,000/yr F 25%, discounted cost | S$85.0m (23.5–151.9) | S$101.5m (85.9–122.7) | 16% |
+| J only, incidence reduction | 85.9% (40.8–93.7) | 85.7% (70.5–91.3) | 0.28% |
+| J only, mortality reduction | 54.7% (50.0–61.0) | 54.9% (52.3–57.4) | 0.28% |
+| 5,000/yr F 25%, mortality reduction | 68.4% (65.2–72.3) | 68.5% (66.6–70.4) | 0.23% |
+| 5,000/yr F 25%, joint pass probability | 88.8% | 97.0% | 8.2 pp |
+| 8,000/yr F 25%, mortality reduction | 74.0% (71.3–77.3) | 74.1% (72.4–75.7) | 0.19% |
+| 8,000/yr F 75%, mortality reduction | 63.7% (59.6–68.7) | 63.8% (61.4–66.2) | 0.15% |
+| 8,000/yr F 25%, discounted cost | S$96.5m (18.4–163.1) | S$102.6m (86.1–122.6) | 6.0% |
 
-- **Reductions:** medians within 2.4% of the reference, with wider intervals.
-- **Cost:** 16% lower with a much wider interval, because cost depends on absolute population
-  size, which the NPE posterior spreads more widely.
+- **Reductions:** medians within 0.3% of the reference, with wider intervals; the wider intervals
+  lower the joint-pass probability by 8 percentage points.
+- **Cost:** 6% lower with a much wider interval, because cost depends on absolute population size,
+  which the NPE posterior spreads more widely.
 
 ## Conclusion
 
-- **Agreement:** poor for parameters (0 of 7 pass), adequate for policy reductions (≤ 2.4%).
+- **Agreement:** poor for parameters (0 of 7 pass, a third of draws outside the support),
+  adequate for policy reduction medians (≤ 0.3%).
 - **Production posterior:** the reference MCMC samples the exact target, passes its own SBC
   check and fits all six targets, so it remains the production posterior.
-- **Role of NPE:** independent cross-validation. It costs about 30 minutes of simulation on 10
-  workers plus 6 minutes of training, against 4.0 hours for the MCMC on 4 cores.
+- **Role of NPE:** independent cross-validation, not validated under this prior. It costs about 29
+  minutes of simulation on 10 workers plus 6 minutes of training, against 4.0 hours for the MCMC on
+  4 cores.

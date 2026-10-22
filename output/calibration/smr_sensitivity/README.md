@@ -8,8 +8,8 @@ and 4.73 (non-viraemic). Each folder keeps `predictions.csv`, `solutions.csv`,
 
 | Run | SMR viraemic | SMR non-viraemic | Objective (−log posterior) | c | Seroprevalence RMSE |
 | --- | --- | --- | --- | --- | --- |
-| `smr_low` | 8.06 | 3.47 | −7.846 | 1.100 | 0.0119 |
-| production | 9.52 | 4.73 | −7.828 | 1.099 | 0.0130 |
+| `smr_low` | 8.06 | 3.47 | −7.847 | 1.100 | 0.0119 |
+| production | 9.52 | 4.73 | −7.829 | 1.099 | 0.0130 |
 | `smr_high` | 11.26 | 6.45 | −7.787 | 1.097 | 0.0148 |
 
 The SMRs barely change the fit or `c`; all starts converged and passed the equilibrium check.
