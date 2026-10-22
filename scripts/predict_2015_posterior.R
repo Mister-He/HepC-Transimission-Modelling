@@ -30,22 +30,22 @@ Rcpp::sourceCpp(file.path(ROOT, "scripts/model/sim.cpp"))
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R"))
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
+stopifnot(isTRUE(all.equal(fit$base_params, setup_env$params)))  # fit made with the current model
 
 sample_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
 sample_files <- ifelse(grepl("^/", sample_files), sample_files, file.path(ROOT, sample_files))
-names(sample_files) <- basename(dirname(sample_files))
 if (length(sample_files) == 0) stop("No posterior samples found")
-draws <- do.call(rbind, lapply(names(sample_files), function(source) {
-  x <- read.csv(sample_files[[source]]); x$posterior_source <- source; x
+# One file at a time: two files in the same folder must not collapse into one name.
+draws <- do.call(rbind, lapply(sample_files, function(f) {
+  x <- read.csv(f); x$posterior_source <- basename(dirname(f)); x
 }))
 theta_names <- paste0("theta", 1:N_THETA)
 if (MAX_DRAWS > 0 && nrow(draws) > MAX_DRAWS) {
   set.seed(20261011); draws <- draws[sample.int(nrow(draws), MAX_DRAWS), , drop = FALSE]
 }
 
-idx0 <- function(s, k, h, i) s * 120 + (k - 1) * 30 + h * 6 + i + 2L
 stratum_idx <- function(s, states) as.vector(sapply(1:4, function(k)
-  sapply(states, function(h) sapply(0:5, function(i) idx0(s, k, h, i) - 1L))))
+  sapply(states, function(h) sapply(0:5, function(i) idx(s, k, h, i) - 1L))))
 population_idx <- lapply(0:3, stratum_idx, states = 0:4)
 active_idx <- lapply(0:3, stratum_idx, states = 1:3)
 
@@ -95,7 +95,7 @@ summary <- data.frame(measure = colnames(mat), summary, row.names = NULL, check.
 summary$n_draws_used <- nrow(mat)
 summary$n_finite_draws <- nrow(all_mat)
 summary$n_equilibrium_pass <- n_equilibrium
-summary$posterior_sources <- paste(names(sample_files), collapse = "+")
+summary$posterior_sources <- paste(basename(dirname(sample_files)), collapse = "+")
 
 data_best <- setup_env$data; data_best$t_start <- 0
 data_best$t_end <- MODEL_YEAR

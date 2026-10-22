@@ -216,7 +216,8 @@ if want("calibration_agepop"):
                 v = dr[[f"p{i}" for i in range(1, 7)]].to_numpy()
                 est, lo, hi = np.median(v, 0), np.quantile(v, .025, 0), np.quantile(v, .975, 0)
                 who = "MCMC" if "MCMC" in name else "NPE"
-                assert np.allclose(lo, chk[f"{who}_lower"], rtol=1e-6), "interval drift"
+                assert np.allclose(lo, chk[f"{who}_lower"], rtol=1e-6) and np.allclose(hi, chk[f"{who}_upper"], rtol=1e-6), \
+                    "interval drift"
             xs = np.arange(6) + (j - 1) * 0.22
             ax.errorbar(xs, est, yerr=[est - lo, hi - est], fmt=mk, color=col, ms=4.5, elinewidth=1,
                         capsize=2, label=name)
@@ -414,17 +415,25 @@ if want("scenario_cost_composition_pies"):
     pass_ids = [s for s in order if s != "J_only" and summ.set_index("scenario_id").loc[s, "target_status"] == "PASS"]
     ids = ["J_only"] + pass_ids
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(1, len(ids), figsize=((COL if len(ids) == 1 else FULL) * MM, 75 * MM),
+        # Grid of at most 3 pies per row with one shared legend; each pie lists its shares below
+        # the title, so no per-pie legend can overlap its neighbour.
+        ncol = min(3, len(ids)); nrow = -(-len(ids) // ncol)
+        fig, axes = plt.subplots(nrow, ncol, figsize=((COL if ncol == 1 else FULL) * MM, (25 + 55 * nrow) * MM),
                                  layout="constrained", squeeze=False)
-        for ax, sid in zip(axes[0], ids):
+        for ax in axes.flat[len(ids):]:
+            ax.set_visible(False)
+        for ax, sid in zip(axes.flat, ids):
             v = it.loc[sid, list(ITEM_COLS.values())].to_numpy(float)
             fr = v / v.sum()
             ax.pie(fr, colors=list(ITEM.values()), startangle=90, counterclock=False,
                    wedgeprops=dict(ec="white", lw=0.6))
             name = "Status quo (J only)" if sid == "J_only" else label[sid]
-            ax.set_title(f"{name}\nS${S.loc[sid, 'total_discounted_cost_2026_2030_sgd'] / 1e6:.2f}m", fontsize=8)
-            ax.legend([Patch(fc=c) for c in ITEM.values()], [f"{k} {100 * x:.2f}%" for k, x in zip(ITEM, fr)],
-                      loc="center left", bbox_to_anchor=(1, .5), frameon=False)
+            sh = [f"{k} {100 * x:.1f}%" for k, x in zip(ITEM, fr)]
+            shares = ", ".join(sh[:2]) + "\n" + ", ".join(sh[2:])
+            ax.set_title(f"{name}: S${S.loc[sid, 'total_discounted_cost_2026_2030_sgd'] / 1e6:.1f}m\n{shares}",
+                         fontsize=6.5)
+        fig.legend([Patch(fc=c) for c in ITEM.values()], list(ITEM), loc="outside lower center",
+                   ncols=len(ITEM), frameon=False)
         fig.suptitle("2026–2030 discounted cost composition\n(2026 S$, 3%/yr; shares of item medians)",
                      fontsize=8, fontweight="bold")
         save(fig, SC / "scenario_cost_composition_pies", ["scenario_item_totals.csv", "scenario_2030_summary.csv"])
@@ -441,7 +450,8 @@ if want("mcmc_traceplots"):
             for i, (ch, g) in enumerate(dr.groupby("chain")):
                 ax.plot(g.iteration, g[t], color=chain_col[i], lw=0.25, alpha=0.8, label=f"Chain {ch}")
             ax.set_title(f"θ{t[5:]}", fontsize=8)
-        fig.supxlabel("Retained iteration (every 10th stored)", fontsize=8)
+        thin = json.loads((CAL / "mcmc_reference/mcmc_run_config.json").read_text())["thin_storage"]
+        fig.supxlabel(f"Retained iteration (every {thin}th stored)", fontsize=8)
         fig.supylabel("θ (log scale)", fontsize=8)
         fig.legend(*axes.flat[0].get_legend_handles_labels(), loc="outside upper center", ncols=4)
         save(fig, CAL / "mcmc_reference/mcmc_traceplots", ["mcmc_reference/mcmc_draws.csv"])

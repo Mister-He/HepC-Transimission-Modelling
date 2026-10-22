@@ -4,7 +4,6 @@
 # =============================================================================
 
 N_THETA <- 7L
-TARGET_MODE <- "sero"
 EPS <- 1e-10
 EQ_PENALTY_FACTOR <- 1e6
 BOUND_PENALTY_FACTOR <- 1e6

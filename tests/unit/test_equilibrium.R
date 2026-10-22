@@ -21,7 +21,7 @@ perturbed <- stable; perturbed[6, -1] <- 1.5
 eq2 <- check_equilibrium(perturbed)
 check_true(!eq2$pass, "a final-state jump fails the gate")
 check_true(eq2$max_comp_log_ratio > 0.02, "five-state compartment jump is detected")
-check_equal(eq$T_minus_lag, 0, "the five-year lag selects the first row")
+check_equal(eq$T_minus_lag, 0, "the 10-year lag reaches back to the first row")
 
 n_fail <- test_report("tests/unit/test_equilibrium.R")
 if (n_fail > 0) quit(status = 1)

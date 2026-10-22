@@ -185,20 +185,20 @@ params <- list(
 # INITIAL CONDITIONS
 # 480 compartments initialised to near-zero (4 strata x 4 stages x 5 HCV
 # states x 6 ages).
-# A small seed of chronic infection is placed in D_c,1,i (never-incarcerated,
-# non-cirrhosis, chronic, all age groups) to start the epidemic.
+# A small seed of acute infection is placed in D_a,1,i (never-incarcerated,
+# non-cirrhosis, acute, all age groups) to start the epidemic.
 # CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
 # =============================================================================
 y0 <- rep(0.0, 480)
 
 # Susceptible population: put most of PWID in D_u,1,i
-# Seed chronic infection: 20 chronic per age group in D_c,1,i
+# Seed infection: pos acute per age group in D_a,1,i
 pos = c(26, 95, 164, 169, 183, 241)
 tot = c(145, 607, 759, 649, 564, 544)
 for (i in 0:5) {
-  # Column index for the compartment in the 481-column output matrix.
-  y0[idx(s=0, k=1, h=0, i=i)] <- tot[i+1] - pos[i+1]  # D_{u,1,i} 
-  y0[idx(s=0, k=1, h=1, i=i)] <- pos[i+1]             # D_{a,1,i}
+  # idx() is the output-matrix column (time is column 1), so y0 position = idx - 1.
+  y0[idx(s=0, k=1, h=0, i=i) - 1L] <- tot[i+1] - pos[i+1]  # D_{u,1,i}
+  y0[idx(s=0, k=1, h=1, i=i) - 1L] <- pos[i+1]             # D_{a,1,i}
 }
 
 # =============================================================================
@@ -223,49 +223,3 @@ data <- list(
   inflow_schedule = inflow_matrix,
   inflow_schedule_start = 150.0
 )
-
-# =============================================================================
-# SCENARIO HELPERS
-# =============================================================================
-
-# Scenario 1: no treatment (baseline counterfactual)
-params_s1 <- modifyList(params, list(tau = c(0, 0, 0, 0)))
-
-# # Scenario 2: treat NC and CC only (limited access)
-# params_s2 <- modifyList(params, list(tau = c(0.5, 0.5, 0, 0)))
-
-# # Scenario 3: treat all stages
-# params_s3 <- modifyList(params, list(tau = c(0.5, 0.5, 0.3, 0.2)))
-
-# # Scenario 4: aggressive elimination target
-# params_s4 <- modifyList(params, list(tau = c(0.8, 0.8, 0.6, 0.4)))
-
-# # Scenario 5: sensitivity analysis with reduced DC SVR efficacy
-# params_s5 <- modifyList(params, list(tau = c(1.0, 1.0, 1.0, 1.0)))
-
-# =============================================================================
-# COLUMN NAME HELPER (for labelling the output matrix)
-# =============================================================================
-strata_names <- c("D", "J", "F", "X")
-stage_names  <- c("NC", "CC", "DC", "HCC")
-state_names  <- c("u", "a", "c", "t", "r")
-age_names    <- paste0("age", 1:6)
-
-# Column order must match idx(s,k,h,i) = s*120 + (k-1)*30 + h*6 + i.
-# The output matrix is [time, compartment 0, ..., compartment 479], so the
-# compartment with C++ index idx sits in column idx + 2.
-col_names <- character(481)
-col_names[1] <- "time"
-for (ss in 0:3) {
-  for (kk in 1:4) {
-    for (hh in 0:4) {
-      for (ii in 0:5) {
-        pos <- ss * 120 + (kk - 1) * 30 + hh * 6 + ii + 2
-        col_names[pos] <- paste0(strata_names[ss + 1], "_", stage_names[kk], "_",
-                                 state_names[hh + 1], "_age", ii + 1)
-      }
-    }
-  }
-}
-stopifnot(length(col_names) == 481)
-

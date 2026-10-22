@@ -3,9 +3,9 @@
 # update_rate_params.R — copies the Stan rate-fit summaries into scripts/model/setup.R,
 # replacing the manual copy step after scripts/model/preprocess.R.
 #
-# lambda2 = exp(posterior mean of the release fit's log_lambda) (preprocess.R convention);
-# lambda3 = posterior mean of exp(log_lambda), pi_recid = posterior mean of
-# inv_logit(pi_raw), both from the re-arrest fit draws. First arrest is not estimated here
+# Both fits are list(summary, draws [iteration, chain, variable]) from preprocess.R.
+# lambda2 and lambda3 = posterior mean of exp(log_lambda) from the release and re-arrest draws;
+# pi_recid = posterior mean of inv_logit(pi_raw). First arrest is not estimated here
 # (lambda1 = c_first * lambda3, c_first calibrated). Values are written to 3 significant figures, the precision of the
 # existing entries. Every value is validated (six finite positive ages, pi in (0, 1)) and
 # every target line must occur exactly once before the file is rewritten; otherwise
@@ -20,21 +20,19 @@ SETUP <- normalizePath(arg("--setup", file.path(ROOT, "scripts/model/setup.R")),
 RELEASE <- arg("--release-fit", file.path(ROOT, "output/release_rate_fit.rds"))
 REARREST <- arg("--rearrest-fit", file.path(ROOT, "output/rearrest_rate_fit.rds"))
 
-release <- readRDS(RELEASE)
-rel_sum <- as.data.frame(release$summary("log_lambda"))
-rearrest <- readRDS(REARREST)  # list(summary, draws [iteration, chain, variable])
-d <- rearrest[[2]]
-draws <- matrix(d, ncol = dim(d)[3], dimnames = list(NULL, dimnames(d)[[3]]))
-cols <- function(prefix) {
+as_draws <- function(fit) { d <- fit[[2]]; matrix(d, ncol = dim(d)[3], dimnames = list(NULL, dimnames(d)[[3]])) }
+rel_draws <- as_draws(readRDS(RELEASE))
+draws <- as_draws(readRDS(REARREST))
+cols <- function(prefix, draws) {
   j <- grep(paste0("^", prefix, "\\["), colnames(draws))
-  if (!length(j)) stop("rearrest fit has no ", prefix, " draws")
+  if (!length(j)) stop("rate fit has no ", prefix, " draws")
   draws[, j, drop = FALSE]
 }
 if (!"pi_raw" %in% colnames(draws)) stop("rearrest fit has no pi_raw draws")
 
 new <- list(
-  lambda2 = exp(rel_sum$mean[order(as.integer(sub(".*\\[(\\d+)\\]", "\\1", rel_sum$variable)))]),
-  lambda3 = unname(colMeans(exp(cols("log_lambda")))),
+  lambda2 = unname(colMeans(exp(cols("log_lambda", rel_draws)))),
+  lambda3 = unname(colMeans(exp(cols("log_lambda", draws)))),
   pi_recid = mean(plogis(draws[, "pi_raw"]))
 )
 for (nm in c("lambda2", "lambda3"))

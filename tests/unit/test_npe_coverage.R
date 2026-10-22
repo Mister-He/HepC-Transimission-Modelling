@@ -25,6 +25,7 @@ check_true(min(tt[, 1]) >= log(0.5) && max(tt[, 1]) <= log(100) && min(tt[, 2]) 
            "truncation keeps draws inside the bounds of truncated columns only")
 check_true(ks.test(tt[, 1], function(q) (pnorm(q) - pnorm(log(0.5))) / (pnorm(log(100)) - pnorm(log(0.5))))$p.value > 0.01,
            "truncated LHS draws follow the truncated Normal")
+check_identical(dim(prior_from_unit(matrix(0.5, 1, 3), rep(0, 3), 1)), c(1L, 3L), "a single draw stays a 1-row matrix")
 
 npe_dir <- file.path(root, "output", "calibration", "npe_lhs")
 post_path <- file.path(npe_dir, "posterior_samples_npe.csv")

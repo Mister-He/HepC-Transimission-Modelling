@@ -5,11 +5,7 @@
 
 library(dplyr)
 library(lubridate)
-
-# Clear the environment
-rm(list = ls())
-
-gc()
+library(cmdstanr)
 
 # Read SPS data
 sps = read.csv('data/sps.csv')
@@ -140,118 +136,71 @@ data = data %>%
                T ~ "OUTOFRANGE"
            ))
 
-# Ensure censored record has to show up at last
-# Detect are there any record being NA under 'end'
-# If there are, it means the record is censored, and we need to make sure it shows up at last for each individual
-data = lapply(
-    unique(data$IDENTIFER),
-    function(id){
-        temp = data %>% filter(IDENTIFER == id) %>% arrange(start)
-        if(any(is.na(temp$end))){
-            loc = which(is.na(temp$end))
-            temp = temp[c(1:loc), ]
-        }
-        temp
-    }
-) %>% do.call('rbind', .)
+# Keep each person's records up to and including the first censored one (end = NA), in
+# order of first appearance and admission date.
+data = data %>%
+    mutate(.ord = match(IDENTIFER, unique(IDENTIFER))) %>%
+    arrange(.ord, start) %>%
+    group_by(IDENTIFER) %>%
+    filter(cumsum(lag(is.na(end), default = FALSE)) == 0) %>%
+    ungroup() %>%
+    select(-.ord) %>%
+    as.data.frame()
 
 # Save the cleaned data for future analysis
 saveRDS(data, 'output/cleaned_data.rds')
 
-# Total population counts for calibration targets (use 2015 snapshot)
+# 2015 prison snapshot of the screened PWID, aggregated by age group (not calibration targets;
+# the manuscript reports the total against the modelled prison population).
 time_end = as.Date("2015-12-31")
-data %>%
-    filter(
-      start <= time_end, ,
-      is.na(end) | end >= time_end,
-      Screening_result != "Not Known"
-    ) %>%
-    mutate(
-        c_age = year(time_end) - YEAR_OF_BIRTH,
-        c_age_grp = case_when(
-            c_age < 20 ~ "<20",
-            c_age >= 20 & c_age < 30 ~ "20-29",
-            c_age >= 30 & c_age < 40 ~ "30-39",
-            c_age >= 40 & c_age < 50 ~ "40-49",
-            c_age >= 50 & c_age < 60 ~ "50-59",
-            c_age >= 60 ~ "60+",
-            T ~ "OUTOFRANGE"
-        )
-    ) %>%
-    group_by(c_age_grp) %>%
-    reframe(total = n()) %>% 
-    pull
-
-# HCV prevalence target for calibration
-data %>%
-    filter(
-      start <= time_end, ,
-      is.na(end) | end >= time_end,
-      Screening_result != "Not Known"
-    ) %>%
-    group_by(IDENTIFER) %>%
-    slice(n()) %>%
-    ungroup() %>%
-    group_by(adm_age_grp) %>%
-    reframe(positive = sum(HEPC_IND == "Positive"), total = n()) %>%
-    mutate(percent = positive / total) %>%
-    pull(percent)
+in_prison_2015 = data %>%
+    filter(start <= time_end, is.na(end) | end >= time_end, Screening_result != "Not Known")
+counts_2015 = in_prison_2015 %>%
+    mutate(age_group = cut(year(time_end) - YEAR_OF_BIRTH, c(0, 2:6 * 10, Inf), right = FALSE,
+                           labels = c("<20", "20-29", "30-39", "40-49", "50-59", "60+"))) %>%
+    count(age_group, name = "n_in_prison")
+# Seroprevalence by age at admission, from each person's last record in the snapshot.
+sero_2015 = in_prison_2015 %>%
+    group_by(IDENTIFER) %>% slice(n()) %>% ungroup() %>%
+    group_by(age_group = adm_age_grp) %>%
+    reframe(positive = sum(HEPC_IND == "Positive"), screened = n())
+write.csv(full_join(counts_2015, sero_2015, by = "age_group"), "output/prison_2015_counts.csv", row.names = FALSE)
 
 
 # ================ Release rate estimation ================#
-library(dplyr)
-library(lubridate)
-library(cmdstanr)
-
-# Clean the environment
-rm(list = ls())
-gc()
-
-# Load the cleaned data
-data = readRDS('output/cleaned_data.rds')
 data$t_injail = data$t_injail / 365.25 # convert to years
 
-## Lexis splitting
-## applied to each incarceration due to age grp specific hazard
-split_by_age = function(id, t_tot, age_s, obs_yn, n_age, ageint) {
-    out <- c()
-    idx <- sum(ageint <= age_s)
-    while (t_tot > 0 && idx <= n_age) {
-        if (idx == n_age) {
-            t0 <- t_tot
-            event <- obs_yn # observed
-        } else {
-            t0 <- min(t_tot, ageint[idx + 1] - max(age_s, ageint[idx]))
-            event <- ifelse(abs(t_tot - t0) < 1e-3, obs_yn, 0)
-        }
-        out <- rbind(out, data.frame(id = id, age = idx, t = t0, event = event))
-        idx <- idx + 1
-        t_tot <- t_tot - t0
-    }
-    out
-}
-
-## Age group breaks
+## Lexis splitting: cut each spell (length t_tot from age age_s) at the 10-year age bands.
+## Bands are walked for all spells at once; the event (obs) goes on the piece that ends within
+## 1e-3 years of the spell end, and always on the open 60+ band.
 ageint = c(0, 2:6)*10
 n_age = length(ageint)
-
-release_dat = lapply(1:nrow(data), function(i) {
-    if (data$t_injail[i] > 0) {
-        split_by_age(id = data$IDENTIFER[i], 
-                     t_tot = data$t_injail[i], 
-                     age_s = data$adm_age[i], 
-                     obs_yn = data$event[i], 
-                     n_age = n_age, 
-                     ageint = ageint)
+split_by_age = function(t_tot, age_s, obs) {
+    idx <- findInterval(age_s, ageint); pieces <- list()
+    repeat {
+        act <- which(t_tot > 0 & idx <= n_age)
+        if (!length(act)) break
+        last <- idx[act] == n_age
+        t0 <- ifelse(last, t_tot[act],
+                     pmin(t_tot[act], ageint[pmin(idx[act] + 1, n_age)] - pmax(age_s[act], ageint[idx[act]])))
+        event <- ifelse(last, obs[act], ifelse(abs(t_tot[act] - t0) < 1e-3, obs[act], 0))
+        pieces[[length(pieces) + 1]] <- data.frame(row = act, step = length(pieces) + 1, age = idx[act],
+                                                   t = t0, event = event)
+        idx[act] <- idx[act] + 1; t_tot[act] <- t_tot[act] - t0
     }
-}) %>% do.call("rbind", .)
+    out <- do.call(rbind, pieces)
+    out[order(out$row, out$step), ]
+}
+
+release_dat = split_by_age(data$t_injail, data$adm_age, data$event)
+release_dat = data.frame(id = data$IDENTIFER[release_dat$row], age = release_dat$age,
+                         t = release_dat$t, event = release_dat$event)
 
 ## HMC input parameters
 set.seed(114514)
 N_BURNIN = 1e3
 N_ITER = 5e3
 N_CHAINS = 4
-N_AGE_GRP = length(unique(data$adm_age_grp))
 
 data_list = list(
     n_age = n_age,
@@ -273,125 +222,40 @@ release_fit = model$sample(
     save_cmdstan_config = T
 )
 
-## Release rate estimation results
-### Including Rhat and ESS for convergence diagnostics
+## Release rate estimation results (summary and draws, as for the re-arrest fit)
 release_fit$summary()
-saveRDS(release_fit, 'output/release_rate_fit.rds')
+list(release_fit$summary(variables = "log_lambda"), release_fit$draws(variables = "log_lambda")) %>%
+saveRDS('output/release_rate_fit.rds')
 
 # =============== Rearrest rate estimation ================#
-library(dplyr)
-library(lubridate)
-library(cmdstanr)
+# At-risk intervals after each release: a gap to the next admission (re-arrest), or for the
+# last record, the time from release to 2017-12-31 (censored).
+cutoff = as.Date('2017-12-31')
+by_person = data %>% group_by(IDENTIFER) %>% mutate(i = row_number(), n.record = n()) %>% ungroup()
+gaps = by_person %>%
+    group_by(IDENTIFER) %>%
+    mutate(t = as.numeric(start - lag(end)) / 365.25, age_rel = lag(adm_age) + lag(t_injail)) %>%
+    ungroup() %>% filter(i > 1) %>%
+    transmute(id = IDENTIFER, idx = i - 1, t, age_rel, censor = 0, rearrest = 1)
+tails = by_person %>%
+    filter(i == n.record, !is.na(end), end < cutoff) %>%
+    transmute(id = IDENTIFER, idx = n.record, t = as.numeric(cutoff - end) / 365.25,
+              age_rel = adm_age + t_injail, censor = 1, rearrest = 0)
+rearrest_dat = bind_rows(gaps, tails) %>%
+    arrange(match(id, unique(data$IDENTIFER)), idx) %>%
+    as.data.frame()
 
-# Clear the environment
-rm(list = ls())
-gc()
-
-# Load the cleaned data
-data = readRDS('output/cleaned_data.rds')
-data$t_injail = data$t_injail / 365.25 # convert to years
-
-# Derive rearrest at risk intervals for further HMC estimation
-rearrest_dat = lapply(
-    unique(data$IDENTIFER), 
-    function(id){
-        temp = data %>% filter(IDENTIFER == id) %>% arrange(start)
-        n.record = nrow(temp)
-        
-        # If multiple records
-        if(n.record > 1){
-            out1 = lapply(
-                2:n.record, 
-                function(i){
-                    delta = as.numeric(temp$start[i] - temp$end[i-1]) / 365.25
-                    age = temp$adm_age[i-1] + temp$t_injail[i-1]
-                    data.frame(
-                        id = id,
-                        idx = i - 1,
-                        t = delta,
-                        age_rel = age,
-                        censor = 0,
-                        rearrest = 1
-                    )
-                } 
-            ) %>% do.call('rbind', .)
-        }
-
-        # Deal with last/first record
-        temp = temp %>% slice(n.record)
-        last_obs = F
-        if(temp$end < as.Date('2017-12-31') & !is.na(temp$end)){
-            duration = as.numeric(as.Date('2017-12-31') - temp$end) / 365.25
-            out0 = data.frame(
-                id = id,
-                idx = n.record,
-                t = duration,
-                age_rel = temp$adm_age + temp$t_injail,
-                censor = 1,
-                rearrest = 0
-            )
-            last_obs = T
-        }
-
-        # Aggregation
-        if(n.record > 1 & last_obs) rbind(out1, out0)
-        else if(n.record > 1) out1
-        else if(last_obs) out0
-    }
-) %>% do.call('rbind', .)
-
-# Lexis splitting
-split_by_age <- function(id, t_tot, age_s, obs_yn, n_age, ageint) {
-    out <- c()
-    idx <- sum(ageint <= age_s)
-    while (t_tot > 0 && idx <= n_age) {
-        if (idx == n_age) {
-            t0 <- t_tot
-            event <- obs_yn # observed
-        } else {
-            t0 <- min(t_tot, ageint[idx + 1] - max(age_s, ageint[idx]))
-            event <- ifelse(abs(t_tot - t0) < 1e-3, obs_yn, 0)
-        }
-        out <- rbind(out, data.frame(id = id, age = idx, t = t0, event = event))
-        idx <- idx + 1
-        t_tot <- t_tot - t0
-    }
-    out
-}
-
-## Age group breaks
-ageint <- c(0, 2:6) * 10
-n_age <- length(ageint)
-
-rearrest_dat_lexis = lapply(
-    1:nrow(rearrest_dat),
-    function(i){
-        temp0 = rearrest_dat %>% slice(i)
-        temp1 = split_by_age(
-            id = temp0$id,
-            t_tot = temp0$t,
-            age_s = temp0$age_rel,
-            obs_yn = temp0$rearrest,
-            n_age = n_age,
-            ageint = ageint
-        )
-        expand_age_grp = rep(0, n_age)
-        expand_age_grp[round(temp1$age)] = temp1$t
-        output = c(
-            range(temp1$age),
-            expand_age_grp,
-            temp0$rearrest
-        )
-        return(output)
-    }
-) %>% do.call('rbind', .)
+pieces = split_by_age(rearrest_dat$t, rearrest_dat$age_rel, rearrest_dat$rearrest)
+stopifnot(all(seq_len(nrow(rearrest_dat)) %in% pieces$row))  # every interval has positive length
+t_mat = matrix(0, nrow(rearrest_dat), n_age); t_mat[cbind(pieces$row, round(pieces$age))] = pieces$t
+rearrest_dat_lexis = cbind(tapply(pieces$age, pieces$row, min), tapply(pieces$age, pieces$row, max),
+                           t_mat, rearrest_dat$rearrest)
 
 ## HMC input parameters
 set.seed(114514)
 N_BURNIN <- 1e3
 N_ITER <- 5e3
 N_CHAINS <- 4
-N_AGE_GRP <- length(unique(data$adm_age_grp))
 
 data_list <- list(
     n_age = n_age,

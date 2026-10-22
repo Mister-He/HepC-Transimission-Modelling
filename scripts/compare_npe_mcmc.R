@@ -6,7 +6,8 @@
 #
 # Tolerances (fixed before comparison): |standardised mean difference| <= 0.1,
 # |standardised 95% endpoint difference| <= 0.2, 95% width ratio in [0.9, 1.1].
-# The NPE policy run (1,000 posterior states) is generated if policy/npe_lhs/ is missing or
+# NPE draws outside the MCMC support (bounds, equilibrium) are dropped first. The NPE policy
+# run (1,000 of the remaining states) is generated if policy/npe_lhs/ is missing or
 # older than the NPE posterior or the production scenario draws, and is compared with the
 # production scenario draws in output/scenarios_2026/. Nothing here feeds the production path.
 # Usage: Rscript scripts/compare_npe_mcmc.R [--root .] [--policy-cores 14]
@@ -25,7 +26,21 @@ TOL <- list(smd = 0.1, endpoint = 0.2, width = c(0.9, 1.1))
 ref <- as.matrix(read.csv(file.path(CAL, "mcmc_reference/mcmc_draws.csv"))[, TH])
 ref_diag <- read.csv(file.path(CAL, "mcmc_reference/mcmc_diagnostics.csv"))
 ref_diag <- ref_diag[ref_diag$subset == "all_retained", ]
-samples <- list(npe_lhs = as.matrix(read.csv(file.path(CAL, "npe_lhs/posterior_samples_npe.csv"))[, TH]))
+# NPE draws get the MCMC's support: 4,000 random draws, keeping those within the bounds that pass
+# the 2015 equilibrium check (the MCMC gives the others -Inf).
+npe_all <- as.matrix(read.csv(file.path(CAL, "npe_lhs/posterior_samples_npe.csv"))[, TH])
+old <- setwd("scripts/model"); setup_env <- new.env(parent = globalenv()); sys.source("setup.R", setup_env); setwd(old)
+Rcpp::sourceCpp("scripts/model/sim.cpp")
+targets <- jsonlite::fromJSON("data/calibration_targets.json")
+for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R")) sys.source(file.path("scripts/calibration", f), envir = environment())
+eq_data <- setup_env$data; eq_data$t_start <- 0; eq_data$t_end <- targets$equilibrium_horizon_years
+set.seed(20261015); npe_try <- npe_all[sample.int(nrow(npe_all), min(4000, nrow(npe_all))), ]
+npe_ok <- unlist(parallel::mclapply(seq_len(nrow(npe_try)), function(i) within_bounds(npe_try[i, ]) &&
+  isTRUE(tryCatch(check_equilibrium(run_sim(build_params(npe_try[i, ], setup_env$params), eq_data))$pass,
+                  error = function(e) FALSE)), mc.cores = POLICY_CORES))
+writeLines(c(paste("npe_draws_checked", length(npe_ok)), paste("npe_draws_equilibrium_pass", sum(npe_ok))),
+           file.path(OUT, "npe_support.txt"))
+samples <- list(npe_lhs = npe_try[npe_ok, , drop = FALSE])
 label <- function(k) "Single-round NPE, 50,000 LHS prior simulations"
 
 stats_of <- function(m) { s <- t(apply(m, 2, function(v) c(mean(v), sd(v), quantile(v, probs, names = FALSE))))
@@ -85,10 +100,10 @@ deps <- file.path(ROOT, c("output/calibration/npe_lhs/posterior_samples_npe.csv"
 if (!file.exists(pol_draws) || any(file.mtime(deps) > file.mtime(pol_draws))) {
   dir.create(pol_in, recursive = TRUE, showWarnings = FALSE)
   set.seed(20261014); f_in <- file.path(pol_in, "policy_input_states.csv")
-  write.csv(samples$npe_lhs[sample.int(nrow(samples$npe_lhs), 1000), ], f_in, row.names = FALSE)
+  write.csv(samples$npe_lhs[sample.int(nrow(samples$npe_lhs), min(1000, nrow(samples$npe_lhs))), ], f_in, row.names = FALSE)
   st <- system2("Rscript", c("scripts/scenarios_2026.R", "--root", ".", "--posterior-files", f_in,
                              "--draws-per-seed", 1000, "--cores", POLICY_CORES, "--out-dir", pol_in,
-                             "--no-figures", "true", "--sample-seed", 20261010, "--min-valid-share", 0),
+                             "--sample-seed", 20261010, "--min-valid-share", 0),
                 stdout = file.path(pol_in, "run.log"), stderr = file.path(pol_in, "run.log"))
   if (st != 0) stop("NPE-LHS policy run failed; see ", file.path(pol_in, "run.log"))
   # Keep only what this comparison reads; the production scenario set is output/scenarios_2026/.
@@ -149,7 +164,7 @@ pairs_of <- list(c("theta1", "theta7"), c("theta6", "theta7"), c("theta2", "thet
 pp <- lapply(pairs_of, function(pr) {
   set.seed(2); mk <- function(m, lab) data.frame(x = m[, pr[1]], y = m[, pr[2]], source = lab)
   d2 <- rbind(mk(ref[sample.int(nrow(ref), 5000), ], "Reference MCMC"),
-              mk(samples$npe_lhs[sample.int(nrow(samples$npe_lhs), 5000), ], "NPE, 50,000 LHS"))
+              mk(samples$npe_lhs[sample.int(nrow(samples$npe_lhs), min(5000, nrow(samples$npe_lhs))), ], "NPE, 50,000 LHS"))
   ggplot(d2, aes(x, y)) + geom_density_2d(aes(colour = source), bins = 6) + labs(x = pr[1], y = pr[2], colour = NULL) +
     theme_classic(base_size = 9) })
 ggsave(file.path(OUT, "figures", "pairs.png"), wrap_plots(pp, ncol = 2, guides = "collect") & theme(legend.position = "bottom"),

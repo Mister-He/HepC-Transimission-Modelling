@@ -46,7 +46,7 @@ setup_env <- new.env(parent = globalenv())
 sys.source("setup.R", setup_env)
 setwd(old)
 Rcpp::sourceCpp(file.path(ROOT, "scripts/model/sim.cpp"))
-for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "mcmc.R"))
+for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "mcmc.R", "prior_sampling.R"))
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
 base_params <- setup_env$params
@@ -62,20 +62,18 @@ TH <- paste0("theta", 1:N_THETA)
 T_METHOD0 <- proc.time()[["elapsed"]]
 prior <- prior_spec()
 prior_mean <- prior$mean; prior_sd <- prior$sd
-logpost <- function(theta) log_posterior_exact(theta, base_params, data, prior_mean, prior_sd)
+logpost <- function(theta) log_posterior_exact(theta, base_params, data)
 
 # Transformed-prior variances from prior draws (no ODE solves). theta is already
 # unconstrained and the prior is defined on theta, so no Jacobian is needed.
-set.seed(SEED + 3000)
-prior_draws <- sweep(matrix(rnorm(N_PRIOR_VAR * N_THETA), N_PRIOR_VAR, N_THETA), 2, prior_sd, "*") +
-  matrix(prior_mean, N_PRIOR_VAR, N_THETA, byrow = TRUE)
+prior_draws <- sample_prior_random(N_PRIOR_VAR, prior_mean, prior_sd, SEED + 3000, THETA_LO, THETA_HI)
 prior_var <- apply(prior_draws, 2, stats::var)
 reg <- diag(1e-6 * prior_var)
 Sigma_init <- diag(INIT_SCALE^2 * prior_var)
 pre_chain_sec <- proc.time()[["elapsed"]] - T_METHOD0
 
 run_chain <- function(i) {
-  draw_prior <- function() rnorm(N_THETA, prior_mean, prior_sd)
+  draw_prior <- function() prior_from_unit(matrix(runif(N_THETA), 1), prior_mean, prior_sd, THETA_LO, THETA_HI)[1, ]
   res <- arwm_budget(logpost, draw_prior, Sigma_init, reg, n_warmup = N_WARMUP,
                      max_evals = MAX_EVALS, adapt_start = ADAPT_START, adapt_every = ADAPT_EVERY,
                      seed = SEED + 1000 + i, t_offset = pre_chain_sec)

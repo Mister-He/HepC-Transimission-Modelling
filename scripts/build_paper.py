@@ -31,7 +31,6 @@ def ui(m, lo, hi, scale=1, d=1, pre="", suf=""):
     return f"{f(m)} (95% UI: {f(lo)}–{f(hi)})"
 def col(row, c, **k): return ui(row[c], row[c + "_lo"], row[c + "_hi"], **k)
 def pct(row, c, d=1): return col(row, c, scale=100, d=d, suf="%")
-def ratio_pct(row, c, d=1): return col(row, c, scale=100, d=d, suf="%")
 def tr(sid, yr): return next(r for r in traj if r["scenario_id"] == sid and int(F(r["year"])) == yr)
 def ntr(yr): return next(r for r in nt if int(F(r["year"])) == yr)
 def an(sid, yr, st): return next(r for r in ann if r["scenario_id"] == sid and int(F(r["year"])) == yr and r["stratum"] == st)
@@ -52,61 +51,50 @@ f_pool = F(cF["screening_eligible"])
 # quota use over five years
 def fx_tot(sid, st, c):
     return sum(F(r[c]) for r in ann if r["scenario_id"] == sid and r["stratum"] == st)
-fq_8025 = fx_tot("S8000_F25", "F", "actual_screened") / fx_tot("S8000_F25", "F", "screening_quota")
-fq_8075 = fx_tot("S8000_F75", "F", "actual_screened") / fx_tot("S8000_F75", "F", "screening_quota")
 finite = [k for k, v in summ.items() if v["scenario_type"] == "finite"]
 n_inc = sum(1 for k in finite if summ[k]["who_incidence_pass"] == "TRUE")
 n_mort = sum(1 for k in finite if summ[k]["who_mortality_pass"] == "TRUE")
-n_joint = sum(1 for k in finite if summ[k]["who_joint_pass"] == "TRUE")
 ndraw = int(F(j["n_posterior_draws"]))
-def scen_phrase(ids):
-    by = {}
-    for k in ids:
-        by.setdefault(int(F(summ[k]["screening_total"])), []).append(round(100 * F(summ[k]["f_share"])))
-    parts = []
-    for tot in sorted(by):
-        sh = [f"{x}%" for x in sorted(by[tot])]
-        sh_txt = sh[0] if len(sh) == 1 else ", ".join(sh[:-1]) + " or " + sh[-1]
-        parts.append(f"{tot:,} tests a year with {sh_txt} to F")
-    return " and ".join(parts)
-mort_finite = [k for k in finite if summ[k]["who_mortality_pass"] == "TRUE"]
 j_mort = 100 * F(j["mortality_reduction"])
-sinf_inc = 100 * F(summ["SInf"]["incidence_reduction"])
-max_inc = max(100 * F(summ[k]["incidence_reduction"]) for k in finite)
 d_inc_share = 1 - F(summ["SInf"]["fx_incidence"]) / F(summ["SInf"]["incidence"])  # D share of 2030 infections
 # The narrative below is written for these results; stop the build if they change.
-assert n_inc == 15 and j_inc >= 80 and j_mort < 65 and n_mort == 0, "results changed: revise the narrative"
+mort_finite = [k for k in finite if summ[k]["who_mortality_pass"] == "TRUE"]
+assert n_inc == 15 and j_inc >= 80 and j_mort < 65, "results changed: revise the narrative"
+assert set(mort_finite) == {"S5000_F25", "S5000_F50", "S8000_F25", "S8000_F50"}, "mortality-passing scenarios changed: revise the narrative"
+def scen_phrase(ids):  # "5,000 or 8,000 tests a year with 25% or 50% to F" style list
+    caps = sorted({int(F(summ[k]["screening_total"])) for k in ids}); shares = sorted({round(100 * F(summ[k]["f_share"])) for k in ids})
+    assert len(ids) == len(caps) * len(shares), "passing scenarios are not a full grid: revise the phrase"
+    return f"{' or '.join(f'{c:,}' for c in caps)} tests a year with {' or '.join(f'{x}%' for x in shares)} to F"
+def jprob(sid): return f"{100*F(summ[sid]['joint_pass_probability']):.0f}%"
 assert summ["SInf"]["who_mortality_pass"] == "TRUE" and j_inc - j_mort > 20, "results changed: revise the narrative"
 strata = {r["measure"]: r for r in rd("output/calibration/mcmc_reference/model_prediction_2015_strata.csv")}
 def mprob(sid): return f"{100*F(summ[sid]['who_mortality_pass_prob']):.0f}%"
 def iprob(sid): return f"{100*F(summ[sid]['who_incidence_pass_prob']):.0f}%"
 best_mort = max(finite, key=lambda k: F(summ[k]["mortality_reduction"]))
 assert best_mort == "S8000_F25", "best finite scenario changed: revise the narrative"
-inc8 = [F(summ[f"S8000_F{x}"]["incidence_reduction"]) * 100 for x in (25, 50, 75)]
-inc8_txt = f"{min(inc8):.1f}%" if round(min(inc8), 1) == round(max(inc8), 1) else f"{min(inc8):.1f}% to {max(inc8):.1f}%"
-post_sum = rd("output/calibration/mcmc_reference/mcmc_parameter_summary.csv")
-PRIOR_SDS = [1.5] * 6 + [0.5]  # scripts/calibration/likelihood.R
-c_med, c_lo, c_hi = (math.exp(F(post_sum[6][k])) for k in ("median", "q025", "q975"))
+ref_cfg = json.load(open(os.path.join(ROOT, "output/calibration/mcmc_reference/mcmc_run_config.json")))
+PRIOR_SDS = ref_cfg["prior_sd"]
+c_post = next(r for r in rd("output/calibration/mcmc_reference/mcmc_parameter_summary.csv") if r["parameter"] == "theta7")
+c_med, c_lo, c_hi = (math.exp(F(c_post[k])) for k in ("median", "q025", "q975"))
 C_TXT = f"{c_med:.2f} (95% interval {c_lo:.2f} to {c_hi:.2f})"
-c_sd_ratio = F(post_sum[6]["sd"]) / PRIOR_SDS[6]
+c_sd_ratio = F(c_post["sd"]) / PRIOR_SDS[6]
 def drug_share(sid):
     rr = [x for x in ann if x["scenario_id"] == sid]
     return sum(F(x["discounted_cost_daa_sgd"]) for x in rr) / sum(F(x["discounted_cost_total_sgd"]) for x in rr)
-ds_txt = f"{100*drug_share(best_mort):.0f}%"
+ds_txt = f"{100*drug_share('S5000_F25'):.0f}%"
 CMP = "output/calibration/npe_vs_mcmc"
 acc_sum = {r["run"]: r for r in rd(CMP + "/accuracy_summary.csv")}
 pol_cmp = rd(CMP + "/policy_comparison.csv")
 npe_l = acc_sum["npe_lhs"]
 npe_w = F(npe_l["mean_width95_ratio"])
-npe_pol = max(F(r["error"]) for r in pol_cmp if r["run"] == "npe_lhs" and r["error_unit"] == "relative")
 npe_pol_med = max(F(r["error"]) for r in pol_cmp if r["run"] == "npe_lhs" and r["error_unit"] == "relative"
                   and "cost" not in r["outcome"])
-npe_pp = max(F(r["error"]) for r in pol_cmp if r["run"] == "npe_lhs" and r["error_unit"] != "relative")
+npe_sup = [int(l.split()[1]) for l in open(os.path.join(ROOT, CMP, "npe_support.txt"))]
+npe_jp = max(F(r["error"]) for r in pol_cmp if r["error_unit"] != "relative")
 npe_ss = json.load(open(os.path.join(ROOT, "output/calibration/npe_lhs/simulation_summary.json")))
 npe_cfg = json.load(open(os.path.join(ROOT, "output/calibration/npe_lhs/npe_config.json")))
 npe_sbc = [r for r in rd("output/calibration/npe_lhs/sbc_summary.csv")]
 mc_sbc = {r["parameter"]: r for r in rd(CMP + "/mcmc_sbc/mcmc_sbc_summary.csv")}["all"]
-ref_cfg = json.load(open(os.path.join(ROOT, "output/calibration/mcmc_reference/mcmc_run_config.json")))
 def rng(k, d=2): v = [F(r[k]) for r in npe_sbc]; return f"{min(v):.{d}f} to {max(v):.{d}f}"
 sbc_uniform = all(r["rank_shape"] == "uniform" for r in npe_sbc)
 w_txt = (f"on average {100*(1-npe_w):.0f}% narrower than" if npe_w < 0.995 else
@@ -119,10 +107,26 @@ assert max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S6
 fq_8075 = fx_tot("S8000_F75", "F", "actual_screened") / fx_tot("S8000_F75", "F", "screening_quota")
 f_chronic_share = F(cF["chronic_stock_start"]) / f_pool  # chronic share of people eligible for screening in F
 x_chronic_share = F(cX["chronic_stock_start"]) / F(cX["screening_eligible"])
-J_OBS_2015 = 3367  # SPS 2015 prison count of screened PWID (preprocess.R); not a calibration target
+J_OBS_2015 = sum(int(r["n_in_prison"]) for r in rd("output/prison_2015_counts.csv"))  # screened PWID in prison, 2015 (preprocess.R); not a target
 nm_sol = rd("output/calibration/r_20261021_agepop/solutions.csv")
 nm_best = min(nm_sol, key=lambda r: F(r["objective"]))
 max_abs_err = F(nm_best["prevalence_max_abs_err"])
+REF_DIAG = [r for r in rd("output/calibration/mcmc_reference/mcmc_diagnostics.csv") if r["subset"] == "all_retained"]
+# Claims the text makes; stop the build if any stops holding.
+assert 50 <= j_mort < 60, "J-only mortality reduction is no longer 'about half'"
+assert F(summ["S5000_F50"]["joint_pass_probability"]) < 0.75 and min(F(summ[k]["joint_pass_probability"]) for k in mort_finite if k != "S5000_F50") > 0.95, "pass robustness changed: revise the narrative"
+assert summ["S8000_F75"]["who_mortality_pass"] != "TRUE" and summ["S5000_F75"]["who_mortality_pass"] != "TRUE", "75% F scenarios changed: revise the narrative"
+for cap in (600, 1000, 2000, 5000, 8000):
+    ids = [f"S{cap}_F{x}" for x in (25, 50, 75)]
+    m = [F(summ[k]["mortality_reduction"]) for k in ids]; i = [F(summ[k]["incidence_reduction"]) for k in ids]
+    assert m == sorted(m, reverse=True) and i == sorted(i), f"F/X ordering changed at {cap}/yr"
+assert x_chronic_share > f_chronic_share, "X no longer has the higher chronic share"
+assert max(F(d["rhat"]) for d in REF_DIAG) < 1.01, "MCMC R-hat is no longer below 1.01"
+j_model_2015 = F(strata["population_J"]["median"])
+assert j_model_2015 > J_OBS_2015, "modelled prison population is no longer larger than observed"
+assert (SMR_V, SMR_NV) == (9.52, 4.73), "SMRs changed: update the confidence intervals in the text"
+SCEN_SEED = re.search(r"sampling seed (\d+)", open(os.path.join(S, "calibration_source.txt")).read()).group(1)
+pol_n = f"{int(F(pol_cmp[0]['n_valid'])):,} valid neural posterior states (of {int(F(pol_cmp[0]['n_requested'])):,})"
 def inc_per_pp(sid):
     d = (F(summ[sid]["mortality_reduction"]) - F(j["mortality_reduction"])) * 100
     return F(summ[sid]["incremental_discounted_cost_vs_j_only_sgd"]) / 1e6 / d
@@ -160,11 +164,11 @@ Hepatitis C virus (HCV) infection in Singapore is concentrated among people who 
 
 ## Methods and findings
 
-We built an age structured HCV model with four groups: active PWID never imprisoned (D), people in prison (J), and released people who still inject (F) or have stopped (X). We calibrated it to age specific HCV seroprevalence in prison in 2015 with Bayesian methods. Entry into injecting followed official counts of new drug users, and the first arrest rate was a calibrated multiple of the re-arrest rate. We assumed treatment in prison from 2019. From 2026 we compared 15 community screening scenarios of 600 to 8,000 tests a year, with 25%, 50% or 75% for F and the rest for X. Results are medians with 95% uncertainty intervals (UI) across {ndraw:,} posterior draws. Without treatment, new infections in 2030 were {ratio_pct(nt30, 'incidence_ratio_2015')} of the 2015 level. With prison treatment alone, new infections fell by {red('J_only', 'incidence_reduction')} by 2030, meeting the incidence target in {iprob('J_only')} of draws, but HCV deaths fell by only {red('J_only', 'mortality_reduction')}. In 2026, {100*xshare:.0f}% of chronic infections among released people were in X, and {100*fx_death_share_2026:.0f}% of HCV deaths occurred in F and X. Every screening scenario met the incidence target, but none met the mortality target. The largest mortality reduction, {red(best_mort, 'mortality_reduction')}, came from 8,000 tests a year with 25% to F; screening everyone eligible in F and X every year gave {red('SInf', 'mortality_reduction')}. At every capacity, giving more tests to X gave larger falls in deaths. The model covers only PWID, assumes ideal linkage to treatment and was not fitted to the size of the prison population.
+We built an age structured HCV model with four groups: active PWID never imprisoned (D), people in prison (J), and released people who still inject (F) or have stopped (X). We calibrated it to age specific HCV seroprevalence in prison in 2015 with Bayesian methods. Entry into injecting followed official counts of new drug users, and the first arrest rate was a calibrated multiple of the re-arrest rate. We assumed treatment in prison from 2019. From 2026 we compared 15 community screening scenarios of 600 to 8,000 tests a year, with 25%, 50% or 75% for F and the rest for X. Results are medians with 95% uncertainty intervals (UI) across {ndraw:,} posterior draws. Without treatment, new infections in 2030 were {pct(nt30, 'incidence_ratio_2015')} of the 2015 level. With prison treatment alone, new infections fell by {red('J_only', 'incidence_reduction')} by 2030, meeting the incidence target in {iprob('J_only')} of draws, but HCV deaths fell by only {red('J_only', 'mortality_reduction')}. In 2026, {100*xshare:.0f}% of chronic infections among released people were in X, and {100*fx_death_share_2026:.0f}% of HCV deaths occurred in F and X. Every screening scenario met the incidence target. The mortality target was met at the median only at {scen_phrase(mort_finite)}. Three of these met both targets in at least {math.floor(min(100*F(summ[k]['joint_pass_probability']) for k in mort_finite if k != 'S5000_F50'))}% of draws; 5,000 tests a year with 50% to F did so in only {jprob('S5000_F50')}. At every capacity, giving more tests to X gave larger falls in deaths. The model covers only PWID, assumes ideal linkage to treatment and was not fitted to the size of the prison population.
 
 ## Conclusions
 
-In this model, prison treatment alone cuts new HCV infections by more than four fifths by 2030 but cuts HCV deaths by less than half. Most remaining deaths occur among released people who no longer inject. Community screening of up to 8,000 tests a year did not reach the mortality target; only screening everyone released every year did. Screening capacity is best directed to released people who have stopped injecting, who hold most chronic infections.
+In this model, prison treatment alone cuts new HCV infections by more than four fifths by 2030 but cuts HCV deaths by only about half. Most remaining deaths occur among released people who no longer inject. Community screening of about 5,000 tests a year or more, with most tests for released people who have stopped injecting, met both targets. That is eight times the planned capacity of the current programme.
 
 # Author summary
 
@@ -178,12 +182,12 @@ In this model, prison treatment alone cuts new HCV infections by more than four 
 
 - We built a model of hepatitis C transmission and liver disease among people with a history of injecting drugs in Singapore. We calibrated it to prison seroprevalence data and carried uncertainty in the calibrated parameters through to the results.
 - Prison treatment alone reduced new infections by {j_inc:.0f}% and hepatitis C deaths by {j_mort:.0f}% by 2030. It met the WHO target of 80% for infections but not the target of 65% for deaths.
-- By 2026, nearly all chronic infections and deaths among released people were in those who had stopped injecting. Up to 8,000 screening tests a year raised the fall in deaths to at most {med(best_mort,'mortality_reduction',d=0)}%, short of the target.
+- By 2026, nearly all chronic infections and deaths among released people were in those who had stopped injecting. Community screening of 5,000 or 8,000 tests a year met both targets when at least half of the tests went to people who had stopped injecting.
 
 ## What do these findings mean?
 
 - Prison treatment works well against transmission. Deaths come from liver disease that built up over decades and fall more slowly.
-- Reaching the mortality target needs community screening far larger than current plans, aimed mainly at people who have stopped injecting.
+- Reaching the mortality target needs community screening about eight times larger than current plans, aimed mainly at people who have stopped injecting.
 - These results come from a model with ideal links from testing to treatment, calibrated only to seroprevalence. Real programmes will need data on uptake, referral and cost before they set targets.
 
 # Introduction
@@ -212,7 +216,7 @@ Transmission occurs only among active injectors in D and F. People in J and X ar
 
 We fitted the model to 2015 HCV seroprevalence among people in prison in six age groups, from the Singapore Prison Service. Seroprevalence was the only target; the size of the prison population was not fitted. Each observed seroprevalence had a beta likelihood centred on the model value with a fixed precision of {TG['beta_precision']}, so no sample sizes were used. We estimated seven parameters. Six scaled the contact rates by age. The seventh, $c$, multiplied the re-arrest rate to give the first arrest rate, and was bounded below at 0.5. Entry into injecting was the official annual number of new drug users by age, without scaling [@singstat_drug]. Each model run started in model year 0 and ran for 150 years to reach equilibrium with the 2015 entry counts. The end of that period represents 2015. From 2016, entry followed the annual counts. The 2025 value was held constant to 2030.
 
-The prior did not depend on the data. Each log contact scale had a normal prior with mean 0 and standard deviation 1.5. The log of $c$ had a normal prior with mean 0 and standard deviation 0.5, centred on equal first and re-arrest rates and truncated at the bounds. A multi start Nelder Mead search found the posterior mode. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran four chains from independent prior draws, with 50,000 model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. S1 Text, Section 2 gives details.
+The prior did not depend on the data. Each log contact scale had a normal prior with mean 0 and standard deviation 1.5. The log of $c$ had a normal prior with mean 0 and standard deviation 0.5, centred on equal first and re-arrest rates and truncated at the bounds. A multi start Nelder Mead search found the posterior mode. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran {['one', 'two', 'three', 'four', 'five', 'six'][ref_cfg['n_chains'] - 1]} chains from independent prior draws, with {ref_cfg['max_evals_per_chain']:,} model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. S1 Text, Section 2 gives details.
 
 ## Treatment and screening scenarios
 
@@ -224,7 +228,7 @@ Screening worked as follows. At the start of each year, we counted the people in
 
 ## Outcomes
 
-The two main outcomes were the reductions in 2030 compared with 2015 in annual new infections and annual HCV deaths. New infections include reinfections. HCV deaths are excess deaths from decompensated cirrhosis and liver cancer. These are event counts per year in the modelled population. They are not rates per person. A scenario met a target if its median reduction was at least 80% for infections or 65% for deaths. We also report the share of posterior draws in which each target, and both together, were met. Secondary outcomes were screening tests, treatment starts and costs from 2026 to 2030.
+The two main outcomes were the reductions in 2030 compared with 2015 in annual new infections and annual HCV deaths. New infections include reinfections. HCV deaths are excess deaths from decompensated cirrhosis and liver cancer, plus the excess non-liver deaths of people with viraemic infection over the non-viraemic death rate. These are event counts per year in the modelled population. They are not rates per person. A scenario met a target if its median reduction was at least 80% for infections or 65% for deaths. We also report the share of posterior draws in which each target, and both together, were met. Secondary outcomes were screening tests, treatment starts and costs from 2026 to 2030.
 
 Costs covered antibody tests, RNA tests, one consultation per treatment start and a full course of sofosbuvir and velpatasvir. The drug cost was S$40,405 per course [@wong2019; @sgd_rate]. Test and consultation prices came from public price lists [@nhg_dsc; @parkway_rna]. These are model prices. They are not Singapore payer costs. Costs were discounted at 3% a year to 2026. Treatment starts were not discounted. S1 Text, Section 3 lists all cost inputs.
 
@@ -240,27 +244,27 @@ The model reproduced the age specific seroprevalence targets; the best fit was w
 
 ## Prison treatment alone met the incidence target but not the mortality target
 
-Without any treatment, new infections in 2030 were {ratio_pct(nt30, 'incidence_ratio_2015')} of the 2015 level and HCV deaths {ratio_pct(nt30, 'mortality_ratio_2015')} (Fig 2).
+Without any treatment, new infections in 2030 were {pct(nt30, 'incidence_ratio_2015')} of the 2015 level and HCV deaths {pct(nt30, 'mortality_ratio_2015')} (Fig 2).
 
-Prison treatment from 2019 changed the course of new infections. By 2025 they were {ratio_pct(j25, 'incidence_ratio_2015')} of the 2015 level. By 2030 they had fallen by {red('J_only', 'incidence_reduction')}, which met the 80% target at the median and in {iprob('J_only')} of draws. Deaths fell more slowly. By 2025 they were {ratio_pct(j25, 'mortality_ratio_2015')} of the 2015 level. By 2030 the reduction was {red('J_only', 'mortality_reduction')}, well short of the 65% target.
+Prison treatment from 2019 changed the course of new infections. By 2025 they were {pct(j25, 'incidence_ratio_2015')} of the 2015 level. By 2030 they had fallen by {red('J_only', 'incidence_reduction')}, which met the 80% target at the median and in {iprob('J_only')} of draws. Deaths fell more slowly. By 2025 they were {pct(j25, 'mortality_ratio_2015')} of the 2015 level. By 2030 the reduction was {red('J_only', 'mortality_reduction')}, well short of the 65% target.
 
 The reason lies in where infection and disease sit after release. In 2026, F held {col(cF, 'chronic_stock_start', d=0)} people with chronic infection. X held {col(cX, 'chronic_stock_start', d=0)}. X thus held {100*xshare:.0f}% of chronic infections among released people. In the J only scenario, {100*fx_death_share_2026:.0f}% of HCV deaths in 2026 occurred in F and X. By 2030 this share was {100*fx_death_share_2030:.0f}%. People in X do not inject and do not transmit. Prison treatment does not reach them after release.
 
-## Community screening did not reach the mortality target
+## Community screening can meet both targets
 
 Adding community screening increased both reductions (Table 1). Every scenario met the incidence target at the median, including 600 tests a year ({red('S600_F25', 'incidence_reduction')} with 25% to F; target met in {iprob('S600_F25')} of draws). Screening everyone eligible in F and X every year gave {red('SInf', 'incidence_reduction')}. In that ideal reference, {100*d_inc_share:.0f}% of the remaining new infections in 2030 occurred in D, among people who inject but have never been imprisoned.
 
-No finite scenario met the mortality target, at the median or in any draw. The largest reduction was {red(best_mort, 'mortality_reduction')}, at 8,000 tests a year with 25% to F. Only the ideal reference, which screened everyone eligible in F and X every year, met it ({red('SInf', 'mortality_reduction')}; both targets met in {100*F(summ['SInf']['joint_pass_probability']):.1f}% of draws). At 600 tests a year, the planned size of the current community programme, the mortality reduction was at most {max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S600_F75'])*100:.1f}%, a gain of under 5 percentage points over prison treatment alone.
+The mortality target was met at the median in {n_mort} of 15 scenarios: {scen_phrase(mort_finite)}. Three of them met both targets in most draws: 5,000 tests a year with 25% to F ({jprob('S5000_F25')}), 8,000 with 25% ({jprob('S8000_F25')}) and 8,000 with 50% ({jprob('S8000_F50')}). At 5,000 tests a year with 50% to F the median reduction was {red('S5000_F50', 'mortality_reduction')}, just above the target, and both targets were met in only {jprob('S5000_F50')} of draws. With 75% to F the target was missed at both capacities ({med('S5000_F75','mortality_reduction')}% and {med('S8000_F75','mortality_reduction')}%). Screening everyone eligible in F and X every year reduced mortality by {red('SInf', 'mortality_reduction')}. At 600 tests a year, the planned size of the current community programme, the mortality reduction was at most {max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S600_F75'])*100:.1f}%, a gain of under 5 percentage points over prison treatment alone.
 
 ## How screening is split between F and X matters
 
 The split between F and X changed the results in a consistent way (Fig 3). More screening for F gave a larger fall in new infections. More screening for X gave a larger fall in deaths, at every capacity.
 
-The two groups differ in where chronic infection is. In 2026 about {round(f_pool,-1):,.0f} people in F were eligible for screening, of whom {100*f_chronic_share:.0f}% had chronic infection. In X, {100*x_chronic_share:.0f}% of those eligible did. A test given to X therefore found more people to treat. At 8,000 tests a year, the mortality reduction fell from {red('S8000_F25','mortality_reduction')} with 25% to F to {red('S8000_F75','mortality_reduction')} with 75% to F, while the incidence reduction rose from {med('S8000_F25','incidence_reduction')}% to {med('S8000_F75','incidence_reduction')}%. With 75% to F at this capacity, {100*fq_8075:.0f}% of the F quota was used. At 2,000 tests a year, moving from 25% to 75% for F raised the incidence reduction from {med('S2000_F25','incidence_reduction')}% to {med('S2000_F75','incidence_reduction')}% and lowered the mortality reduction from {med('S2000_F25','mortality_reduction')}% to {med('S2000_F75','mortality_reduction')}%. Because every scenario already met the incidence target, the mortality target is the binding one, and it favours X.
+The two groups differ in where chronic infection is. In 2026 about {round(f_pool,-1):,.0f} people in F were eligible for screening, of whom {100*f_chronic_share:.0f}% had chronic infection. In X, {100*x_chronic_share:.0f}% of those eligible did. A test given to X therefore found more people to treat. At 8,000 tests a year, the mortality reduction fell from {red('S8000_F25','mortality_reduction')} with 25% to F to {red('S8000_F75','mortality_reduction')} with 75% to F, while the incidence reduction rose from {med('S8000_F25','incidence_reduction')}% to {med('S8000_F75','incidence_reduction')}%. With 75% to F at this capacity, {100*fq_8075:.0f}% of the F quota was used. At 2,000 tests a year, moving from 25% to 75% for F raised the incidence reduction from {med('S2000_F25','incidence_reduction')}% to {med('S2000_F75','incidence_reduction')}% and lowered the mortality reduction from {med('S2000_F25','mortality_reduction')}% to {med('S2000_F75','mortality_reduction')}%. Because every scenario already met the incidence target, the mortality target is the binding one, and it favours X: at 5,000 and 8,000 tests a year, only the splits with 25% or 50% to F met it.
 
 ## Treatment volume and cost
 
-Treatment starts in F and X over 2026 to 2030 ranged from {summ['S600_F75']['fx_starts_text']} at 600 tests a year with 75% to F, to {summ['S8000_F25']['fx_starts_text']} at 8,000 tests a year with 25% to F (Table 1). Starts were highest in 2026 and fell each year as the stock of chronic infection was treated. The discounted cost of 8,000 tests a year with 25% to F was {money(summ[best_mort], 'total_discounted_cost_2026_2030_sgd')} over five years; drugs made up {ds_txt} of it. Compared with prison treatment alone, each extra percentage point of mortality reduction cost about S${inc_per_pp(best_mort):.1f} million in that scenario. Single round neural posterior estimation gave policy medians within {100*npe_pol_med:.1f}% of these values (S1 Text, Table S4).
+Treatment starts in F and X over 2026 to 2030 ranged from {summ['S600_F75']['fx_starts_text']} at 600 tests a year with 75% to F, to {summ['S8000_F25']['fx_starts_text']} at 8,000 tests a year with 25% to F (Table 1). Starts were highest in 2026 and fell each year as the stock of chronic infection was treated. The cheapest scenario that met both targets in most draws, 5,000 tests a year with 25% to F, cost {money(summ['S5000_F25'], 'total_discounted_cost_2026_2030_sgd')} over five years; drugs made up {ds_txt} of it. Compared with prison treatment alone, each extra percentage point of mortality reduction cost about S${inc_per_pp('S5000_F25'):.1f} million in that scenario. Single round neural posterior estimation gave policy medians within {100*npe_pol_med:.1f}% of these values (S1 Text, Table S4).
 
 **Table 1. HCV outcomes in 2030 and services from 2026 to 2030 in selected scenarios.**
 
@@ -268,23 +272,23 @@ Treatment starts in F and X over 2026 to 2030 ranged from {summ['S600_F75']['fx_
 | --- | --- | --- | --- | --- | --- |
 {chr(10).join(t1row(s) for s in table1_ids)}
 
-Reductions compare 2030 with 2015. Values are medians (95% UI) across {ndraw:,} posterior draws. Targets are at least 80% for incidence and at least 65% for mortality. Every scenario met the incidence target at the median and none of the finite scenarios met the mortality target. Costs are in 2026 Singapore dollars, discounted at 3% a year, and include prison treatment costs from 2026. Treatment starts count courses, not people. S1 Text, Table S9 gives all 17 scenarios.
+Reductions compare 2030 with 2015. Values are medians (95% UI) across {ndraw:,} posterior draws. Targets are at least 80% for incidence and at least 65% for mortality. Every scenario met the incidence target at the median; the mortality target was met at {scen_phrase(mort_finite)}. Costs are in 2026 Singapore dollars, discounted at 3% a year, and include prison treatment costs from 2026. Treatment starts count courses, not people. S1 Text, Table S9 gives all 17 scenarios.
 
 # Discussion
 
-In this model, prison treatment from 2019 cut new HCV infections among people who inject drugs in Singapore by {j_inc:.0f}% and HCV deaths by {j_mort:.0f}% by 2030. This met the incidence target but not the mortality target. By 2026, nearly all chronic infections and HCV deaths among released people were in those who had stopped injecting. Community screening of up to 8,000 tests a year raised the mortality reduction to at most {med(best_mort,'mortality_reduction')}%. Only screening everyone released every year met the target.
+In this model, prison treatment from 2019 cut new HCV infections among people who inject drugs in Singapore by {j_inc:.0f}% and HCV deaths by {j_mort:.0f}% by 2030. This met the incidence target but not the mortality target. By 2026, nearly all chronic infections and HCV deaths among released people were in those who had stopped injecting. Community screening of 5,000 tests a year or more met the mortality target, but only when most tests went to released people who had stopped injecting.
 
 Prison treatment works on transmission among people who pass through prison. Curing them before release removes infection from that part of the injecting network, which matches earlier work on treatment as prevention [@martin2013; @lim2018]. In this model people who inject are first arrested at about the rate at which released people are re-arrested, so prison reaches most of the network; even with screening of everyone eligible after release, {100*d_inc_share:.0f}% of the remaining infections in 2030 occurred in people never imprisoned. The first arrest rate is the weakest part of this result. Seroprevalence barely informs it, and its posterior follows its prior. A slower first arrest would leave more infections out of reach of prison. Deaths follow a different path. They arise from cirrhosis and liver cancer that built up over many years. Most of this burden sits in people who stopped injecting long ago. They do not transmit and are not reached by prison treatment after release. Cure also does not remove all risk in people who already have cirrhosis [@morgan2013; @vandermeer2012].
 
 Our findings on the F and X split have direct use for planning. A programme that targets people who still inject may seem the best choice for elimination. In this model it improved incidence, which was already on target, at the cost of deaths, which were not. People in X held most chronic infection, so tests given to them found more people to treat. Planners should therefore direct most community screening to people who have stopped injecting. These people may be harder to reach. They may not use drug services and may not see themselves as at risk. Outreach through primary care, addiction services and records of past imprisonment may be needed.
 
-The scale required is large. Even 8,000 tests a year, {round(8000/600)} times the planned capacity of the current community programme [@moh2025ett], did not meet the mortality target. All scenarios also assumed that every person identified starts treatment. Real linkage is weaker. In a Singapore trial among halfway house residents, only 12.6% of people with antibodies started treatment [@hsiang2022]. Care navigation and simpler models of care can raise uptake [@clink2022; @eckhardt2022]. Even then, real programmes will likely need more screening than our model suggests.
+The scale required is large. The cheapest robust scenario, 5,000 tests a year, is {round(5000/600)} times the planned capacity of the current community programme [@moh2025ett]. All scenarios also assumed that every person identified starts treatment. Real linkage is weaker. In a Singapore trial among halfway house residents, only 12.6% of people with antibodies started treatment [@hsiang2022]. Care navigation and simpler models of care can raise uptake [@clink2022; @eckhardt2022]. Even then, real programmes will likely need more screening than our model suggests.
 
 Our study has several strengths. We propagated parameter uncertainty through every scenario using {ndraw:,} draws from a well converged MCMC posterior. We modelled screening capacity explicitly, so treatment depends on how many people are found. We separated released people by injecting status, which earlier work did not do [@chaillon2021]. Mortality outside the liver depended on each person's infection status, using mortality ratios for people who use drugs [@vansanten2014], so the share of deaths from viraemic people changed as treatment progressed.
 
-The study also has limitations. First, the model covers only people with a history of injecting drugs. It cannot show elimination in the whole population [@who2023validation]. Second, we calibrated the model only to one year of prison seroprevalence. We did not fit the size of the prison population, and the model's 2015 prison population ({stx('population_J', False)}) was much larger than the {J_OBS_2015:,} people with a known screening result in prison records. Absolute numbers of infections, deaths and treatments are therefore uncertain beyond what the UIs show; the reductions relative to 2015 are less affected. We did not fit observed treatment numbers after 2019. Third, we assumed perfect linkage from screening to treatment and no loss to follow up. Fourth, people in X cannot be reinfected or return to injecting. Some do relapse, which would add transmission. Fifth, the first arrest rate is set largely by its prior. Entry into injecting uses counts of new drug users from law enforcement, without scaling, as a proxy. Sixth, the mortality ratios come from an Amsterdam cohort grouped by antibody status rather than viraemia [@vansanten2014]. Seventh, costs use list prices and an older drug price. Actual payer costs are not public. Eighth, our uncertainty intervals cover model parameters only.
+The study also has limitations. First, the model covers only people with a history of injecting drugs. It cannot show elimination in the whole population [@who2023validation]. Second, we calibrated the model only to one year of prison seroprevalence. We did not fit the size of the prison population, and the model's 2015 prison population ({stx('population_J', False)}) was much larger than the {J_OBS_2015:,} people with a known screening result in prison records. Absolute numbers of infections, deaths and treatments are therefore uncertain beyond what the UIs show; the reductions relative to 2015 are less affected. We did not fit observed treatment numbers after 2019. Third, we assumed perfect linkage from screening to treatment and no loss to follow up. Fourth, people in X cannot be reinfected or return to injecting. Some do relapse, which would add transmission. Fifth, the first arrest rate is set largely by its prior. Entry into injecting uses counts of new drug users from law enforcement, without scaling, as a proxy. Sixth, the mortality ratios come from an Amsterdam cohort grouped by antibody status rather than viraemia [@vansanten2014]. HCV deaths include the excess non-liver deaths of viraemic people, which cure removes in the model; if part of that excess reflects other risks of people who use drugs, the mortality benefit of treatment is overstated. Seventh, costs use list prices and an older drug price. Actual payer costs are not public. Eighth, our uncertainty intervals cover model parameters only.
 
-In conclusion, prison treatment has done much to reduce HCV among people who inject drugs in Singapore. In this model it meets the WHO incidence target by 2030 but not the mortality target. Community screening after release, directed mainly to people who have stopped injecting, narrows the gap, but meeting the mortality target needs screening on a much larger scale than current plans.
+In conclusion, prison treatment has done much to reduce HCV among people who inject drugs in Singapore. In this model it meets the WHO incidence target by 2030 but not the mortality target. Community screening after release can meet both targets at about 5,000 tests a year, if most tests go to people who have stopped injecting, but that is far larger than current plans.
 
 # Supporting information
 
@@ -316,7 +320,7 @@ All model code, inputs and generated results are in the project repository [repo
 
 ![Fig 1. Model structure.](OUTPUT_DIR/scenarios_2026/paper_fig1_schematic.png){{width=100%}}
 
-**Fig 2. Annual new HCV infections and HCV deaths relative to 2015.** (A) New infections, including reinfections. (B) HCV deaths from decompensated cirrhosis and liver cancer. Lines show medians and shaded bands show 95% UIs across {ndraw:,} posterior draws. Dashed horizontal lines show the WHO targets of 20% and 35% of the 2015 level. Dotted vertical lines mark 2019 and 2026.
+**Fig 2. Annual new HCV infections and HCV deaths relative to 2015.** (A) New infections, including reinfections. (B) HCV deaths: liver deaths and the excess non-liver deaths of viraemic people. Lines show medians and shaded bands show 95% UIs across {ndraw:,} posterior draws. Dashed horizontal lines show the WHO targets of 20% and 35% of the 2015 level. Dotted vertical lines mark 2019 and 2026.
 
 ![Fig 2. Annual new HCV infections and HCV deaths relative to 2015.](OUTPUT_DIR/scenarios_2026/paper_fig2_trajectories.png){{width=100%}}
 
@@ -334,7 +338,7 @@ smr = {k: min(rd(f"output/calibration/smr_sensitivity/{k}/solutions.csv"), key=l
 nm_cfg = json.load(open(os.path.join(ROOT, "output/calibration/r_20261021_agepop/run_config.json")))
 ovl = rd("figures/calibration_interval_overlap.csv")
 REF = "output/calibration/mcmc_reference"
-ref_diag = [r for r in rd(REF + "/mcmc_diagnostics.csv") if r["subset"] == "all_retained"]
+ref_diag = REF_DIAG
 ref_cs = rd(REF + "/mcmc_chain_summary.csv")
 for r in ref_cs:
     r["acceptance"] = r.get("acceptance") or r.get("acceptance_forward_budget")
@@ -436,7 +440,7 @@ As an example, the equation for chronic infection in group F, stage 1, age $i$ i
 
 $$\\frac{{dF_{{c,1,i}}}}{{dt}} = \\pi\\lambda^{{(2)}}_i J_{{c,1,i}} + \\frac{{1-\\kappa}}{{\\iota_1}} F_{{a,1,i}} + \\frac{{1-\\bar\\alpha_1}}{{\\iota_2}} F_{{t,1,i}} - \\left(\\tau_{{F}} + \\lambda^{{(3)}}_i + s_v\\mu_i + \\tilde p_{{1\\to2}}\\right) F_{{c,1,i}}$$
 
-Background mortality is $s\\,\\mu_i$, where $\\mu_i$ is the Singapore resident death rate and $s$ is an all-cause standardised mortality ratio for people who use drugs against the general population, from the Amsterdam Cohort Studies (1985 to 2012) [@vansanten2014]. People in the viraemic states (a, c, t) have $s_v = {SMR_V:.2f}$ (95% CI 8.06 to 11.26; HCV monoinfected). People in states u and r have $s_n = {SMR_NV:.2f}$ (3.47 to 6.45; HCV and HIV uninfected). Recovered people take the uninfected ratio because extrahepatic mortality after loss of viraemia is close to that of uninfected people [@lee2012]. Liver deaths in stages 3 and 4 are added on top. The rate is set by each person's state, so the viraemic share of the population, and with it average mortality, changes over time and falls with treatment. The deaths at rate $s\\,\\mu_i$ are not counted as HCV-related deaths.
+Background mortality is $s\\,\\mu_i$, where $\\mu_i$ is the Singapore resident death rate and $s$ is an all-cause standardised mortality ratio for people who use drugs against the general population, from the Amsterdam Cohort Studies (1985 to 2012) [@vansanten2014]. People in the viraemic states (a, c, t) have $s_v = {SMR_V:.2f}$ (95% CI 8.06 to 11.26; HCV monoinfected). People in states u and r have $s_n = {SMR_NV:.2f}$ (3.47 to 6.45; HCV and HIV uninfected). Recovered people take the uninfected ratio because extrahepatic mortality after loss of viraemia is close to that of uninfected people [@lee2012]. Liver deaths in stages 3 and 4 are added on top. The rate is set by each person's state, so the viraemic share of the population, and with it average mortality, changes over time and falls with treatment. The non-liver deaths of viraemic people above the non-viraemic rate, $(s_v - s_n)\\mu_i$, are counted as HCV deaths together with the liver deaths; the deaths at rate $s_n\\mu_i$ are not.
 
 The other 479 equations follow the same pattern. The full set is in the project file `docs/equations.tex` and is implemented in `scripts/model/sim.cpp`.
 
@@ -512,7 +516,7 @@ With the standardised mortality ratios at the bounds of their 95% confidence int
 
 ## 2.4 Posterior sampling
 
-The posterior combined the prior and the beta likelihood for the six seroprevalences. Parameter sets outside the bounds or whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. Four chains started from independent prior draws. The initial proposal covariance was 0.01 times the prior variance. Adaptation began after {ref_cfg['adapt_start']:,} proposals, was refreshed every {ref_cfg['adapt_every']} proposals and was frozen after warmup. A 5% share of proposals always used the initial covariance. Each chain ran {ref_cfg['max_evals_per_chain']:,} model evaluations, of which {ref_cfg['n_warmup']:,} were warmup, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained iterations. Every {ref_cfg['thin_storage']}th iteration was stored ({len(ref_draws):,} draws), and diagnostics used all retained iterations. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
+The posterior combined the prior and the beta likelihood for the six seroprevalences. Parameter sets outside the bounds or whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. Four chains started from independent prior draws. The initial proposal covariance was {ref_cfg['init_scale']**2:g} times the prior variance. Adaptation began after {ref_cfg['adapt_start']:,} proposals, was refreshed every {ref_cfg['adapt_every']} proposals and was frozen after warmup. A {100*ref_cfg['safety_p']:.0f}% share of proposals always used the initial covariance. Each chain ran {ref_cfg['max_evals_per_chain']:,} model evaluations, of which {ref_cfg['n_warmup']:,} were warmup, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained iterations. Every {ref_cfg['thin_storage']}th iteration was stored ({len(ref_draws):,} draws), and diagnostics used all retained iterations. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
 
 **Table S3. Convergence diagnostics of the MCMC posterior.**
 
@@ -526,7 +530,7 @@ We checked the MCMC posterior against single round neural posterior estimation (
 
 Simulation based calibration [@talts2018] on {int(npe_sbc[0]['n_sbc']):,} datasets simulated from independent prior draws showed a well calibrated neural posterior on average: for each parameter, 95% interval coverage was {rng('coverage_95', 3)} and 90% coverage {rng('coverage_90', 3)}. {"No" if sbc_uniform else "Some"} rank histogram{"" if sbc_uniform else "s"} showed systematic skew. As a smaller direct check, we reran the MCMC on {mc_sbc['n_datasets']} of these simulated datasets, with one chain of 30,000 evaluations each. Pooled 95% coverage was {F(mc_sbc['coverage_95']):.2f} and 90% coverage {F(mc_sbc['coverage_90']):.2f} over {7*int(mc_sbc['n_datasets'])} ranks; this guards only against gross miscalibration.
 
-At the observed data, however, the neural posterior did not match the MCMC posterior (Table S4). Its 95% intervals were {w_txt} the MCMC intervals, and {"no parameter" if F(npe_l['share_pass_all']) == 0 else f"{100*F(npe_l['share_pass_all']):.0f}% of parameters"} passed all three checks. Calibration on average across prior datasets does not guarantee accuracy at one dataset; with six noisy summaries and a wide prior, the network spends its capacity over the whole prior range. The policy medians were less sensitive: they differed from the MCMC results by at most {100*npe_pol_med:.1f}%. We used the MCMC posterior for all results. The full comparison is in the project repository (`output/calibration/npe_vs_mcmc/report.md`).
+At the observed data, however, the neural posterior did not match the MCMC posterior (Table S4). Of {npe_sup[0]:,} random neural posterior draws, {npe_sup[0]-npe_sup[1]:,} ({100*(1-npe_sup[1]/npe_sup[0]):.0f}%) failed the equilibrium check, which the MCMC treats as impossible; they were dropped before the comparison. Its 95% intervals were {w_txt} the MCMC intervals, and {"no parameter" if F(npe_l['share_pass_all']) == 0 else f"{100*F(npe_l['share_pass_all']):.0f}% of parameters"} passed all three checks. Calibration on average across prior datasets does not guarantee accuracy at one dataset; with six noisy summaries and a wide prior, the network spends its capacity over the whole prior range. The policy medians were less sensitive: they differed from the MCMC results by at most {100*npe_pol_med:.1f}%, although the share of draws meeting both targets at 5,000 tests a year with 25% to F differed by {npe_jp:.0f} percentage points. We used the MCMC posterior for all results. The full comparison is in the project repository (`output/calibration/npe_vs_mcmc/report.md`).
 
 **Table S4. Single round NPE compared with the MCMC posterior.**
 
@@ -534,7 +538,7 @@ At the observed data, however, the neural posterior did not match the MCMC poste
 | --- | --- | --- | --- | --- | --- | --- | --- |
 {chr(10).join(bench_rows)}
 
-Checks: absolute mean difference at most 0.1 SD, 95% interval endpoints within 0.2 SD and width ratio between 0.9 and 1.1. Policy errors compare 1,000 neural posterior states with the {ndraw:,} MCMC states used for the scenarios; the worst policy error is for discounted cost.
+Checks: absolute mean difference at most 0.1 SD, 95% interval endpoints within 0.2 SD and width ratio between 0.9 and 1.1. Policy errors compare {pol_n} with the {ndraw:,} MCMC states used for the scenarios; the worst policy error is for discounted cost.
 
 ## 2.6 Posterior distribution and model fit
 
@@ -580,11 +584,11 @@ This is an aggregate approximation. The model does not track individual screenin
 
 ## 3.3 Outcomes
 
-New infections are the annual flow from states u and r to state a in D and F, evaluated at the end of each calendar year. HCV deaths are the annual excess deaths in stages 3 and 4. Both are event counts per year. The reduction in 2030 is one minus the ratio of the 2030 value to the 2015 value. We also report these reductions for F and X combined.
+New infections are the annual flow from states u and r to state a in D and F, evaluated at the end of each calendar year. HCV deaths are the annual excess deaths in stages 3 and 4 plus $(s_v - s_n)\\mu_i$ times the number of viraemic people (states a, c and t) in every group, stage and age. Both are event counts per year. The reduction in 2030 is one minus the ratio of the 2030 value to the 2015 value. We also report these reductions for F and X combined.
 
 ## 3.4 Costs
 
-Costs were counted for F, J and X from 2026 to 2030 (Table S8). In F and X, each person screened had one antibody test. Each expected antibody positive person had one RNA test. Each treatment start had one consultation and one full drug course. In J, each antibody positive person entering prison had one antibody test. Each treatment start in J had one RNA test, one consultation and one drug course. Costs were counted in the year they occurred and discounted as $C_y / 1.03^{{(y-2026)}}$.
+Costs were counted for F, J and X from 2026 to 2030 (Table S8). In F and X, each person screened had one antibody test. Each expected antibody positive person had one RNA test. Each treatment start had one consultation and one full drug course. In J the same rule applied to people entering prison: every entrant not on treatment had one antibody test and every expected antibody positive entrant one RNA test. Each treatment start in J had one consultation and one drug course. Costs were counted in the year they occurred and discounted as $C_y / 1.03^{{(y-2026)}}$.
 
 The drug price was USD 2,577 per week for 12 weeks [@wong2019]. This is USD 30,924 per course. We converted it at the 2025 average rate of 1.3066 Singapore dollars per US dollar [@sgd_rate]. Prices were not inflated. These are model prices and not Singapore payer costs. Follow up visits, SVR12 tests, fibrosis assessment and programme staff were not included.
 
@@ -626,7 +630,7 @@ Screening counts may include the same person in more than one year. Treatment st
 
 ![Fig S5. Share of the five year screening quota used in F and X. The F group is small, so a large F share leaves part of its quota unused.](OUTPUT_DIR/scenarios_2026/paper_fig4_f_pool.png){{width=90%}}
 
-![Fig S6. Cost composition of the prison only scenario and the no screening cap reference, the only scenario that met both targets. Shares use the median cost of each item.](OUTPUT_DIR/scenarios_2026/scenario_cost_composition_pies.png){{width=100%}}
+![Fig S6. Cost composition of the prison only scenario and the scenarios that met both targets at the median. Shares use the median cost of each item.](OUTPUT_DIR/scenarios_2026/scenario_cost_composition_pies.png){{width=100%}}
 
 ![Fig S7. Discounted costs and treatment starts by group, 2026 to 2030. Segments show the median for each group. Labels show the median total.](OUTPUT_DIR/scenarios_2026/scenario_cumulative_costs.png){{width=100%}}
 
@@ -642,7 +646,7 @@ Table S11 scales all unit costs by 0.5, 1 and 1.5. Epidemiological results do no
 
 # 5. Uncertainty analysis and software
 
-We sampled {ndraw:,} parameter sets at random without replacement from the {len(ref_draws):,} MCMC posterior draws, using sampling seed 20261005. For each set we ran the full pipeline. This included the 150 year equilibrium, the equilibrium check, the shared history from 2016 to 2025, the no treatment counterfactual and all 17 scenarios to 2030. All {ndraw:,} draws passed the equilibrium check. Derived quantities such as reductions, costs and incremental costs were computed within each draw before summarising. We report the median and the 2.5th and 97.5th percentiles. A scenario met a target if its median reduction met the threshold. We also report the share of draws meeting both targets.
+We sampled {ndraw:,} parameter sets at random without replacement from the {len(ref_draws):,} MCMC posterior draws, using sampling seed {SCEN_SEED}. For each set we ran the full pipeline. This included the 150 year equilibrium, the equilibrium check, the shared history from 2016 to 2025, the no treatment counterfactual and all 17 scenarios to 2030. All {ndraw:,} draws passed the equilibrium check. Derived quantities such as reductions, costs and incremental costs were computed within each draw before summarising. We report the median and the 2.5th and 97.5th percentiles. A scenario met a target if its median reduction met the threshold. We also report the share of draws meeting both targets.
 
 The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCMC ran in R. Neural posterior estimation used Python, PyTorch and sbi [@sbi2020]. The MCMC posterior took about {F(ref_cfg['method_sec'])/3600:.1f} hours on four processor cores. The scenario analysis of {ndraw:,} draws took about one hour on four cores. The project test suite passed.
 
@@ -654,7 +658,7 @@ The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCM
 - **Group X.** People in X cannot relapse or be reinfected. Relapse would add transmission and reinfection.
 - **Event counts.** Outcomes are annual event counts in the modelled population. They are not rates per person.
 - **Costs.** Prices are public list prices and an older drug price. Many programme costs are not included.
-- **Mortality ratios.** The standardised mortality ratios come from the Amsterdam Cohort Studies of people who use drugs, 1985 to 2012, against the Dutch general population [@vansanten2014]. They group people by HCV antibody status, so the viraemic ratio (HCV monoinfected, 9.52) includes people who cleared infection and liver deaths, which the model also counts separately. No cohort reports these ratios by viraemic status.
+- **Mortality ratios.** The standardised mortality ratios come from the Amsterdam Cohort Studies of people who use drugs, 1985 to 2012, against the Dutch general population [@vansanten2014]. They group people by HCV antibody status, so the viraemic ratio (HCV monoinfected, {SMR_V:.2f}) includes people who cleared infection and liver deaths, which the model also counts separately. No cohort reports these ratios by viraemic status.
 - **Population size.** Only seroprevalence was fitted. The modelled 2015 prison population ({stx('population_J', False)}) was much larger than the {J_OBS_2015:,} people with a known screening result in prison records, so absolute counts of infections, deaths, screening and treatment, and costs, are uncertain beyond the UIs.
 - **First arrest rate.** The prison records cannot identify the first arrest rate of people who have never been imprisoned. It was a multiple $c \\ge 0.5$ of the re-arrest rate, and its posterior ({C_TXT}) follows its prior. A lower first arrest rate would leave more people in D, who are never reached by prison treatment.
 - **Uncertainty.** The UIs reflect calibrated parameters only. Fixed natural history parameters, uptake and price were not varied.

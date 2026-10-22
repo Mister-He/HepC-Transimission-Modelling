@@ -26,9 +26,12 @@ dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 theta <- as.matrix(read.csv(file.path(NPE, "theta_sbc.csv"))[seq_len(K), TH])
 x <- as.matrix(read.csv(file.path(NPE, "x_sbc.csv"))[seq_len(K), ])
 stopifnot(nrow(theta) == K, nrow(x) == K)
-stopifnot(isTRUE(all.equal(jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))$prior_sd,
-                           prior_spec()$sd)))  # same prior as the NPE SBC set
 base <- jsonlite::fromJSON("data/calibration_targets.json")
+ss <- jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))  # the NPE SBC set must share prior and phi
+ps <- prior_spec()
+stopifnot(isTRUE(all.equal(ss$prior_mean, ps$mean)), isTRUE(all.equal(ss$prior_sd, ps$sd)),
+          isTRUE(all.equal(ss$theta_lo, ps$lo)), isTRUE(all.equal(ss$theta_hi, ps$hi)),
+          isTRUE(all.equal(ss$beta_precision, base$beta_precision)))
 set.seed(SEED)
 for (k in seq_len(K)) {
   phi <- base$beta_precision

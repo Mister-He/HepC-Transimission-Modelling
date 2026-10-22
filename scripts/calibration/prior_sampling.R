@@ -16,10 +16,10 @@ lhs_unit <- function(n, d, seed) {
 prior_from_unit <- function(u, mean, sd, lo = -Inf, hi = Inf) {
   stopifnot(ncol(u) == length(mean), length(sd) %in% c(1L, length(mean)))
   sd <- rep_len(sd, length(mean)); lo <- rep_len(lo, length(mean)); hi <- rep_len(hi, length(mean))
-  vapply(seq_along(mean), function(j) {
+  matrix(vapply(seq_along(mean), function(j) {  # matrix() keeps one-row input a matrix
     a <- pnorm(lo[j], mean[j], sd[j]); b <- pnorm(hi[j], mean[j], sd[j])
     qnorm(a + u[, j] * (b - a), mean[j], sd[j])
-  }, numeric(nrow(u)))
+  }, numeric(nrow(u))), nrow(u))
 }
 
 sample_prior_lhs <- function(n, mean, sd, seed, lo = -Inf, hi = Inf)

@@ -1,5 +1,7 @@
 # Learning route: Singapore PWID HCV model
 
+> **Historical (2026-10-06).** Commands still apply, but the model has changed since: 7 parameters (contact scales and the first-arrest multiplier `c`), a seroprevalence-only Beta likelihood and PWID mortality ratios. Expected values below are from the 2026-10-06 run; current commands and results are in `docs/training.md` and `docs/evaluation.md`.
+
 > **Update 2026-10-11.** Calibration was rebuilt after this guide was written:
 > - **Inference:** the workflow now keeps only single-round NPE (`scripts/run_npe.R`, 50,000 Latin hypercube
 >   prior simulations) and the reference MCMC (`scripts/run_mcmc_reference.R`). Multi-round APT/SNPE and
@@ -130,7 +132,7 @@ Rscript scripts/run_tests.R --scope all      # expect: All 6 test file(s) passed
 
 | File | Content | Used by |
 | --- | --- | --- |
-| `calibration_targets.json` | 2015 prison seroprevalence and population in six age groups, `population_sigma_log = 0.10`, horizon 150, lag 5 | calibration, NPE, MCMC, scenarios |
+| `calibration_targets.json` | 2015 prison seroprevalence in six age groups, Beta precision `beta_precision` (φ = 100), horizon 150 | calibration, NPE, MCMC, scenarios |
 | `singstat_new_drug_abusers.csv` | New drug users by age, 2015–2025 ([data.gov.sg](https://data.gov.sg/datasets/d_f174679381e9085e32869c32bdb01b87/view)) | `setup.R:205` (inflow schedule) |
 | `scenario_policy_config.json` | Screening totals, F shares, start probabilities, unit costs, discounting | `scenarios_2026.R:10` |
 | `sps.csv` (**not in this worktree**) | Individual Singapore Prison Service records, sensitive and gitignored | `scripts/model/preprocess.R:9` only |
@@ -151,7 +153,7 @@ Reading the targets:
 # scripts/calibration/targets.R:2
 source("scripts/calibration/targets.R")
 targets <- read_targets("data/calibration_targets.json")
-targets$x_prev        # binomial counts = round(seroprevalence * population)
+targets$beta_precision   # φ of the Beta likelihood; there are no counts
 ```
 
 ---
@@ -195,7 +197,7 @@ targets$x_prev        # binomial counts = round(seroprevalence * population)
 | `sim.cpp:266` | `treatment_events`: integrates starts, completions and cures per stratum |
 | `sim.cpp:300` | `run_sim(params, data)`: exported to R; returns time + 480 states (481 columns). If `data$treatment_capacity` (length 4) is supplied, 12 cumulative event columns are added (493 columns: starts, completions and cures for D, J, F, X) and the per-stratum caps are enforced (`sim.cpp:366-406`) |
 | `scripts/model/setup.R:41` | `params` list, with literature sources in comments (lines 20–38) |
-| `setup.R:116-122` | background mortality `mu` and the PWID multiplier `omega` |
+| `setup.R` | background mortality `mu` and the PWID mortality ratios `smr_viraemic`, `smr_nonviraemic` |
 | `setup.R:158`, `setup.R:172` | contact matrix `C_contact` and inflow `beta` (scaled by calibration) |
 | `setup.R:190` | initial state `y0` (D/u and D/a seeds; all `r` start at zero) |
 | `setup.R:215` | `data` list: `t_start`, `t_end`, `dt = 1/365`, inflow schedule starting at model year 150 |
@@ -277,7 +279,7 @@ rm -r output/calibration/smoke_test
 
 - **Code:**
   - `scripts/run_npe.R:33` `sample_prior`: Normal on log scale, centred on the best fit.
-  - `run_npe.R:42` `simulate`: one model run returns 6 seroprevalences + 6 population sizes.
+  - `run_npe.R:42` `simulate`: one model run returns 6 seroprevalences.
   - `run_npe.R:67` `step_data`: 3,000 training + 300 SBC simulations.
   - `run_npe.R:79` `py_round`: calls Python.
   - `run_npe.R:109` `step_train`: seed `SEED` and `SEED+1`, suffix `seed2`.

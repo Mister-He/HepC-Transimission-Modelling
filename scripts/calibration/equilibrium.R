@@ -7,10 +7,9 @@
 # Default convergence: max(|p_a(T) - p_a(T-10)|) \leq 0.005
 # =============================================================================
 
-check_equilibrium <- function(out, t_lag = 10, target_mode = "sero",
+check_equilibrium <- function(out, t_lag = 10,
                               crit_log_pop = 0.01,
                               crit_prev = 0.005,
-                              crit_total_pop = 0.01,
                               crit_state = 0.01,
                               crit_comp = 0.02) {
   times <- out[, 1]
@@ -22,14 +21,9 @@ check_equilibrium <- function(out, t_lag = 10, target_mode = "sero",
   s_T5 <- J_summary_at(out, row_T5)
 
   log_ratio   <- abs(log(s_T$N_hat / s_T5$N_hat))
-  prev_col <- if (target_mode == "sero") "p_sero" else "p_viremic"
-  prev_change <- abs(s_T[[prev_col]] - s_T5[[prev_col]])
-  tot_T  <- sum(out[row_T, -1])
-  tot_T5 <- sum(out[row_T5, -1])
-  total_log_ratio <- abs(log(tot_T / tot_T5))
+  prev_change <- abs(s_T$p_sero - s_T5$p_sero)
 
-  # All-state convergence: total HCV, DC, HCC, and every compartment.
-  idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
+  # All-state convergence: total HCV, DC, HCC, and every compartment (idx from model_metrics.R).
   comp_idx <- as.vector(sapply(0:3, function(s) sapply(1:4, function(k)
     sapply(0:4, function(h) sapply(0:5, function(i) idx(s, k, h, i))))))
   comp_T  <- out[row_T, comp_idx]
@@ -64,7 +58,6 @@ check_equilibrium <- function(out, t_lag = 10, target_mode = "sero",
     max_log_pop_ratio = max(log_ratio),
     max_prev_change   = max(prev_change),
     violation         = violation,
-    total_log_ratio   = total_log_ratio,
     state_log_ratio   = state_log_ratio,
     max_comp_log_ratio = max_comp_log_ratio,
     by_age = data.frame(

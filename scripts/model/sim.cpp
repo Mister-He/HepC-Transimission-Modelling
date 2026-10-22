@@ -37,7 +37,6 @@ struct Params {
     double pi_recid;
     arma::mat C_contact;
     std::vector<double> beta;
-    std::vector<double> beta_base;
     std::vector<std::vector<double>> inflow_schedule;
     double inflow_schedule_start;
     bool has_inflow_schedule;
@@ -50,9 +49,7 @@ double inflow_rate(int age, double time, const Params& p) {
     // Model year 150 is the 2015 snapshot, so interval 150--151 is 2016.
     int row = static_cast<int>(std::floor(time - p.inflow_schedule_start + 1.0 + 1e-10));
     row = std::max(0, std::min(row, static_cast<int>(p.inflow_schedule.size()) - 1));
-    double base = p.beta_base[age];
-    double scale = base > 0.0 ? p.beta[age] / base : 0.0;
-    return scale * p.inflow_schedule[row][age];
+    return p.inflow_schedule[row][age];  // CNB counts, unscaled
 }
 
 double force_of_infection(int age, const std::vector<double>& y,
@@ -358,12 +355,6 @@ NumericMatrix run_sim(List params_r, List data_r) {
     p.pi_recid = as<double>(params_r["pi_recid"]);
     NumericMatrix C = as<NumericMatrix>(params_r["C_contact"]); p.C_contact = arma::mat(C.begin(), N_AGES, N_AGES, false);
     NumericVector beta = as<NumericVector>(params_r["beta"]); p.beta.assign(beta.begin(), beta.end());
-    if (params_r.containsElementNamed("beta_base")) {
-        NumericVector beta_base = as<NumericVector>(params_r["beta_base"]);
-        p.beta_base.assign(beta_base.begin(), beta_base.end());
-    } else {
-        p.beta_base = p.beta;
-    }
     double t_start = as<double>(data_r["t_start"]), t_end = as<double>(data_r["t_end"]), dt = as<double>(data_r["dt"]);
     p.has_inflow_schedule = data_r.containsElementNamed("inflow_schedule");
     p.inflow_schedule_start = data_r.containsElementNamed("inflow_schedule_start") ?

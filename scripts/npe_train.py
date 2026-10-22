@@ -80,10 +80,12 @@ class Ensemble:
 
     def _one(self, m, n, x, show_progress_bars):
         out = torch.empty((0, len(self.lo)))
-        while len(out) < n:
+        for _ in range(100):
             d = m.sample((2 * n,), x=x, show_progress_bars=show_progress_bars)
             out = torch.cat([out, d[((d >= self.lo) & (d <= self.hi)).all(dim=1)]])
-        return out[:n]
+            if len(out) >= n:
+                return out[:n]
+        raise RuntimeError(f"only {len(out)} of {200 * n} posterior draws fell inside the bounds")
 
     def sample(self, shape, x=None, show_progress_bars=False):
         k = len(self.members)

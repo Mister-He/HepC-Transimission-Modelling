@@ -48,11 +48,12 @@ stopifnot(isTRUE(all.equal(fit$base_params, base_params)))
 log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite = NA,
                        n_equilibrium_fail = NA, n_out_of_bounds = NA) {
   f <- file.path(OUT, "r_timings.csv")
+  old <- if (file.exists(f)) read.csv(f) else NULL  # a rerun of one step replaces its row
   row <- data.frame(stage = stage, seconds = seconds, n_attempted = n_attempted, n_ok = n_ok,
                     n_nonfinite = n_nonfinite, n_equilibrium_fail = n_equilibrium_fail,
                     n_out_of_bounds = n_out_of_bounds,
                     workers = N_CORES, time = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"))
-  write.table(row, f, sep = ",", row.names = FALSE, col.names = !file.exists(f), append = file.exists(f))
+  write.csv(rbind(old[old$stage != stage, , drop = FALSE], row), f, row.names = FALSE)
 }
 
 # Returns p_sero (the six calibration summaries) or a failure code: "bounds", "nonfinite" or "equilibrium".
@@ -77,7 +78,10 @@ simulate_many <- function(theta, stage) {
     parallel::mclapply(seq_len(nrow(theta)), one, mc.cores = N_CORES) else
     lapply(seq_len(nrow(theta)), one)
   ok <- vapply(ans, is.numeric, logical(1))
-  code <- vapply(ans, function(a) if (is.numeric(a)) "ok" else as.character(a)[1], character(1))
+  known <- c("bounds", "nonfinite", "equilibrium")
+  code <- vapply(ans, function(a) if (is.numeric(a)) "ok" else if (is.character(a) && a[1] %in% known) a[1] else "error",
+                 character(1))
+  if (any(code == "error")) stop(sum(code == "error"), " simulation worker(s) failed")
   log_timing(stage, proc.time()[["elapsed"]] - t0, nrow(theta), sum(ok),
              sum(code == "nonfinite"), sum(code == "equilibrium"), sum(code == "bounds"))
   list(x = do.call(rbind, ans[ok]), ok = ok, code = code)
@@ -109,7 +113,8 @@ step_data <- function() {
   jsonlite::write_json(list(
     sampling = "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
     prior = "independent Normal(prior_mean, prior_sd) on theta, truncated to the bounds (likelihood.R)",
-    prior_mean = center, prior_sd = prior_sd, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
+    prior_mean = center, prior_sd = prior_sd, theta_lo = THETA_LO, theta_hi = THETA_HI,
+    beta_precision = targets$beta_precision, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
     n_excluded_nonfinite = sum(sim$code == "nonfinite"), n_excluded_equilibrium = sum(sim$code == "equilibrium"),
     n_excluded_bounds = sum(sim$code == "bounds"),
     exclusion_rule = "drop draws outside the parameter bounds (within_bounds) and simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",

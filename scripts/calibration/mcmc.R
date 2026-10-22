@@ -3,12 +3,12 @@
 # the reference MCMC posterior, plus posterior summaries.
 # =============================================================================
 
-# Exact target shared with NPE: independent Normal prior on theta (log scales),
-# Binomial prevalence likelihood (no population term), and the 2015
-# equilibrium check as a hard support restriction (failure -> -Inf, no penalty).
+# Exact target shared with NPE and Nelder-Mead: the truncated Normal prior of likelihood.R
+# (-nlp, up to a constant), the Beta seroprevalence likelihood, and the 2015 equilibrium check
+# as a hard support restriction (failure -> -Inf, no penalty).
 # Returns list(lp, ode) so that ODE calls can be counted separately.
-log_posterior_exact <- function(theta, base_params, data, prior_mean, prior_sd) {
-  lprior <- sum(dnorm(theta, prior_mean, prior_sd, log = TRUE))
+log_posterior_exact <- function(theta, base_params, data) {
+  lprior <- -nlp(theta)
   if (!within_bounds(theta)) return(list(lp = -Inf, ode = 0L))
   pm <- tryCatch(build_params(theta, base_params), error = function(e) NULL)
   if (is.null(pm)) return(list(lp = -Inf, ode = 0L))
@@ -60,7 +60,8 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
   for (t in seq_len(n_warmup)) {
     if (evals >= max_evals) { status <- "budget_exhausted_in_warmup"; break }
     if (t > adapt_start && ((t - adapt_start - 1L) %% adapt_every == 0L || is.null(L_adapt))) {
-      S <- stats::cov(warm[seq_len(t), , drop = FALSE]) + reg
+      # Recent half of warmup only: the walk-in from the prior start would inflate the proposal.
+      S <- stats::cov(warm[max(1L, t %/% 2L):t, , drop = FALSE]) + reg
       L_adapt <- tryCatch(chol(c_d * S), error = function(e) L_init)
       ev_S <- eigen(c_d * S, symmetric = TRUE, only.values = TRUE)$values
       drift <- if (is.null(S_prev)) NA_real_ else norm(S - S_prev, "F") / max(norm(S_prev, "F"), 1e-12)

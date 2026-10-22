@@ -23,6 +23,7 @@ source(file.path(ROOT, "scripts/calibration/equilibrium.R"))
 source(file.path(ROOT, "scripts/calibration/likelihood.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
 fit <- readRDS(FIT)
+stopifnot(isTRUE(all.equal(fit$base_params, setup_env$params)))  # fit made with the current model
 # --posterior-files: comma-separated CSVs with columns theta1..theta7; each file is one
 # sampling group. Default: the reference MCMC posterior.
 posterior_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
@@ -38,9 +39,8 @@ draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
   data.frame(seed = k, draw = seq_len(nrow(d)), d)
 }))
 
-idx0 <- function(s, k, h, i) s * 120 + (k - 1) * 30 + h * 6 + i + 2L
 rate_components <- function(state, time, pm) {
-  y <- as.numeric(state); idxs <- function(s, k, h, age) idx0(s, k, h, age) - 1L
+  y <- as.numeric(state); idxs <- function(s, k, h, age) idx(s, k, h, age) - 1L
   incidence <- 0; fx_incidence <- 0
   for (age in 0:5) {
     lambda <- 0
@@ -60,10 +60,13 @@ rate_components <- function(state, time, pm) {
       if (s == 2) fx_incidence <- fx_incidence + event_rate
     }
   }
+  # HCV deaths: liver deaths in DC/HCC plus the non-liver excess of viraemic people (a, c, t)
+  # over the non-viraemic rate, mu * (smr_viraemic - smr_nonviraemic); cure removes both.
   mortality <- 0; fx_mortality <- 0
   for (s in 0:3) for (k in 1:4) for (h in 0:4) for (age in 0:5) {
-    disease_rate <- if (k == 3) pm$mu_DC * ifelse(h %in% c(3, 4), pm$psi_DC, 1) else
+    liver <- if (k == 3) pm$mu_DC * ifelse(h %in% c(3, 4), pm$psi_DC, 1) else
       if (k == 4) pm$mu_HCC * ifelse(h %in% c(3, 4), pm$psi_HCC, 1) else 0
+    disease_rate <- liver + if (h %in% 1:3) pm$mu[age + 1] * (pm$smr_viraemic - pm$smr_nonviraemic) else 0
     death_rate <- disease_rate * y[idxs(s, k, h, age)]
     mortality <- mortality + death_rate
     if (s >= 2) fx_mortality <- fx_mortality + death_rate
@@ -74,7 +77,7 @@ rate_components <- function(state, time, pm) {
 
 
 strata <- c("D", "J", "F", "X")
-idx_state <- function(s, h) as.vector(sapply(1:4, function(k) sapply(0:5, function(i) idx0(s,k,h,i)-1L)))
+idx_state <- function(s, h) as.vector(sapply(1:4, function(k) sapply(0:5, function(i) idx(s,k,h,i)-1L)))
 sum_state <- function(y, s, h=0:4) sum(y[unlist(lapply(h, function(x) idx_state(s,x)))])
 state_from <- function(z) as.numeric(z[nrow(z),2:481])
 set_tau <- function(pm, s, rate) { pm$tau_by_stratum[(s*4+1):(s*4+4)] <- rate; pm }
@@ -88,19 +91,18 @@ run_year <- function(y0, year, pm, cap=rep(Inf,4)) {
   if (abs(z[nrow(z),1]-d$t_end)>1e-6) stop("Annual simulation lost endpoint")
   z
 }
-# Entry-event proxy: antibody tests on antibody-positive prison entrants.
-# This avoids recharging the full J stock each year; re-entries can recur.
-j_positive_entries <- function(z, pm) {
-  x <- vapply(seq_len(nrow(z)), function(i) {
-    y <- z[i,2:481]; total <- 0
-    for (age in 0:5) for (k in 1:4) for (h in c(1,2,4)) {
-      total <- total + pm$c_first*pm$lambda3[age+1]*y[idx0(0,k,h,age)-1] +
-        pm$lambda3[age+1]*y[idx0(2,k,h,age)-1]
-    }
-    total
-  }, numeric(1))
+# Prison entries over a simulated year, by HCV state h: first arrests from D and re-arrests from F
+# (trapezoid rule over the daily output). Re-entries can recur.
+j_entries <- function(z, pm, h) {
+  g <- expand.grid(age = 0:5, k = 1:4, h = h, s = c(0, 2))
+  w <- ifelse(g$s == 0, pm$c_first, 1) * pm$lambda3[g$age + 1]
+  x <- as.vector(z[, idx(g$s, g$k, g$h, g$age), drop = FALSE] %*% w)
   sum((head(x,-1)+tail(x,-1))*diff(z[,1])/2)
 }
+# Prison testing, the same rule as F/X screening: every entrant not on treatment (u, a, c, r)
+# has an antibody test, and every antibody-positive one (a, c, r) an RNA test.
+j_tests <- function(z, pm) list(antibody = j_entries(z, pm, c(0, 1, 2, 4)), rna = j_entries(z, pm, c(1, 2, 4)),
+                               rna_positive = j_entries(z, pm, c(1, 2)))
 # Screening quotas are one fixed year-start snapshot. No queue is tracked.
 screen_plan <- function(y, s, quota) {
   n <- sum_state(y,s,c(0,1,2,4))
@@ -116,12 +118,12 @@ screen_plan <- function(y, s, quota) {
 }
 stopifnot(screen_plan(rep(0,480),2,Inf)$treatment_capacity==0,
           screen_plan(rep(0,480),3,100)$antibody_tests==0)
-process_row <- function(id, year, s, plan, z, j_ab=0) {
+process_row <- function(id, year, s, plan, z, jt=NULL) {
   events <- z[nrow(z),482:493]
   if (s==1) {
-    ab <- j_ab; rna <- events[2]; identified <- events[2]
+    ab <- jt$antibody; rna <- jt$rna; identified <- events[2]
     quota <- NA_real_; eligible <- NA_real_; chronic <- NA_real_
-    capacity <- Inf; screened <- ab; rnapos <- events[2]
+    capacity <- Inf; screened <- ab; rnapos <- jt$rna_positive
   } else {
     ab <- plan$antibody_tests; rna <- plan$rna_tests
     identified <- plan$chronic_identified; quota <- plan$screening_quota
@@ -189,6 +191,8 @@ scenario_table$scenario_label <- ifelse(scenario_table$scenario_type=="control",
 stopifnot(nrow(scenario_table)==17,sum(scenario_table$scenario_type=="finite")==15,
           !any(scenario_table$screening_total==800))
 
+known_pass <- function(ratio,threshold) ifelse(is.finite(ratio),ratio<=threshold,NA)
+
 # One full policy analysis for one posterior parameter vector. Returns NULL if the
 # 2015 snapshot is not at equilibrium.
 evaluate_draw <- function(theta) {
@@ -199,7 +203,6 @@ if (!check_equilibrium(snapshot)$pass) return(NULL)
 policy_params <- base
 # Costed regimen is SOF/VEL alone. Use the model's RBV-free DC SVR branch.
 policy_params$alpha_DC <- policy_params$alpha_DC_neg
-policy_params$tau <- rep(1, 4)
 policy_params$tau_min_age <- 1L; policy_params$tau_max_age <- 6L
 policy_params$tau_by_stratum <- rep(0, 16)
 pre_pm <- policy_params
@@ -240,8 +243,7 @@ run_policy <- function(row) {
     z <- run_year(y,year,pm,cap)
     if (year==2030) stopifnot(abs(z[nrow(z),1]-165)<1e-8)
     y <- state_from(z)
-    jab <- j_positive_entries(z,pm)
-    rows[[paste0(year,"J")]] <- process_row(id,year,1,NULL,z,jab)
+    rows[[paste0(year,"J")]] <- process_row(id,year,1,NULL,z,j_tests(z,pm))
     rows[[paste0(year,"F")]] <- process_row(id,year,2,f,z)
     rows[[paste0(year,"X")]] <- process_row(id,year,3,x,z)
     trajectories[[as.character(year)]] <- rate_row(y,151+year-2016,year,id)
@@ -280,7 +282,6 @@ safe_ratio <- function(x,denominator) if (is.finite(denominator) && denominator>
   x/denominator else rep(NA_real_,length(x))
 for (metric in c("incidence","mortality","fx_incidence","fx_mortality"))
   trajectories[[paste0(metric,"_ratio_2015")]] <- safe_ratio(trajectories[[metric]],as.numeric(b[[metric]]))
-known_pass <- function(ratio,threshold) ifelse(is.finite(ratio),ratio<=threshold,NA)
 trajectories$who_incidence_pass <- known_pass(trajectories$incidence_ratio_2015,.2)
 trajectories$who_mortality_pass <- known_pass(trajectories$mortality_ratio_2015,.35)
 trajectories$who_joint_pass <- ifelse(is.na(trajectories$who_incidence_pass) |
@@ -369,7 +370,7 @@ valid <- !vapply(results,is.null,logical(1))
 cat("Valid draws:",sum(valid),"of",length(valid),"(equilibrium failures:",sum(!valid),")\n")
 draw_seed <- draw_table$seed[valid]; results <- results[valid]
 MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))  # the NPE cross-validation policy run passes 0
-stopifnot(length(results)>=MIN_VALID_SHARE*length(valid))
+stopifnot(length(results) > 0, length(results)>=MIN_VALID_SHARE*length(valid))
 writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid))), file.path(OUT,"draw_validity.txt"))
 collect <- function(name) lapply(results,`[[`,name)
 process <- agg_draws(collect("process"),c("scenario_id","year","stratum"))
@@ -388,7 +389,6 @@ treatment <- agg_draws(collect("treatment"),c("scenario_id","stratum"))
 item_totals <- agg_draws(collect("item_totals"),"scenario_id")
 stratum_totals <- agg_draws(collect("stratum_totals"),c("scenario_id","stratum"))
 # Pass flags use the median reductions shown in the figures; *_prob columns give the share of draws passing.
-known_pass <- function(ratio,threshold) ifelse(is.finite(ratio),ratio<=threshold,NA)
 join_pass <- function(a,b) ifelse(is.na(a)|is.na(b),NA,a & b)
 for (d in c("trajectories","endpoint")) {
   x <- get(d)
@@ -461,7 +461,9 @@ if (requireNamespace("writexl",quietly=TRUE)) writexl::write_xlsx(
 write.csv(stratum_totals,file.path(OUT,"scenario_stratum_totals.csv"),row.names=FALSE)
 write.csv(item_totals,file.path(OUT,"scenario_item_totals.csv"),row.names=FALSE)
 
-if (identical(arg("--no-figures", "false"), "true")) {
+# The ggplot figures below are superseded by scripts/figures.py and overwrite its PNGs, so they
+# are drawn only on request (--figures true).
+if (!identical(arg("--figures", "false"), "true")) {
   cat("Wrote", nrow(scenario_table), "policies to", OUT, "(figures skipped)\n"); quit(save = "no")
 }
 library(ggplot2); library(tidyr); library(patchwork)

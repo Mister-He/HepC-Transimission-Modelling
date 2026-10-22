@@ -38,6 +38,7 @@ Rcpp::sourceCpp(file.path(root, "scripts/model/sim.cpp"))
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R"))
   sys.source(file.path(root, "scripts/calibration", f), envir = environment())
 fit <- readRDS(fit_path)
+stopifnot(isTRUE(all.equal(fit$base_params, setup_env$params)))  # fit made with the current model
 
 age_names <- targets$age_groups
 theta_names <- paste0("theta", 1:N_THETA)
@@ -70,7 +71,10 @@ load_draws <- function(files) {
 simulate_or_load <- function(theta, cache_file, label, source_files) {
   cache_fresh <- file.exists(cache_file) &&
     file.info(cache_file)$mtime >= max(file.info(source_files)$mtime)
-  if (isTRUE(cache_fresh)) return(read.csv(cache_file, check.names = FALSE))
+  if (isTRUE(cache_fresh)) {
+    cached <- read.csv(cache_file, check.names = FALSE)
+    if (identical(cached$n_requested[1], nrow(theta))) return(cached)
+  }
   message("Evaluating ", nrow(theta), " ", label, " draws with ", cores, " cores...")
   if (cores > 1 && .Platform$OS.type != "windows") {
     result <- parallel::mclapply(seq_len(nrow(theta)),
@@ -80,15 +84,18 @@ simulate_or_load <- function(theta, cache_file, label, source_files) {
   }
   keep <- vapply(result, function(x) is.numeric(x) && length(x) == length(age_names) + 1L, logical(1))
   if (!any(keep)) stop("No finite ", label, " predictive draws available")
-  out <- as.data.frame(do.call(rbind, result[keep]))
+  out <- as.data.frame(do.call(rbind, result[keep])); out$n_requested <- nrow(theta)
   write.csv(out, cache_file, row.names = FALSE)
   out
 }
 
-npe <- simulate_or_load(load_draws(npe_file),
-  file.path(dirname(npe_file), "model_prediction_2015_age_draws.csv"), "NPE posterior", npe_file)
-mcmc <- simulate_or_load(load_draws(mcmc_file),
-  file.path(dirname(mcmc_file), "model_prediction_2015_age_draws.csv"), "MCMC posterior", mcmc_file)
+# The cache is fresh only if newer than the draws and every model input and made from the same
+# number of draws (n_requested column), so a different --max-draws never reuses it.
+model_inputs <- c(file.path(root, c("scripts/model/setup.R", "scripts/model/sim.cpp",
+  "data/calibration_targets.json", "scripts/calibration/likelihood.R")), fit_path)
+cache_for <- function(f) file.path(dirname(f), "model_prediction_2015_age_draws.csv")
+npe <- simulate_or_load(load_draws(npe_file), cache_for(npe_file), "NPE posterior", c(npe_file, model_inputs))
+mcmc <- simulate_or_load(load_draws(mcmc_file), cache_for(mcmc_file), "MCMC posterior", c(mcmc_file, model_inputs))
 
 summarise_draws <- function(x, source, prefix) {
   x <- x[as.logical(x$equilibrium_pass), , drop = FALSE]

@@ -65,7 +65,7 @@ check_true(t_out[nrow(t_out), idx(0, 1, 4, 2)] > 0,
 age_data <- short_data; age_data$y0 <- rep(0, 480); age_data$y0[idx(0, 1, 2, 1) - 1L] <- 100
 age_data$y0[idx(0, 1, 2, 3) - 1L] <- 100
 age_params <- e$params
-age_params$q <- 0; age_params$beta <- rep(0, 6); age_params$beta_base <- e$params$beta
+age_params$q <- 0; age_params$beta <- rep(0, 6)
 age_params$p_NC_CC <- 0; age_params$tau <- rep(1, 4); age_params$tau_stratum <- rep(1, 4)
 age_params$tau_min_age <- 2; age_params$tau_max_age <- 3
 age_params$tau_by_stratum <- as.vector(t(outer(age_params$tau_stratum, age_params$tau)))
@@ -94,11 +94,10 @@ check_true(reinf_out[nrow(reinf_out), idx(0, 1, 1, 2)] >
              reinf_base[nrow(reinf_base), idx(0, 1, 1, 2)],
            "recovered people are susceptible to reinfection")
 
-# The post-2015 schedule is active and uses the calibrated beta scale.
+# The post-2015 schedule is active (CNB counts, unscaled).
 scheduled <- e$data; scheduled$t_start <- 150; scheduled$t_end <- 151
 scheduled$y0 <- rep(0, 480); scheduled$y0[idx(0, 1, 0, 2) - 1L] <- 1
-scheduled_params <- e$params; scheduled_params$beta <- rep(2, 6)
-scheduled_params$beta_base <- e$params$beta
+scheduled_params <- e$params; scheduled_params$beta <- rep(0, 6)
 scheduled_out <- run_sim(scheduled_params, scheduled)
 check_true(sum(scheduled_out[nrow(scheduled_out), -1]) > 1,
            "post-2015 scheduled inflow is active")
@@ -169,11 +168,11 @@ cal_out <- run_sim(build_params(rep(0, N_THETA), e$params), cal_data)
 check_true(check_equilibrium(cal_out)$pass,
            "base parameters satisfy the 10-year equilibrium gate")
 
-# The MCMC target is prior + Binomial prevalence (no other terms).
+# The MCMC target is the likelihood.R prior + Beta seroprevalence (no other terms).
 sys.source(file.path(root, "scripts", "calibration", "mcmc.R"), envir = environment())
-lp0 <- log_posterior_exact(rep(0, N_THETA), e$params, cal_data, rep(0, N_THETA), rep(1, N_THETA))$lp
+lp0 <- log_posterior_exact(rep(0, N_THETA), e$params, cal_data)$lp
 s0 <- J_summary_final(cal_out)
-check_equal(lp0, sum(dnorm(rep(0, N_THETA), 0, 1, log = TRUE)) - nll_prev(s0$p_sero),
+check_equal(lp0, -nlp(rep(0, N_THETA)) - nll_prev(s0$p_sero),
             tol = 1e-8, "the MCMC log posterior is prior + prevalence")
 
 n_fail <- test_report("tests/integration/test_sim_and_pipeline.R")
