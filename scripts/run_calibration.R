@@ -41,6 +41,7 @@ for (nm in c("smr_viraemic", "smr_nonviraemic")) {  # sensitivity only: override
 data         <- setup_env$data
 data$t_start <- 0
 data$t_end   <- targets$equilibrium_horizon_years
+data$save_every <- round(1 / data$dt)  # one stored row per model year: callers read only yearly rows (2015 snapshot, T-10)
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "calibrate_nm.R"))
   sys.source(file.path(ROOT, "scripts", "calibration", f), envir = environment())
 

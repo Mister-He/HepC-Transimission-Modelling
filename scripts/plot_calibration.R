@@ -38,7 +38,7 @@ Rcpp::sourceCpp(file.path(root, "scripts/model/sim.cpp"))
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R"))
   sys.source(file.path(root, "scripts/calibration", f), envir = environment())
 fit <- readRDS(fit_path)
-stopifnot(isTRUE(all.equal(fit$base_params, setup_env$params)))  # fit made with the current model
+check_fit_current(fit, setup_env$params, setup_env$data)
 
 age_names <- targets$age_groups
 theta_names <- paste0("theta", 1:N_THETA)
@@ -49,6 +49,7 @@ evaluate_draw <- function(theta) {
     data <- setup_env$data
     data$t_start <- 0
     data$t_end <- targets$equilibrium_horizon_years
+    data$save_every <- round(1 / data$dt)
     out <- run_sim(pm, data)
     eq <- check_equilibrium(out)
     s <- J_summary_final(out)

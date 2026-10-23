@@ -23,7 +23,7 @@ source(file.path(ROOT, "scripts/calibration/equilibrium.R"))
 source(file.path(ROOT, "scripts/calibration/likelihood.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
 fit <- readRDS(FIT)
-stopifnot(isTRUE(all.equal(fit$base_params, setup_env$params)))  # fit made with the current model
+check_fit_current(fit, setup_env$params, setup_env$data)
 # --posterior-files: comma-separated CSVs with columns theta1..theta7; each file is one
 # sampling group. Default: the reference MCMC posterior.
 posterior_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
@@ -39,40 +39,29 @@ draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
   data.frame(seed = k, draw = seq_len(nrow(d)), d)
 }))
 
+# Compartment table (position in the 480-state vector), built once for rate_components().
+comp <- expand.grid(age = 0:5, h = 0:4, k = 1:4, s = 0:3)
+comp$pos <- idx(comp$s, comp$k, comp$h, comp$age) - 1L
+inj <- comp$s %in% c(0, 2)  # D and F inject
+
+# Annual new infections (u, r -> a in D and F) and HCV deaths at a state, as sim.cpp computes them.
 rate_components <- function(state, time, pm) {
-  y <- as.numeric(state); idxs <- function(s, k, h, age) idx(s, k, h, age) - 1L
-  incidence <- 0; fx_incidence <- 0
-  for (age in 0:5) {
-    lambda <- 0
-    for (source_age in 0:5) {
-      infectious <- 0; active <- 0
-      for (s in c(0, 2)) for (k in 1:4) {
-        infectious <- infectious + y[idxs(s, k, 1, source_age)] + y[idxs(s, k, 2, source_age)]
-        active <- active + sum(y[sapply(0:4, function(h) idxs(s, k, h, source_age))])
-      }
-      if (active > 0) lambda <- lambda + pm$C_contact[age + 1, source_age + 1] * infectious / active
-    }
-    m <- pm$m_min + (pm$m_max - pm$m_min) / (1 + exp(-(time - pm$m_t0) / pm$m_tau))
-    gam <- pm$q * m * lambda
-    for (s in c(0, 2)) for (k in 1:4) {
-      event_rate <- gam * (y[idxs(s, k, 0, age)] + y[idxs(s, k, 4, age)])
-      incidence <- incidence + event_rate
-      if (s == 2) fx_incidence <- fx_incidence + event_rate
-    }
-  }
+  y <- as.numeric(state)[comp$pos]
+  active <- tapply(y[inj], comp$age[inj], sum)
+  infectious <- tapply(y[inj & comp$h %in% 1:2], comp$age[inj & comp$h %in% 1:2], sum)
+  share <- ifelse(active > 0, infectious / active, 0)
+  gam <- pm$q * as.vector(pm$C_contact %*% share)  # force of infection by age
+  sus <- inj & comp$h %in% c(0, 4)
+  inc <- gam[comp$age + 1] * y * sus
   # HCV deaths: liver deaths in DC/HCC plus the non-liver excess of viraemic people (a, c, t)
   # over the non-viraemic rate, mu * (smr_viraemic - smr_nonviraemic); cure removes both.
-  mortality <- 0; fx_mortality <- 0
-  for (s in 0:3) for (k in 1:4) for (h in 0:4) for (age in 0:5) {
-    liver <- if (k == 3) pm$mu_DC * ifelse(h %in% c(3, 4), pm$psi_DC, 1) else
-      if (k == 4) pm$mu_HCC * ifelse(h %in% c(3, 4), pm$psi_HCC, 1) else 0
-    disease_rate <- liver + if (h %in% 1:3) pm$mu[age + 1] * (pm$smr_viraemic - pm$smr_nonviraemic) else 0
-    death_rate <- disease_rate * y[idxs(s, k, h, age)]
-    mortality <- mortality + death_rate
-    if (s >= 2) fx_mortality <- fx_mortality + death_rate
-  }
-  c(incidence = incidence, mortality = mortality,
-    fx_incidence = fx_incidence, fx_mortality = fx_mortality)
+  treated <- comp$h %in% c(3, 4)
+  liver <- ifelse(comp$k == 3, pm$mu_DC * ifelse(treated, pm$psi_DC, 1),
+                  ifelse(comp$k == 4, pm$mu_HCC * ifelse(treated, pm$psi_HCC, 1), 0))
+  excess <- ifelse(comp$h %in% 1:3, pm$mu[comp$age + 1] * (pm$smr_viraemic - pm$smr_nonviraemic), 0)
+  deaths <- (liver + excess) * y
+  c(incidence = sum(inc), mortality = sum(deaths),
+    fx_incidence = sum(inc[comp$s == 2]), fx_mortality = sum(deaths[comp$s >= 2]))
 }
 
 
@@ -461,11 +450,13 @@ if (requireNamespace("writexl",quietly=TRUE)) writexl::write_xlsx(
 write.csv(stratum_totals,file.path(OUT,"scenario_stratum_totals.csv"),row.names=FALSE)
 write.csv(item_totals,file.path(OUT,"scenario_item_totals.csv"),row.names=FALSE)
 
-# The ggplot figures below are superseded by scripts/figures.py and overwrite its PNGs, so they
-# are drawn only on request (--figures true).
+# The ggplot figures below are superseded by scripts/figures.py; they are drawn only on request
+# (--figures true), into legacy/.
 if (!identical(arg("--figures", "false"), "true")) {
   cat("Wrote", nrow(scenario_table), "policies to", OUT, "(figures skipped)\n"); quit(save = "no")
 }
+# Legacy ggplot versions go to legacy/, so they never overwrite the figures.py PNGs/SVGs.
+LEGACY <- file.path(OUT, "legacy"); dir.create(LEGACY, showWarnings = FALSE)
 library(ggplot2); library(tidyr); library(patchwork)
 # Reuse the repository's Nature-style conventions: classic theme, 10 pt base,
 # 0.7 pt trajectory lines, viridis policy palette and 300 dpi PNG export.
@@ -568,7 +559,7 @@ p <- ggplot(heat,aes(indicator,scenario_label,fill=status))+
     subtitle="Versus 2015: incidence reduction ≥80%, mortality reduction ≥65%; joint requires both")+
   nature_theme()+theme(axis.text.x=element_text(face="bold"),
     panel.grid=element_blank(),plot.margin=margin(7,20,7,7))
-ggsave(file.path(OUT,"scenario_target_heatmap.png"),p,width=12,height=10,dpi=300)
+ggsave(file.path(LEGACY,"scenario_target_heatmap.png"),p,width=12,height=10,dpi=300)
 
 target_bars <- subset(heat,indicator %in% c("Incidence","Mortality"))
 target_bars$indicator <- droplevels(target_bars$indicator)
@@ -589,7 +580,7 @@ p_bars <- ggplot(target_bars,aes(scenario_label,value,fill=status))+
   nature_theme()+theme(legend.position="bottom",legend.title.position="left")
 p <- (p_traj+p_bars+plot_layout(widths=c(1.1,1.9),guides="collect")) &
   theme(legend.position="bottom")
-ggsave(file.path(OUT,"scenario_target_trajectories.png"),p,width=22,height=10,dpi=300)
+ggsave(file.path(LEGACY,"scenario_target_trajectories.png"),p,width=22,height=10,dpi=300)
 
 # Two-panel budget and course-count figure, with a single F/J/X legend.
 stratum_totals$scenario_label <- policy_label_factor(stratum_totals$scenario_id)
@@ -629,7 +620,7 @@ p_starts <- ggplot(stratum_totals,aes(scenario_label,treatment_starts,fill=strat
        subtitle="Service counts are not discounted")+nature_theme()
 p <- (p_cost+p_starts+plot_layout(guides="collect")) &
   theme(legend.position="bottom",legend.title.position="left")
-ggsave(file.path(OUT,"scenario_cumulative_costs.png"),p,width=16,height=10,dpi=300)
+ggsave(file.path(LEGACY,"scenario_cumulative_costs.png"),p,width=16,height=10,dpi=300)
 
 # Annual F/X figure: column = screening slots, solid = actual starts,
 # dashed = year-start screening-implied treatment capacity. The grid labels
@@ -655,7 +646,7 @@ p <- ggplot(start_long,aes(year,courses,colour=stratum,linetype=measure,
     linetype="Measure",title="Annual F/X starts under screening quotas",
     subtitle="Lines: medians; shaded band: 95% UI of actual starts")+
   nature_theme()+theme(strip.text.y=element_text(angle=0),legend.position="bottom")
-ggsave(file.path(OUT,"scenario_treatment_starts.png"),p,width=18,height=10,dpi=300)
+ggsave(file.path(LEGACY,"scenario_treatment_starts.png"),p,width=18,height=10,dpi=300)
 
 finite$cumulative_starts <- ave(finite$treatment_starts,
   interaction(finite$scenario_id,finite$stratum,drop=TRUE),FUN=cumsum)
@@ -666,7 +657,7 @@ p <- ggplot(finite,aes(year,cumulative_starts,colour=stratum))+geom_line(linewid
   labs(x="Calendar year",y="Cumulative treatment starts (courses)",colour="Stratum",
        title="Cumulative F/X treatment starts, 2026–2030")+
   nature_theme()+theme(strip.text.y=element_text(angle=0))
-ggsave(file.path(OUT,"scenario_cumulative_treatment.png"),p,width=18,height=10,dpi=300)
+ggsave(file.path(LEGACY,"scenario_cumulative_treatment.png"),p,width=18,height=10,dpi=300)
 
 util <- subset(finite,is.finite(treatment_capacity)&treatment_capacity>0)
 p <- ggplot(util,aes(year,treatment_starts/treatment_capacity,colour=stratum))+
@@ -677,7 +668,7 @@ p <- ggplot(util,aes(year,treatment_starts/treatment_capacity,colour=stratum))+
   labs(x="Calendar year",y="Screen-derived treatment quota used",colour="Stratum",
        title="Annual F/X treatment quota utilization")+
   nature_theme()+theme(strip.text.y=element_text(angle=0))
-ggsave(file.path(OUT,"scenario_capacity_utilization.png"),p,width=18,height=10,dpi=300)
+ggsave(file.path(LEGACY,"scenario_capacity_utilization.png"),p,width=18,height=10,dpi=300)
 
 # The cascade is aggregated across F/X; all 15 finite policies are displayed.
 cascade <- aggregate(cbind(actual_screened,rna_tests,rna_positive,chronic_identified,
@@ -697,7 +688,7 @@ p <- ggplot(cascade_long,aes(year,count,colour=service))+geom_line(linewidth=.7)
   labs(x="Calendar year",y="Expected F+X events",colour="Service",
        title="F/X screening-to-treatment cascade, all finite policies")+
   nature_theme()+theme(strip.text.y=element_text(angle=0))
-ggsave(file.path(OUT,"scenario_care_cascade.png"),p,width=18,height=10,dpi=300)
+ggsave(file.path(LEGACY,"scenario_care_cascade.png"),p,width=18,height=10,dpi=300)
 
 # Annual cost chart uses discounted values for all 17 policies.
 annual_items <- pivot_longer(process,cols=c(discounted_cost_antibody_sgd,
@@ -717,7 +708,7 @@ p <- ggplot(annual_items,aes(year,discounted_sgd/1e6,fill=item))+
     title="Annual F/J/X cost components, 2026–2030",
     subtitle="3% annual discount to 2026")+
   nature_theme()
-ggsave(file.path(OUT,"scenario_annual_costs.png"),p,width=18,height=12,dpi=300)
+ggsave(file.path(LEGACY,"scenario_annual_costs.png"),p,width=18,height=12,dpi=300)
 
 # Cost composition uses exactly the endpoint joint PASS status used above.
 # Pie shares normalise the per-item medians; the title shows the median total.
@@ -798,7 +789,7 @@ p <- ggplot(pie_wedges,aes(x,y,fill=item,group=interaction(scenario_id,item)))+
     plot.background=element_rect(fill="white",colour=NA),
     panel.background=element_rect(fill="white",colour=NA),
     legend.background=element_rect(fill="white",colour=NA))
-ggsave(file.path(OUT,"scenario_cost_composition_pies.png"),p,width=20,height=5.8,dpi=300,
+ggsave(file.path(LEGACY,"scenario_cost_composition_pies.png"),p,width=20,height=5.8,dpi=300,
   device=ragg::agg_png,bg="white")
 heat_joint_ids <- as.character(heat$scenario_id[heat$indicator=="Joint" & heat$status=="PASS"])
 stopifnot(setequal(finite_pass_ids,intersect(finite_levels,heat_joint_ids)))

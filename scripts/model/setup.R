@@ -6,7 +6,6 @@
 # =============================================================================
 
 library(Rcpp)
-library(dplyr)
 
 # =============================================================================
 # HELPER: flat compartment index (mirrors C++ idx())
@@ -27,7 +26,7 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   alpha_*   — Pawlotsky (2020 EASL); Xiao et al. (2025)
 #   p_*       — Thein et al. (2008); Alazawi et al. (2010, PMID 20497143);
 #               Rivera-Irigoin et al. (2006, PMID 17209765)
-#   r3_*      — Kanwal et al. (2014); derived (see Section X)
+#   r3_*      — Kanwal et al. (2014)
 #   phi_*     — van Meer (2012); Morgan et al. (2013)
 #   mu_DC/HCC — Lim et al. (2018)
 #   psi_*     — Premkumar (2024); Dang et al. (2020)
@@ -35,8 +34,8 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   lambda2/3 — fitted to SPS data (scripts/model/update_rate_params.R)
 #   c_first   — CALIBRATED first-arrest multiplier (lambda1 = c_first * lambda3)
 #   smr_*     — van Santen et al. (2014)
-#   mu        — CALIBRATED to SingStat life tables (guesses used here)
-#   c_contact — CALIBRATED to HCV prevalence trajectory (guess used here)
+#   mu        — SingStat 2015 resident death rates (fixed)
+#   C_contact — base 6 x 6 matrix; row scales calibrated (theta1-6)
 #   beta      — SingStat/CNB 2015 new drug abusers (fixed, unscaled)
 # =============================================================================
 
@@ -61,11 +60,11 @@ params <- list(
   # alpha_DC_pos = 0.78*0.87 + 0.22*0.92 = 0.8818
   alpha_DC_pos = 0.8818,
 
-  # Stage 3 (DC) without RBV (used in sensitivity)
+  # Stage 3 (DC) without RBV (the costed SOF/VEL regimen used in the scenarios)
   # alpha_DC_neg = 0.78*0.45 + 0.22*0.90 = 0.5490
   alpha_DC_neg = 0.5490,
 
-  # Stage 4 (HCC): assumed equal to DC+ (no dedicated trial data; see Section X)
+  # Stage 4 (HCC): assumed equal to DC+ (no dedicated trial data)
   alpha_HCC    = 0.8818,
 
   # ── Treatment initiation rates (per year, per stage) ──────────────────────
@@ -113,7 +112,6 @@ params <- list(
   #           = 21.88/1000 (deaths 60+ / population 60+); the earlier value
   #           (mean of 60-64 and 65-69 only, 8.45/1000) understated the
   #           open-ended group by excluding ages 70+.
-  # See docs/calibration/mortality_review.md.
   # Age groups (example boundaries): <20, 20-29, 30-39, 40-49, 50-59, 60+
   mu = c(0.0002000000, 0.0002500000, 0.0004500000, 0.0012000000, 0.0033500000, 0.0218818000),
 
@@ -126,17 +124,7 @@ params <- list(
   smr_viraemic = 9.52,
   smr_nonviraemic = 4.73,
 
-  # ── Transmission multiplier: CONSTANT (fixed, not fitted) ────────────────
-  # This revision does NOT fit m_min/m_max. Transmission is constant over
-  # time: m(t) = 1 for all t (m_min = m_max = 1, m_t0/m_tau inert). The
-  # historical transmission level is absorbed by the fitted contact-matrix
-  # row scales (see AGENTS.md / prompt.md "No m_min/m_max fitting"). The
-  # code path is retained for compatibility with sim.cpp (which reads these
-  # fields), but the calibration parameterisation no longer includes them.
-  m_min = 1,
-  m_max = 1,
-  m_t0  = 25,
-  m_tau = 3,
+  # Transmission is constant over time; its level is set by the calibrated contact scales.
 
   # ── Disease-specific excess mortality ──────────────────────────────────────
   mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
@@ -156,7 +144,7 @@ params <- list(
   pi_recid = 0.724,          # share of released who return to injecting (SPS fit)
 
   # ── Needle-sharing contact rate ────────────────────────────────────────────
-  # CALIBRATED: scalar homogeneous mixing — replace with 10×10 matrix post-calib.
+  # Base 6 x 6 contact matrix; build_params() multiplies row i by exp(theta_i).
   C_contact = matrix(c(
     1.23, 1.01, 0.2, 0.15, 0, 0,
     23.53, 101.22, 95.84, 21, 1.64/2, 1.64/2,
@@ -183,11 +171,9 @@ params <- list(
 
 # =============================================================================
 # INITIAL CONDITIONS
-# 480 compartments initialised to near-zero (4 strata x 4 stages x 5 HCV
-# states x 6 ages).
-# A small seed of acute infection is placed in D_a,1,i (never-incarcerated,
-# non-cirrhosis, acute, all age groups) to start the epidemic.
-# CALIBRATED: replace with equilibrium-derived or SPS/CNB baseline estimates.
+# 480 compartments (4 strata x 4 stages x 5 HCV states x 6 ages). This is only the seed of
+# the 150-year burn-in: susceptibles and an acute seed in D_u,1,i and D_a,1,i (never
+# imprisoned, no cirrhosis); the 2015 state is the equilibrium the burn-in reaches.
 # =============================================================================
 y0 <- rep(0.0, 480)
 

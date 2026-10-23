@@ -262,7 +262,7 @@ if want("scenario_target_trajectories"):
         top.legend(handles=h1, title="Annual F/X screening", loc="outside lower left", ncols=4, fontsize=7)
         top.legend(handles=h2, title="F allocation", loc="outside lower right", ncols=3, fontsize=7)
         for ax, (k, name, thr) in zip(ba, [("incidence", "Incidence", .8), ("mortality", "Mortality", .65)]):
-            m = S[f"{k}_reduction"]; ok = S[f"who_{k}_pass"].astype(bool)
+            m = S[f"{k}_reduction"]; ok = S[f"who_{k}_pass"].fillna(False).astype(bool)  # missing = not met
             y = np.array([pos[s] for s in S.index])
             ax.barh(y, m, color=[STATUS[v] for v in ok], height=0.7, edgecolor="0.2", lw=0.3)
             ax.errorbar(m, y, xerr=[m - S[f"{k}_reduction_lo"], S[f"{k}_reduction_hi"] - m], fmt="none",
@@ -285,7 +285,7 @@ if want("scenario_target_heatmap"):
                 ("Mortality", "mortality_reduction", "who_mortality_pass"), ("Joint", None, "who_joint_pass")]
         for j, (name, v, p) in enumerate(cols):
             for sid, r in S.iterrows():
-                ok = bool(r[p]); y = pos[sid]
+                ok = bool(r[p]) if pd.notna(r[p]) else False; y = pos[sid]  # missing = not met
                 ax.add_patch(plt.Rectangle((j, y - .5), 1, 1, fc=matplotlib.colors.to_rgba(STATUS[ok], .3),
                                            ec="white", lw=1.5))
                 txt = ("PASS" if ok else "FAIL") if v is None else f"{100 * r[v]:.1f}%  {'pass' if ok else 'fail'}"

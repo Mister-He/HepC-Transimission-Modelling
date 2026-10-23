@@ -79,7 +79,7 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
   if (status != "ok") return(list(status = status, evals = evals, ode = ode, warmup = warm))
   if (is.null(L_adapt)) L_adapt <- L_init  # frozen from here on
 
-  cap <- max(1000L, max_evals - evals) * 4L
+  cap <- max_evals - evals  # each retained iteration costs exactly one evaluation
   keep <- matrix(NA_real_, cap, d); info <- matrix(NA_real_, cap, 6)
   colnames(info) <- c("lp", "accepted", "evals", "ode", "elapsed_sec", "jump")
   n <- 0L
@@ -89,9 +89,6 @@ arwm_budget <- function(logpost, draw_prior, Sigma_init, reg, n_warmup = 4999L,
     lp_prop <- ev(prop); acc <- 0
     if (is.finite(lp_prop) && log(runif(1)) < lp_prop - lp) { theta <- prop; lp <- lp_prop; acc <- 1 }
     n <- n + 1L
-    if (n > nrow(keep)) {
-      keep <- rbind(keep, matrix(NA_real_, cap, d)); info <- rbind(info, matrix(NA_real_, cap, 6))
-    }
     keep[n, ] <- theta; info[n, ] <- c(lp, acc, evals, ode, elapsed(), sqrt(sum(step^2)))
   }
   list(status = status, samples = keep[seq_len(n), , drop = FALSE],

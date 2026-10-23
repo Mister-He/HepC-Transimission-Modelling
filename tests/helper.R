@@ -46,14 +46,3 @@ test_report <- function(file = "tests") {
   .__TEST__$failures <- 0L
   fails
 }
-
-# Locate the repository root from the currently executing test file.
-test_root <- function() {
-  args0 <- commandArgs(FALSE)
-  file_arg <- sub("^--file=", "", args0[grepl("^--file=", args0)])
-  if (length(file_arg) && nzchar(file_arg) && file.exists(file_arg)) {
-    normalizePath(file.path(dirname(normalizePath(file_arg)), "..", ".."))
-  } else {
-    normalizePath(getwd())
-  }
-}

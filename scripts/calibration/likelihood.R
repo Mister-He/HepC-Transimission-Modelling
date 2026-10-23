@@ -64,3 +64,15 @@ make_objective <- function(base_params, data, equilibrium_penalty = TRUE) {
     value
   }
 }
+
+# Stop if a stored Nelder-Mead fit no longer matches the current model: the parameters must equal
+# setup.R's and re-simulating the best fit must reproduce its stored seroprevalence, which catches
+# changes to sim.cpp as well as to setup.R.
+check_fit_current <- function(fit, base_params, data) {
+  stopifnot("fit made with different setup.R parameters" = isTRUE(all.equal(fit$base_params, base_params)))
+  d <- data; d$t_start <- 0; d$t_end <- targets$equilibrium_horizon_years; d$save_every <- round(1 / d$dt)
+  p <- J_summary_final(run_sim(build_params(fit$best$theta, base_params), d))$p_sero
+  stopifnot("fit made with a different model (sim.cpp)" =
+              isTRUE(all.equal(p, fit$predictions$seroprevalence_hat, tolerance = 1e-8)))
+  invisible(TRUE)
+}

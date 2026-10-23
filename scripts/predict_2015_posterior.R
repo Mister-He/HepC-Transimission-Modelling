@@ -30,7 +30,7 @@ Rcpp::sourceCpp(file.path(ROOT, "scripts/model/sim.cpp"))
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R"))
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
-stopifnot(isTRUE(all.equal(fit$base_params, setup_env$params)))  # fit made with the current model
+check_fit_current(fit, setup_env$params, setup_env$data)
 
 sample_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
 sample_files <- ifelse(grepl("^/", sample_files), sample_files, file.path(ROOT, sample_files))
@@ -53,7 +53,7 @@ one_prediction <- function(theta) {
   tryCatch({
     pm <- build_params(theta, fit$base_params)
     data <- setup_env$data; data$t_start <- 0
-    data$t_end <- MODEL_YEAR
+    data$t_end <- MODEL_YEAR; data$save_every <- round(1 / data$dt)
     out <- run_sim(pm, data)
     eq_out <- out[out[, 1] <= targets$equilibrium_horizon_years + 1e-8, , drop = FALSE]
     eq <- check_equilibrium(eq_out)
@@ -98,7 +98,7 @@ summary$n_equilibrium_pass <- n_equilibrium
 summary$posterior_sources <- paste(basename(dirname(sample_files)), collapse = "+")
 
 data_best <- setup_env$data; data_best$t_start <- 0
-data_best$t_end <- MODEL_YEAR
+data_best$t_end <- MODEL_YEAR; data_best$save_every <- round(1 / data_best$dt)
 best_out <- run_sim(build_params(fit$best$theta, fit$base_params), data_best)
 best_state <- best_out[which.min(abs(best_out[, 1] - MODEL_YEAR)), -1]
 best_total <- vapply(population_idx, function(ii) sum(best_state[ii]), numeric(1))
@@ -126,7 +126,7 @@ writeLines(c(
   "| Group | Total population | Active HCV cases |", "|---|---:|---:|",
   apply(pretty, 1, function(z) paste0("| ", z[1], " | ", z[2], " | ", z[3], " |")), "",
   paste0("Finite posterior draws: ", nrow(all_mat), " / ", nrow(draws), "; equilibrium-pass draws used: ", n_equilibrium, "."),
-  paste0("Posterior sources: ", paste(names(sample_files), collapse = "+"), ".")
+  paste0("Posterior sources: ", paste(basename(dirname(sample_files)), collapse = "+"), ".")
 ), file.path(OUT, paste0("model_prediction_", FILE_TAG, "_strata.md")))
 
 png(file.path(OUT, paste0("model_prediction_", FILE_TAG, "_strata.png")), width = 2000, height = 1300, res = 180)

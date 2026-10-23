@@ -1,6 +1,6 @@
 # =============================================================================
 # tests/integration/test_sim_and_pipeline.R — integration tests for the 480-compartment simulator
-# (compilation, flows, reinfection, treatment, inflow) and calibration wiring.
+# (compilation, flows, reinfection, treatment, entry, thinning) and calibration wiring.
 # =============================================================================
 
 args0 <- commandArgs(FALSE)
@@ -94,6 +94,11 @@ check_true(reinf_out[nrow(reinf_out), idx(0, 1, 1, 2)] >
              reinf_base[nrow(reinf_base), idx(0, 1, 1, 2)],
            "recovered people are susceptible to reinfection")
 
+# save_every stores every k-th step plus the last one, with the same values as the full output.
+thin_data <- short_data; thin_data$t_end <- 1
+full <- run_sim(e$params, thin_data); thin_data$save_every <- 100L; thin <- run_sim(e$params, thin_data)
+check_equal(thin, full[c(1, seq(101, nrow(full), 100), nrow(full)), ], tol = 0, "save_every keeps every k-th row and the last row unchanged")
+
 # Entry is beta in every year: one year of entry adds the same people in 2016 (t 150) and 2025
 # (t 159), and nothing else enters.
 entry_data <- e$data; entry_data$y0 <- rep(0, 480)
@@ -163,6 +168,17 @@ lp0 <- log_posterior_exact(rep(0, N_THETA), e$params, cal_data)$lp
 s0 <- J_summary_final(cal_out)
 check_equal(lp0, -nlp(rep(0, N_THETA)) - nll_prev(s0$p_sero),
             tol = 1e-8, "the MCMC log posterior is prior + prevalence")
+
+# The stored fit matches the current model, and a model change is detected.
+fit_path <- file.path(root, "output/calibration/r_20261021_agepop/fit.rds")
+if (file.exists(fit_path)) {
+  fit <- readRDS(fit_path)
+  check_true(isTRUE(check_fit_current(fit, e$params, e$data)), "stored fit matches setup.R and sim.cpp")
+  changed <- e$params; changed$q <- changed$q * 1.01
+  check_error(check_fit_current(fit, changed, e$data), "a changed model parameter is detected")
+  fit_sim <- fit; fit_sim$base_params <- changed  # same parameters as the 'model', different simulation
+  check_error(check_fit_current(fit_sim, changed, e$data), "a changed simulation result is detected")
+} else cat("SKIP: no stored fit\n")
 
 n_fail <- test_report("tests/integration/test_sim_and_pipeline.R")
 if (n_fail > 0) quit(status = 1)

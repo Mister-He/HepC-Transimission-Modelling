@@ -25,6 +25,7 @@ ann = rd("output/scenarios_2026/scenario_annual_services_costs.csv")
 treat = rd("output/scenarios_2026/scenario_treatment_summary.csv")
 cost_ev = rd("output/scenarios_2026/cost_evidence.csv")
 F = float
+WORDS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen'.split()  # small counts in prose
 
 def ui(m, lo, hi, scale=1, d=1, pre="", suf=""):
     f = lambda v: f"{pre}{F(v)*scale:,.{d}f}{suf}"
@@ -65,7 +66,6 @@ def scen_phrase(ids):  # "5,000 or 8,000 tests a year with 25% or 50% to F" styl
     caps = sorted({int(F(summ[k]["screening_total"])) for k in ids}); shares = sorted({round(100 * F(summ[k]["f_share"])) for k in ids})
     assert len(ids) == len(caps) * len(shares), "passing scenarios are not a full grid: revise the phrase"
     return f"{' or '.join(f'{c:,}' for c in caps)} tests a year with {' or '.join(f'{x}%' for x in shares)} to F"
-def jprob(sid): return f"{100*F(summ[sid]['joint_pass_probability']):.0f}%"
 assert summ["SInf"]["who_mortality_pass"] == "TRUE" and j_inc - j_mort > 20, "results changed: revise the narrative"
 strata = {r["measure"]: r for r in rd("output/calibration/mcmc_reference/model_prediction_2015_strata.csv")}
 def mprob(sid): return f"{100*F(summ[sid]['who_mortality_pass_prob']):.0f}%"
@@ -89,8 +89,9 @@ npe_l = acc_sum["npe_lhs"]
 npe_w = F(npe_l["mean_width95_ratio"])
 npe_pol_med = max(F(r["error"]) for r in pol_cmp if r["run"] == "npe_lhs" and r["error_unit"] == "relative"
                   and "cost" not in r["outcome"])
-npe_sup = [int(l.split()[1]) for l in open(os.path.join(ROOT, CMP, "npe_support.txt"))]
-npe_jp = max(F(r["error"]) for r in pol_cmp if r["error_unit"] != "relative")
+npe_sup = dict(l.split() for l in open(os.path.join(ROOT, CMP, "npe_support.txt")))
+npe_sup = [int(npe_sup["npe_draws_checked"]), int(npe_sup["npe_draws_equilibrium_pass"])]
+npe_jp = F(next(r for r in pol_cmp if r["scenario"] == "S5000_F25" and r["outcome"] == "joint_pass_probability")["error"])
 npe_ss = json.load(open(os.path.join(ROOT, "output/calibration/npe_lhs/simulation_summary.json")))
 npe_cfg = json.load(open(os.path.join(ROOT, "output/calibration/npe_lhs/npe_config.json")))
 npe_sbc = [r for r in rd("output/calibration/npe_lhs/sbc_summary.csv")]
@@ -129,6 +130,7 @@ j_model_2015 = F(strata["population_J"]["median"])
 assert j_model_2015 > J_OBS_2015, "modelled prison population is no longer larger than observed"
 assert (SMR_V, SMR_NV) == (9.52, 4.73), "SMRs changed: update the confidence intervals in the text"
 SCEN_SEED = re.search(r"sampling seed (\d+)", open(os.path.join(S, "calibration_source.txt")).read()).group(1)
+assert len({r["n_valid"] for r in pol_cmp}) == 1, "policy comparison rows use different NPE states"
 pol_n = f"{int(F(pol_cmp[0]['n_valid'])):,} valid neural posterior states (of {int(F(pol_cmp[0]['n_requested'])):,})"
 def inc_per_pp(sid):
     d = (F(summ[sid]["mortality_reduction"]) - F(j["mortality_reduction"])) * 100
@@ -167,11 +169,11 @@ Hepatitis C virus (HCV) infection in Singapore is concentrated among people who 
 
 ## Methods and findings
 
-We built an age structured HCV model with four groups: active PWID never imprisoned (D), people in prison (J), and released people who still inject (F) or have stopped (X). We calibrated it to age specific HCV seroprevalence in prison in 2015 with Bayesian methods. Entry into injecting was held at the official 2015 counts of new drug users in every year, and the first arrest rate was a calibrated multiple of the re-arrest rate. We assumed treatment in prison from 2019. From 2026 we compared 15 community screening scenarios of 600 to 8,000 tests a year, with 25%, 50% or 75% for F and the rest for X. Results are medians with 95% uncertainty intervals (UI) across {ndraw:,} posterior draws. Without treatment, new infections in 2030 were {pct(nt30, 'incidence_ratio_2015')} of the 2015 level. With prison treatment alone, new infections fell by {red('J_only', 'incidence_reduction')} by 2030, meeting the incidence target in {iprob('J_only')} of draws, but HCV deaths fell by only {red('J_only', 'mortality_reduction')}. In 2026, {100*xshare:.0f}% of chronic infections among released people were in X, and {100*fx_death_share_2026:.0f}% of HCV deaths occurred in F and X. Every screening scenario met the incidence target. The mortality target was met at the median only at {scen_phrase(mort_finite)}. Three of these met both targets in at least {math.floor(min(100*F(summ[k]['joint_pass_probability']) for k in mort_finite if k != 'S5000_F50'))}% of draws; 5,000 tests a year with 50% to F did so in only {jprob('S5000_F50')}. At every capacity, giving more tests to X gave larger falls in deaths. The model covers only PWID, assumes ideal linkage to treatment and was not fitted to the size of the prison population.
+We built an age structured HCV model with four groups: active PWID never imprisoned (D), people in prison (J), and released people who still inject (F) or have stopped (X). We calibrated it to age specific HCV seroprevalence in prison in 2015 with Bayesian methods. Entry into injecting was held at the official 2015 counts of new drug users in every year, and the first arrest rate was a calibrated multiple of the re-arrest rate. We assumed treatment in prison from 2019. From 2026 we compared 15 community screening scenarios of 600 to 8,000 tests a year, with 25%, 50% or 75% for F and the rest for X. Results are medians with 95% uncertainty intervals (UI) across {ndraw:,} posterior draws. Without treatment, new infections in 2030 were {pct(nt30, 'incidence_ratio_2015')} of the 2015 level. With prison treatment alone, new infections fell by {red('J_only', 'incidence_reduction')} by 2030, meeting the incidence target in {iprob('J_only')} of draws, but HCV deaths fell by only {red('J_only', 'mortality_reduction')}. In 2026, {100*xshare:.0f}% of chronic infections among released people were in X, and {100*fx_death_share_2026:.0f}% of HCV deaths occurred in F and X. Every screening scenario met the incidence target. The mortality target was met at the median only at {scen_phrase(mort_finite)}. Three of these met both targets in at least {math.floor(min(100*F(summ[k]['joint_pass_probability']) for k in mort_finite if k != 'S5000_F50'))}% of draws; 5,000 tests a year with 50% to F did so in only {prob('S5000_F50')}. At every capacity, giving more tests to X gave larger falls in deaths. The model covers only PWID, assumes ideal linkage to treatment and was not fitted to the size of the prison population.
 
 ## Conclusions
 
-In this model, prison treatment alone cuts new HCV infections by more than four fifths by 2030 but cuts HCV deaths by only about half. Most remaining deaths occur among released people, and most chronic infection after release is in people who no longer inject. Community screening of about 5,000 tests a year or more, with most tests for released people who have stopped injecting, met both targets. That is eight times the planned capacity of the current programme.
+In this model, prison treatment alone cuts new HCV infections by more than four fifths by 2030 but cuts HCV deaths by only about half. Most remaining deaths occur among released people, and most chronic infection after release is in people who no longer inject. Community screening of about 5,000 tests a year or more, with most tests for released people who have stopped injecting, met both targets. That is {WORDS[round(5000/600)]} times the planned capacity of the current programme.
 
 # Author summary
 
@@ -190,7 +192,7 @@ In this model, prison treatment alone cuts new HCV infections by more than four 
 ## What do these findings mean?
 
 - Prison treatment works well against transmission. Deaths come from liver disease that built up over decades and fall more slowly.
-- Reaching the mortality target needs community screening about eight times larger than current plans, aimed mainly at people who have stopped injecting.
+- Reaching the mortality target needs community screening about {WORDS[round(5000/600)]} times larger than current plans, aimed mainly at people who have stopped injecting.
 - These results come from a model with ideal links from testing to treatment, calibrated only to seroprevalence. Real programmes will need data on uptake, referral and cost before they set targets.
 
 # Introduction
@@ -219,7 +221,7 @@ Transmission occurs only among active injectors in D and F. People in J and X ar
 
 We fitted the model to 2015 HCV seroprevalence among people in prison in six age groups, from the Singapore Prison Service. Seroprevalence was the only target; the size of the prison population was not fitted. Each observed seroprevalence had a beta likelihood centred on the model value with a fixed precision of {TG['beta_precision']}, so no sample sizes were used. We estimated seven parameters. Six scaled the contact rates by age. The seventh, $c$, multiplied the re-arrest rate to give the first arrest rate, and was bounded below at 0.5. Entry into injecting was the official 2015 number of new drug users by age, without scaling [@singstat_drug]. Each model run started in model year 0 and ran for 150 years to reach equilibrium with these entry counts. The end of that period represents 2015. Entry was held at the 2015 counts from 2016 to 2030, so the projections show the effect of treatment and screening, not of changes in drug use.
 
-The prior did not depend on the data. Each log contact scale had a normal prior with mean 0 and standard deviation 1.5. The log of $c$ had a normal prior with mean 0 and standard deviation 0.5, centred on equal first and re-arrest rates and truncated at the bounds. A multi start Nelder Mead search found the posterior mode. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran {['one', 'two', 'three', 'four', 'five', 'six'][ref_cfg['n_chains'] - 1]} chains from independent prior draws, with {ref_cfg['max_evals_per_chain']:,} model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. S1 Text, Section 2 gives details.
+The prior did not depend on the data. Each log contact scale had a normal prior with mean 0 and standard deviation 1.5. The log of $c$ had a normal prior with mean 0 and standard deviation 0.5, centred on equal first and re-arrest rates and truncated at the bounds. A multi start Nelder Mead search found the posterior mode. Parameter sets that did not reach equilibrium were excluded. We sampled the posterior with an adaptive random walk Metropolis algorithm [@haario2001]. We ran {WORDS[ref_cfg['n_chains']]} chains from independent prior draws, with {ref_cfg['max_evals_per_chain']:,} model runs each. All parameters reached rank normalised R-hat below 1.01 [@vehtari2021]. We also trained single round neural posterior estimation [@greenberg2019; @sbi2020] on {npe_ss['n_attempted']:,} prior simulations drawn by Latin hypercube sampling and compared it with MCMC. S1 Text, Section 2 gives details.
 
 ## Treatment and screening scenarios
 
@@ -257,7 +259,7 @@ The reason lies in where infection and disease sit after release. In 2026, F hel
 
 Adding community screening increased both reductions (Table 1). Every scenario met the incidence target at the median, including 600 tests a year ({red('S600_F25', 'incidence_reduction')} with 25% to F; target met in {iprob('S600_F25')} of draws). Screening everyone eligible in F and X every year gave {red('SInf', 'incidence_reduction')}. In that ideal reference, {100*d_inc_share:.0f}% of the remaining new infections in 2030 occurred in D, among people who inject but have never been imprisoned.
 
-The mortality target was met at the median in {n_mort} of 15 scenarios: {scen_phrase(mort_finite)}. Three of them met both targets in at least 95% of draws: 5,000 tests a year with 25% to F ({jprob('S5000_F25')}), 8,000 with 25% ({jprob('S8000_F25')}) and 8,000 with 50% ({jprob('S8000_F50')}). At 5,000 tests a year with 50% to F the median reduction was {red('S5000_F50', 'mortality_reduction')}, just above the target, and both targets were met in only {jprob('S5000_F50')} of draws. With 75% to F the target was missed at both capacities ({med('S5000_F75','mortality_reduction')}% and {med('S8000_F75','mortality_reduction')}%). Screening everyone eligible in F and X every year reduced mortality by {red('SInf', 'mortality_reduction')}. At 600 tests a year, the planned size of the current community programme, the mortality reduction was at most {max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S600_F75'])*100:.1f}%, a gain of under 5 percentage points over prison treatment alone.
+The mortality target was met at the median in {n_mort} of 15 scenarios: {scen_phrase(mort_finite)}. Three of them met both targets in at least 95% of draws: 5,000 tests a year with 25% to F ({prob('S5000_F25')}), 8,000 with 25% ({prob('S8000_F25')}) and 8,000 with 50% ({prob('S8000_F50')}). At 5,000 tests a year with 50% to F the median reduction was {red('S5000_F50', 'mortality_reduction')}, just above the target, and both targets were met in only {prob('S5000_F50')} of draws. With 75% to F the target was missed at both capacities ({med('S5000_F75','mortality_reduction')}% and {med('S8000_F75','mortality_reduction')}%). Screening everyone eligible in F and X every year reduced mortality by {red('SInf', 'mortality_reduction')}. At 600 tests a year, the planned size of the current community programme, the mortality reduction was at most {max(F(summ[k]['mortality_reduction']) for k in ['S600_F25','S600_F50','S600_F75'])*100:.1f}%, a gain of under 5 percentage points over prison treatment alone.
 
 ## How screening is split between F and X matters
 
@@ -347,6 +349,12 @@ for r in ref_cs:
     r["acceptance"] = r.get("acceptance") or r.get("acceptance_forward_budget")
 inflow = rd("data/singstat_new_drug_abusers.csv")
 cfg = json.load(open(os.path.join(ROOT, "data/scenario_policy_config.json")))
+# Values the prose states in words; stop if the inputs behind them change.
+assert (cfg["j_annual_start_probability"], cfg["fx_annual_start_probability"]) == (0.99995, 0.99), "start probabilities changed"
+assert (cfg["sof_vel_usd_per_week"], cfg["sof_vel_weeks"], cfg["usd_to_sgd"]) == (2577, 12, 1.3066), "drug price inputs changed"
+assert abs(F(next(c for c in cost_ev if "SOF" in c["item"])["base_cost_sgd"]) - 2577 * 12 * 1.3066) < 0.01, "cost_evidence.csv drug price differs from the config"
+dv = dict(l.split() for l in open(os.path.join(S, "draw_validity.txt")))
+assert dv["draws_valid"] == dv["draws_requested"], "not every scenario draw passed equilibrium: revise 'All draws passed'"
 
 
 def quant(xs, p):
@@ -366,7 +374,7 @@ for i in range(7):
 prior_dom = [f"θ{i+1}" for i in range(7) if sd_ratio[i] > 0.7]
 assert "θ7" in prior_dom, "c is no longer prior dominated: revise the narrative"
 pd_txt = ", ".join(prior_dom[:-1]) + " and " + prior_dom[-1] if len(prior_dom) > 1 else prior_dom[0]
-diag_rows = [f"| θ{i+1} | {F(d['rhat']):.4f} | {F(d['ess_bulk']):,.0f} | {F(d['ess_tail']):,.0f} | {F(d['mcse_mean'])/F(d['sd']):.3f} |" for i, d in enumerate(ref_diag)]
+diag_rows = [f"| θ{d['parameter'][5:]} | {F(d['rhat']):.4f} | {F(d['ess_bulk']):,.0f} | {F(d['ess_tail']):,.0f} | {F(d['mcse_mean'])/F(d['sd']):.3f} |" for d in ref_diag]
 def bench_row(k):
     a = acc_sum[k]
     pc = [r for r in pol_cmp if r["run"] == k and r["error_unit"] == "relative"]
@@ -379,7 +387,7 @@ bench_rows = [bench_row("npe_lhs")]
 n_ovl = sum(o["MCMC_overlap"] == "TRUE" for o in ovl)
 miss_txt = "" if n_ovl == 6 else " (not: " + ", ".join(o["age_group"] for o in ovl if o["MCMC_overlap"] != "TRUE") + ")"
 cal_rows = [f"| {c['age_group']} | {100*F(c['seroprevalence_target']):.1f}% ({100*F(o['target_lower']):.1f}% to {100*F(o['target_upper']):.1f}%) | "
-            f"{100*F(c['seroprevalence_hat']):.1f}% | {100*F(o['MCMC_lower']):.1f}% to {100*F(o['MCMC_upper']):.1f}% |" for c, o in zip(calib, ovl)]
+            f"{100*F(c['seroprevalence_hat']):.1f}% | {100*F(o['MCMC_lower']):.1f}% to {100*F(o['MCMC_upper']):.1f}% |" for c in calib for o in [next(x for x in ovl if x["age_group"] == c["age_group"])]]
 ages = ["<20", "20-29", "30-39", "40-49", "50-59", "60+"]
 years = ["2015"]
 inflow_rows = [f"| {y} | " + " | ".join(next(r["new_drug_abusers"] for r in inflow if r["year"] == y and r["age_group"] == a) for a in ages) + " |" for y in years]
@@ -519,7 +527,7 @@ With the standardised mortality ratios at the bounds of their 95% confidence int
 
 ## 2.4 Posterior sampling
 
-The posterior combined the prior and the beta likelihood for the six seroprevalences. Parameter sets outside the bounds or whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. Four chains started from independent prior draws. The initial proposal covariance was {ref_cfg['init_scale']**2:g} times the prior variance. Adaptation began after {ref_cfg['adapt_start']:,} proposals, was refreshed every {ref_cfg['adapt_every']} proposals and was frozen after warmup. A {100*ref_cfg['safety_p']:.0f}% share of proposals always used the initial covariance. Each chain ran {ref_cfg['max_evals_per_chain']:,} model evaluations, of which {ref_cfg['n_warmup']:,} were warmup, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained iterations. Every {ref_cfg['thin_storage']}th iteration was stored ({len(ref_draws):,} draws), and diagnostics used all retained iterations. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
+The posterior combined the prior and the beta likelihood for the six seroprevalences. Parameter sets outside the bounds or whose simulation failed the equilibrium check had zero posterior density. We sampled it with adaptive random walk Metropolis [@haario2001]. {WORDS[ref_cfg['n_chains']].capitalize()} chains started from independent prior draws. The initial proposal covariance was {ref_cfg['init_scale']**2:g} times the prior variance. Adaptation began after {ref_cfg['adapt_start']:,} proposals, was refreshed every {ref_cfg['adapt_every']} proposals and was frozen after warmup. A {100*ref_cfg['safety_p']:.0f}% share of proposals always used the initial covariance. Each chain ran {ref_cfg['max_evals_per_chain']:,} model evaluations, of which {ref_cfg['n_warmup']:,} were warmup, giving {sum(int(F(r['retained_total'])) for r in ref_cs):,} retained iterations. Every {ref_cfg['thin_storage']}th iteration was stored ({len(ref_draws):,} draws), and diagnostics used all retained iterations. Acceptance was {min(F(r['acceptance']) for r in ref_cs):.2f} to {max(F(r['acceptance']) for r in ref_cs):.2f}. All parameters met the convergence checks (Table S3) [@vehtari2021].
 
 **Table S3. Convergence diagnostics of the MCMC posterior.**
 
@@ -651,7 +659,7 @@ Table S11 scales all unit costs by 0.5, 1 and 1.5. Epidemiological results do no
 
 We sampled {ndraw:,} parameter sets at random without replacement from the {len(ref_draws):,} MCMC posterior draws, using sampling seed {SCEN_SEED}. For each set we ran the full pipeline. This included the 150 year equilibrium, the equilibrium check, the shared history from 2016 to 2025, the no treatment counterfactual and all 17 scenarios to 2030. All {ndraw:,} draws passed the equilibrium check. Derived quantities such as reductions, costs and incremental costs were computed within each draw before summarising. We report the median and the 2.5th and 97.5th percentiles. A scenario met a target if its median reduction met the threshold. We also report the share of draws meeting both targets.
 
-The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCMC ran in R. Neural posterior estimation used Python, PyTorch and sbi [@sbi2020]. The MCMC posterior took about {F(ref_cfg['method_sec'])/3600:.1f} hours on four processor cores. The scenario analysis of {ndraw:,} draws took about one hour on four cores. The project test suite passed.
+The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCMC ran in R. Neural posterior estimation used Python, PyTorch and sbi [@sbi2020]. The MCMC posterior took about {F(ref_cfg['method_sec'])/3600:.1f} hours on {WORDS[ref_cfg['cores']]} processor cores. The project test suite passed.
 
 # 6. Further limitations
 
@@ -680,7 +688,7 @@ The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCM
 | 5 | Study population | Methods, Model structure |
 | 6 | Setting and location | Introduction, Methods |
 | 7 | Comparators | Methods, Treatment and screening scenarios |
-| 8 | Perspective | Methods, Outcomes (health service service costs only) |
+| 8 | Perspective | Methods, Outcomes (health service costs only) |
 | 9 | Time horizon | Methods, Outcomes (2026 to 2030) |
 | 10 | Discount rate | Methods, Outcomes; S1 Text 3.4 |
 | 11 | Selection of outcomes | Methods, Outcomes |
@@ -704,7 +712,6 @@ The model was solved in C++ through Rcpp [@rcpp2011] with a daily time step. MCM
 
 # References
 """
-si = si.replace("health service service costs", "health service costs")
 DOCS = os.path.join(ROOT, "docs")
 for name, text, out in (("main.md", main, "main.docx"), ("supplementary.md", si, "Supplementary Information.docx")):
     text = text.replace("OUTPUT_DIR/", os.path.join(ROOT, "output") + "/").replace("FIGURES_DIR/", os.path.join(ROOT, "figures") + "/")

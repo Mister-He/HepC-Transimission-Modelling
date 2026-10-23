@@ -34,6 +34,7 @@ Rcpp::sourceCpp("scripts/model/sim.cpp")
 targets <- jsonlite::fromJSON("data/calibration_targets.json")
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R")) sys.source(file.path("scripts/calibration", f), envir = environment())
 eq_data <- setup_env$data; eq_data$t_start <- 0; eq_data$t_end <- targets$equilibrium_horizon_years
+eq_data$save_every <- round(1 / eq_data$dt)
 set.seed(20261015); npe_try <- npe_all[sample.int(nrow(npe_all), min(4000, nrow(npe_all))), ]
 npe_ok <- unlist(parallel::mclapply(seq_len(nrow(npe_try)), function(i) within_bounds(npe_try[i, ]) &&
   isTRUE(tryCatch(check_equilibrium(run_sim(build_params(npe_try[i, ], setup_env$params), eq_data))$pass,

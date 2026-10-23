@@ -50,11 +50,12 @@ for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "mcmc.R", "prior
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
 base_params <- setup_env$params
-stopifnot(isTRUE(all.equal(fit$base_params, base_params)))  # fit made with the current model
+check_fit_current(fit, base_params, data)
 data <- setup_env$data
 data$t_start <- 0
 data$t_end <- targets$equilibrium_horizon_years
 data$dt <- DT
+data$save_every <- round(1 / data$dt)  # one stored row per model year: callers read only yearly rows (2015 snapshot, T-10)
 startup_sec <- proc.time()[["elapsed"]] - T_SCRIPT0
 TH <- paste0("theta", 1:N_THETA)
 

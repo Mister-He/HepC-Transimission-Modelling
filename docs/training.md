@@ -172,7 +172,8 @@ Rscript scripts/scenarios_2026.R --root . --draws-per-seed 2000 --cores 4 --samp
   analysis is run per draw, then summarised as the median and 95% UI.
 - **Options:**
   - `--posterior-files` accepts any CSV with `theta1..theta7`;
-  - `--figures true` also draws the old ggplot figures (they overwrite the `figures.py` PNGs);
+  - `--figures true` also draws the old ggplot figures, into `output/scenarios_2026/legacy/`
+    (`scripts/paper_figures.R` writes its legacy versions there too);
   - `--min-valid-share` sets the share of draws that must pass equilibrium.
 - **More detail:** see `output/scenarios_2026/README.md`.
 

@@ -40,12 +40,12 @@ struct Params {
   double pi_recid;
   arma::mat C_contact;
   std::vector<double> beta; // entry into D per year, held at the 2015 counts
-  double m_min, m_max, t0, m_slope;
 };
 
-double force_of_infection(int age, const std::vector<double> &y,
-                          const Params &p) {
-  double lambda = 0.0;
+// Share infectious (a, c) among active injectors (D, F) in each age group; computed once
+// per right-hand-side call and shared by every target age.
+std::vector<double> infectious_share(const std::vector<double> &y) {
+  std::vector<double> share(N_AGES, 0.0);
   for (int j = 0; j < N_AGES; ++j) {
     double infectious = 0.0, active = 0.0;
     for (int s : {0, 2}) { // D and F inject; J and X do not.
@@ -56,14 +56,9 @@ double force_of_infection(int age, const std::vector<double> &y,
       }
     }
     if (active > 0.0)
-      lambda += p.C_contact(age, j) * infectious / active;
+      share[j] = infectious / active;
   }
-  return p.q * lambda;
-}
-
-double transmission_multiplier(double time, const Params &p) {
-  return p.m_min +
-         (p.m_max - p.m_min) / (1.0 + std::exp(-(time - p.t0) / p.m_slope));
+  return share;
 }
 
 std::vector<double> rhs(double time, const std::vector<double> &y,
@@ -108,9 +103,12 @@ std::vector<double> rhs(double time, const std::vector<double> &y,
     return 0.0;
   };
 
+  const std::vector<double> share = infectious_share(y);
   for (int age = 0; age < N_AGES; ++age) {
-    const double gam =
-        transmission_multiplier(time, p) * force_of_infection(age, y, p);
+    double gam = 0.0;
+    for (int j = 0; j < N_AGES; ++j)
+      gam += p.C_contact(age, j) * share[j];
+    gam *= p.q;
     const double l1 = p.c_first * p.lambda3[age];
     const double l2 = p.lambda2[age];
     const double l3 = p.lambda3[age], pi = p.pi_recid;
@@ -377,22 +375,13 @@ NumericMatrix run_sim(List params_r, List data_r) {
   p.ptu_CC_HCC = p.phi_CC_HCC * p.ptc_CC_HCC;
   p.ptu_DC_HCC = p.phi_DC_HCC * p.ptc_DC_HCC;
   NumericVector mu = as<NumericVector>(params_r["mu"]);
+  if (mu.size() != N_AGES)
+    stop("mu must have length 6");
   p.mu.assign(mu.begin(), mu.end());
   p.mu_DC = as<double>(params_r["mu_DC"]);
   p.mu_HCC = as<double>(params_r["mu_HCC"]);
   p.psi_DC = as<double>(params_r["psi_DC"]);
   p.psi_HCC = as<double>(params_r["psi_HCC"]);
-  p.m_min = params_r.containsElementNamed("m_min")
-                ? as<double>(params_r["m_min"])
-                : 1.0;
-  p.m_max = params_r.containsElementNamed("m_max")
-                ? as<double>(params_r["m_max"])
-                : 1.0;
-  p.t0 = params_r.containsElementNamed("m_t0") ? as<double>(params_r["m_t0"])
-                                               : 25.0;
-  p.m_slope = params_r.containsElementNamed("m_tau")
-                  ? as<double>(params_r["m_tau"])
-                  : 3.0;
   NumericVector l2 = as<NumericVector>(params_r["lambda2"]),
                 l3 = as<NumericVector>(params_r["lambda3"]);
   if (l2.size() != N_AGES || l3.size() != N_AGES)
@@ -409,12 +398,24 @@ NumericMatrix run_sim(List params_r, List data_r) {
     stop("smr_viraemic and smr_nonviraemic must be positive");
   p.pi_recid = as<double>(params_r["pi_recid"]);
   NumericMatrix C = as<NumericMatrix>(params_r["C_contact"]);
+  if (C.nrow() != N_AGES || C.ncol() != N_AGES)
+    stop("C_contact must be 6 x 6");
   p.C_contact = arma::mat(C.begin(), N_AGES, N_AGES, false);
   NumericVector beta = as<NumericVector>(params_r["beta"]);
+  if (beta.size() != N_AGES)
+    stop("beta must have length 6");
   p.beta.assign(beta.begin(), beta.end());
   double t_start = as<double>(data_r["t_start"]),
          t_end = as<double>(data_r["t_end"]), dt = as<double>(data_r["dt"]);
   int n_steps = static_cast<int>((t_end - t_start) / dt) + 1;
+  // Optional thinning: store every save_every-th step (and the last); default 1 = every step.
+  const int save_every = data_r.containsElementNamed("save_every")
+                             ? as<int>(data_r["save_every"])
+                             : 1;
+  if (save_every < 1)
+    stop("save_every must be at least 1");
+  const int last = n_steps - 1;
+  const int n_out = 1 + last / save_every + (last % save_every != 0);
   NumericVector y0 = as<NumericVector>(data_r["y0"]);
   if (y0.size() != N_COMP)
     stop("y0 must have length 480 (five HCV states)");
@@ -431,7 +432,8 @@ NumericMatrix run_sim(List params_r, List data_r) {
     }
   }
   std::vector<double> y(y0.begin(), y0.end());
-  NumericMatrix out(n_steps, N_COMP + 1 + (capped ? 12 : 0));
+  NumericMatrix out(n_out, N_COMP + 1 + (capped ? 12 : 0));
+  int row = 0;
   out(0, 0) = t_start;
   for (int c = 0; c < N_COMP; ++c)
     out(0, c + 1) = y[c];
@@ -494,12 +496,15 @@ NumericMatrix run_sim(List params_r, List data_r) {
             aged[idx(s, k, h, age + 1)] += moved;
           }
     y.swap(aged);
-    out(step, 0) = time;
+    if (step % save_every != 0 && step != last)
+      continue;
+    ++row;
+    out(row, 0) = time;
     for (int c = 0; c < N_COMP; ++c)
-      out(step, c + 1) = y[c];
+      out(row, c + 1) = y[c];
     if (capped)
       for (int c = 0; c < 12; ++c)
-        out(step, N_COMP + 1 + c) = cumulative[c];
+        out(row, N_COMP + 1 + c) = cumulative[c];
   }
   return out;
 }

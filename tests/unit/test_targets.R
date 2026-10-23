@@ -1,5 +1,5 @@
 # =============================================================================
-# tests/unit/test_targets.R — unit tests for loading the 2015 calibration targets and inflow data.
+# tests/unit/test_targets.R — unit tests for loading the 2015 calibration targets and the CNB data.
 # =============================================================================
 
 args0 <- commandArgs(FALSE)
@@ -21,7 +21,7 @@ check_true(!"release_sero_2017_target" %in% names(targets),
 check_true(is.null(targets$entry) && is.null(targets$population_sigma_log),
            "no entry or population likelihood settings")
 check_true(file.exists(file.path(root, "data/singstat_new_drug_abusers.csv")),
-           "SingStat inflow data are versioned in the repository")
+           "SingStat new drug abuser data (Table S2 source) are versioned in the repository")
 
 n_fail <- test_report("tests/unit/test_targets.R")
 if (n_fail > 0) quit(status = 1)

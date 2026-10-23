@@ -8,6 +8,9 @@ suppressPackageStartupMessages({library(ggplot2); library(patchwork)})
 args <- commandArgs(trailingOnly = TRUE)
 ROOT <- normalizePath(if (length(args)) args[1] else getwd(), mustWork = TRUE)
 OUT <- file.path(ROOT, "output/scenarios_2026")
+# Superseded by scripts/figures.py: these ggplot versions go to legacy/ so they never overwrite
+# the manuscript PNGs/SVGs that figures.py writes.
+FIG <- file.path(OUT, "legacy"); dir.create(FIG, showWarnings = FALSE)
 theme_paper <- function() theme_classic(base_size = 10) +
   theme(plot.title = element_text(face = "bold"), legend.position = "bottom",
         strip.background = element_blank(), strip.text = element_text(face = "bold"))
@@ -37,7 +40,7 @@ p1 <- ggplot() +
     label = "Transmission in D and F only", colour = "grey20") +
   scale_fill_manual(values = cols) + coord_cartesian(xlim = c(-0.3, 9), ylim = c(-0.1, 4.7)) +
   theme_void() + theme(legend.position = "none")
-ggsave(file.path(OUT, "paper_fig1_schematic.png"), p1, width = 8, height = 4.2, dpi = 300, bg = "white")
+ggsave(file.path(FIG, "paper_fig1_schematic.png"), p1, width = 8, height = 4.2, dpi = 300, bg = "white")
 
 # Figure 2: incidence and mortality trajectories -----------------------------
 tr <- read.csv(file.path(OUT, "scenario_trajectories.csv"))
@@ -66,7 +69,7 @@ p2 <- ggplot(long, aes(year, m, colour = label, fill = label)) +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1.4)) +
   labs(x = "Calendar year", y = "Annual events relative to 2015", colour = NULL, fill = NULL) +
   guides(colour = guide_legend(nrow = 2)) + theme_paper()
-ggsave(file.path(OUT, "paper_fig2_trajectories.png"), p2, width = 9, height = 4.6, dpi = 300, bg = "white")
+ggsave(file.path(FIG, "paper_fig2_trajectories.png"), p2, width = 9, height = 4.6, dpi = 300, bg = "white")
 
 # Figure 3: 2030 reductions by capacity and F share ---------------------------
 s <- read.csv(file.path(OUT, "scenario_2030_summary.csv"))
@@ -92,7 +95,7 @@ p3 <- ggplot(g, aes(fshare, m, colour = cap, group = cap)) +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "Share of screening quota allocated to F", y = "Reduction versus 2015",
        colour = "Screens per year", linetype = "Reference") + theme_paper()
-ggsave(file.path(OUT, "paper_fig3_allocation.png"), p3, width = 9, height = 4.6, dpi = 300, bg = "white")
+ggsave(file.path(FIG, "paper_fig3_allocation.png"), p3, width = 9, height = 4.6, dpi = 300, bg = "white")
 
 # Figure 4: why a larger F share can waste quota ------------------------------
 a <- read.csv(file.path(OUT, "scenario_annual_services_costs.csv"))
@@ -110,5 +113,5 @@ p4 <- ggplot(tot, aes(fshare, use, colour = cap, group = cap)) + geom_line() + g
   scale_y_continuous(labels = scales::percent, limits = c(0, 1.02)) +
   labs(x = "Share of screening quota allocated to F", y = "Share of quota used, 2026-2030",
        colour = "Screens per year") + theme_paper()
-ggsave(file.path(OUT, "paper_fig4_f_pool.png"), p4, width = 8, height = 4, dpi = 300, bg = "white")
+ggsave(file.path(FIG, "paper_fig4_f_pool.png"), p4, width = 8, height = 4, dpi = 300, bg = "white")
 cat("Wrote paper figures to", OUT, "\n")

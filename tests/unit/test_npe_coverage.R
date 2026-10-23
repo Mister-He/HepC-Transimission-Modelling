@@ -15,7 +15,7 @@ check_true(all(u > 0 & u < 1), "LHS unit design lies inside the unit cube")
 check_true(all(apply(u, 2, function(v) all(sort(floor(v * n)) == 0:(n - 1)))),
            "LHS places exactly one point in each stratum of every column")
 th <- prior_from_unit(u, mu, 0.2)
-check_identical(dim(th), c(as.integer(n), 12L), "LHS prior draws have 12 parameter columns")
+check_identical(dim(th), c(as.integer(n), 12L), "LHS prior draws keep one column per parameter")
 check_true(max(abs(colMeans(th) - mu)) < 0.01 && all(abs(apply(th, 2, sd) - 0.2) < 0.01),
            "LHS draws reproduce the Normal(mean, 0.20) prior marginals")
 check_true(all(sapply(1:12, function(j) ks.test(th[, j], "pnorm", mu[j], 0.2)$p.value) > 0.01),
