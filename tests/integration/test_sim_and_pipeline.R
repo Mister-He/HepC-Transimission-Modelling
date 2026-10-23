@@ -94,25 +94,14 @@ check_true(reinf_out[nrow(reinf_out), idx(0, 1, 1, 2)] >
              reinf_base[nrow(reinf_base), idx(0, 1, 1, 2)],
            "recovered people are susceptible to reinfection")
 
-# The post-2015 schedule is active (CNB counts, unscaled).
-scheduled <- e$data; scheduled$t_start <- 150; scheduled$t_end <- 151
-scheduled$y0 <- rep(0, 480); scheduled$y0[idx(0, 1, 0, 2) - 1L] <- 1
-scheduled_params <- e$params; scheduled_params$beta <- rep(0, 6)
-scheduled_out <- run_sim(scheduled_params, scheduled)
-check_true(sum(scheduled_out[nrow(scheduled_out), -1]) > 1,
-           "post-2015 scheduled inflow is active")
-
-# Calendar alignment: model time 150 is the 2015 snapshot, so the interval
-# beginning at 150 must use the 2016 row rather than the 2015 row.
-calendar_data <- scheduled; calendar_data$inflow_schedule <- rbind(
-  c(100, rep(0, 5)), c(10, rep(0, 5)))
-calendar_params <- e$params; calendar_params$beta <- e$params$beta
-calendar_2016 <- run_sim(calendar_params, calendar_data)
-calendar_data$inflow_schedule <- rbind(c(10, rep(0, 5)), c(100, rep(0, 5)))
-calendar_2015 <- run_sim(calendar_params, calendar_data)
-check_true(sum(calendar_2016[nrow(calendar_2016), -1]) + 5 <
-             sum(calendar_2015[nrow(calendar_2015), -1]),
-           "post-2015 schedule starts with the 2016 row")
+# Entry is beta in every year: one year of entry adds the same people in 2016 (t 150) and 2025
+# (t 159), and nothing else enters.
+entry_data <- e$data; entry_data$y0 <- rep(0, 480)
+entry_params <- modifyList(e$params, list(q = 0, beta = c(100, rep(0, 5))))
+one_year <- function(t0) { entry_data$t_start <- t0; entry_data$t_end <- t0 + 1
+  out <- run_sim(entry_params, entry_data); sum(out[nrow(out), 2:481]) }
+check_true(one_year(150) > 99 && one_year(150) <= 100, "one year of entry adds beta people (minus a few deaths)")
+check_equal(one_year(159), one_year(150), tol = 1e-12, "entry is the same in every projection year")
 
 # Event-located annual quotas: F and X stop independently; existing courses
 # finish after the cap, and restarting the solver resets the annual counter.

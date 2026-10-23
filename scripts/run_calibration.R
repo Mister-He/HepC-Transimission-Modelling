@@ -123,8 +123,7 @@ config <- list(
   fitted_parameters = N_THETA, 
   optimizer = "Nelder-Mead",
   target_source = "data/calibration_targets.json",
-  inflow_source = "data/singstat_new_drug_abusers.csv",
-  inflow_rule = "2015 baseline; 2016--2025 SingStat age-specific counts; latest year held constant through 2030; unscaled",
+  inflow_rule = "CNB 2015 age-specific counts (setup.R beta), unscaled, held constant in every year",
   best_objective = best$objective, 
   equilibrium_pass = eq_best$pass,
   viraemic_share_2015 = viraemic_share(out_best),  # reported only; it varies over time

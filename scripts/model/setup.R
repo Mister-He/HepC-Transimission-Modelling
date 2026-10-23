@@ -170,7 +170,7 @@ params <- list(
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
   # SingStat/CNB 2015 new-drug-abuser counts, used as the entry into D without
-  # scaling; 2016 onward uses the time series loaded below.
+  # scaling in every year (2015 equilibrium and the 2016-2030 projection).
   beta = c(
     257, # age group 1
     644, # age group 2
@@ -204,22 +204,11 @@ for (i in 0:5) {
 # =============================================================================
 # DATA / SIMULATION SETTINGS
 # =============================================================================
-inflow_path <- file.path("..", "..", "data", "singstat_new_drug_abusers.csv")
-if (!file.exists(inflow_path)) stop("Missing ", inflow_path)
-inflow <- read.csv(inflow_path, stringsAsFactors = FALSE)
-inflow$age_group <- factor(inflow$age_group,
-                           levels = c("<20", "20-29", "30-39", "40-49", "50-59", "60+"))
-inflow <- inflow[order(inflow$year, inflow$age_group), ]
-inflow_matrix <- do.call(rbind, lapply(sort(unique(inflow$year)), function(yr)
-  inflow$new_drug_abusers[inflow$year == yr]))
-rownames(inflow_matrix) <- sort(unique(inflow$year))
-
 data <- list(
   t_start = 0.0,    # start at model year 0
   t_end   = 150.0,   # simulate 150 model years
   dt      = 1/365,   # daily time steps (1/365 of a year)
-  y0      = y0,      # initial conditions (length-480 vector)
-  # Model time 150 is the 2015 snapshot; row 2016 starts after that state.
-  inflow_schedule = inflow_matrix,
-  inflow_schedule_start = 150.0
+  y0      = y0       # initial conditions (length-480 vector)
 )
+# Entry into D is params$beta (the CNB 2015 counts) in every year, including the 2016-2030
+# projection: there is no year-by-year inflow schedule.

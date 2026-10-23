@@ -10,8 +10,8 @@ equilibrium convention described in `docs/AGENTS.md`.
   - **Mortality:** background deaths are the general-population rate `mu` times a PWID SMR:
     `smr_viraemic` for states a, c, t and `smr_nonviraemic` for u, r (van Santen 2014). DC and
     HCC add liver deaths on top. The viraemic share follows the model state over time.
-- `setup.R`: parameters, initial state and the inflow schedule (source). Entry into D is the
-  CNB new drug abuser count, unscaled.
+- `setup.R`: parameters and initial state (source). Entry into D is the CNB 2015 new drug
+  abuser count, unscaled, in every model year (no year-by-year schedule).
 - `preprocess.R`, `release_rate.stan`, `rearrest_rate.stan`: clean the prison
   records (`data/sps.csv`, not tracked by git; people ever held for drug consumption)
   and fit release and re-arrest rates (cure-type survival model for `pi` and `lambda3`).
