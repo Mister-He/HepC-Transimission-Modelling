@@ -65,16 +65,16 @@ Seven predeclared outcomes compare 1,000 NPE posterior states with the productio
 
 | Outcome | NPE: median (95% interval) | Reference | Error |
 | --- | --- | --- | --- |
-| J only, incidence reduction | 85.9% (40.8–93.7) | 85.7% (70.5–91.3) | 0.28% |
-| J only, mortality reduction | 54.7% (50.0–61.0) | 54.9% (52.3–57.4) | 0.28% |
-| 5,000/yr F 25%, mortality reduction | 68.4% (65.2–72.3) | 68.5% (66.6–70.4) | 0.23% |
-| 5,000/yr F 25%, joint pass probability | 88.8% | 97.0% | 8.2 pp |
-| 8,000/yr F 25%, mortality reduction | 74.0% (71.3–77.3) | 74.1% (72.4–75.7) | 0.19% |
-| 8,000/yr F 75%, mortality reduction | 63.7% (59.6–68.7) | 63.8% (61.4–66.2) | 0.15% |
-| 8,000/yr F 25%, discounted cost | S$96.5m (18.4–163.1) | S$102.6m (86.1–122.6) | 6.0% |
+| J only, incidence reduction | 84.7% (38.9–92.9) | 84.5% (68.7–90.5) | 0.27% |
+| J only, mortality reduction | 54.7% (50.1–61.1) | 54.9% (52.3–57.5) | 0.31% |
+| 5,000/yr F 25%, mortality reduction | 68.2% (64.9–72.2) | 68.4% (66.3–70.2) | 0.28% |
+| 5,000/yr F 25%, joint pass probability | 84.4% | 95.3% | 10.9 pp |
+| 8,000/yr F 25%, mortality reduction | 73.7% (71.0–77.2) | 73.9% (72.2–75.5) | 0.22% |
+| 8,000/yr F 75%, mortality reduction | 63.6% (59.5–68.7) | 63.7% (61.2–66.2) | 0.17% |
+| 8,000/yr F 25%, discounted cost | S$96.7m (18.3–164.1) | S$102.7m (86.0–123.4) | 5.8% |
 
 - **Reductions:** medians within 0.3% of the reference, with wider intervals; the wider intervals
-  lower the joint-pass probability by 8 percentage points.
+  lower the joint-pass probability by 11 percentage points.
 - **Cost:** 6% lower with a much wider interval, because cost depends on absolute population size,
   which the NPE posterior spreads more widely.
 

@@ -269,9 +269,12 @@ outputs were backed up to the session scratchpad only (not in the repo).
   MCMC SBC cov95 0.96. NPE is not validated under this prior.
 - **Outcomes (audit fixes):** HCV deaths = DC/HCC liver deaths + viraemic non-liver excess
   `mu(9.52 − 4.73)`; prison tests follow the F/X rule (antibody for entrants u/a/c/r, RNA for a/c/r).
-- **Scenarios:** J only incidence −85.7% (70.5–91.3), mortality −54.9%. All finite scenarios meet
-  incidence; mortality at the median at 5,000/8,000 per year with F 25%/50% (joint 97%, 57%, 98%,
-  99.6%); F 75% misses. No cap 87.1%. More tests to X always lower deaths more.
+- **Projection entry (2026-10-23):** entry into D is held at the CNB 2015 counts in every year
+  (the 2016–2025 schedule was removed from `setup.R`/`sim.cpp`); calibration is unaffected.
+- **Scenarios:** J only incidence −84.5% (68.7–90.5; 77% of draws), mortality −54.9%. All finite
+  scenarios meet incidence; mortality at the median at 5,000/8,000 per year with F 25%/50% (joint
+  95%, 51%, 98%, 99%); F 75% misses. No cap 87.1%. More tests to X always lower deaths more.
+  No-treatment 2030 = 100% of 2015.
 - **Code:** `scenarios_2026.R` draws its old ggplot figures only with `--figures true`; prediction,
   plot and scenario scripts stop if the fit does not match `setup.R`.
 - **Manuscript** rewritten; `build_paper.py` asserts every result claim it makes.

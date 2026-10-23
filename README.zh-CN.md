@@ -11,8 +11,8 @@
   `(r+a+c+t)/(u+r+a+c+t)`。
 - 每次 simulator 调用运行 150 年，最后十年检查 equilibrium；第 150
   年作为 2015 snapshot。
-- 2016--2025 的新 drug-abuser inflow 来自
-  `data/singstat_new_drug_abusers.csv`，最新年份数值延续到 2030。
+- 进入 D 的人数在所有年份（含 2016–2030）都保持为
+  `data/singstat_new_drug_abusers.csv` 的 2015 年数值（`setup.R` 的 `beta`）。
 
 ## 校准
 
@@ -25,7 +25,7 @@ Rscript scripts/run_calibration.R --run-id r_20261021_agepop \
   --maxit 3000 --nm-restarts 5 --n-starts 8 --sd-perturb 0.9 --seed 20261001 --cores 8
 ```
 
-监狱率参数：`Rscript scripts/model/preprocess.R`（需要 `data/sps.csv`）用 Stan 拟合释放率、再逮捕率和回到注射的比例 `pi`（全部药物使用记录；再逮捕模型只有生存部分，没有监狱稳态和首次逮捕流）；`Rscript scripts/model/update_rate_params.R` 写入 `setup.R`。监狱记录观察不到从未被捕的人，也无法分辨真正的初犯，因此首次逮捕率为 `c` × 再逮捕率，`c`（θ7，≥ 0.5）参与校准。进入 D 的人数为 CNB 新吸毒者人数，不缩放。背景死亡率 = 一般人口死亡率 × 吸毒者 SMR：病毒血症（a、c、t）9.52，非病毒血症（u、r）4.73（van Santen 2014），病毒血症比例随时间变化。
+监狱率参数：`Rscript scripts/model/preprocess.R`（需要 `data/sps.csv`）用 Stan 拟合释放率、再逮捕率和回到注射的比例 `pi`（全部药物使用记录；再逮捕模型只有生存部分，没有监狱稳态和首次逮捕流）；`Rscript scripts/model/update_rate_params.R` 写入 `setup.R`。监狱记录观察不到从未被捕的人，也无法分辨真正的初犯，因此首次逮捕率为 `c` × 再逮捕率，`c`（θ7，≥ 0.5）参与校准。进入 D 的人数为 CNB 2015 年新吸毒者人数，不缩放，所有年份（含 2016–2030 预测）保持不变。背景死亡率 = 一般人口死亡率 × 吸毒者 SMR：病毒血症（a、c、t）9.52，非病毒血症（u、r）4.73（van Santen 2014），病毒血症比例随时间变化。
 
 生产路径：Nelder–Mead 多起点（无信息起点 θ = 0 及其扰动）求后验众数 → 参考 MCMC（自适应随机游走 Metropolis，4 条链，每条 50,000 次评估，warmup 10,000，从第 5,000 次开始自适应，thin 10）给出生产后验 → scenario。先验固定、不以拟合为中心：接触尺度对数 N(0, 1.5)，log `c` N(0, 0.5)。单轮 NPE（50,000 个 LHS 先验模拟，5 个网络的集成）与 SBC 只做交叉验证，不进入生产路径：
 

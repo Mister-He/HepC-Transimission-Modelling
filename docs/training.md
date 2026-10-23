@@ -127,7 +127,7 @@ Rscript scripts/run_npe.R --step all --n-sims 50000 --seed 20261012 --train-seed
 - **Comparison with the reference MCMC:** NPE draws that fail the equilibrium check are dropped
   first (1,329 of 4,000, 33%). At the observed data the NPE does not match the MCMC (0 of 7
   parameters pass all checks; 95% intervals on average 28% wider; worst mean difference 0.56 SD).
-  Policy reductions agree within 0.3%; joint-pass probability at 5,000/yr F25% differs by 8 pp and
+  Policy reductions agree within 0.3%; joint-pass probability at 5,000/yr F25% differs by 11 pp and
   cost by 6%. See
   `output/calibration/npe_vs_mcmc/report.md`.
 

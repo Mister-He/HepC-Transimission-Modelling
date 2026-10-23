@@ -63,22 +63,25 @@ prison testing by the F/X rule.
 - **Accuracy against the reference** (`output/calibration/npe_vs_mcmc/report.md`): poor at the
   observed data. 33% of NPE draws fail the equilibrium check and are dropped; of the rest, 0 of 7
   parameters pass all checks (worst |SMD| 0.56, 95% intervals on average 28% wider). Policy
-  reductions are within 0.3%; the joint-pass probability at 5,000/yr F25% differs by 8 pp.
+  reductions are within 0.3%; the joint-pass probability at 5,000/yr F25% differs by 11 pp.
 
 **Direct MCMC SBC** (`output/calibration/npe_vs_mcmc/mcmc_sbc/`, 8 datasets): pooled cov95 0.96,
 cov90 0.89 and mean rank 0.48. This is a gross-failure check only.
 
 ### Scenarios (`output/scenarios_2026/`, 2,000 reference draws)
 
-- **J only:** incidence −85.7% (95% UI 70.5–91.3; target met in 82% of draws) and mortality
-  −54.9% (52.3–57.4).
-- **Every finite scenario meets the incidence target** at the median (600/yr F25%: −86.8%).
-- **The mortality target is met at the median** at 5,000/yr F25% (68.5%; both targets in 97% of
-  draws), 5,000/yr F50% (65.2%; 57%), 8,000/yr F25% (74.1%; 98%), 8,000/yr F50% (69.7%; 99.6%) and
-  no cap (87.1%; 99.8%). With 75% to F it is missed (5,000/yr 61.1%, 8,000/yr 63.8%).
+- **Entry** is held at the CNB 2015 counts in every projection year (2026-10-23; previously the
+  2016–2025 CNB series, then 2025 held constant).
+- **J only:** incidence −84.5% (95% UI 68.7–90.5; target met in 77% of draws) and mortality
+  −54.9% (52.3–57.5).
+- **Every finite scenario meets the incidence target** at the median (600/yr F25%: −85.6%).
+- **The mortality target is met at the median** at 5,000/yr F25% (68.4%; both targets in 95% of
+  draws), 5,000/yr F50% (65.1%; 51%), 8,000/yr F25% (73.9%; 98%), 8,000/yr F50% (69.6%; 99%) and
+  no cap (87.1%; 99.7%). With 75% to F it is missed (5,000/yr 61.0%, 8,000/yr 63.7%).
 - **Allocation:** at every capacity, more tests for X give larger mortality falls (F holds 6%
   chronic among those eligible, X 9%; X holds 90% of chronic infections after release).
-- **No-treatment counterfactual (2030 vs 2015):** incidence 91.5% and deaths 100.6%.
+- **No-treatment counterfactual (2030 vs 2015):** incidence 100.0% and deaths 100.1% (constant entry
+  keeps the untreated epidemic at its 2015 equilibrium).
 
 ### Calibration figure
 
