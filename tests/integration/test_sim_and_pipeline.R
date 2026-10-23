@@ -174,6 +174,8 @@ fit_path <- file.path(root, "output/calibration/r_20261021_agepop/fit.rds")
 if (file.exists(fit_path)) {
   fit <- readRDS(fit_path)
   check_true(isTRUE(check_fit_current(fit, e$params, e$data)), "stored fit matches setup.R and sim.cpp")
+  monthly <- e$data; monthly$dt <- 1 / 12
+  check_true(isTRUE(check_fit_current(fit, e$params, monthly)), "the check uses the fit's time step, not the caller's")
   changed <- e$params; changed$q <- changed$q * 1.01
   check_error(check_fit_current(fit, changed, e$data), "a changed model parameter is detected")
   fit_sim <- fit; fit_sim$base_params <- changed  # same parameters as the 'model', different simulation
