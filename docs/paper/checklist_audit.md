@@ -1,0 +1,35 @@
+Items follow the CHEERS 2022 statement [@cheers2022]; the item wording and the locations below are to be checked by the authors against the official checklist before submission. [claim:C248] [evidence:E034]
+
+| Item | Topic | Where addressed |
+|---|---|---|
+| 1 | Title | Title page | [claim:C249] [evidence:E034]
+| 2 | Abstract | Abstract | [claim:C250] [evidence:E034]
+| 3 | Background and objectives | Introduction, last paragraph | [claim:C251] [evidence:E034]
+| 4 | Health economic analysis plan | Not available: no analysis plan was registered (Methods, Study design) | [claim:C252] [evidence:E034]
+| 5 | Study population | Methods, Model structure; S1 Text Section 5 | [claim:C253] [evidence:E034]
+| 6 | Setting and location | Methods, Model structure (Singapore) | [claim:C254] [evidence:E034]
+| 7 | Comparators | Methods, Policy scenarios | [claim:C255] [evidence:E034]
+| 8 | Perspective | Methods, Costs (charges; payer perspective not available) | [claim:C256] [evidence:E034]
+| 9 | Time horizon | Methods, Policy scenarios (2026–2030) | [claim:C257] [evidence:E034]
+| 10 | Discount rate | Methods, Costs; S1 Text Section 7 | [claim:C258] [evidence:E034]
+| 11 | Selection of outcomes | Methods, Outcomes | [claim:C259] [evidence:E034]
+| 12 | Measurement of outcomes | Methods, Outcomes; S1 Text Section 6 | [claim:C260] [evidence:E034]
+| 13 | Valuation of outcomes | Not applicable: outcomes were not valued (no utilities) | [claim:C261] [evidence:E034]
+| 14 | Measurement and valuation of resources and costs | Methods, Costs; S1 Text Table H | [claim:C262] [evidence:E034]
+| 15 | Currency, price date, and conversion | Methods, Costs; S1 Text Section 7 | [claim:C263] [evidence:E034]
+| 16 | Rationale and description of model | Methods, Model structure; S1 Text Section 1 | [claim:C264] [evidence:E034]
+| 17 | Analytics and assumptions | Methods; S1 Text Sections 1, 4 and 6 | [claim:C265] [evidence:E034]
+| 18 | Characterising heterogeneity | Results by group (D, J, F, X) and age; S1 Text Section 5 | [claim:C266] [evidence:E034]
+| 19 | Characterising distributional effects | Not addressed | [claim:C267] [evidence:E034]
+| 20 | Characterising uncertainty | Methods, Uncertainty; S1 Text Section 8 (price sensitivity) | [claim:C268] [evidence:E034]
+| 21 | Approach to engagement with patients and others affected by the study | Not addressed: no engagement (to be confirmed by the authors) | [claim:C269] [evidence:E034]
+| 22 | Study parameters | S1 Text Tables A, B, D and H | [claim:C270] [evidence:E034]
+| 23 | Summary of main results | Results; Table 1 | [claim:C271] [evidence:E034]
+| 24 | Effect of uncertainty | Results (uncertainty intervals and probabilities); S1 Text Table I | [claim:C272] [evidence:E034]
+| 25 | Effect of engagement with patients and others affected by the study | Not applicable: no engagement | [claim:C273] [evidence:E034]
+| 26 | Study findings, limitations, generalisability, and current knowledge | Discussion | [claim:C274] [evidence:E034]
+| 27 | Source of funding | Funding statement (to be completed) | [claim:C275] [evidence:E034]
+| 28 | Conflicts of interest | Competing interests (to be completed) | [claim:C276] [evidence:E034]
+
+::: {#refs}
+:::

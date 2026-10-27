@@ -300,3 +300,16 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - Removed: superseded `output/calibration/r_20261021_agepop/`. Next per `docs/instructions.md`: ponytail audit →
   refactor → review, one commit per step, no push.
 
+## Ponytail pass, DC fix and new manuscript (2026-10-28)
+- **Ponytail** (`docs/instructions.md`): audit → refactor (`equilibrium_data()`, `rate_components()` moved to
+  `model_metrics.R`, fit.rds without NM history, figure grids 3×5, read_targets everywhere) → review fix.
+- **Model bug fixed** (`sim.cpp`): recovered people in DC were also added back to DC when progressing to HCC
+  (people created). Found by the new R-vs-C++ HCV-death test. Calibration unchanged (no r in DC before 2019);
+  scenarios rerun: mortality +0.4–0.5 pp (J only 54.4%), same pass set, S5000_F25 joint 87%.
+- **Manuscript rewritten from scratch** with the scientific-writing skill (PLOS Medicine): new
+  `scripts/build_paper.py` + `scripts/paper/`. Registries in `docs/paper/` (276 claims, 85 sources, all
+  unverified). Placeholders: authors/affiliation, ethics, funding, conflicts, CRediT, data availability,
+  AI statement, registration. Open items in `docs/paper/unresolved_issues.md` (seroprevalence targets differ
+  from current prison processing by up to 0.5 pp; death-rate and contact-matrix sources; CHEERS wording).
+- NPE: gate FAIL accepted (user); user plans to delete NPE later (`sbc_mcmc.R` depends on NPE SBC files).
+

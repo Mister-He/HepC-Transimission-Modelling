@@ -1,0 +1,2124 @@
+{
+  "schema_version": "1.0",
+  "sources": [
+    {
+      "source_type": "dataset",
+      "title": "Project repository file data/scenario_policy_config.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "data/scenario_policy_config.json",
+      "confidentiality": "public",
+      "evidence_id": "E001",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/scenarios_2026.R",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/scenarios_2026.R",
+      "confidentiality": "public",
+      "evidence_id": "E002",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "book",
+      "title": "Global health sector strategies on, respectively, HIV, viral hepatitis and sexually transmitted infections for the period 2022--2030",
+      "authors": [
+        "World Health Organization"
+      ],
+      "year": 2022,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E003",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/model/setup.R",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/model/setup.R",
+      "confidentiality": "public",
+      "evidence_id": "E004",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file data/singstat_new_drug_abusers.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "data/singstat_new_drug_abusers.csv",
+      "confidentiality": "public",
+      "evidence_id": "E005",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file data/calibration_targets.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "data/calibration_targets.json",
+      "confidentiality": "public",
+      "evidence_id": "E006",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/mcmc_reference/mcmc_run_config.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/mcmc_reference/mcmc_run_config.json",
+      "confidentiality": "public",
+      "evidence_id": "E007",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/scenario_2030_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/scenario_2030_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E008",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/rearrest_rate_fit.rds",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/rearrest_rate_fit.rds",
+      "confidentiality": "public",
+      "evidence_id": "E009",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file data/sps.csv and output/cleaned_data.rds (record-level, not distributed)",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "data/sps.csv and output/cleaned_data.rds (record-level, not distributed)",
+      "confidentiality": "restricted",
+      "evidence_id": "E010",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/scenario_annual_services_costs.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/scenario_annual_services_costs.csv",
+      "confidentiality": "public",
+      "evidence_id": "E011",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/scenario_trajectories.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/scenario_trajectories.csv",
+      "confidentiality": "public",
+      "evidence_id": "E012",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/mcmc_reference/model_prediction_2015_strata.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/mcmc_reference/model_prediction_2015_strata.csv",
+      "confidentiality": "public",
+      "evidence_id": "E013",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/prison_2015_counts.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/prison_2015_counts.csv",
+      "confidentiality": "restricted",
+      "evidence_id": "E014",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/mcmc_reference/mcmc_parameter_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/mcmc_reference/mcmc_parameter_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E015",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/cost_evidence.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/cost_evidence.csv",
+      "confidentiality": "public",
+      "evidence_id": "E016",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Seroprevalence of hepatitis C in intravenous opioid users presenting in the early phase of injecting drug use in Singapore",
+      "authors": [
+        "Winslow, M.",
+        "Subramaniam, M.",
+        "Ng, W. L.",
+        "Lee, A.",
+        "Song, G.",
+        "Chan, Y. H."
+      ],
+      "year": 2007,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E017",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "The impact of unrestricted access to direct-acting antiviral among incarcerated hepatitis C virus-infected patients",
+      "authors": [
+        "Wong, Yu Jun",
+        "Thurairajah, Prem Harichander",
+        "Kumar, Rahul",
+        "Fock, Kwong Ming",
+        "Law, Ngai Moh",
+        "Chong, Sin-Yoong"
+      ],
+      "year": 2021,
+      "identifiers": {
+        "doi": "10.3350/cmh.2021.0015",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E018",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "book",
+      "title": "Guidance for country validation of viral hepatitis elimination and path to elimination",
+      "authors": [
+        "World Health Organization"
+      ],
+      "year": 2023,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E019",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "EASL recommendations on treatment of hepatitis C: Final update of the series",
+      "authors": [
+        "Pawlotsky, Jean-Michel",
+        "Negro, Francesco",
+        "Aghemo, Alessio",
+        "Berenguer, Marina",
+        "Dalgard, Olav",
+        "Dusheiko, Geoffrey"
+      ],
+      "year": 2020,
+      "identifiers": {
+        "doi": "10.1016/j.jhep.2020.08.018",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E020",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Hepatitis C virus treatment for prevention among people who inject drugs: Modeling treatment scale-up in the age of direct-acting antivirals",
+      "authors": [
+        "Martin, Natasha K.",
+        "Vickerman, Peter",
+        "Grebely, Jason",
+        "Hellard, Margaret",
+        "Hutchinson, Sharon J.",
+        "Lima, Viviane D."
+      ],
+      "year": 2013,
+      "identifiers": {
+        "doi": "10.1002/hep.26431",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E021",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Hepatitis C virus elimination: laying the foundation for achieving 2030 targets",
+      "authors": [
+        "Dore, Gregory J.",
+        "Bajis, Sahar"
+      ],
+      "year": 2021,
+      "identifiers": {
+        "doi": "10.1038/s41575-020-00392-3",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E022",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Hepatitis C",
+      "authors": [
+        "Communicable Diseases Agency Singapore"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://www.cda.gov.sg/professionals/diseases/hepatitis-c/"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E023",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Estimating the size of key populations for HIV in Singapore using the network scale-up method",
+      "authors": [
+        "Teo, Alvin Kuo Jing",
+        "Prem, Kiesha",
+        "Chen, Mark I C",
+        "Roellin, Adrian",
+        "Wong, Mee Lian",
+        "La, Hanh Hao"
+      ],
+      "year": 2019,
+      "identifiers": {
+        "doi": "10.1136/sextrans-2018-053747",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E024",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Real‐world impact of a subsidy decision of sofosbuvir–velpatasvir for treatment of chronic hepatitis C on clinical practice and patient outcomes",
+      "authors": [
+        "Tan, Chee‐Kiat",
+        "Luo, Xue‐Shi",
+        "Ong, Benjamin Shao‐Kiat",
+        "Lin, Liang",
+        "Ng, Kwong‐Hoe"
+      ],
+      "year": 2023,
+      "identifiers": {
+        "doi": "10.1002/jgh3.12850",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E025",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Care Navigation Increases Initiation of Hepatitis C Treatment After Release From Prison in a Prospective Randomized Controlled Trial: The C-LINK Study",
+      "authors": [
+        "Papaluca, Timothy",
+        "Craigie, Anne",
+        "McDonald, Lucy",
+        "Edwards, Amy",
+        "Winter, Rebecca",
+        "Hoang, Annabelle"
+      ],
+      "year": 2022,
+      "identifiers": {
+        "doi": "10.1093/ofid/ofac350",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E026",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Accessible Hepatitis C Care for People Who Inject Drugs",
+      "authors": [
+        "Eckhardt, Benjamin",
+        "Mateu-Gelabert, Pedro",
+        "Aponte-Melendez, Yesenia",
+        "Fong, Chunki",
+        "Kapadia, Shashi",
+        "Smith, Melinda"
+      ],
+      "year": 2022,
+      "identifiers": {
+        "doi": "10.1001/jamainternmed.2022.0170",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E027",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Opening address by Mdm Rahayu Mahzam, Minister of State, Ministry of Health, at the ``Educate, Test, Treat'' MOU signing ceremony between HCSA Community Services and Tzu Chi Foundation (Singapore) on Thursday, 25 July 2024",
+      "authors": [
+        "Ministry of Health Singapore"
+      ],
+      "year": 2024,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://www.moh.gov.sg/newsroom/opening-address-by-mdm-rahayu-mahzam--minister-of-state--ministry-of-health--at-the--educate--test--treat--mou-signing-ceremony-between-hcsa-community-services-and-tzu-chi-foundation-%28singapore%29-on-thursday-25-july-2024/"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E028",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Speech by Mdm Rahayu Mahzam, Minister of State, MDDI and MOH, at the ``Educate, Test, Treat!'' MOU signing ceremony between HCSA Highpoint and TTSH",
+      "authors": [
+        "Ministry of Health Singapore"
+      ],
+      "year": 2025,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://www.moh.gov.sg/newsroom/speech-by-mdm-rahayu-mahzam--minister-of-state--mddi--and-moh--at-the--educate--test--treat-----mou-signing-ceremony-between-hcsa-highpoint-and-ttsh/"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E029",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "National HIV, Hepatitis C, and STI Programmes",
+      "authors": [
+        "Communicable Diseases Agency Singapore"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://www.cda.gov.sg/professionals/national-hiv-hepatitis-c-and-sti-programmes/"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E030",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Point-of-care hepatitis C screening with direct access referral to improve linkage to care among halfway house residents: a pilot randomised study",
+      "authors": [
+        "Hsiang, JC",
+        "Sinnaswami, P",
+        "Lee, MY",
+        "Zhang, MM",
+        "Quek, KE",
+        "Tan, KH"
+      ],
+      "year": 2022,
+      "identifiers": {
+        "doi": "10.11622/smedj.2020116",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E031",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "What is required for achieving hepatitis C virus elimination in Singapore? A modeling study",
+      "authors": [
+        "Chaillon, Antoine",
+        "Thurairajah, Prem Harichander",
+        "Hsiang, John Chen",
+        "Martin, Natasha K"
+      ],
+      "year": 2021,
+      "identifiers": {
+        "doi": "10.1111/jgh.15211",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E032",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/model/sim.cpp",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/model/sim.cpp",
+      "confidentiality": "public",
+      "evidence_id": "E033",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Consolidated Health Economic Evaluation Reporting Standards 2022 (CHEERS 2022) statement: updated reporting guidance for health economic evaluations",
+      "authors": [
+        "Husereau, Don",
+        "Drummond, Michael",
+        "Augustovski, Federico",
+        "de Bekker-Grob, Esther",
+        "Briggs, Andrew H",
+        "Carswell, Chris"
+      ],
+      "year": 2022,
+      "identifiers": {
+        "doi": "10.1136/bmj-2021-067975",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E034",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Temporal trends in mortality among people who use drugs compared with the general Dutch population differ by hepatitis C virus and HIV infection status",
+      "authors": [
+        "van Santen, Dani\\\"ela K",
+        "van der Helm, Jannie J",
+        "Grady, Bart P X",
+        "de Vos, Anneke S",
+        "Kretzschmar, Mirjam E E",
+        "Stolte, Ineke G"
+      ],
+      "year": 2014,
+      "identifiers": {
+        "doi": "10.1097/QAD.0000000000000450",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E035",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/calibration/equilibrium.R",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/calibration/equilibrium.R",
+      "confidentiality": "public",
+      "evidence_id": "E036",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/release_rate_fit.rds",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/release_rate_fit.rds",
+      "confidentiality": "public",
+      "evidence_id": "E037",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/calibration/likelihood.R",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/calibration/likelihood.R",
+      "confidentiality": "public",
+      "evidence_id": "E038",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Number of drug abusers by age group, annual",
+      "authors": [
+        "Singapore Department of Statistics"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://data.gov.sg/datasets/d_f174679381e9085e32869c32bdb01b87/view"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E039",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/r_20261027_agepop/run_config.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/r_20261027_agepop/run_config.json",
+      "confidentiality": "public",
+      "evidence_id": "E040",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "An adaptive Metropolis algorithm",
+      "authors": [
+        "Haario, Heikki",
+        "Saksman, Eero",
+        "Tamminen, Johanna"
+      ],
+      "year": 2001,
+      "identifiers": {
+        "doi": "10.2307/3318737",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E041",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Rank-normalization, folding, and localization: an improved R-hat for assessing convergence of MCMC (with discussion)",
+      "authors": [
+        "Vehtari, Aki",
+        "Gelman, Andrew",
+        "Simpson, Daniel",
+        "Carpenter, Bob",
+        "B\\\"urkner, Paul-Christian"
+      ],
+      "year": 2021,
+      "identifiers": {
+        "doi": "10.1214/20-BA1221",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E042",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Validating Bayesian inference algorithms with simulation-based calibration",
+      "authors": [
+        "Talts, Sean",
+        "Betancourt, Michael",
+        "Simpson, Daniel",
+        "Vehtari, Aki",
+        "Gelman, Andrew"
+      ],
+      "year": 2018,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E043",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "conference_paper",
+      "title": "Automatic posterior transformation for likelihood-free inference",
+      "authors": [
+        "Greenberg, David",
+        "Nonnenmacher, Marcel",
+        "Macke, Jakob"
+      ],
+      "year": 2019,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E044",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "sbi: A toolkit for simulation-based inference",
+      "authors": [
+        "Tejero-Cantero, Alvaro",
+        "Boelts, Jan",
+        "Deistler, Michael",
+        "Lueckmann, Jan-Matthis",
+        "Durkan, Conor",
+        "Gonçalves, Pedro"
+      ],
+      "year": 2020,
+      "identifiers": {
+        "doi": "10.21105/joss.02505",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E045",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Economic evaluation of direct‐acting antivirals for the treatment of genotype 3 hepatitis C infection in Singapore",
+      "authors": [
+        "Wong, Yu‐Jun",
+        "Cheen, McVin HH",
+        "Hsiang, John C",
+        "Kumar, Rahul",
+        "Tan, Jessica",
+        "Teo, Eng K"
+      ],
+      "year": 2019,
+      "identifiers": {
+        "doi": "10.1002/jgh3.12139",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E046",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "DSC clinic charges",
+      "authors": [
+        "National Healthcare Group"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://www.nhghealth.com.sg/nsc/about-dsc-clinic/dsc-patient-information/dsc-services/clinic-charges/"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E047",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Send-out test price list",
+      "authors": [
+        "Parkway Laboratories"
+      ],
+      "year": 2025,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://www.parkwaylabs.com.sg/docs/parkwaylablibraries/test-catalogues/send-out-test-price.pdf"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E048",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Exchange rates, annual average: SGD per USD",
+      "authors": [
+        "Singapore Department of Statistics"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://data.gov.sg/datasets/d_b09aeaf8eb591c4bfe347b66148c6b53/view"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E049",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/draw_validity.txt",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/draw_validity.txt",
+      "confidentiality": "public",
+      "evidence_id": "E050",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Rcpp: Seamless R and C++ Integration",
+      "authors": [
+        "Eddelbuettel, Dirk",
+        "François, Romain"
+      ],
+      "year": 2011,
+      "identifiers": {
+        "doi": "10.18637/jss.v040.i08",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E051",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/mcmc_reference/mcmc_diagnostics.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/mcmc_reference/mcmc_diagnostics.csv",
+      "confidentiality": "public",
+      "evidence_id": "E052",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file figures/calibration_interval_overlap.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "figures/calibration_interval_overlap.csv",
+      "confidentiality": "public",
+      "evidence_id": "E053",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/r_20261027_agepop/predictions.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/r_20261027_agepop/predictions.csv",
+      "confidentiality": "public",
+      "evidence_id": "E054",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/no_treatment_trajectory.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/no_treatment_trajectory.csv",
+      "confidentiality": "public",
+      "evidence_id": "E055",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Chronic hepatitis C virus infection increases mortality from hepatic and extrahepatic diseases: a community-based long-term prospective study",
+      "authors": [
+        "Lee, Mei-Hsuan",
+        "Yang, Hwai-I",
+        "Lu, Sheng-Nan",
+        "Jen, Chin-Lan",
+        "You, San-Lin",
+        "Wang, Li-Yu"
+      ],
+      "year": 2012,
+      "identifiers": {
+        "doi": "10.1093/infdis/jis385",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E056",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Impact of hepatitis C treatment uptake on cirrhosis and mortality in persons who inject drugs: a longitudinal, community-based cohort study",
+      "authors": [
+        "Cepeda, Javier A",
+        "Thomas, David L",
+        "Astemborski, Jacqueline",
+        "Rudolph, Jacqueline E",
+        "Gicquelais, Rachel",
+        "Kirk, Gregory D"
+      ],
+      "year": 2022,
+      "identifiers": {
+        "doi": "10.7326/M21-3846",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E057",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Hepatitis C virus infection and risk of liver-related and non-liver-related deaths: a population-based cohort study in Naples, southern Italy",
+      "authors": [
+        "Piselli, Pierluca",
+        "Serraino, Diego",
+        "Fusco, Mario",
+        "Girardi, Enrico",
+        "Pirozzi, Angelo",
+        "Toffolutti, Federica"
+      ],
+      "year": 2021,
+      "identifiers": {
+        "doi": "10.1186/s12879-021-06336-9",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E058",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/npe_lhs/sbc_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/npe_lhs/sbc_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E059",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents",
+      "authors": [
+        "Kassis, Timothy",
+        "Agarwal, Vinayak",
+        "He, Yuhuan",
+        "Patel, Darshil",
+        "Brueckner, Aubrey M."
+      ],
+      "year": 2026,
+      "identifiers": {
+        "doi": "10.48550/arXiv.2609.00065",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://arxiv.org/abs/2609.00065"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E060",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Per-Event Probability of Hepatitis C Infection during Sharing of Injecting Equipment",
+      "authors": [
+        "Boelen, Lies",
+        "Teutsch, Suzy",
+        "Wilson, David P.",
+        "Dolan, Kate",
+        "Dore, Greg J.",
+        "Lloyd, Andrew R."
+      ],
+      "year": 2014,
+      "identifiers": {
+        "doi": "10.1371/journal.pone.0100749",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E061",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Spontaneous viral clearance following acute hepatitis C infection: a systematic review of longitudinal studies",
+      "authors": [
+        "Micallef, J. M.",
+        "Kaldor, J. M.",
+        "Dore, G. J."
+      ],
+      "year": 2006,
+      "identifiers": {
+        "doi": "10.1111/j.1365-2893.2005.00651.x",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E062",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Acute Hepatitis C: Current Status and Future Perspectives",
+      "authors": [
+        "Fasano, Massimo",
+        "Ieva, Francesco",
+        "Ciarallo, Marianna",
+        "Caccianotti, Bruno",
+        "Santantonio, Teresa Antonia"
+      ],
+      "year": 2024,
+      "identifiers": {
+        "doi": "10.3390/v16111739",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E063",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Novel non-invasive score to predict cirrhosis in the era of hepatitis C elimination: A population study of ex-substance users in Singapore",
+      "authors": [
+        "Zhao, Yue",
+        "Thurairajah, Prem Harichander",
+        "Kumar, Rahul",
+        "Tan, Jessica",
+        "Teo, Eng Kiong",
+        "Hsiang, John Chen"
+      ],
+      "year": 2019,
+      "identifiers": {
+        "doi": "10.1016/j.hbpd.2018.12.002",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E064",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Efficacy and Safety of Velpatasvir Plus Sofosbuvir With or Without Ribavirin in Hepatitis C Patients With Decompensated Cirrhosis: A Systematic Review and Meta‐Analysis",
+      "authors": [
+        "Xiao, Jing",
+        "Zhang, Xinnian",
+        "Mao, Xiaozhou",
+        "Lai, Shunhao",
+        "Li, Shuangli",
+        "Sheng, Yunjian"
+      ],
+      "year": 2025,
+      "identifiers": {
+        "doi": "10.1111/jvh.70078",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E065",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Estimation of stage‐specific fibrosis progression rates in chronic hepatitis C virus infection",
+      "authors": [
+        "Thein, Hla‐Hla",
+        "Yi, Qilong",
+        "Dore, Gregory J.",
+        "Krahn, Murray D."
+      ],
+      "year": 2008,
+      "identifiers": {
+        "doi": "10.1002/hep.22375",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E066",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Curbing the hepatitis C virus epidemic in Pakistan: the impact of scaling up treatment and prevention for achieving elimination",
+      "authors": [
+        "Lim, Aaron G",
+        "Qureshi, Huma",
+        "Mahmood, Hassan",
+        "Hamid, Saeed",
+        "Davies, Charlotte F",
+        "Trickey, Adam"
+      ],
+      "year": 2018,
+      "identifiers": {
+        "doi": "10.1093/ije/dyx270",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E067",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "HCV Genotype 3 Is Associated With an Increased Risk of Cirrhosis and Hepatocellular Cancer in a National Sample of U.S. Veterans With HCV",
+      "authors": [
+        "Kanwal, Fasiha",
+        "Kramer, Jennifer R.",
+        "Ilyas, Jawad",
+        "Duan, Zhigang",
+        "El-Serag, Hashem B."
+      ],
+      "year": 2014,
+      "identifiers": {
+        "doi": "10.1002/hep.27095",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E068",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Association Between Sustained Virological Response and All-Cause Mortality Among Patients With Chronic Hepatitis C and Advanced Hepatic Fibrosis",
+      "authors": [
+        "van der Meer, Adriaan J.",
+        "Veldt, Bart J.",
+        "Feld, Jordan J.",
+        "Wedemeyer, Heiner",
+        "Dufour, Jean-François",
+        "Lammert, Frank"
+      ],
+      "year": 2012,
+      "identifiers": {
+        "doi": "10.1001/jama.2012.144878",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E069",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Eradication of Hepatitis C Virus Infection and the Development of Hepatocellular Carcinoma",
+      "authors": [
+        "Morgan, Rebecca L.",
+        "Baack, Brittney",
+        "Smith, Bryce D.",
+        "Yartel, Anthony",
+        "Pitasi, Marc",
+        "Falck-Ytter, Yngve"
+      ],
+      "year": 2013,
+      "identifiers": {
+        "doi": "10.7326/0003-4819-158-5-201303050-00005",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E070",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Recompensation of Chronic Hepatitis C–Related Decompensated Cirrhosis Following Direct-Acting Antiviral Therapy: Prospective Cohort Study From a Hepatitis C Virus Elimination Program",
+      "authors": [
+        "Premkumar, Madhumita",
+        "Dhiman, Radha K.",
+        "Duseja, Ajay",
+        "Mehtani, Rohit",
+        "Taneja, Sunil",
+        "Gupta, Ekta"
+      ],
+      "year": 2024,
+      "identifiers": {
+        "doi": "10.1053/j.gastro.2024.08.018",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E071",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "Cure With Interferon‐Free Direct‐Acting Antiviral Is Associated With Increased Survival in Patients With Hepatitis C Virus‐Related Hepatocellular Carcinoma From Both East and West",
+      "authors": [
+        "Dang, Hansen",
+        "Yeo, Yee Hui",
+        "Yasuda, Satoshi",
+        "Huang, Chung‐Feng",
+        "Iio, Etsuko",
+        "Landis, Charles"
+      ],
+      "year": 2020,
+      "identifiers": {
+        "doi": "10.1002/hep.30988",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E072",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/model/preprocess.R",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/model/preprocess.R",
+      "confidentiality": "public",
+      "evidence_id": "E073",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/model/release_rate.stan",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/model/release_rate.stan",
+      "confidentiality": "public",
+      "evidence_id": "E074",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/model/rearrest_rate.stan",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/model/rearrest_rate.stan",
+      "confidentiality": "public",
+      "evidence_id": "E075",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/r_20261027_agepop/solutions.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/r_20261027_agepop/solutions.csv",
+      "confidentiality": "public",
+      "evidence_id": "E076",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/mcmc_reference/mcmc_chain_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/mcmc_reference/mcmc_chain_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E077",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/npe_vs_mcmc/mcmc_sbc/mcmc_sbc_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/npe_vs_mcmc/mcmc_sbc/mcmc_sbc_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E078",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/npe_lhs/simulation_summary.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/npe_lhs/simulation_summary.json",
+      "confidentiality": "public",
+      "evidence_id": "E079",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/npe_lhs/npe_config.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/npe_lhs/npe_config.json",
+      "confidentiality": "public",
+      "evidence_id": "E080",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "conference_paper",
+      "title": "Masked autoregressive flow for density estimation",
+      "authors": [
+        "Papamakarios, George",
+        "Pavlakou, Theo",
+        "Murray, Iain"
+      ],
+      "year": 2017,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E081",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/npe_vs_mcmc/npe_support.txt",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/npe_vs_mcmc/npe_support.txt",
+      "confidentiality": "public",
+      "evidence_id": "E082",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/npe_vs_mcmc/accuracy_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/npe_vs_mcmc/accuracy_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E083",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/figures.py",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/figures.py",
+      "confidentiality": "public",
+      "evidence_id": "E084",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/scenario_stratum_totals.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/scenario_stratum_totals.csv",
+      "confidentiality": "public",
+      "evidence_id": "E085",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    }
+  ]
+}

@@ -216,8 +216,20 @@ Rscript scripts/scenarios_2026.R --root . --draws-per-seed 2000 --cores 4 --samp
 
 ```bash
 python scripts/figures.py .   # redraws every figure (PNG + editable SVG)
-python3 scripts/build_paper.py .
+python3 scripts/build_paper.py . --python /path/to/python-with-pillow
 ```
+
+- **`build_paper.py`** writes the PLOS Medicine files: `docs/main.docx`, `docs/Supplementary
+  Information.docx` (S1 Text), `docs/S1_Checklist.docx` (CHEERS 2022) and `docs/paper/figures/Fig1–4.tif`.
+  The docx files are double spaced with continuous line numbers and page numbers.
+- **Prose and numbers:** text is in `scripts/paper/main_text.py` and `si_text.py`; every number comes
+  from `scripts/paper/facts.py`, which reads `output/` and `figures/` (no simulation). The build stops
+  if a result the text relies on changes (`main_text.checks`).
+- **Evidence registries** (scientific-writing skill format) in `docs/paper/`: each factual line has a
+  claim ID bound to evidence IDs (`claims_*.csv`, `source_manifest.json`, `*_audit.md`). All are
+  `unverified` until an author checks them. If the skill is installed, the build runs its local audits;
+  the expected failures are the unverified claims and the missing statements.
+  `docs/paper/unresolved_issues.md` lists what the authors must supply or decide.
 
 `figures.py` redraws all figures from the saved outputs with the `scientific-visualization` skill
 (`~/.claude/skills/scientific-visualization`, or pass `--skill-dir`). It needs Python ≥ 3.11 with

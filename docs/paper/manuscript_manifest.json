@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "document_id": "hcv-pwid-singapore-plos-medicine",
+  "study_design": "health_economic_evaluation",
+  "draft_status": "draft",
+  "submission_ready": false,
+  "registries": {
+    "authorship_manifest": "authorship.json",
+    "claim_evidence": "claims_main.csv",
+    "consistency_manifest": "consistency_manifest.json",
+    "reporting_coverage": "reporting_coverage.json",
+    "source_manifest": "source_manifest.json"
+  },
+  "reporting_guidelines": [
+    "cheers-2022"
+  ],
+  "human_verification": {
+    "completed": false,
+    "verified_by": "",
+    "verified_on": ""
+  },
+  "confidentiality_review": {
+    "completed": false,
+    "external_services_authorized": false,
+    "policy_checked": false,
+    "verified_by": "",
+    "verified_on": ""
+  },
+  "required_statements": {
+    "ai_disclosure": "missing",
+    "author_contributions": "missing",
+    "code_availability": "missing",
+    "conflicts": "missing",
+    "consent": "missing",
+    "data_availability": "missing",
+    "ethics": "missing",
+    "funding": "missing"
+  }
+}

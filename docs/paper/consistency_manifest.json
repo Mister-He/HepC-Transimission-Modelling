@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "numeric_facts": [
+    {
+      "fact_id": "N001",
+      "concept": "J only: fall in new infections, 2030",
+      "section": "Abstract; Results",
+      "value": 84.4,
+      "unit": "percent",
+      "numerator": null,
+      "denominator": null,
+      "sample_size": 2000,
+      "analysis_set": "posterior draws passing the 2015 equilibrium check",
+      "evidence_ids": [
+        "E008"
+      ]
+    },
+    {
+      "fact_id": "N002",
+      "concept": "J only: fall in HCV deaths, 2030",
+      "section": "Abstract; Results",
+      "value": 54.4,
+      "unit": "percent",
+      "numerator": null,
+      "denominator": null,
+      "sample_size": 2000,
+      "analysis_set": "posterior draws passing the 2015 equilibrium check",
+      "evidence_ids": [
+        "E008"
+      ]
+    },
+    {
+      "fact_id": "N003",
+      "concept": "5,000/year, 25% to F: fall in HCV deaths, 2030",
+      "section": "Abstract; Results",
+      "value": 66.7,
+      "unit": "percent",
+      "numerator": null,
+      "denominator": null,
+      "sample_size": 2000,
+      "analysis_set": "posterior draws passing the 2015 equilibrium check",
+      "evidence_ids": [
+        "E008"
+      ]
+    },
+    {
+      "fact_id": "N004",
+      "concept": "8,000/year, 25% to F: fall in HCV deaths, 2030",
+      "section": "Abstract; Results",
+      "value": 72.1,
+      "unit": "percent",
+      "numerator": null,
+      "denominator": null,
+      "sample_size": 2000,
+      "analysis_set": "posterior draws passing the 2015 equilibrium check",
+      "evidence_ids": [
+        "E008"
+      ]
+    },
+    {
+      "fact_id": "N005",
+      "concept": "Uncapped: fall in HCV deaths, 2030",
+      "section": "Abstract; Results",
+      "value": 88.7,
+      "unit": "percent",
+      "numerator": null,
+      "denominator": null,
+      "sample_size": 2000,
+      "analysis_set": "posterior draws passing the 2015 equilibrium check",
+      "evidence_ids": [
+        "E008"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "method_id": "M001",
+      "name": "Bayesian calibration (adaptive random-walk Metropolis)",
+      "analysis_intent": "descriptive",
+      "protocol_status": "not_applicable",
+      "outcome_ids": [
+        "O001"
+      ]
+    },
+    {
+      "method_id": "M002",
+      "name": "Policy scenario projection over posterior draws",
+      "analysis_intent": "exploratory",
+      "protocol_status": "not_applicable",
+      "outcome_ids": [
+        "O002",
+        "O003",
+        "O004"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "result_id": "R001",
+      "method_id": "M001",
+      "outcome_id": "O001",
+      "analysis_intent": "descriptive",
+      "sample_size": 4000,
+      "evidence_ids": [
+        "E052",
+        "E053"
+      ],
+      "reported_sections": [
+        "Results: Calibration and the 2015 population"
+      ]
+    },
+    {
+      "result_id": "R002",
+      "method_id": "M002",
+      "outcome_id": "O002",
+      "analysis_intent": "exploratory",
+      "sample_size": 2000,
+      "evidence_ids": [
+        "E008"
+      ],
+      "reported_sections": [
+        "Abstract",
+        "Results",
+        "Table 1"
+      ]
+    },
+    {
+      "result_id": "R003",
+      "method_id": "M002",
+      "outcome_id": "O003",
+      "analysis_intent": "exploratory",
+      "sample_size": 2000,
+      "evidence_ids": [
+        "E008"
+      ],
+      "reported_sections": [
+        "Abstract",
+        "Results",
+        "Table 1"
+      ]
+    },
+    {
+      "result_id": "R004",
+      "method_id": "M002",
+      "outcome_id": "O004",
+      "analysis_intent": "exploratory",
+      "sample_size": 2000,
+      "evidence_ids": [
+        "E008",
+        "E011"
+      ],
+      "reported_sections": [
+        "Results: Costs",
+        "Table 1"
+      ]
+    }
+  ]
+}

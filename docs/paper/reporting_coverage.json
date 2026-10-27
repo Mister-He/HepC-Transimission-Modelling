@@ -1,0 +1,38 @@
+{
+  "disclaimer": "Non-scoring coverage aid only; not a quality appraisal or compliance certificate.",
+  "guideline_id": "cheers-2022",
+  "schema_version": "1.0",
+  "items": [
+    {
+      "topic_id": "population-setting-perspective",
+      "status": "addressed",
+      "locations": [
+        "Methods: Model structure",
+        "Methods: Policy scenarios",
+        "Methods: Costs"
+      ]
+    },
+    {
+      "topic_id": "effects-costs-and-currency",
+      "status": "addressed",
+      "locations": [
+        "Methods: Outcomes",
+        "Methods: Costs",
+        "S1 Text Section 7"
+      ]
+    },
+    {
+      "topic_id": "model-assumptions-and-uncertainty",
+      "status": "addressed",
+      "locations": [
+        "Methods: Uncertainty",
+        "S1 Text Sections 1, 4, 6"
+      ]
+    },
+    {
+      "topic_id": "engagement-results-and-conflicts",
+      "status": "missing",
+      "locations": []
+    }
+  ]
+}

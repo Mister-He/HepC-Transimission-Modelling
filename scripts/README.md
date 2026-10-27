@@ -31,7 +31,8 @@ Workflow, in order:
      outputs with the `scientific-visualization` skill, as PNG (300 dpi) plus editable SVG. Run it
      last; the older ggplot drawings in `paper_figures.R` and the other R scripts write the same
      file names.
-   - `build_paper.py`: fills every number from the result files and runs pandoc to write
-     `docs/main.docx` and `docs/Supplementary Information.docx`.
+   - `build_paper.py` (with `paper/facts.py`, `paper/main_text.py`, `paper/si_text.py`,
+     `paper/registry.py`, `paper/fmt.py`): builds the PLOS Medicine manuscript, S1 Text, S1 Checklist,
+     TIFF figures and the evidence registries in `docs/paper/` from the saved outputs.
 7. **Tests:** `run_tests.R` runs everything under `tests/`.
 
