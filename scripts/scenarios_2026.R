@@ -330,7 +330,8 @@ cat("Running",nrow(scenario_table),"policies x",nrow(draw_table),"posterior draw
 results <- parallel::mclapply(seq_len(nrow(draw_table)),function(i)
   tryCatch(evaluate_draw(as.numeric(draw_table[i,theta_cols])),error=function(e) e),
   mc.cores=N_CORES,mc.preschedule=TRUE)
-if (any(vapply(results,is.null,logical(1)))) stop("A parallel worker returned no result (crashed or killed)")
+if (any(vapply(results,function(r) is.null(r) || inherits(r,"try-error"),logical(1))))
+  stop("A parallel worker returned no result (crashed or killed)")
 errors <- vapply(results,function(r) inherits(r,"error"),logical(1))
 if (any(errors)) stop("Draw failed: ",conditionMessage(results[[which(errors)[1]]]))
 valid <- !vapply(results,function(r) isTRUE(r$invalid),logical(1))
