@@ -4,7 +4,7 @@ Generated results; reruns overwrite these folders. Do not create new run folders
 parallel results are requested.
 
 - `calibration/`: calibration results. See `calibration/README.md`.
-  - `r_20261021_agepop/`: Nelder–Mead fit (posterior mode).
+  - `r_20261027_agepop/`: Nelder–Mead fit (posterior mode).
   - `smr_sensitivity/`: Nelder–Mead fits with the PWID mortality ratios at their CI bounds (sensitivity only).
   - `mcmc_reference/`: reference MCMC posterior (production).
   - `npe_lhs/`: single-round NPE from 50,000 LHS prior simulations, with SBC (cross-validation only).

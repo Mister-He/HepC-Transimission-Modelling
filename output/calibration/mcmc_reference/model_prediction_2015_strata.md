@@ -5,12 +5,12 @@ Active HCV cases are a+c+t (viremic states); recovered r is antibody-reactive bu
 
 | Group | Total population | Active HCV cases |
 |---|---:|---:|
-| D | 2178 (839–4651) | 242 (54–783) |
-| J | 8451 (8283–8520) | 2323 (2051–2595) |
-| F | 5857 (5664–5947) | 2046 (1799–2339) |
-| X | 33713 (31476–35073) | 4636 (3931–5413) |
-| Current PWID (D+F) | 8038 (6772–10320) | 2330 (2030–2775) |
-| Ever-PWID (D+J+F+X) | 50218 (49496–50893) | 9300 (8084–10601) |
+| D | 1130 (577–2004) | 77 (25–198) |
+| J | 9741 (8889–11104) | 2657 (2269–3123) |
+| F | 6802 (6189–7827) | 2499 (2126–2963) |
+| X | 40035 (36123–46690) | 5481 (4469–6705) |
+| Current PWID (D+F) | 7957 (7062–9298) | 2584 (2210–3056) |
+| Ever-PWID (D+J+F+X) | 57742 (52350–66850) | 10725 (9005–12859) |
 
 Finite posterior draws: 4000 / 4000; equilibrium-pass draws used: 4000.
-Posterior sources: .
+Posterior sources: mcmc_reference.

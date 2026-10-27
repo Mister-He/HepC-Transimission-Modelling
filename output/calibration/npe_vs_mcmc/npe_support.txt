@@ -1,2 +1,2 @@
 npe_draws_checked 4000
-npe_draws_equilibrium_pass 2671
+npe_draws_equilibrium_pass 3055

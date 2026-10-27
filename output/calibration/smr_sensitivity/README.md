@@ -2,7 +2,7 @@
 
 Nelder–Mead refits (3 uninformative starts each, maxit 3000, `--nm-restarts 5`, seed
 20261001) with the PWID standardised mortality ratios at the bounds of their 95% CIs
-(van Santen et al. 2014). The production fit (`../r_20261021_agepop`) uses 9.52 (viraemic)
+(van Santen et al. 2014). The old-design fit (`r_20261021_agepop`, removed 2026-10-27; in git history) uses 9.52 (viraemic)
 and 4.73 (non-viraemic). Each folder keeps `predictions.csv`, `solutions.csv`,
 `run_config.json` and `targets.json`.
 

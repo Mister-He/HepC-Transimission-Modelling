@@ -1,7 +1,12 @@
 {
   "target_year": 2015,
   "age_groups": ["<20", "20-29", "30-39", "40-49", "50-59", "60+"],
-  "seroprevalence": [0.464498534765071, 0.981415521387786, 0.999500503266432, 0.994423430524212, 0.985082789906464, 0.980574003184272],
+  "seroprevalence": [0.556376106525528, 0.988092043860591, 0.977501461268742, 0.972336950738051, 0.976676751328848, 0.946139617414972],
   "beta_precision": 100,
-  "equilibrium_horizon_years": 150
+  "equilibrium_horizon_years": 150,
+  "first_arrests": [249, 753, 670, 287, 94, 24],
+  "first_arrests_nb_size": 50,
+  "community_pwid": 8149.20014097276,
+  "community_pwid_log_sd": 0.2453,
+  "community_pwid_year": 2017
 }
