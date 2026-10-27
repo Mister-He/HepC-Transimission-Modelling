@@ -23,7 +23,7 @@ THETA_LO <- log(c(CONTACT_LO, ENTRY_LO, C_LO)); THETA_HI <- log(c(CONTACT_HI, EN
 # - theta1-6 (log contact scales relative to setup.R's C_contact): Normal(0, 1.5); 95% range
 #   of a scale 0.05-19.
 # - theta7-12 (log entry scales): Normal(0, 1) truncated at 0, i.e. half-normal; median scale
-#   1.4, 95% below 7.1.
+#   2.0, 95% below 7.1.
 # - theta13 (log c): Normal(0, 0.5), centred on first arrest as fast as re-arrest.
 PRIOR_MEAN <- rep(0, N_THETA)
 PRIOR_SD <- c(rep(1.5, 6), rep(1, 6), 0.5)
@@ -93,8 +93,7 @@ make_objective <- function(base_params, data, equilibrium_penalty = TRUE) {
 # changes to sim.cpp as well as to setup.R.
 check_fit_current <- function(fit, base_params, data) {
   stopifnot("fit made with different setup.R parameters" = isTRUE(all.equal(fit$base_params, base_params)))
-  d <- data; d$t_start <- 0; d$t_end <- targets$equilibrium_horizon_years
-  d$dt <- fit$data$dt; d$save_every <- round(1 / d$dt)  # the fit's own step, whatever the caller uses
+  d <- data; d$dt <- fit$data$dt; d <- equilibrium_data(d)  # the fit's own step, whatever the caller uses
   p <- J_summary_final(run_sim(build_params(fit$best$theta, base_params), d))$p_sero
   stopifnot("fit made with a different model (sim.cpp)" =
               isTRUE(all.equal(p, fit$predictions$seroprevalence_hat, tolerance = 1e-8)))

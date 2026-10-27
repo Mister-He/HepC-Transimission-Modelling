@@ -488,7 +488,7 @@ if want("sbc_rank_histograms"):
     ranks = np.load(CAL / "npe_lhs/sbc_ranks.npy"); n, nb = len(ranks), 20
     lo, hi = stats.binom.ppf([0.005, 0.995], n, 1 / nb)
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(2, 4, figsize=(FULL * MM, 85 * MM), layout="constrained", sharex=True, sharey=True)
+        fig, axes = plt.subplots(3, 5, figsize=(FULL * MM, 110 * MM), layout="constrained", sharex=True, sharey=True)
         for ax in axes.flat[ranks.shape[1]:]:
             ax.set_visible(False)
         for i, ax in zip(range(ranks.shape[1]), axes.flat):
@@ -509,7 +509,7 @@ if want("marginals") or want("pairs"):
 
 if want("marginals"):
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(2, 4, figsize=(FULL * MM, 90 * MM), layout="constrained")
+        fig, axes = plt.subplots(3, 5, figsize=(FULL * MM, 115 * MM), layout="constrained")
         for ax in axes.flat[len(TH):]:
             ax.set_visible(False)
         for ax, t in zip(axes.flat, TH):

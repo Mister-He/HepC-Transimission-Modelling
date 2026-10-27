@@ -7,6 +7,12 @@
 # Default convergence: max(|p_a(T) - p_a(T-10)|) \leq 0.005
 # =============================================================================
 
+# Run settings for the burn-in to the 2015 snapshot (model year = horizon): start at 0, one stored
+# row per model year (callers read only yearly rows: the snapshot and T-10). Set dt before calling.
+equilibrium_data <- function(data, t_end = targets$equilibrium_horizon_years) {
+  data$t_start <- 0; data$t_end <- t_end; data$save_every <- round(1 / data$dt); data
+}
+
 check_equilibrium <- function(out, t_lag = 10,
                               crit_log_pop = 0.01,
                               crit_prev = 0.005,

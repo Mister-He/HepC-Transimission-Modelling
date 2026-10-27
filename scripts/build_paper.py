@@ -259,7 +259,7 @@ We drew {ndraw:,} parameter sets at random from the MCMC posterior. For each dra
 
 ## Calibration
 
-The model reproduced the age specific seroprevalence targets; the best fit was within {100*max_abs_err:.1f} percentage points of every target. All {n_ovl} 95% posterior predictive intervals overlapped the target intervals (S1 Text, Section 2). Modelled first arrests matched the counts of new drug users at ages under 30 but were higher at older ages, because people who start injecting young age before their first arrest and entry could not fall below the official counts. The model had {stx('population_current_PWID')} active injectors outside prison in 2015, below the survey estimate of {TG['community_pwid']:,} but within its interval. The first arrest multiplier was {C_TXT}, well above its prior median of about 1.05, but its posterior was only modestly narrower than its prior (standard deviation {100*c_sd_ratio:.0f}% of the prior's). Entry was close to the official counts: the median scale was {entry_lo:.2f} to {entry_hi:.2f} below age 60. Because the prison population size was not fitted, the modelled prison population in 2015 was {stx('population_J', False)}, compared with {J_OBS_2015:,} people with a known screening result in prison records. In 2015, the model estimated {stx('population_ever_PWID')} people with a history of injecting drugs. Of these, {stx('population_D', False)} were in D, {stx('population_F', False)} in F and {stx('population_X', False)} in X.
+The model reproduced the age specific seroprevalence targets; the best fit was within {100*max_abs_err:.1f} percentage points of every target. All {n_ovl} 95% posterior intervals of the model values overlapped the target intervals (S1 Text, Section 2). Modelled first arrests matched the counts of new drug users at ages under 30 but were higher at older ages, because people who start injecting young age before their first arrest and entry could not fall below the official counts. The model had {stx('population_current_PWID')} active injectors outside prison in 2015, below the survey estimate of {TG['community_pwid']:,} but within its interval. The first arrest multiplier was {C_TXT}, well above its prior median of about 1.05, but its posterior was only modestly narrower than its prior (standard deviation {100*c_sd_ratio:.0f}% of the prior's). Entry was close to the official counts: the median scale was {entry_lo:.2f} to {entry_hi:.2f} below age 60. Because the prison population size was not fitted, the modelled prison population in 2015 was {stx('population_J', False)}, compared with {J_OBS_2015:,} people with a known screening result in prison records. In 2015, the model estimated {stx('population_ever_PWID')} people with a history of injecting drugs. Of these, {stx('population_D', False)} were in D, {stx('population_F', False)} in F and {stx('population_X', False)} in X.
 
 ## Prison treatment alone met the incidence target but not the mortality target
 
@@ -580,7 +580,7 @@ Table S5 gives the posterior of each parameter. For {pd_txt} the posterior stand
 | --- | --- | --- | --- | --- | --- | --- |
 {chr(10).join(post_rows)}
 
-Table S6 compares the targets with the posterior mode and the 95% posterior predictive interval (with observation noise) of each modelled target. {f"All {n_ovl}" if n_ovl == len(ovl) else f"{n_ovl} of {len(ovl)}"} intervals overlapped the target intervals{miss_txt}. Fig S1 shows the fit.
+Table S6 compares the targets with the posterior mode and the 95% posterior interval of each modelled target value (no observation noise added). {f"All {n_ovl}" if n_ovl == len(ovl) else f"{n_ovl} of {len(ovl)}"} intervals overlapped the target intervals{miss_txt}. Fig S1 shows the fit.
 
 **Table S6. Calibration targets and model fit, 2015.**
 
@@ -588,7 +588,7 @@ Table S6 compares the targets with the posterior mode and the 95% posterior pred
 | --- | --- | --- | --- | --- |
 {chr(10).join(cal_rows)}
 
-![Fig S1. Calibration targets, 2015: seroprevalence in prison by age, first arrests by age, and active injectors outside prison. Target values with the 95% range of the likelihood are compared with 95% posterior predictive intervals from the MCMC posterior and, for contrast, single round neural posterior estimation.](FIGURES_DIR/calibration_agepop.png){{width=80%}}
+![Fig S1. Calibration targets, 2015: seroprevalence in prison by age, first arrests by age, and active injectors outside prison. Target values with the 95% range of the likelihood are compared with 95% posterior intervals of the model values from the MCMC posterior and, for contrast, single round neural posterior estimation.](FIGURES_DIR/calibration_agepop.png){{width=80%}}
 
 In 2015 the model estimated {stx('population_D')} people in D, {stx('population_J', False)} in J, {stx('population_F', False)} in F and {stx('population_X', False)} in X. The total was {stx('population_ever_PWID', False)} people with a history of injecting drugs. Of these, {stx('active_hcv_ever_PWID', False)} were viraemic. Only D + F ({stx('population_current_PWID', False)}) was fitted, to the survey estimate. The modelled prison population is much larger than the {J_OBS_2015:,} people with a known screening result in prison records.
 

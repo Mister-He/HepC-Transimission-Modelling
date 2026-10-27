@@ -191,7 +191,7 @@ Rscript scripts/plot_calibration.R --cores 14 --max-draws 2000
   (`output/prison_2015_counts.csv`).
 - **Calibration figure:** `figures/calibration_agepop.png` has three panels (seroprevalence,
   first arrests, community PWID). Each target is shown with the 95% range of its likelihood,
-  against posterior predictive intervals (with observation noise) from the reference MCMC and
+  against 95% posterior intervals of the model values (no observation noise) from the reference MCMC and
   the NPE (LHS; 1,527 of 2,000 NPE draws pass equilibrium).
 - **Overlap check:** `figures/calibration_interval_overlap.csv` records whether each 95% interval
   overlaps its target (MCMC: 13 of 13; NPE: 13 of 13). The posterior medians of first

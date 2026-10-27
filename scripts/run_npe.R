@@ -39,8 +39,7 @@ Rcpp::sourceCpp(file.path(ROOT, "scripts/model/sim.cpp"))
 for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "prior_sampling.R"))
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT); base_params <- setup_env$params; data <- setup_env$data
-data$t_start <- 0; data$t_end <- targets$equilibrium_horizon_years
-data$save_every <- round(1 / data$dt)  # one stored row per model year: callers read only yearly rows (2015 snapshot, T-10)
+data <- equilibrium_data(data)
 prior <- prior_spec()  # same fixed prior as Nelder-Mead and the reference MCMC
 center <- prior$mean; prior_sd <- prior$sd
 # fit$base_params is what the scenarios use; a setup.R edit without a refit must not slip through.

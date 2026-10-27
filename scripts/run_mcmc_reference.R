@@ -52,10 +52,7 @@ fit <- readRDS(FIT)
 base_params <- setup_env$params
 data <- setup_env$data
 check_fit_current(fit, base_params, data)
-data$t_start <- 0
-data$t_end <- targets$equilibrium_horizon_years
-data$dt <- DT
-data$save_every <- round(1 / data$dt)  # one stored row per model year: callers read only yearly rows (2015 snapshot, T-10)
+data$dt <- DT; data <- equilibrium_data(data)
 startup_sec <- proc.time()[["elapsed"]] - T_SCRIPT0
 TH <- paste0("theta", 1:N_THETA)
 

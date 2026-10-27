@@ -36,7 +36,7 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   smr_*     — van Santen et al. (2014)
 #   mu        — SingStat 2015 resident death rates (fixed)
 #   C_contact — base 6 x 6 matrix; row scales calibrated (theta1-6)
-#   beta      — SingStat/CNB 2015 new drug abusers (fixed, unscaled)
+#   beta      — SingStat/CNB 2015 new drug abusers; scaled by the calibrated entry scales (theta7-12)
 # =============================================================================
 
 params <- list(
@@ -137,7 +137,7 @@ params <- list(
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # Fitted to SPS records by preprocess.R and written by update_rate_params.R.
   # First arrest (D -> J) is lambda1_i = c_first * lambda3_i; c_first is calibrated
-  # (theta7), so the value here is only a placeholder for uncalibrated runs.
+  # (theta13), so the value here is only a placeholder for uncalibrated runs.
   c_first = 1,
   lambda2 = c(0.462, 0.636, 0.454, 0.337, 0.325, 0.394),  # release rate lambda_i^(2) (SPS fit)
   lambda3 = c(0.548, 0.478, 0.469, 0.471, 0.384, 0.265),  # re-arrest rate lambda_i^(3) (SPS fit)
@@ -157,8 +157,8 @@ params <- list(
   
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
-  # SingStat/CNB 2015 new-drug-abuser counts, used as the entry into D without
-  # scaling in every year (2015 equilibrium and the 2016-2030 projection).
+  # SingStat/CNB 2015 new-drug-abuser counts; build_params() multiplies them by the calibrated
+  # entry scales (theta7-12). Held constant in every year (2015 equilibrium and 2016-2030 projection).
   beta = c(
     257, # age group 1
     644, # age group 2

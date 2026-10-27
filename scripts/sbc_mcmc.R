@@ -21,14 +21,14 @@ N_WARMUP <- as.integer(arg("--n-warmup", "15000"))
 CORES <- as.integer(arg("--cores", "8")); SEED <- as.integer(arg("--seed", "20261201"))
 FIT <- arg("--fit", "output/calibration/r_20261027_agepop/fit.rds")
 NPE <- "output/calibration/npe_lhs"; OUT <- "output/calibration/npe_vs_mcmc/mcmc_sbc"
-source("scripts/calibration/likelihood.R")
+source("scripts/calibration/likelihood.R"); source("scripts/calibration/targets.R")
 TH <- paste0("theta", 1:N_THETA)
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 
-theta <- as.matrix(read.csv(file.path(NPE, "theta_sbc.csv"))[seq_len(K), TH])
-x <- as.matrix(read.csv(file.path(NPE, "x_sbc.csv"))[seq_len(K), ])
-stopifnot(nrow(theta) == K, nrow(x) == K)
-base <- jsonlite::fromJSON("data/calibration_targets.json")
+theta <- as.matrix(read.csv(file.path(NPE, "theta_sbc.csv"))[, TH]); x <- as.matrix(read.csv(file.path(NPE, "x_sbc.csv")))
+stopifnot(K <= nrow(theta), nrow(x) == nrow(theta))  # indexing past the end would pad with NA rows
+theta <- theta[seq_len(K), , drop = FALSE]; x <- x[seq_len(K), , drop = FALSE]
+base <- read_targets("data/calibration_targets.json")
 ss <- jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))  # the NPE SBC set must share prior and phi
 ps <- prior_spec()
 stopifnot(isTRUE(all.equal(ss$prior_mean, ps$mean)), isTRUE(all.equal(ss$prior_sd, ps$sd)),

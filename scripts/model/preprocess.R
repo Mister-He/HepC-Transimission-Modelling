@@ -171,8 +171,8 @@ write.csv(full_join(counts_2015, sero_2015, by = "age_group"), "output/prison_20
 data$t_injail = data$t_injail / 365.25 # convert to years
 
 ## Lexis splitting: cut each spell (length t_tot from age age_s) at the 10-year age bands.
-## Bands are walked for all spells at once; the event (obs) goes on the piece that ends within
-## 1e-3 years of the spell end, and always on the open 60+ band.
+## Bands are walked for all spells at once; the event (obs) goes on the piece in which the spell
+## ends (always the open 60+ band if reached).
 ageint = c(0, 2:6)*10
 n_age = length(ageint)
 split_by_age = function(t_tot, age_s, obs) {

@@ -18,12 +18,12 @@ MAX_DRAWS <- as.integer(arg("--max-draws", "4000"))   # 0 = use all draws
 TARGET_YEAR <- as.integer(arg("--year", "2015"))
 if (!TARGET_YEAR %in% c(2015L, 2016L, 2017L))
   stop("--year must be 2015, 2016, or 2017")
-MODEL_YEAR <- 150L + TARGET_YEAR - 2015L
 FILE_TAG <- as.character(TARGET_YEAR)
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 
 source(file.path(ROOT, "scripts/calibration/targets.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
+MODEL_YEAR <- targets$equilibrium_horizon_years + TARGET_YEAR - 2015L  # model year of the 2015 snapshot = horizon
 old <- setwd(file.path(ROOT, "scripts/model")); setup_env <- new.env(parent = globalenv())
 sys.source("setup.R", setup_env); setwd(old)
 Rcpp::sourceCpp(file.path(ROOT, "scripts/model/sim.cpp"))
@@ -52,8 +52,7 @@ active_idx <- lapply(0:3, state_idx, states = 1:3)
 one_prediction <- function(theta) {
   tryCatch({
     pm <- build_params(theta, fit$base_params)
-    data <- setup_env$data; data$t_start <- 0
-    data$t_end <- MODEL_YEAR; data$save_every <- round(1 / data$dt)
+    data <- equilibrium_data(setup_env$data, MODEL_YEAR)
     out <- run_sim(pm, data)
     eq_out <- out[out[, 1] <= targets$equilibrium_horizon_years + 1e-8, , drop = FALSE]
     eq <- check_equilibrium(eq_out)
@@ -97,16 +96,7 @@ summary$n_finite_draws <- nrow(all_mat)
 summary$n_equilibrium_pass <- n_equilibrium
 summary$posterior_sources <- paste(basename(dirname(sample_files)), collapse = "+")
 
-data_best <- setup_env$data; data_best$t_start <- 0
-data_best$t_end <- MODEL_YEAR; data_best$save_every <- round(1 / data_best$dt)
-best_out <- run_sim(build_params(fit$best$theta, fit$base_params), data_best)
-best_state <- best_out[which.min(abs(best_out[, 1] - MODEL_YEAR)), -1]
-best_total <- vapply(population_idx, function(ii) sum(best_state[ii]), numeric(1))
-best_active <- vapply(active_idx, function(ii) sum(best_state[ii]), numeric(1))
-point <- c(best_total[1:4], best_total[1] + best_total[3], sum(best_total),
-           best_active[1:4], best_active[1] + best_active[3], sum(best_active))
-names(point) <- c(paste0("population_", c("D", "J", "F", "X", "current_PWID", "ever_PWID")),
-                  paste0("active_hcv_", c("D", "J", "F", "X", "current_PWID", "ever_PWID")))
+point <- one_prediction(fit$best$theta)$values
 summary$point_estimate <- unname(point[match(summary$measure, names(point))])
 summary$definition <- ifelse(grepl("active_hcv", summary$measure),
   "a+c+t; viremic/active HCV states", "u+a+c+t+r; all model states")

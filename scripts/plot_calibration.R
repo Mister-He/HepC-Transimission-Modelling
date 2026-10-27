@@ -48,9 +48,7 @@ evaluate_draw <- function(theta) {
   tryCatch({
     pm <- build_params(theta, fit$base_params)
     data <- setup_env$data
-    data$t_start <- 0
-    data$t_end <- targets$equilibrium_horizon_years
-    data$save_every <- round(1 / data$dt)
+    data <- equilibrium_data(data)
     out <- run_sim(pm, data)
     eq <- check_equilibrium(out)
     cs <- calib_summary(out, pm)
@@ -96,7 +94,8 @@ simulate_or_load <- function(theta, cache_file, label, source_files) {
 # The cache is fresh only if newer than the draws and every model input and made from the same
 # number of draws (n_requested column), so a different --max-draws never reuses it.
 model_inputs <- c(file.path(root, c("scripts/model/setup.R", "scripts/model/sim.cpp",
-  "data/calibration_targets.json", "scripts/calibration/likelihood.R")), fit_path)
+  "data/calibration_targets.json", "scripts/calibration/likelihood.R",
+  "scripts/calibration/model_metrics.R", "scripts/calibration/equilibrium.R")), fit_path)
 cache_for <- function(f) file.path(dirname(f), "model_prediction_2015_age_draws.csv")
 npe <- simulate_or_load(load_draws(npe_file), cache_for(npe_file), "NPE posterior", c(npe_file, model_inputs))
 mcmc <- simulate_or_load(load_draws(mcmc_file), cache_for(mcmc_file), "MCMC posterior", c(mcmc_file, model_inputs))
