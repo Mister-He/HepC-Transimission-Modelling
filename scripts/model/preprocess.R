@@ -183,7 +183,9 @@ split_by_age = function(t_tot, age_s, obs) {
         last <- idx[act] == n_age
         t0 <- ifelse(last, t_tot[act],
                      pmin(t_tot[act], ageint[pmin(idx[act] + 1, n_age)] - pmax(age_s[act], ageint[idx[act]])))
-        event <- ifelse(last, obs[act], ifelse(abs(t_tot[act] - t0) < 1e-3, obs[act], 0))
+        # The event belongs to the piece in which the spell ends (no tolerance: a tolerance
+        # gave the event to both pieces when a spell ended just after a band boundary).
+        event <- ifelse(last | t0 >= t_tot[act], obs[act], 0)
         pieces[[length(pieces) + 1]] <- data.frame(row = act, step = length(pieces) + 1, age = idx[act],
                                                    t = t0, event = event)
         idx[act] <- idx[act] + 1; t_tot[act] <- t_tot[act] - t0

@@ -73,13 +73,14 @@ std::vector<double> rhs(double time, const std::vector<double> &y,
   };
   auto mortality = [&](int k, int h, int age) {
     // General-population rate times the PWID SMR of the state: viraemic (a, c,
-    // t) or non-viraemic (u, r). Liver deaths in DC/HCC are added on top.
+    // t) or non-viraemic (u, r). Liver deaths in DC/HCC are added on top; the
+    // SVR modifiers psi scale only those liver deaths, not the background rate.
     double base =
         p.mu[age] * ((h >= 1 && h <= 3) ? p.smr_viraemic : p.smr_nonviraemic);
     if (k == 3)
-      return ((h == 3 || h == 4) ? p.psi_DC : 1.0) * (p.mu_DC + base);
+      return ((h == 3 || h == 4) ? p.psi_DC : 1.0) * p.mu_DC + base;
     if (k == 4)
-      return ((h == 3 || h == 4) ? p.psi_HCC : 1.0) * (p.mu_HCC + base);
+      return ((h == 3 || h == 4) ? p.psi_HCC : 1.0) * p.mu_HCC + base;
     return base;
   };
   auto progression = [&](int from, int to) {
