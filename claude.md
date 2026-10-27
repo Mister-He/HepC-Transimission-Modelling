@@ -246,7 +246,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
   more injectors outside prison.
 - `docs/first_arrest_mortality_update.md` and `docs/final_review.md` are historical.
 
-## First-arrest multiplier, seroprevalence-only fit, audit fixes (2026-10-21/22, `docs/first_arrest_multiplier.md`) — current state
+## First-arrest multiplier, seroprevalence-only fit, audit fixes (2026-10-21/22, `docs/first_arrest_multiplier.md`) — superseded; see "Redesign" at the end
 - **Rates:** `rearrest_rate.stan` is survival-only (no prison steady state, no `f_pop`); `pi` 0.724,
   `lambda3` 0.548, 0.478, 0.469, 0.471, 0.384, 0.265. Both fits saved as `list(summary, draws)`;
   `lambda2`/`lambda3` = posterior mean of `exp(log_lambda)`. `preprocess.R` is vectorised (bit-identical
@@ -278,3 +278,25 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - **Code:** `scenarios_2026.R` draws its old ggplot figures only with `--figures true`; prediction,
   plot and scenario scripts stop if the fit does not match `setup.R`.
 - **Manuscript** rewritten; `build_paper.py` asserts every result claim it makes.
+
+## Redesign: entry scales, first-arrest and community targets (2026-10-27, `docs/redesign_prompt.md`) — current state
+- **Rates:** rerun, unchanged; `setup.R` not modified.
+- **Model fixes:** ψ mortality fix in `sim.cpp`; `split_by_age` fix in `preprocess.R`.
+- **Calibration (user decisions):** 13 parameters: θ1–θ6 contact N(0, 1.5); θ7–θ12 log entry scales on the CNB 2015
+  counts, N⁺(0, 1), scale 1–100; θ13 log `c` N(0, 0.5), 0.5–100. Likelihood: Beta seroprevalence (φ 100) + negative
+  binomial first arrests vs CNB (257, 644, 292, 94, 21, 1; size 50) + log-normal D + F vs Teo 2019 (11,000,
+  6,500–17,000; SD 0.2453). Community = D + F.
+- **Fit** `output/calibration/r_20261027_agepop` (maxit 5000): 7/8 starts agree (objective 18.8–19.5; one local optimum
+  121.5); RMSE 0.014, `c` 2.28, D + F 7,720. Entry scales 30+ at the bound 1; first arrests over target at 30+.
+- **MCMC** (8 chains × 60,000, 1.9 h): R-hat ≤ 1.004, bulk ESS ≥ 2,158, acceptance 0.12–0.14. `c` 2.78 (1.55–5.49).
+  Prior-dominated (SD ratio > 0.7): θ5, θ6, θ13. 2015: D + F 7,957, J 9,741 (observed 3,367, not fitted), ever-PWID 57,742.
+  MCMC SBC (8 datasets, 104 ranks): cov95 0.952, max split R-hat 1.015.
+- **NPE:** gate **FAIL** (θ2, θ11 biased, θ10 U-shaped; coverage fine), 24% of draws fail equilibrium, 2/13 parameters
+  agree with MCMC. User decision: accept and document; NPE will likely be deleted later. The test now checks the
+  marker matches the SBC result instead of requiring a pass.
+- **Scenarios (2,000 draws):** J only incidence −84.4% (67.9–90.4), mortality −54.0%. All finite scenarios meet
+  incidence; mortality at the median only at S5000_F25 (66.2%, joint 80%), S8000_F25 (71.6%, 99.85%), S8000_F50 (67.4%).
+  X holds 89% of released chronic infections. Manuscript rebuilt; `build_paper.py` asserts these claims.
+- Removed: superseded `output/calibration/r_20261021_agepop/`. Next per `docs/instructions.md`: ponytail audit →
+  refactor → review, one commit per step, no push.
+
