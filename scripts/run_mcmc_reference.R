@@ -4,12 +4,12 @@
 # on the exact posterior, with convergence, adaptation and proposal diagnostics.
 #
 # Target (shared with single-round NPE): the fixed truncated Normal prior of likelihood.R
-# (prior_spec()) on the 7 log-scale parameters, the Beta seroprevalence likelihood, and the
-# 2015 equilibrium check as a hard restriction. Defaults: 4
-# prior-started chains, 10,000 warmup proposals with adaptation from proposal 5,000,
-# 50,000 evaluations per chain, draws stored every 10th iteration (--thin; all
+# (prior_spec()) on the 13 log-scale parameters, the seroprevalence, first-arrest and
+# community-PWID likelihood (nll_targets), and the 2015 equilibrium check as a hard
+# restriction. Defaults: 8 prior-started chains, 20,000 warmup proposals with adaptation from
+# proposal 5,000, 60,000 evaluations per chain, draws stored every 10th iteration (--thin; all
 # diagnostics use every retained draw). The stored production run
-# (output/calibration/mcmc_reference) used these defaults with --cores 4.
+# (output/calibration/mcmc_reference) used these defaults.
 # Starts and the initial proposal covariance come from the prior only.
 # =============================================================================
 
@@ -21,12 +21,12 @@ arg <- function(name, default = NULL) {
 T_SCRIPT0 <- proc.time()[["elapsed"]]
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261027_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
-N_CHAINS <- as.integer(arg("--n-chains", "4"))
-CORES <- as.integer(arg("--cores", "4"))
-N_WARMUP <- as.integer(arg("--n-warmup", "10000"))
-MAX_EVALS <- as.integer(arg("--max-evals", "50000"))
+N_CHAINS <- as.integer(arg("--n-chains", "8"))
+CORES <- as.integer(arg("--cores", "8"))
+N_WARMUP <- as.integer(arg("--n-warmup", "20000"))
+MAX_EVALS <- as.integer(arg("--max-evals", "60000"))
 ADAPT_START <- as.integer(arg("--adapt-start", "5000"))
 ADAPT_EVERY <- as.integer(arg("--adapt-every", "50"))
 THIN <- as.integer(arg("--thin", "10"))
@@ -50,8 +50,8 @@ for (f in c("model_metrics.R", "equilibrium.R", "likelihood.R", "mcmc.R", "prior
   sys.source(file.path(ROOT, "scripts/calibration", f), envir = environment())
 fit <- readRDS(FIT)
 base_params <- setup_env$params
-check_fit_current(fit, base_params, data)
 data <- setup_env$data
+check_fit_current(fit, base_params, data)
 data$t_start <- 0
 data$t_end <- targets$equilibrium_horizon_years
 data$dt <- DT
@@ -195,7 +195,7 @@ jsonlite::write_json(list(
   regularisation = "1e-6 * diag(prior variance)",
   prior = "independent Normal(prior_mean, prior_sd) on theta, truncated to the bounds (likelihood.R)",
   prior_mean = prior_mean, prior_sd = prior_sd, theta_lo = THETA_LO, theta_hi = THETA_HI,
-  target = "Beta seroprevalence likelihood (fixed precision); equilibrium failure = -Inf",
+  target = "Beta seroprevalence + negative binomial first arrests + log-normal community PWID; equilibrium failure = -Inf",
   integration_dt = DT, seed = SEED,
   seeds = list(prior_variance = SEED + 3000, chain = "SEED+1000+i (initial prior draws and sampling)"),
   startup_sec = startup_sec, pre_chain_sec = pre_chain_sec, method_sec = method_sec,

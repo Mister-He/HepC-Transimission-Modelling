@@ -17,7 +17,7 @@ arg        <- function(name, default = NULL) {
 }
 STEP       <- arg("--step", "all")
 ROOT       <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
+FIT        <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261027_agepop/fit.rds")), mustWork = TRUE)
 OUT        <- file.path(ROOT, arg("--out-dir", "output/calibration/npe_lhs"))
 PYTHON     <- arg("--python", Sys.which("python3"))
 N_SIMS     <- as.integer(arg("--n-sims", "50000"))
@@ -57,7 +57,8 @@ log_timing <- function(stage, seconds, n_attempted = NA, n_ok = NA, n_nonfinite 
   write.csv(rbind(old[old$stage != stage, , drop = FALSE], row), f, row.names = FALSE)
 }
 
-# Returns p_sero (the six calibration summaries) or a failure code: "bounds", "nonfinite" or "equilibrium".
+# Returns the 13 calibration summaries (6 seroprevalences, 6 first arrests, community PWID) or a
+# failure code: "bounds", "nonfinite" or "equilibrium".
 # Out-of-bounds draws are dropped because the MCMC target gives them -Inf (same support).
 simulate <- function(theta) {
   if (!within_bounds(theta)) return("bounds")
@@ -65,11 +66,11 @@ simulate <- function(theta) {
   if (is.null(pm)) return("nonfinite")
   out <- tryCatch(run_sim(pm, data), error = function(e) NULL)
   if (is.null(out)) return("nonfinite")
-  s <- J_summary_final(out)
-  if (any(!is.finite(s$p_sero)) || any(!is.finite(s$N_hat)) || any(s$N_hat <= 0)) return("nonfinite")
+  cs <- calib_summary(out, pm)
+  if (!summary_ok(out, cs)) return("nonfinite")
   eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
   if (is.null(eq) || !eq$pass) return("equilibrium")
-  s$p_sero
+  c(cs$p_sero, cs$first_arrests, cs$community_pwid)
 }
 
 simulate_many <- function(theta, stage) {
@@ -88,10 +89,11 @@ simulate_many <- function(theta, stage) {
   list(x = do.call(rbind, ans[ok]), ok = ok, code = code)
 }
 
+X_NAMES <- c(paste0("p", 1:6), paste0("fa", 1:6), "community")
 write_pairs <- function(theta, sim, theta_file, x_file) {
   write.csv(setNames(as.data.frame(theta[sim$ok, , drop = FALSE]), paste0("theta", 1:N_THETA)),
             file.path(OUT, theta_file), row.names = FALSE)
-  write.csv(setNames(as.data.frame(sim$x), paste0("p", 1:6)), file.path(OUT, x_file), row.names = FALSE)
+  write.csv(setNames(as.data.frame(sim$x), X_NAMES), file.path(OUT, x_file), row.names = FALSE)
 }
 
 step_data <- function() {
@@ -109,13 +111,14 @@ step_data <- function() {
     sbc <- simulate_many(th_sbc, "sbc_simulation")
     write_pairs(th_sbc, sbc, "theta_sbc.csv", "x_sbc.csv")
   }
-  write.csv(setNames(as.data.frame(t(targets$seroprevalence)), paste0("p", 1:6)),
+  write.csv(setNames(as.data.frame(t(c(targets$seroprevalence, targets$first_arrests, targets$community_pwid))), X_NAMES),
             file.path(OUT, "x_obs.csv"), row.names = FALSE)
   jsonlite::write_json(list(
     sampling = "Latin hypercube on the unit cube, mapped by the Normal inverse CDF per parameter",
     prior = "independent Normal(prior_mean, prior_sd) on theta, truncated to the bounds (likelihood.R)",
     prior_mean = center, prior_sd = prior_sd, theta_lo = THETA_LO, theta_hi = THETA_HI,
-    beta_precision = targets$beta_precision, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
+    beta_precision = targets$beta_precision, first_arrests_nb_size = targets$first_arrests_nb_size,
+    community_pwid_log_sd = targets$community_pwid_log_sd, design_seed = SEED, n_attempted = N_SIMS, n_valid = sum(sim$ok),
     n_excluded_nonfinite = sum(sim$code == "nonfinite"), n_excluded_equilibrium = sum(sim$code == "equilibrium"),
     n_excluded_bounds = sum(sim$code == "bounds"),
     exclusion_rule = "drop draws outside the parameter bounds (within_bounds) and simulations that are non-finite or fail check_equilibrium (10-year lag); no replacement",
@@ -133,7 +136,8 @@ step_train <- function() {
          "--x-obs", file.path(OUT, "x_obs.csv"), "--out", OUT, "--seed", TRAIN_SEED, "--n-draws", N_DRAWS,
          paste0("--prior-mean=", paste(center, collapse = ",")), "--prior-sd", paste(prior_sd, collapse = ","),
          "--hidden-features", HIDDEN, "--num-transforms", TRANSFORMS,
-         "--beta-precision", targets$beta_precision, paste0("--theta-lo=", paste(THETA_LO, collapse = ",")),
+         "--beta-precision", targets$beta_precision, "--nb-size", targets$first_arrests_nb_size,
+         "--community-log-sd", targets$community_pwid_log_sd, paste0("--theta-lo=", paste(THETA_LO, collapse = ",")),
          paste0("--theta-hi=", paste(THETA_HI, collapse = ",")), "--max-epochs", MAX_EPOCHS,
          "--threads", THREADS, "--sampling-label", "lhs")
   if (N_SBC > 0) a <- c(a, "--n-sbc", N_SBC, "--theta-sbc", file.path(OUT, "theta_sbc.csv"),

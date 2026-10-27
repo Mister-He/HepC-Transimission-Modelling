@@ -43,5 +43,14 @@ vs[1, c(idx(0, 1, 2, 0), idx(3, 4, 3, 5), idx(1, 1, 1, 2))] <- 1  # c, t, a: vir
 vs[1, c(idx(2, 2, 4, 3), idx(1, 3, 0, 1))] <- 1                    # r, u: not viraemic
 check_equal(viraemic_share(vs), 0.6, "viraemic share counts a, c and t states over all PWID")
 
+# Calibration summaries: first arrests = c * lambda3 * D by age; community PWID = D + F.
+cm <- matrix(0, 1, 481); cm[1, 1] <- 150
+cm[1, idx(0, 1, 0, 1)] <- 100; cm[1, idx(0, 3, 2, 1)] <- 20   # D, age 20-29
+cm[1, idx(2, 1, 4, 4)] <- 30                                  # F, age 50-59
+cm[1, idx(1, 1, 0, 2)] <- 50; cm[1, idx(3, 1, 0, 2)] <- 70    # J and X: not community
+cs <- calib_summary(cm, list(c_first = 2, lambda3 = (1:6) / 10))
+check_equal(cs$first_arrests, c(0, 2 * 0.2 * 120, 0, 0, 0, 0), "first arrests are c * lambda3 * D by age")
+check_equal(cs$community_pwid, 150, "community PWID counts D and F only")
+
 n_fail <- test_report("tests/unit/test_metrics.R")
 if (n_fail > 0) quit(status = 1)

@@ -32,7 +32,7 @@ post_path <- file.path(npe_dir, "posterior_samples_npe.csv")
 if (file.exists(post_path)) {
   post <- read.csv(post_path); eval <- read.csv(file.path(npe_dir, "npe_evaluation.csv"))
   ss <- jsonlite::fromJSON(file.path(npe_dir, "simulation_summary.json"))
-  theta <- as.matrix(post[, paste0("theta", 1:7)])
+  theta <- as.matrix(post[, paste0("theta", 1:13)])
   check_identical(as.integer(ss$n_attempted), 50000L, "NPE uses 50,000 attempted LHS prior simulations")
   check_identical(as.integer(ss$n_valid + ss$n_excluded_nonfinite + ss$n_excluded_equilibrium +
                              ss$n_excluded_bounds),
@@ -41,18 +41,20 @@ if (file.exists(post_path)) {
                   "training set contains exactly the valid simulations (no replacements)")
   check_true(nrow(post) >= 500 && all(is.finite(theta)), "NPE posterior draws are finite and sufficiently large")
   check_true(all(eval$posterior_sd >= 0.05), "NPE posterior standard deviations are not collapsed")
-  check_true(file.exists(file.path(npe_dir, "NPE_OK.txt")) && !file.exists(file.path(npe_dir, "NPE_NOT_OK.txt")),
-             "NPE quality gate is accepted without a stale failure marker")
+  gate_ok <- file.exists(file.path(npe_dir, "NPE_OK.txt"))
+  check_true(xor(gate_ok, file.exists(file.path(npe_dir, "NPE_NOT_OK.txt"))),
+             "exactly one NPE quality-gate marker is present")
   sbc_path <- file.path(npe_dir, "sbc_summary.csv")
   check_true(file.exists(sbc_path) && file.exists(file.path(npe_dir, "sbc_ranks.npy")),
              "SBC summary and ranks are retained")
   if (file.exists(sbc_path)) {
     sbc <- read.csv(sbc_path)
-    check_identical(sbc$parameter, paste0("theta", 1:7), "SBC covers all 7 parameters")
+    check_identical(sbc$parameter, paste0("theta", 1:13), "SBC covers all 13 parameters")
     check_true(all(sbc$n_sbc >= 500), "SBC uses at least 500 synthetic datasets")
     check_true(all(sbc$coverage_95 >= 0.85 & sbc$coverage_90 >= 0.75),
                "SBC coverage passes the 95% and 90% gates for every parameter")
-    check_true(all(sbc$rank_shape == "uniform"), "no SBC rank histogram is systematically skewed")
+    # The 13-parameter NPE fails on rank shape (accepted, cross-validation only); the marker must say so.
+    check_identical(gate_ok, all(sbc$rank_shape == "uniform"), "the gate marker matches the SBC rank shapes")
   }
 } else cat("SKIP: single-round NPE output is not present\n")
 

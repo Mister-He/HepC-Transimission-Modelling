@@ -6,18 +6,20 @@
 #
 # True parameters and noise-free outputs are the first K rows of the NPE SBC set
 # (output/calibration/npe_lhs/theta_sbc.csv, x_sbc.csv: prior draws that pass the
-# equilibrium check). Observations follow the MCMC likelihood: y ~ Beta(p * phi, (1 - p) * phi)
-# per age group, with the fixed precision phi of the targets file. Each dataset gets one chain with
-# the production sampler settings and --max-evals evaluations.
-# Usage: Rscript scripts/sbc_mcmc.R [--root .] [--n-datasets 8] [--max-evals 30000] [--cores 8]
+# equilibrium check). Observations follow the MCMC likelihood: seroprevalence
+# ~ Beta(p * phi, (1 - p) * phi), first arrests ~ negative binomial(size, mu), community PWID
+# ~ log-normal, with the settings of the targets file. Each dataset gets one chain with the
+# production sampler settings, --n-warmup warmup proposals and --max-evals evaluations.
+# Usage: Rscript scripts/sbc_mcmc.R [--root .] [--n-datasets 8] [--max-evals 45000] [--cores 8]
 # =============================================================================
 
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i + 1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE); setwd(ROOT)
-K <- as.integer(arg("--n-datasets", "8")); MAX_EVALS <- as.integer(arg("--max-evals", "30000"))
+K <- as.integer(arg("--n-datasets", "8")); MAX_EVALS <- as.integer(arg("--max-evals", "45000"))
+N_WARMUP <- as.integer(arg("--n-warmup", "15000"))
 CORES <- as.integer(arg("--cores", "8")); SEED <- as.integer(arg("--seed", "20261201"))
-FIT <- arg("--fit", "output/calibration/r_20261021_agepop/fit.rds")
+FIT <- arg("--fit", "output/calibration/r_20261027_agepop/fit.rds")
 NPE <- "output/calibration/npe_lhs"; OUT <- "output/calibration/npe_vs_mcmc/mcmc_sbc"
 source("scripts/calibration/likelihood.R")
 TH <- paste0("theta", 1:N_THETA)
@@ -31,11 +33,15 @@ ss <- jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))  # the NPE S
 ps <- prior_spec()
 stopifnot(isTRUE(all.equal(ss$prior_mean, ps$mean)), isTRUE(all.equal(ss$prior_sd, ps$sd)),
           isTRUE(all.equal(ss$theta_lo, ps$lo)), isTRUE(all.equal(ss$theta_hi, ps$hi)),
-          isTRUE(all.equal(ss$beta_precision, base$beta_precision)))
+          isTRUE(all.equal(ss$beta_precision, base$beta_precision)),
+          isTRUE(all.equal(ss$first_arrests_nb_size, base$first_arrests_nb_size)),
+          isTRUE(all.equal(ss$community_pwid_log_sd, base$community_pwid_log_sd)))
 set.seed(SEED)
 for (k in seq_len(K)) {
   phi <- base$beta_precision
   tg <- base; tg$seroprevalence <- rbeta(6, x[k, 1:6] * phi, (1 - x[k, 1:6]) * phi)
+  tg$first_arrests <- rnbinom(6, size = base$first_arrests_nb_size, mu = x[k, 7:12])
+  tg$community_pwid <- x[k, 13] * exp(rnorm(1, 0, base$community_pwid_log_sd))
   jsonlite::write_json(tg, file.path(OUT, sprintf("targets_ds%02d.json", k)), auto_unbox = TRUE, digits = NA,
                        pretty = TRUE)
 }
@@ -44,7 +50,8 @@ run_one <- function(k) {
   d <- file.path(OUT, sprintf("ds%02d", k))
   st <- system2("Rscript", c("scripts/run_mcmc_reference.R", "--root", ".", "--fit", FIT,
                              "--targets", file.path(OUT, sprintf("targets_ds%02d.json", k)), "--out-dir", d,
-                             "--n-chains", 1, "--cores", 1, "--max-evals", MAX_EVALS, "--seed", SEED + k),
+                             "--n-chains", 1, "--cores", 1, "--n-warmup", N_WARMUP, "--max-evals", MAX_EVALS,
+                             "--seed", SEED + k),
                 stdout = paste0(d, ".log"), stderr = paste0(d, ".log"))
   unlink(file.path(d, setdiff(list.files(d), c("mcmc_draws.csv", "mcmc_diagnostics.csv", "mcmc_run_config.json",
                                                "MCMC_STATUS.txt"))))

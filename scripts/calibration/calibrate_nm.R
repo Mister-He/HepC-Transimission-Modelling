@@ -55,7 +55,7 @@ run_nm_start <- function(theta0, objective_fn, start_id = "start",
 
 clip_to_bounds <- function(theta) pmin(pmax(theta, THETA_LO), THETA_HI)
 
-# Uninformative starts: theta = 0 (every contact scale 1, c = 1) and n_perturbed draws
+# Uninformative starts: theta = 0 (every contact scale 1, entry = CNB counts, c = 1) and n_perturbed draws
 # around it (log-scale SD sd_perturb), clipped to the bounds. Nothing comes from earlier fits.
 make_start_set <- function(n_perturbed = 5, sd_perturb = 0.4, seed_base = 101) {
   anchor <- rep(0, N_THETA)

@@ -8,11 +8,13 @@
 # Network and training: MAF with 50 hidden features and 5 transforms, batch 256,
 # Adam lr 5e-4, validation fraction 0.10, early stopping after 20 epochs, at most
 # 250 epochs, gradient clipping 5.0, per-feature z-scoring by sbi, CPU only.
-# Parameters are the 7 log-scale theta (six contact scales, first-arrest multiplier c) with an
-# independent Normal(--prior-mean, --prior-sd) prior truncated to [--theta-lo, --theta-hi]
-# (posterior draws outside are rejected). Data are x = logit(p_1..6) with p clipped to
-# [1e-4, 1-1e-4]; Beta(p*phi, (1-p)*phi) noise (--beta-precision phi) is added here so
-# training pairs follow the calibration observation model. Outputs in --out:
+# Parameters are the 13 log-scale theta (six contact scales, six entry scales, first-arrest
+# multiplier c) with an independent Normal(--prior-mean, --prior-sd) prior truncated to
+# [--theta-lo, --theta-hi] (posterior draws outside are rejected). Data are 13 summaries:
+# 6 seroprevalences, 6 first-arrest counts and the community PWID count. Observation noise
+# follows the calibration likelihood and is added here: Beta(p*phi, (1-p)*phi) (--beta-precision),
+# negative binomial (--nb-size) and log-normal (--community-log-sd). Network inputs are
+# logit(p) with p clipped to [1e-4, 1-1e-4], log(1 + count) and log(community). Outputs in --out:
 # posterior_samples_npe.csv, npe_config.json, npe_timing.json, loss_curve.csv,
 # npe_inference.pkl and, when --n-sbc > 0, sbc_summary.csv / sbc_ranks.npy /
 # sbc_rank_histograms.png.
@@ -33,7 +35,8 @@ from sbi.inference import NPE_C
 from sbi.neural_nets import posterior_nn
 from torch.distributions import Independent, Normal
 T_IMPORT = time.time() - T_IMPORT0
-N_THETA = 7  # six log contact scales + log c
+N_THETA = 13  # six log contact scales + six log entry scales + log c
+N_SERO, N_FA = 6, 6  # x columns: p1..6, fa1..6, community
 
 
 def read_numeric_csv(path):
@@ -61,15 +64,22 @@ def build_prior(mean, sd):
 CLIP = 1e-4  # observed or simulated prevalence is clipped to [CLIP, 1 - CLIP] before logit
 
 
-def add_observation_noise(x_raw, phi, rng):
-    """Beta(p * phi, (1 - p) * phi) noise on each age group's prevalence (no counts)."""
-    p = np.clip(np.asarray(x_raw, dtype=np.float64), CLIP, 1.0 - CLIP)
-    return rng.beta(p * phi, (1.0 - p) * phi)
+def add_observation_noise(x_raw, args, rng):
+    """Draw observations from the calibration likelihood around the model summaries: Beta on the
+    prevalences, negative binomial (gamma-Poisson) on the first arrests, log-normal on community."""
+    x = np.asarray(x_raw, dtype=np.float64)
+    p = np.clip(x[:, :N_SERO], CLIP, 1.0 - CLIP)
+    phi, size = args.beta_precision, args.nb_size
+    mu = np.maximum(x[:, N_SERO:N_SERO + N_FA], 1e-10)
+    fa = rng.poisson(rng.gamma(size, mu / size))
+    com = x[:, N_SERO + N_FA:] * np.exp(rng.normal(0.0, args.community_log_sd, (len(x), 1)))
+    return np.hstack([rng.beta(p * phi, (1.0 - p) * phi), fa, com])
 
 
 def transform_x(x):
-    p = np.clip(x, CLIP, 1.0 - CLIP)
-    return np.log(p / (1.0 - p))
+    p = np.clip(x[:, :N_SERO], CLIP, 1.0 - CLIP)
+    return np.hstack([np.log(p / (1.0 - p)), np.log1p(x[:, N_SERO:N_SERO + N_FA]),
+                      np.log(x[:, N_SERO + N_FA:])])
 
 
 class Ensemble:
@@ -98,7 +108,7 @@ def rank_shape(r, n, chisq_p):
     """Predeclared skew rule: outer-10% rank share or mean rank more than 3 binomial SE off,
     else any deviation with a Bonferroni-corrected (per parameter) chi-square p < 0.001.
     The two 3-SE checks are per parameter, so a calibrated posterior still fails the
-    all-uniform gate about 4% of the time (7 parameters); a failure should be confirmed on fresh data."""
+    all-uniform gate about 8% of the time (13 parameters); a failure should be confirmed on fresh data."""
     outer = np.mean((r < 0.05) | (r > 0.95))
     se_outer, se_mean = math.sqrt(0.1 * 0.9 / n), math.sqrt(1 / 12 / n)
     if outer > 0.1 + 3 * se_outer:
@@ -113,7 +123,7 @@ def rank_shape(r, n, chisq_p):
 def run_sbc(posterior, args, rng):
     from scipy import stats
     theta = read_numeric_csv(args.theta_sbc)
-    x = transform_x(add_observation_noise(read_numeric_csv(args.x_sbc), args.beta_precision, rng))
+    x = transform_x(add_observation_noise(read_numeric_csv(args.x_sbc), args, rng))
     n = min(args.n_sbc, len(theta))
     ranks = np.zeros((n, theta.shape[1]))
     for j in range(n):
@@ -138,7 +148,7 @@ def run_sbc(posterior, args, rng):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(2, 4, figsize=(10, 5), sharex=True)
+    fig, axes = plt.subplots(3, 5, figsize=(12, 7), sharex=True)
     lo, hi = stats.binom.ppf([0.005, 0.995], n, 1 / n_bins)
     for ax in axes.flat[ranks.shape[1]:]:
         ax.set_visible(False)
@@ -167,6 +177,8 @@ def main():
     ap.add_argument("--prior-mean", required=True)  # comma-separated, log scale
     ap.add_argument("--prior-sd", required=True)
     ap.add_argument("--beta-precision", type=float, required=True)  # phi of the Beta likelihood
+    ap.add_argument("--nb-size", type=float, required=True)  # first-arrest negative binomial size
+    ap.add_argument("--community-log-sd", type=float, required=True)  # community PWID log-normal SD
     ap.add_argument("--theta-lo", required=True)  # parameter bounds: draws outside are rejected
     ap.add_argument("--theta-hi", required=True)
     ap.add_argument("--hidden-features", type=int, default=50)
@@ -197,7 +209,7 @@ def main():
     theta = read_numeric_csv(args.theta)
     if theta.shape[1] != N_THETA:
         raise ValueError(f"expected {N_THETA} parameters, got {theta.shape[1]}")
-    x = transform_x(add_observation_noise(read_numeric_csv(args.x), args.beta_precision, noise_rng))
+    x = transform_x(add_observation_noise(read_numeric_csv(args.x), args, noise_rng))
     timing["load_sec"] = time.time() - t0
     t1 = time.time()
     # Single round on prior simulations (standard NLL loss). Each ensemble member differs only in
@@ -254,8 +266,9 @@ def main():
         "batch_size": args.batch_size, "learning_rate": args.learning_rate, "optimizer": "Adam",
         "validation_fraction": args.validation_fraction, "stop_after_epochs": args.stop_after_epochs,
         "max_epochs": args.max_epochs, "clip_max_norm": args.clip_max_norm,
-        "x_transform": f"logit(p) with p clipped to [{CLIP}, 1-{CLIP}]",
-        "observation_noise": f"Beta(p*phi, (1-p)*phi), phi={args.beta_precision}",
+        "x_transform": f"logit(p) with p clipped to [{CLIP}, 1-{CLIP}]; log(1 + first arrests); log(community)",
+        "observation_noise": (f"Beta(p*phi, (1-p)*phi), phi={args.beta_precision}; negative binomial size "
+                              f"{args.nb_size}; log-normal SD {args.community_log_sd}"),
         "truncation": {"lo": parse_vector(args.theta_lo), "hi": parse_vector(args.theta_hi)},
         "prior": {"mean": parse_vector(args.prior_mean), "sd": parse_vector(args.prior_sd),
                   "form": "independent Normal on log scales"},

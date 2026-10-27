@@ -4,7 +4,7 @@
 # =============================================================================
 
 # Exact target shared with NPE and Nelder-Mead: the truncated Normal prior of likelihood.R
-# (-nlp, up to a constant), the Beta seroprevalence likelihood, and the 2015 equilibrium check
+# (-nlp, up to a constant), the three likelihood terms (nll_targets), and the 2015 equilibrium check
 # as a hard support restriction (failure -> -Inf, no penalty).
 # Returns list(lp, ode) so that ODE calls can be counted separately.
 log_posterior_exact <- function(theta, base_params, data) {
@@ -14,12 +14,11 @@ log_posterior_exact <- function(theta, base_params, data) {
   if (is.null(pm)) return(list(lp = -Inf, ode = 0L))
   out <- tryCatch(run_sim(pm, data), error = function(e) NULL)
   if (is.null(out) || nrow(out) < 2) return(list(lp = -Inf, ode = 1L))
-  s <- J_summary_final(out)
-  if (!all(is.finite(s$N_hat)) || !all(is.finite(s$p_sero)) || any(s$N_hat <= 0))
-    return(list(lp = -Inf, ode = 1L))
+  cs <- calib_summary(out, pm)
+  if (!summary_ok(out, cs)) return(list(lp = -Inf, ode = 1L))
   eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
   if (is.null(eq) || !eq$pass) return(list(lp = -Inf, ode = 1L))
-  list(lp = lprior - nll_prev(s$p_sero), ode = 1L)
+  list(lp = lprior - nll_targets(cs), ode = 1L)
 }
 
 # Adaptive random-walk Metropolis with a fixed evaluation budget (Haario et al. 2001 style).

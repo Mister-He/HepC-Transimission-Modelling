@@ -6,7 +6,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i+1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
+FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261027_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/scenarios_2026"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 config <- jsonlite::fromJSON(file.path(ROOT, "data/scenario_policy_config.json"))
@@ -24,7 +24,7 @@ source(file.path(ROOT, "scripts/calibration/likelihood.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
 fit <- readRDS(FIT)
 check_fit_current(fit, setup_env$params, setup_env$data)
-# --posterior-files: comma-separated CSVs with columns theta1..theta7; each file is one
+# --posterior-files: comma-separated CSVs with columns theta1..theta13; each file is one
 # sampling group. Default: the reference MCMC posterior.
 posterior_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
 posterior_files <- ifelse(grepl("^/", posterior_files), posterior_files, file.path(ROOT, posterior_files))

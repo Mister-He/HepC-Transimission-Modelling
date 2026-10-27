@@ -12,7 +12,7 @@ arg <- function(name, default = NULL) {
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261027_agepop/fit.rds")), mustWork = TRUE)
 CORES <- as.integer(arg("--cores", "4"))
 MAX_DRAWS <- as.integer(arg("--max-draws", "4000"))   # 0 = use all draws
 TARGET_YEAR <- as.integer(arg("--year", "2015"))
@@ -44,10 +44,10 @@ if (MAX_DRAWS > 0 && nrow(draws) > MAX_DRAWS) {
   set.seed(20261011); draws <- draws[sample.int(nrow(draws), MAX_DRAWS), , drop = FALSE]
 }
 
-stratum_idx <- function(s, states) as.vector(sapply(1:4, function(k)
+state_idx <- function(s, states) as.vector(sapply(1:4, function(k)
   sapply(states, function(h) sapply(0:5, function(i) idx(s, k, h, i) - 1L))))
-population_idx <- lapply(0:3, stratum_idx, states = 0:4)
-active_idx <- lapply(0:3, stratum_idx, states = 1:3)
+population_idx <- lapply(0:3, state_idx, states = 0:4)
+active_idx <- lapply(0:3, state_idx, states = 1:3)
 
 one_prediction <- function(theta) {
   tryCatch({

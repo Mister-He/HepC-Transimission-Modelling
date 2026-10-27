@@ -54,7 +54,7 @@ SHARE_LS = {0.25: "-", 0.5: (0, (4, 2)), 0.75: (0, (1, 1.5))}
 CAP_MARK = ["o", "s", "^", "D", "v"]
 pct = PercentFormatter(1.0, decimals=0)
 comma = FuncFormatter(lambda v, _: f"{v:,.0f}")
-TH = [f"theta{i}" for i in range(1, 8)]  # six log contact scales + log c
+TH = [f"theta{i}" for i in range(1, 14)]  # six log contact scales, six log entry scales, log c
 written = []
 
 
@@ -199,34 +199,45 @@ if want("paper_fig4_f_pool"):
 # ---------------------------------------------------------------- calibration
 if want("calibration_agepop"):
     tg = json.loads((ROOT / "data/calibration_targets.json").read_text())
-    ages = tg["age_groups"]; y = np.array(tg["seroprevalence"]); phi = tg["beta_precision"]
-    # Seroprevalence is the only target; its interval is the 95% range of the Beta likelihood.
-    target = (y, stats.beta.ppf(0.025, y * phi, (1 - y) * phi), stats.beta.ppf(0.975, y * phi, (1 - y) * phi))
-    srcs = {"Target (Beta likelihood, 95% range)": (None, "black", "^"),
+    ages = tg["age_groups"]
+    # Target intervals are the 95% range of each likelihood around the observation (computed in
+    # plot_calibration.R): Beta seroprevalence, negative binomial first arrests, log-normal community.
+    chk = pd.read_csv(ROOT / "figures/calibration_interval_overlap.csv")
+    srcs = {"Target (likelihood, 95% range)": (None, "black", "^"),
             "Reference MCMC (production)": (CAL / "mcmc_reference/model_prediction_2015_age_draws.csv", "#0072B2", "s"),
             "Single-round NPE (50,000 LHS)": (CAL / "npe_lhs/model_prediction_2015_age_draws.csv", "#D55E00", "o")}
-    chk = pd.read_csv(ROOT / "figures/calibration_interval_overlap.csv")
+    panels = [("seroprevalence", [f"p{i}" for i in range(1, 7)], "HCV seroprevalence in prison, 2015", pct),
+              ("first_arrests", [f"fa{i}" for i in range(1, 7)], "First arrests per year, 2015\n(CNB new drug abusers)", comma),
+              ("community_pwid", ["community"], "Community PWID (D + F)", comma)]
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, ax = plt.subplots(figsize=(COL * MM, 95 * MM), layout="constrained")
-        for j, (name, (f, col, mk)) in enumerate(srcs.items()):
-            if f is None:
-                est, lo, hi = target
-            else:
-                dr = pd.read_csv(f); dr = dr[dr.equilibrium_pass.astype(bool)]
-                v = dr[[f"p{i}" for i in range(1, 7)]].to_numpy()
-                est, lo, hi = np.median(v, 0), np.quantile(v, .025, 0), np.quantile(v, .975, 0)
-                who = "MCMC" if "MCMC" in name else "NPE"
-                assert np.allclose(lo, chk[f"{who}_lower"], rtol=1e-6) and np.allclose(hi, chk[f"{who}_upper"], rtol=1e-6), \
-                    "interval drift"
-            xs = np.arange(6) + (j - 1) * 0.22
-            ax.errorbar(xs, est, yerr=[est - lo, hi - est], fmt=mk, color=col, ms=4.5, elinewidth=1,
-                        capsize=2, label=name)
-        ax.set(xticks=range(6), xticklabels=ages, xlabel="Age group (years)", ylim=(0, None),
-               ylabel="HCV seroprevalence in prison, 2015")
-        ax.yaxis.set_major_formatter(pct)
-        fig.legend(*ax.get_legend_handles_labels(), loc="outside lower center", ncols=1)
+        fig = plt.figure(figsize=(FULL * MM, 150 * MM), layout="constrained")
+        gs = fig.add_gridspec(2, 2, width_ratios=[4, 1])
+        axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[:, 1])]
+        for ax, (measure, cols, ylab, fmt), letter in zip(axes, panels, "ABC"):
+            c = chk[chk.measure == measure]
+            n = len(cols)
+            for j, (name, (f, col, mk)) in enumerate(srcs.items()):
+                if f is None:
+                    est, lo, hi = c.target.to_numpy(), c.target_lower.to_numpy(), c.target_upper.to_numpy()
+                else:
+                    dr = pd.read_csv(f); dr = dr[dr.equilibrium_pass.astype(bool)]
+                    v = dr[cols].to_numpy()
+                    est, lo, hi = np.median(v, 0), np.quantile(v, .025, 0), np.quantile(v, .975, 0)
+                    who = "MCMC" if "MCMC" in name else "NPE"
+                    assert np.allclose(lo, c[f"{who}_lower"], rtol=1e-6) and np.allclose(hi, c[f"{who}_upper"], rtol=1e-6), \
+                        "interval drift"
+                xs = np.arange(n) + (j - 1) * 0.22
+                ax.errorbar(xs, est, yerr=[est - lo, hi - est], fmt=mk, color=col, ms=4.5, elinewidth=1,
+                            capsize=2, label=name)
+            ax.set(xticks=range(n), xticklabels=ages if n == 6 else ["All ages"], ylim=(0, None), ylabel=ylab)
+            if n == 6:
+                ax.set_xlabel("Age group (years)")
+            ax.yaxis.set_major_formatter(fmt)
+            panel_label(ax, letter)
+        fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=3)
         save(fig, ROOT / "figures/calibration_agepop",
-             ["data/calibration_targets.json", "*/model_prediction_2015_age_draws.csv (median, 2.5-97.5%)"])
+             ["data/calibration_targets.json", "figures/calibration_interval_overlap.csv",
+              "*/model_prediction_2015_age_draws.csv (median, 2.5-97.5%)"])
 
 # ---------------------------------------------------------------- Fig S2 targets
 traj = pd.read_csv(SC / "scenario_trajectories.csv")
@@ -442,10 +453,10 @@ if want("scenario_cost_composition_pies"):
 if want("mcmc_traceplots"):
     dr = pd.read_csv(CAL / "mcmc_reference/mcmc_draws.csv")
     with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(3, 3, figsize=(FULL * MM, 150 * MM), layout="constrained", sharex=True)
+        fig, axes = plt.subplots(5, 3, figsize=(FULL * MM, 220 * MM), layout="constrained", sharex=True)
         for ax in axes.flat[len(TH):]:
             ax.set_visible(False)
-        chain_col = ["#0072B2", "#D55E00", "#009E73", "#CC79A7"]
+        chain_col = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#000000", "#999999"]
         for ax, t in zip(axes.flat, TH):
             for i, (ch, g) in enumerate(dr.groupby("chain")):
                 ax.plot(g.iteration, g[t], color=chain_col[i], lw=0.25, alpha=0.8, label=f"Chain {ch}")
@@ -453,7 +464,7 @@ if want("mcmc_traceplots"):
         thin = json.loads((CAL / "mcmc_reference/mcmc_run_config.json").read_text())["thin_storage"]
         fig.supxlabel(f"Retained iteration (every {thin}th stored)", fontsize=8)
         fig.supylabel("θ (log scale)", fontsize=8)
-        fig.legend(*axes.flat[0].get_legend_handles_labels(), loc="outside upper center", ncols=4)
+        fig.legend(*axes.flat[0].get_legend_handles_labels(), loc="outside upper center", ncols=8)
         save(fig, CAL / "mcmc_reference/mcmc_traceplots", ["mcmc_reference/mcmc_draws.csv"])
 
 if want("model_prediction_2015_strata"):
@@ -528,8 +539,8 @@ if want("accuracy"):
 if want("pairs"):
     with style_context("default", palette_name="okabe_ito_on_white"):
         fig, axes = plt.subplots(2, 2, figsize=(COL * MM, 125 * MM), layout="constrained")
-        for ax, (u, v) in zip(axes.flat, [("theta1", "theta7"), ("theta6", "theta7"), ("theta2", "theta3"),
-                                          ("theta4", "theta5")]):
+        for ax, (u, v) in zip(axes.flat, [("theta1", "theta13"), ("theta6", "theta13"), ("theta7", "theta13"),
+                                          ("theta8", "theta13")]):
             sets = [(ref, "0.2", "-"), (npe, "#D55E00", "--")]
             xy = [s[[u, v]].to_numpy()[rng.choice(len(s), 5000, replace=False)].T for s, _, _ in sets]
             allp = np.hstack(xy)

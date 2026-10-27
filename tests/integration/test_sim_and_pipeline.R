@@ -162,15 +162,25 @@ cal_out <- run_sim(build_params(rep(0, N_THETA), e$params), cal_data)
 check_true(check_equilibrium(cal_out)$pass,
            "base parameters satisfy the 10-year equilibrium gate")
 
-# The MCMC target is the likelihood.R prior + Beta seroprevalence (no other terms).
+# The MCMC target is the likelihood.R prior + the three likelihood terms (no other terms).
 sys.source(file.path(root, "scripts", "calibration", "mcmc.R"), envir = environment())
 lp0 <- log_posterior_exact(rep(0, N_THETA), e$params, cal_data)$lp
-s0 <- J_summary_final(cal_out)
-check_equal(lp0, -nlp(rep(0, N_THETA)) - nll_prev(s0$p_sero),
-            tol = 1e-8, "the MCMC log posterior is prior + prevalence")
+pm_cal <- build_params(rep(0, N_THETA), e$params)
+cs0 <- calib_summary(cal_out, pm_cal)
+check_equal(lp0, -nlp(rep(0, N_THETA)) - nll_prev(cs0$p_sero) - nll_first_arrests(cs0$first_arrests) -
+              nll_community(cs0$community_pwid),
+            tol = 1e-8, "the MCMC log posterior is prior + seroprevalence + first arrests + community")
+
+# Entry scales: doubling every entry scale doubles first arrests and community PWID and leaves
+# seroprevalence unchanged (transmission depends on the infectious share only).
+pm_x2 <- build_params(c(rep(0, 6), rep(log(2), 6), 0), e$params)
+cs_x2 <- calib_summary(run_sim(pm_x2, cal_data), pm_x2)
+check_equal(cs_x2$first_arrests, 2 * cs0$first_arrests, tol = 1e-6, "doubling entry doubles first arrests")
+check_equal(cs_x2$community_pwid, 2 * cs0$community_pwid, tol = 1e-6, "doubling entry doubles community PWID")
+check_equal(cs_x2$p_sero, cs0$p_sero, tol = 1e-6, "doubling entry leaves seroprevalence unchanged")
 
 # The stored fit matches the current model, and a model change is detected.
-fit_path <- file.path(root, "output/calibration/r_20261021_agepop/fit.rds")
+fit_path <- file.path(root, "output/calibration/r_20261027_agepop/fit.rds")
 if (file.exists(fit_path)) {
   fit <- readRDS(fit_path)
   check_true(isTRUE(check_fit_current(fit, e$params, e$data)), "stored fit matches setup.R and sim.cpp")

@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# plot_calibration.R — compares the 2015 target intervals with posterior predictive
-# intervals from the reference MCMC posterior and single-round NPE (calibration figure).
+# plot_calibration.R — compares the calibration target intervals (seroprevalence and first
+# arrests by age, community PWID) with posterior predictive intervals of the model values from
+# the reference MCMC posterior and single-round NPE (calibration figure).
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -16,7 +17,7 @@ arg <- function(name, default = NULL) {
 }
 root <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 fit_path <- normalizePath(arg("--fit", file.path(root,
-  "output/calibration/r_20261021_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261027_agepop/fit.rds")), mustWork = TRUE)
 mcmc_file <- normalizePath(arg("--mcmc-file", file.path(root,
   "output/calibration/mcmc_reference/mcmc_draws.csv")), mustWork = TRUE)
 npe_file <- normalizePath(arg("--npe-file", file.path(root,
@@ -52,8 +53,10 @@ evaluate_draw <- function(theta) {
     data$save_every <- round(1 / data$dt)
     out <- run_sim(pm, data)
     eq <- check_equilibrium(out)
-    s <- J_summary_final(out)
-    v <- setNames(s$p_sero, paste0("p", seq_along(age_names)))
+    cs <- calib_summary(out, pm)
+    v <- c(setNames(cs$p_sero, paste0("p", seq_along(age_names))),
+           setNames(cs$first_arrests, paste0("fa", seq_along(age_names))),
+           community = cs$community_pwid)
     if (any(!is.finite(v))) return(NULL)
     c(v, equilibrium_pass = isTRUE(eq$pass))
   }, error = function(e) NULL)
@@ -83,7 +86,7 @@ simulate_or_load <- function(theta, cache_file, label, source_files) {
   } else {
     result <- lapply(seq_len(nrow(theta)), function(i) evaluate_draw(theta[i, ]))
   }
-  keep <- vapply(result, function(x) is.numeric(x) && length(x) == length(age_names) + 1L, logical(1))
+  keep <- vapply(result, function(x) is.numeric(x) && length(x) == 2L * length(age_names) + 2L, logical(1))
   if (!any(keep)) stop("No finite ", label, " predictive draws available")
   out <- as.data.frame(do.call(rbind, result[keep])); out$n_requested <- nrow(theta)
   write.csv(out, cache_file, row.names = FALSE)
@@ -98,81 +101,78 @@ cache_for <- function(f) file.path(dirname(f), "model_prediction_2015_age_draws.
 npe <- simulate_or_load(load_draws(npe_file), cache_for(npe_file), "NPE posterior", c(npe_file, model_inputs))
 mcmc <- simulate_or_load(load_draws(mcmc_file), cache_for(mcmc_file), "MCMC posterior", c(mcmc_file, model_inputs))
 
-summarise_draws <- function(x, source, prefix) {
+# One row per target: measure, label, column of the predictive draws, and the target interval.
+# Target intervals are the 95% range of each likelihood around the observation: Beta for
+# seroprevalence, negative binomial for first arrests, log-normal for community PWID.
+target_table <- function() {
+  y <- targets$seroprevalence; phi <- targets$beta_precision
+  fa <- targets$first_arrests; size <- targets$first_arrests_nb_size
+  m <- targets$community_pwid; sdl <- targets$community_pwid_log_sd
+  data.frame(
+    measure = c(rep("seroprevalence", 6), rep("first_arrests", 6), "community_pwid"),
+    group = c(age_names, age_names, "All ages (D + F)"),
+    column = c(paste0("p", 1:6), paste0("fa", 1:6), "community"),
+    target = c(y, fa, m),
+    target_lower = c(qbeta(0.025, y * phi, (1 - y) * phi), qnbinom(0.025, size = size, mu = fa),
+                     m * exp(-1.959964 * sdl)),
+    target_upper = c(qbeta(0.975, y * phi, (1 - y) * phi), qnbinom(0.975, size = size, mu = fa),
+                     m * exp(1.959964 * sdl)),
+    stringsAsFactors = FALSE)
+}
+
+summarise_draws <- function(x, source) {
   x <- x[as.logical(x$equilibrium_pass), , drop = FALSE]
   if (!nrow(x)) stop("No equilibrium-pass ", source, " draws")
-  data.frame(
-    age_group = age_names,
-    source = source,
-    estimate = vapply(seq_along(age_names), function(i)
-      median(x[[paste0(prefix, i)]]), numeric(1)),
-    lower = vapply(seq_along(age_names), function(i)
-      unname(quantile(x[[paste0(prefix, i)]], 0.025)), numeric(1)),
-    upper = vapply(seq_along(age_names), function(i)
-      unname(quantile(x[[paste0(prefix, i)]], 0.975)), numeric(1)),
-    n_draws = nrow(x), stringsAsFactors = FALSE
-  )
+  tt <- target_table()
+  data.frame(tt[c("measure", "group")], source = source,
+             estimate = vapply(tt$column, function(k) median(x[[k]]), numeric(1)),
+             lower = vapply(tt$column, function(k) unname(quantile(x[[k]], 0.025)), numeric(1)),
+             upper = vapply(tt$column, function(k) unname(quantile(x[[k]], 0.975)), numeric(1)),
+             n_draws = nrow(x), row.names = NULL, stringsAsFactors = FALSE)
 }
 
-# Target interval: the 95% range of the Beta likelihood around the observed seroprevalence.
 target_intervals <- function() {
-  y <- targets$seroprevalence; phi <- targets$beta_precision
-  data.frame(age_group = age_names, source = "Target", estimate = y,
-             lower = qbeta(0.025, y * phi, (1 - y) * phi), upper = qbeta(0.975, y * phi, (1 - y) * phi),
-             n_draws = NA_integer_)
+  tt <- target_table()
+  data.frame(tt[c("measure", "group")], source = "Target", estimate = tt$target,
+             lower = tt$target_lower, upper = tt$target_upper, n_draws = NA_integer_)
 }
 
-age_cols <- c("#FDE725", "#B4DE2C", "#35B779", "#31688E", "#443983", "#440154")
 source_levels <- c("Target", MCMC_LABEL, NPE_LABEL)
 source_shapes <- setNames(c(17, 15, 16), source_levels)
+source_cols <- setNames(c("black", "#0072B2", "#D55E00"), source_levels)
 
-plot_calibration <- function(npe, mcmc, measure, y_label, title, formatter) {
-  d <- rbind(target_intervals(),
-             summarise_draws(mcmc, MCMC_LABEL, measure),
-             summarise_draws(npe, NPE_LABEL, measure))
-  d$age_group <- factor(d$age_group, levels = age_names)
+panel <- function(d, which, y_label, title, formatter, groups) {
+  d <- d[d$measure == which, ]
+  d$group <- factor(d$group, levels = groups)
   d$source <- factor(d$source, levels = source_levels)
-  ggplot(d, aes(x = age_group, y = estimate, colour = age_group, shape = source)) +
-    geom_errorbar(aes(ymin = lower, ymax = upper),
-                  width = 0.12, linewidth = 0.75,
-                  position = position_dodge(width = 0.18)) +
-    geom_point(size = 2.8, position = position_dodge(width = 0.18)) +
-    scale_colour_manual(values = setNames(age_cols, age_names), name = "Age Group") +
-    scale_shape_manual(values = source_shapes, name = "Source") +
-    scale_y_continuous(labels = formatter, limits = c(0, NA),
-                       expand = expansion(mult = c(0, 0.05))) +
-    labs(x = "Age group", y = y_label, title = title) +
-    theme_minimal(base_size = 14) +
-    theme(
-      panel.grid = element_blank(),
-      panel.border = element_rect(fill = NA, colour = "grey60", linewidth = 0.4),
-      panel.background = element_rect(fill = "white", colour = NA),
-      plot.background = element_rect(fill = "white", colour = NA),
-      axis.ticks = element_line(colour = "grey60"),
-      plot.title = element_text(face = "bold", hjust = 0.5),
-      legend.position = "bottom", legend.box = "horizontal",
-      legend.box.just = "center"
-    ) +
-    guides(
-      shape = guide_legend(order = 1, override.aes = list(colour = "grey25")),
-      colour = guide_legend(order = 2, nrow = 1)
-    )
+  ggplot(d, aes(x = group, y = estimate, colour = source, shape = source)) +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.12, linewidth = 0.6,
+                  position = position_dodge(width = 0.45)) +
+    geom_point(size = 2.2, position = position_dodge(width = 0.45)) +
+    scale_colour_manual(values = source_cols, name = NULL) +
+    scale_shape_manual(values = source_shapes, name = NULL) +
+    scale_y_continuous(labels = formatter, limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+    labs(x = NULL, y = y_label, title = title) +
+    theme_classic(base_size = 11) + theme(legend.position = "bottom")
 }
 
-figure <- plot_calibration(npe, mcmc, "p", "HCV seroprevalence",
-  "Age-specific HCV seroprevalence", function(x) paste0(round(100 * x), "%"))
-ggsave(out_file, figure, width = 8, height = 7, dpi = 300, bg = "white")
+d_all <- rbind(target_intervals(), summarise_draws(mcmc, MCMC_LABEL), summarise_draws(npe, NPE_LABEL))
+figure <- (panel(d_all, "seroprevalence", "HCV seroprevalence in prison", "Seroprevalence, 2015",
+                 function(x) paste0(round(100 * x), "%"), age_names) /
+           panel(d_all, "first_arrests", "People per year", "First arrests (CNB new drug abusers), 2015",
+                 scales::comma, age_names) |
+           panel(d_all, "community_pwid", "People", "Community PWID (D + F)", scales::comma,
+                 "All ages (D + F)")) +
+  plot_layout(widths = c(3, 1), guides = "collect") & theme(legend.position = "bottom")
+ggsave(out_file, figure, width = 10, height = 7, dpi = 300, bg = "white")
 
-target_p <- target_intervals()
-check <- data.frame(measure = "seroprevalence", age_group = age_names,
-  target_lower = target_p$lower, target_upper = target_p$upper,
-  NPE_lower = summarise_draws(npe, "NPE posterior", "p")$lower,
-  NPE_upper = summarise_draws(npe, "NPE posterior", "p")$upper,
-  MCMC_lower = summarise_draws(mcmc, "MCMC posterior", "p")$lower,
-  MCMC_upper = summarise_draws(mcmc, "MCMC posterior", "p")$upper)
+tt <- target_table(); sm <- summarise_draws(mcmc, "MCMC"); sn <- summarise_draws(npe, "NPE")
+check <- data.frame(measure = tt$measure, age_group = tt$group, target = tt$target,
+  target_lower = tt$target_lower, target_upper = tt$target_upper,
+  NPE_lower = sn$lower, NPE_upper = sn$upper, MCMC_lower = sm$lower, MCMC_upper = sm$upper)
 check$NPE_overlap <- check$NPE_upper >= check$target_lower & check$NPE_lower <= check$target_upper
 check$MCMC_overlap <- check$MCMC_upper >= check$target_lower & check$MCMC_lower <= check$target_upper
 write.csv(check, file.path(dirname(out_file), "calibration_interval_overlap.csv"), row.names = FALSE)
 message("Wrote ", out_file, "; NPE draws used: ",
         sum(as.logical(npe$equilibrium_pass)), "; MCMC draws used: ",
-        sum(as.logical(mcmc$equilibrium_pass)))
+        sum(as.logical(mcmc$equilibrium_pass)), "; MCMC overlaps: ", sum(check$MCMC_overlap), "/", nrow(check))
