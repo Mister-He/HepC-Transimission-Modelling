@@ -39,31 +39,7 @@ draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
   data.frame(seed = k, draw = seq_len(nrow(d)), d)
 }))
 
-# Compartment table (position in the 480-state vector), built once for rate_components().
-comp <- expand.grid(age = 0:5, h = 0:4, k = 1:4, s = 0:3)
-comp$pos <- idx(comp$s, comp$k, comp$h, comp$age) - 1L
-inj <- comp$s %in% c(0, 2)  # D and F inject
-
-# Annual new infections (u, r -> a in D and F) and HCV deaths at a state, as sim.cpp computes them.
-rate_components <- function(state, time, pm) {
-  y <- as.numeric(state)[comp$pos]
-  active <- tapply(y[inj], comp$age[inj], sum)
-  infectious <- tapply(y[inj & comp$h %in% 1:2], comp$age[inj & comp$h %in% 1:2], sum)
-  share <- ifelse(active > 0, infectious / active, 0)
-  gam <- pm$q * as.vector(pm$C_contact %*% share)  # force of infection by age
-  sus <- inj & comp$h %in% c(0, 4)
-  inc <- gam[comp$age + 1] * y * sus
-  # HCV deaths: liver deaths in DC/HCC plus the non-liver excess of viraemic people (a, c, t)
-  # over the non-viraemic rate, mu * (smr_viraemic - smr_nonviraemic); cure removes both.
-  treated <- comp$h %in% c(3, 4)
-  liver <- ifelse(comp$k == 3, pm$mu_DC * ifelse(treated, pm$psi_DC, 1),
-                  ifelse(comp$k == 4, pm$mu_HCC * ifelse(treated, pm$psi_HCC, 1), 0))
-  excess <- ifelse(comp$h %in% 1:3, pm$mu[comp$age + 1] * (pm$smr_viraemic - pm$smr_nonviraemic), 0)
-  deaths <- (liver + excess) * y
-  c(incidence = sum(inc), mortality = sum(deaths),
-    fx_incidence = sum(inc[comp$s == 2]), fx_mortality = sum(deaths[comp$s >= 2]))
-}
-
+# rate_components() (annual new infections and HCV deaths) lives in model_metrics.R.
 
 strata <- c("D", "J", "F", "X")
 idx_state <- function(s, h) as.vector(sapply(1:4, function(k) sapply(0:5, function(i) idx(s,k,h,i)-1L)))
@@ -182,13 +158,14 @@ stopifnot(nrow(scenario_table)==17,sum(scenario_table$scenario_type=="finite")==
 
 known_pass <- function(ratio,threshold) ifelse(is.finite(ratio),ratio<=threshold,NA)
 
-# One full policy analysis for one posterior parameter vector. Returns NULL if the
-# 2015 snapshot is not at equilibrium.
+# One full policy analysis for one posterior parameter vector. Returns list(invalid = TRUE) if the
+# 2015 snapshot is not at equilibrium (NULL is reserved for a worker that died).
 evaluate_draw <- function(theta) {
 base <- build_params(theta, fit$base_params)
 snapshot_data <- setup_env$data; snapshot_data$t_start <- 0; snapshot_data$t_end <- 150
+snapshot_data$save_every <- round(1 / snapshot_data$dt)  # yearly rows: all the equilibrium check and the end state need
 snapshot <- run_sim(base, snapshot_data)
-if (!check_equilibrium(snapshot)$pass) return(NULL)
+if (!check_equilibrium(snapshot)$pass) return(list(invalid = TRUE))
 policy_params <- base
 # Costed regimen is SOF/VEL alone. Use the model's RBV-free DC SVR branch.
 policy_params$alpha_DC <- policy_params$alpha_DC_neg
@@ -353,9 +330,10 @@ cat("Running",nrow(scenario_table),"policies x",nrow(draw_table),"posterior draw
 results <- parallel::mclapply(seq_len(nrow(draw_table)),function(i)
   tryCatch(evaluate_draw(as.numeric(draw_table[i,theta_cols])),error=function(e) e),
   mc.cores=N_CORES,mc.preschedule=TRUE)
+if (any(vapply(results,is.null,logical(1)))) stop("A parallel worker returned no result (crashed or killed)")
 errors <- vapply(results,function(r) inherits(r,"error"),logical(1))
 if (any(errors)) stop("Draw failed: ",conditionMessage(results[[which(errors)[1]]]))
-valid <- !vapply(results,is.null,logical(1))
+valid <- !vapply(results,function(r) isTRUE(r$invalid),logical(1))
 cat("Valid draws:",sum(valid),"of",length(valid),"(equilibrium failures:",sum(!valid),")\n")
 draw_seed <- draw_table$seed[valid]; results <- results[valid]
 MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))  # the NPE cross-validation policy run passes 0

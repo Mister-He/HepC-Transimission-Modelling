@@ -145,7 +145,6 @@ std::vector<double> rhs(double time, const std::vector<double> &y,
         if (k == 3) {
           c_in += progression(2, 3) * y[idx(s, 2, 2, age)];
           r_in += recovered_progression(2, 3) * y[idx(s, 2, 4, age)];
-          r_in += recovered_progression(3, 4) * y[idx(s, 3, 4, age)];
           r_out = recovered_progression(3, 4);
         }
         if (k == 4) {
@@ -195,7 +194,6 @@ std::vector<double> rhs(double time, const std::vector<double> &y,
         c_out += progression(3, 4);
         c_in += progression(2, 3) * y[idx(1, 2, 2, age)];
         r_in += recovered_progression(2, 3) * y[idx(1, 2, 4, age)];
-        r_in += recovered_progression(3, 4) * y[idx(1, 3, 4, age)];
         r_out = recovered_progression(3, 4);
       }
       if (k == 4) {
@@ -235,7 +233,6 @@ std::vector<double> rhs(double time, const std::vector<double> &y,
         c_out += progression(3, 4);
         c_in += progression(2, 3) * y[idx(3, 2, 2, age)];
         r_in += recovered_progression(2, 3) * y[idx(3, 2, 4, age)];
-        r_in += recovered_progression(3, 4) * y[idx(3, 3, 4, age)];
         r_out = recovered_progression(3, 4);
       }
       if (k == 4) {
