@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy import stats
+from scipy.interpolate import PchipInterpolator
 
 ap = argparse.ArgumentParser()
 ap.add_argument("root", nargs="?", default=".")
@@ -119,14 +120,28 @@ if want("paper_fig1_schematic"):
         ax.text(1, 3.2, "Transmission in D and F only", ha="center", color="0.15", bbox=note)
         save(fig, SC / "paper_fig1_schematic", ["model structure in scripts/model/sim.cpp"])
 
-# Trajectory rows are events summed over each calendar year (scenarios_2026.R rate_row), so each
-# is drawn as a flat step from 1 January of its year to 1 January of the next.
-YEAR_TICKS = dict(xticks=[2015.5, 2019.5, 2026.5, 2030.5], xticklabels=["2015", "2019", "2026", "2030"],
-                  xlim=(2015, 2031), xlabel="Calendar year")
+# Trajectory rows are events summed over each calendar year (scenarios_2026.R rate_row). They are
+# drawn at mid-year and joined by a monotone (PCHIP) curve, which does not overshoot the yearly values.
+# Ticks mark 1 January; the 2030 count sits at mid-2030.
+YEAR_TICKS = dict(xticks=[2015, 2019, 2026, 2030], xlim=(2015, 2030.5), xlabel="Calendar year")
 
 
-def steps(s, col):
-    return np.append(s.year, s.year.iloc[-1] + 1), np.append(s[col], s[col].iloc[-1])
+def year_fit(s, col, jonly=None):
+    """2015 is at equilibrium and nothing is treated before 1 January 2019, so the curve is flat from
+    1 January 2015 to then; a policy curve (jonly = the J-only rows) leaves the J-only curve at
+    1 January 2026."""
+    x, y = list(s.year + 0.5), list(s[col])
+    if s.year.min() <= 2018:
+        x += [2015.0, 2019.0]; y += [float(s.loc[s.year == 2015, col].iloc[0]), float(s.loc[s.year == 2018, col].iloc[0])]
+    if jonly is not None:
+        x.append(2026.0); y.append(float(year_fit(jonly, col)(2026.0)))
+    o = np.argsort(x)
+    return PchipInterpolator(np.array(x)[o], np.array(y)[o])
+
+
+def curve(s, col, jonly=None, start=2015.0, stop=2030.5):
+    xs = np.linspace(start, stop, 300)
+    return xs, year_fit(s, col, jonly)(xs)
 
 
 # ---------------------------------------------------------------- Fig 2 trajectories
@@ -142,12 +157,13 @@ if want("paper_fig2_trajectories"):
         fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 85 * MM), layout="constrained", sharey=True)
         for ax, (m, title, thr) in zip(axes, [("incidence_ratio_2015", "A  HCV incidence", 0.2),
                                               ("mortality_ratio_2015", "B  HCV-related mortality", 0.35)]):
+            jonly = d[d.scenario_id == "J_only"]
             for sid, (lab, col, ls) in pick.items():
                 s = d[d.scenario_id == sid]
-                if sid.startswith("S8000"):  # screening scenarios share the J-only history
-                    s = s[s.year >= 2026]
-                ax.fill_between(*steps(s, m + "_lo"), steps(s, m + "_hi")[1], step="post", color=col, alpha=0.12, lw=0)
-                ax.plot(*steps(s, m), drawstyle="steps-post", color=col, ls=ls, lw=1.3, label=lab)
+                # screening scenarios share the J-only history and branch off in 2026
+                k = dict(jonly=jonly, start=2026.0) if sid.startswith("S8000") else {}
+                ax.fill_between(*curve(s, m + "_lo", **k), curve(s, m + "_hi", **k)[1], color=col, alpha=0.12, lw=0)
+                ax.plot(*curve(s, m, **k), color=col, ls=ls, lw=1.3, label=lab)
             ax.axhline(thr, color="black", ls="--", lw=0.7)
             ax.text(2015.2, thr, f"2030 target ({thr:.0%} of 2015)", va="bottom", fontsize=7)
             for x in (2019, 2026):
@@ -263,15 +279,15 @@ if want("scenario_target_trajectories"):
         for ax, (m, name, thr) in zip(ta, [("incidence_ratio_2015", "Incidence", .2), ("mortality_ratio_2015", "Mortality", .35)]):
             ax.axhline(1, color="0.35", ls=":", lw=0.6); ax.axhline(thr, color="black", ls="--", lw=0.7)
             ax.axvline(2019, color="0.65", ls=":", lw=0.6); ax.axvline(2026, color="0.65", ls="--", lw=0.6)
-            h = traj[(traj.scenario_id == "J_only") & (traj.year <= 2025)]
-            ax.plot(*steps(h, m), drawstyle="steps-post", color="0.15", lw=1.3)
+            h = traj[traj.scenario_id == "J_only"]
+            ax.plot(*curve(h, m, stop=2026.0), color="0.15", lw=1.3)
             for sid in order:
-                s = traj[(traj.scenario_id == sid) & (traj.year >= 2026)]
+                s = traj[traj.scenario_id == sid]
                 if sid in finite_ids:
                     col, ls = CAP_COL[int(meta.loc[sid, "screening_total"])], SHARE_LS[meta.loc[sid, "f_share"]]
                 else:
                     col, ls = ("0.35", "-") if sid == "J_only" else ("black", "-")
-                ax.plot(*steps(s, m), drawstyle="steps-post", color=col, ls=ls, lw=1.0)
+                ax.plot(*curve(s, m, jonly=h, start=2026.0), color=col, ls=ls, lw=1.0)
             ax.set(ylim=(0, 1.2), **YEAR_TICKS)
             ax.yaxis.set_major_formatter(pct); ax.set_title(name)
         ta[0].set_ylabel("Annual events relative to 2015")
