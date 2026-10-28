@@ -119,6 +119,10 @@ if want("paper_fig1_schematic"):
         ax.text(1, 3.2, "Transmission in D and F only", ha="center", color="0.15", bbox=note)
         save(fig, SC / "paper_fig1_schematic", ["model structure in scripts/model/sim.cpp"])
 
+# Trajectory rows are instantaneous rates at the end of each labelled year (scenarios_2026.R
+# rate_row), so they are drawn at year + 1 (1 January) to line up with the policy start lines.
+END_TICKS = [2016, 2019, 2026, 2031]
+
 # ---------------------------------------------------------------- Fig 2 trajectories
 if want("paper_fig2_trajectories"):
     tr = pd.read_csv(SC / "scenario_trajectories.csv")
@@ -136,13 +140,13 @@ if want("paper_fig2_trajectories"):
                 s = d[d.scenario_id == sid]
                 if sid.startswith("S8000"):  # screening scenarios share the J-only history
                     s = s[s.year >= 2025]
-                ax.fill_between(s.year, s[m + "_lo"], s[m + "_hi"], color=col, alpha=0.12, lw=0)
-                ax.plot(s.year, s[m], color=col, ls=ls, lw=1.3, label=lab)
+                ax.fill_between(s.year + 1, s[m + "_lo"], s[m + "_hi"], color=col, alpha=0.12, lw=0)
+                ax.plot(s.year + 1, s[m], color=col, ls=ls, lw=1.3, label=lab)
             ax.axhline(thr, color="black", ls="--", lw=0.7)
-            ax.text(2015.2, thr, f"2030 target ({thr:.0%} of 2015)", va="bottom", fontsize=7)
+            ax.text(2016.2, thr, f"2030 target ({thr:.0%} of 2015)", va="bottom", fontsize=7)
             for x in (2019, 2026):
                 ax.axvline(x, color="0.6", ls=":", lw=0.7)
-            ax.set(xticks=[2015, 2019, 2026, 2030], ylim=(0, 1.4), xlabel="Calendar year")
+            ax.set(xticks=END_TICKS, xlim=(2016, 2031), ylim=(0, 1.4), xlabel="1 January of year")
             ax.yaxis.set_major_formatter(pct); panel_label(ax, title)
         axes[0].set_ylabel("Annual events relative to 2015")
         fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=2)
@@ -254,15 +258,15 @@ if want("scenario_target_trajectories"):
             ax.axhline(1, color="0.35", ls=":", lw=0.6); ax.axhline(thr, color="black", ls="--", lw=0.7)
             ax.axvline(2019, color="0.65", ls=":", lw=0.6); ax.axvline(2026, color="0.65", ls="--", lw=0.6)
             h = traj[(traj.scenario_id == "J_only") & (traj.year <= 2025)]
-            ax.plot(h.year, h[m], color="0.15", lw=1.3)
+            ax.plot(h.year + 1, h[m], color="0.15", lw=1.3)
             for sid in order:
                 s = traj[(traj.scenario_id == sid) & (traj.year >= 2025)]
                 if sid in finite_ids:
                     col, ls = CAP_COL[int(meta.loc[sid, "screening_total"])], SHARE_LS[meta.loc[sid, "f_share"]]
                 else:
                     col, ls = ("0.35", "-") if sid == "J_only" else ("black", "-")
-                ax.plot(s.year, s[m], color=col, ls=ls, lw=1.0)
-            ax.set(xticks=[2015, 2019, 2026, 2030], xlim=(2015, 2030), ylim=(0, 1.2), xlabel="Calendar year")
+                ax.plot(s.year + 1, s[m], color=col, ls=ls, lw=1.0)
+            ax.set(xticks=END_TICKS, xlim=(2016, 2031), ylim=(0, 1.2), xlabel="1 January of year")
             ax.yaxis.set_major_formatter(pct); ax.set_title(name)
         ta[0].set_ylabel("Annual events relative to 2015")
         top.suptitle("A  WHO impact indicators, 2015–2030 (medians). Dotted 2019: J treatment starts; "
