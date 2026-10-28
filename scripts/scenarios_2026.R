@@ -39,7 +39,7 @@ draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
   data.frame(seed = k, draw = seq_len(nrow(d)), d)
 }))
 
-# rate_components() (annual new infections and HCV deaths) lives in model_metrics.R.
+# annual_events() (yearly new infections and HCV deaths) lives in model_metrics.R.
 
 strata <- c("D", "J", "F", "X")
 idx_state <- function(s, h) as.vector(sapply(1:4, function(k) sapply(0:5, function(i) idx(s,k,h,i)-1L)))
@@ -174,9 +174,10 @@ policy_params$tau_by_stratum <- rep(0, 16)
 pre_pm <- policy_params
 j_pm <- set_tau(policy_params, 1, tau_j)
 fx_pm <- set_tau(set_tau(j_pm, 2, tau_fx), 3, tau_fx)
-# Annual incidence is an instantaneous rate at the calendar-year endpoint.
-rate_row <- function(y, time, year, id) {
-  r <- rate_components(y,time,j_pm)
+# Annual new infections and HCV deaths are events summed over the simulated calendar year (the WHO
+# targets compare yearly counts); population columns are end-of-year stocks.
+rate_row <- function(z, year, id) {
+  r <- annual_events(z,j_pm); y <- state_from(z)
   data.frame(scenario_id=id, year=year, incidence=r["incidence"], mortality=r["mortality"],
     fx_incidence=r["fx_incidence"], fx_mortality=r["fx_mortality"],
     viremic=sum(sapply(0:3,function(s) sum_state(y,s,1:3))),
@@ -186,17 +187,19 @@ rate_row <- function(y, time, year, id) {
 }
 # Same calibrated 2015 state and same 2019--2025 J-treated history for every policy.
 initial <- state_from(snapshot)
-base_rates <- rate_row(initial,150,2015,"common_history")
+base_rates <- rate_row(rbind(c(149,initial),c(150,initial)),2015,"common_history")  # 2015 is at equilibrium: one year at the snapshot's rate
 history <- list(); hist_j_starts <- numeric(); y <- initial
 for (year in 2016:2025) {
   before <- y
   z <- run_year(y,year,if (year<2019) pre_pm else j_pm)
   y <- state_from(z)
-  history[[as.character(year)]] <- rate_row(y,151+year-2016,year,"common_history")
+  history[[as.character(year)]] <- rate_row(z,year,"common_history")
   if (year>=2019) hist_j_starts <- c(hist_j_starts,z[nrow(z),483])
 }
 common_2026_state <- y
 history_trajectory <- do.call(rbind,c(list(base_rates),history))
+stopifnot(abs(history$`2016`$incidence/base_rates$incidence-1)<1e-3,  # equilibrium check of the 2015 base
+          abs(history$`2016`$mortality/base_rates$mortality-1)<1e-3)
 stopifnot(length(hist_j_starts)==7,all(hist_j_starts>0))
 run_policy <- function(row) {
   id <- row$scenario_id; y <- common_2026_state
@@ -212,15 +215,15 @@ run_policy <- function(row) {
     rows[[paste0(year,"J")]] <- process_row(id,year,1,NULL,z,j_tests(z,pm))
     rows[[paste0(year,"F")]] <- process_row(id,year,2,f,z)
     rows[[paste0(year,"X")]] <- process_row(id,year,3,x,z)
-    trajectories[[as.character(year)]] <- rate_row(y,151+year-2016,year,id)
+    trajectories[[as.character(year)]] <- rate_row(z,year,id)
   }
   list(process=add_cost(do.call(rbind,rows)),trajectory=do.call(rbind,trajectories),end_state=y)
 }
 # Counterfactual with no treatment in any stratum, 2015-2030 (shows the effect of J treatment from 2019).
 no_tx <- list(base_rates); y <- initial
 for (year in 2016:2030) {
-  y <- state_from(run_year(y,year,pre_pm))
-  no_tx[[as.character(year)]] <- rate_row(y,151+year-2016,year,"no_treatment")
+  z <- run_year(y,year,pre_pm); y <- state_from(z)
+  no_tx[[as.character(year)]] <- rate_row(z,year,"no_treatment")
 }
 no_tx <- do.call(rbind,no_tx); no_tx$scenario_id <- "no_treatment"; rownames(no_tx) <- NULL
 for (metric in c("incidence","mortality","fx_incidence","fx_mortality"))

@@ -69,28 +69,38 @@ fit_metrics <- function(cs) {
 }
 
 # Used by scenarios_2026.R; tests/integration/test_sim_and_pipeline.R checks the deaths against sim.cpp.
-# Compartment table (position in the 480-state vector), built once for rate_components().
+# Compartment table (position in the 480-state vector), built once for event_rates().
 comp <- expand.grid(age = 0:5, h = 0:4, k = 1:4, s = 0:3)
 comp$pos <- idx(comp$s, comp$k, comp$h, comp$age) - 1L
 inj <- comp$s %in% c(0, 2)  # D and F inject
+age_ind <- outer(comp$age, 0:5, "==") + 0
 
-# Annual new infections (u, r -> a in D and F) and HCV deaths at a state, as sim.cpp computes them.
-rate_components <- function(state, time, pm) {
-  y <- as.numeric(state)[comp$pos]
-  active <- tapply(y[inj], comp$age[inj], sum)
-  infectious <- tapply(y[inj & comp$h %in% 1:2], comp$age[inj & comp$h %in% 1:2], sum)
+# New infections (u, r -> a in D and F) and HCV deaths per year, as sim.cpp computes them, at each
+# row of Y (rows = times, columns = the 480 states).
+event_rates <- function(Y, pm) {
+  Y <- Y[, comp$pos, drop = FALSE]
+  active <- Y %*% (age_ind * inj)
+  infectious <- Y %*% (age_ind * (inj & comp$h %in% 1:2))
   share <- ifelse(active > 0, infectious / active, 0)
-  gam <- pm$q * as.vector(pm$C_contact %*% share)  # force of infection by age
+  gam <- t(pm$q * (pm$C_contact %*% t(share)))  # force of infection by age
   sus <- inj & comp$h %in% c(0, 4)
-  inc <- gam[comp$age + 1] * y * sus
+  inc <- gam[, comp$age + 1, drop = FALSE] * Y * rep(sus, each = nrow(Y))
   # HCV deaths: liver deaths in DC/HCC plus the non-liver excess of viraemic people (a, c, t)
   # over the non-viraemic rate, mu * (smr_viraemic - smr_nonviraemic); cure removes both.
   treated <- comp$h %in% c(3, 4)
   liver <- ifelse(comp$k == 3, pm$mu_DC * ifelse(treated, pm$psi_DC, 1),
                   ifelse(comp$k == 4, pm$mu_HCC * ifelse(treated, pm$psi_HCC, 1), 0))
   excess <- ifelse(comp$h %in% 1:3, pm$mu[comp$age + 1] * (pm$smr_viraemic - pm$smr_nonviraemic), 0)
-  deaths <- (liver + excess) * y
-  c(incidence = sum(inc), mortality = sum(deaths),
-    fx_incidence = sum(inc[comp$s == 2]), fx_mortality = sum(deaths[comp$s >= 2]))
+  w <- liver + excess
+  cbind(incidence = rowSums(inc), mortality = as.vector(Y %*% w),
+        fx_incidence = rowSums(inc[, comp$s == 2, drop = FALSE]), fx_mortality = as.vector(Y %*% (w * (comp$s >= 2))))
 }
 
+# Instantaneous rates at one state.
+rate_components <- function(state, time, pm) event_rates(matrix(as.numeric(state), 1), pm)[1, ]
+
+# Events summed over a run's output z (time in column 1), trapezoid rule over the stored rows.
+annual_events <- function(z, pm) {
+  r <- event_rates(z[, 2:481, drop = FALSE], pm)
+  colSums((head(r, -1) + tail(r, -1)) * diff(z[, 1]) / 2)
+}

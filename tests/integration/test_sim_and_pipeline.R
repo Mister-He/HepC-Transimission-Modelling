@@ -56,6 +56,14 @@ total_deaths <- -(sum(x1[2, -1]) - sum(xd$y0)) / xd$dt
 background <- sum(10 * 20 * fa$mu * fa$smr_nonviraemic)
 check_equal(rate_components(xd$y0, 0, fa)[["mortality"]], total_deaths - background, tol = 1e-3,
             "rate_components HCV deaths match the sim.cpp mortality terms")
+# Yearly counts (annual_events) integrate the same rates over the run: a constant state gives
+# rate x duration, and a falling population gives fewer deaths than the start-of-year rate.
+ys <- runif(480) * 100
+check_equal(annual_events(rbind(c(0, ys), c(0.5, ys), c(2, ys)), e$params), 2 * rate_components(ys, 0, e$params),
+            tol = 1e-12, "annual_events of a constant state is rate x duration")
+xd$t_end <- 1; x1 <- run_sim(fa, xd)
+check_true(annual_events(x1, fa)[["mortality"]] < rate_components(xd$y0, 0, fa)[["mortality"]],
+           "annual_events counts deaths over the year, below the start rate as people die")
 
 simulate_seed <- function(state, scale = 1) {
   d <- short_data; d$y0 <- rep(0, 480)
