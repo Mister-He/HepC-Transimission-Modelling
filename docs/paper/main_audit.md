@@ -20,7 +20,7 @@ Hepatitis C virus (HCV) infection in Singapore is concentrated among people who 
 
 We built an age-structured model of PWID never imprisoned (D), in prison (J), and released and still injecting (F) or stopped (X), with prison rates estimated from records of 20,720 people. We calibrated it by Markov chain Monte Carlo to 2015 prison seroprevalence, first arrests and a survey estimate of active injectors, and projected 15 policies screening 600 to 8,000 released people a year from 2026 (25%–75% of tests to F) over 2,000 posterior draws. [claim:C002] [evidence:E004,E005,E006,E007,E001,E008,E009,E010]
 
-Prison treatment alone reduced new infections in 2030 by 84.4% (95% uncertainty interval [UI] 67.9%–90.4%) but HCV deaths by only 54.4% (95% UI 51.6%–57.0%). In 2026, 89% of chronic infections among released people were in X, and F and X accounted for 97% of HCV deaths. All screening policies met the incidence target; the mortality target was met only with 5,000 tests a year and 25% to F (66.7%, 95% UI 63.8%–69.1%; both targets in 87% of draws) or 8,000 tests with 25% or 50% to F. Moving tests from F to X increased the fall in deaths and reduced the fall in infections. The cheapest passing policy cost S$86.2 million (95% UI 70.9–106.4) over 2026–2030, mostly for drugs. Limitations include a modelled prison population (9,741) far above the 3,367 screened people recorded, weakly identified entry parameters, charge-based costs and parameter-only uncertainty. [claim:C003] [evidence:E008,E011,E012,E013,E014,E015,E016]
+Prison treatment alone reduced new infections in 2030 by 83.2% (95% uncertainty interval [UI] 66.5%–89.4%) but HCV deaths by only 53.1% (95% UI 50.3%–55.7%). In 2026, 89% of chronic infections among released people were in X, and F and X accounted for 97% of HCV deaths. All screening policies met the incidence target; the mortality target was met only with 5,000 tests a year and 25% to F (65.4%, 95% UI 62.5%–67.8%; both targets in 60% of draws) or 8,000 tests with 25% or 50% to F. Moving tests from F to X increased the fall in deaths and reduced the fall in infections. The cheapest passing policy cost S$86.2 million (95% UI 70.9–106.4) over 2026–2030, mostly for drugs. Limitations include a modelled prison population (9,741) far above the 3,367 screened people recorded, weakly identified entry parameters, charge-based costs and parameter-only uncertainty. [claim:C003] [evidence:E008,E011,E012,E013,E014,E015,E016]
 
 ## Conclusions
 
@@ -40,7 +40,7 @@ In this model, prison treatment is likely to meet the 2030 target for new HCV in
 
 - We built a model of hepatitis C among people who inject drugs that follows them into and out of prison, and fitted it to prison and national data from 2015. [claim:C007] [evidence:E006]
 
-- In the model, prison treatment alone cut new infections by about 84% by 2030 but deaths by only about 54%, because most deaths occur among released people who have stopped injecting, whom prison treatment does not reach again. [claim:C008] [evidence:E008,E012]
+- In the model, prison treatment alone cut new infections by about 83% by 2030 but deaths by only about 53%, because most deaths occur among released people who have stopped injecting, whom prison treatment does not reach again. [claim:C008] [evidence:E008,E012]
 
 - The death target was met only when 5,000 or more released people were screened each year, with most tests going to people who have stopped injecting. [claim:C009] [evidence:E008]
 
@@ -124,7 +124,7 @@ At the start of each year, the tests given to F or X were applied to people not 
 
 ## Outcomes
 
-The primary outcomes were the reductions in 2030, compared with 2015, of annual new HCV infections among PWID and of annual HCV deaths. New infections were the annual number of infections in D and F. HCV deaths were liver deaths in decompensated cirrhosis and hepatocellular carcinoma, plus the excess non-liver deaths of viraemic people over the rate of non-viraemic people. [claim:C036] [evidence:E002]
+The primary outcomes were the reductions in 2030, compared with 2015, of annual new HCV infections among PWID and of annual HCV deaths. New infections were the number of infections in D and F during the calendar year. HCV deaths were the liver deaths in decompensated cirrhosis and hepatocellular carcinoma during the year, plus the excess non-liver deaths of viraemic people over the rate of non-viraemic people. The 2015 values were the yearly numbers at the calibrated equilibrium. [claim:C036] [evidence:E002]
 
 A policy met a target if the median reduction was at least 80% for infections or 65% for deaths. We also report the share of posterior draws in which both targets were met. [claim:C037] [evidence:E002,E001]
 
@@ -162,9 +162,9 @@ In 2015 the model had 637 (547–755) new infections and 307 (261–368) HCV dea
 
 ## Prison treatment alone
 
-With treatment in prison from 2019, new infections fell steadily (Fig 3). By 2025 they were 34% of the 2015 level, and by 2030 the reduction was 84.4% (95% UI 67.9%–90.4%), meeting the incidence target at the median and in 78% of draws. [claim:C048] [evidence:E012,E008]
+With treatment in prison from 2019, new infections fell steadily (Fig 3). By 2025 they were 37% of the 2015 level, and by 2030 the reduction was 83.2% (95% UI 66.5%–89.4%), meeting the incidence target at the median and in 71% of draws. [claim:C048] [evidence:E012,E008]
 
-HCV deaths fell less: by 54.4% (95% UI 51.6%–57.0%) in 2030. No posterior draw met the mortality target with prison treatment alone. [claim:C049] [evidence:E008]
+HCV deaths fell less: by 53.1% (95% UI 50.3%–55.7%) in 2030. No posterior draw met the mortality target with prison treatment alone. [claim:C049] [evidence:E008]
 
 The reason is where infections remain. Released people who still inject are often re-arrested and treated again in prison, but people who have stopped injecting are never re-arrested in the model. In 2026, under prison treatment only, 89% of the 4,176 people with chronic infection in F and X were in X, and F and X together accounted for 97% of all HCV deaths. [claim:C050] [evidence:E011,E012]
 
@@ -172,15 +172,15 @@ People in D, who had never been imprisoned, accounted for 12% of new infections 
 
 ## Community screening policies
 
-All 15 finite screening policies met the incidence target at the median, but only three met the mortality target (Fig 4 and Table 1). With 8,000 tests a year, the fall in deaths was 72.1% (95% UI 69.1%–74.5%) with 25% to F and 67.9% (95% UI 64.9%–70.5%) with 50% to F; both targets were met in 99.9% and 97% of draws. [claim:C052] [evidence:E008]
+All 15 finite screening policies met the incidence target at the median, but only three met the mortality target (Fig 4 and Table 1). With 8,000 tests a year, the fall in deaths was 70.8% (95% UI 67.8%–73.2%) with 25% to F and 66.6% (95% UI 63.6%–69.2%) with 50% to F; both targets were met in 99.9% and 87% of draws. [claim:C052] [evidence:E008]
 
-With 5,000 tests a year and 25% to F, deaths fell by 66.7% (95% UI 63.8%–69.1%), and both targets were met in 87% of draws. With 50% to F at the same capacity, deaths fell by 63.7% (95% UI 60.7%–66.2%) and both targets were met in only 16% of draws. [claim:C053] [evidence:E008]
+With 5,000 tests a year and 25% to F, deaths fell by 65.4% (95% UI 62.5%–67.8%), only 0.4 percentage points above the target, and both targets were met in 60% of draws, so this policy met the targets only narrowly. With 50% to F at the same capacity, deaths fell by 62.4% (95% UI 59.4%–65.0%) and both targets were met in only 2% of draws. [claim:C053] [evidence:E008]
 
 At every capacity, giving a larger share of tests to F increased the fall in new infections and reduced the fall in deaths. All quotas were used in full in every year and group. [claim:C054] [evidence:E008,E011]
 
 This trade-off follows from the two groups. At the start of 2026, 6,985 people in F were eligible for screening, of whom 6.5% had chronic infection; in X, 40,413 were eligible and 9.2% had chronic infection. A test given to X therefore found more chronic infections, whereas a test given to F found fewer infections but in people who could transmit. [claim:C055] [evidence:E011]
 
-Uncapped screening of everyone in F and X each year reduced new infections by 99.9% (95% UI 99.5%–100.0%) and deaths by 88.7% (95% UI 87.8%–89.6%). Even then, 12% of the remaining infections in 2030 were in D. [claim:C056] [evidence:E008]
+Uncapped screening of everyone in F and X each year reduced new infections by 99.9% (95% UI 99.4%–100.0%) and deaths by 88.3% (95% UI 87.4%–89.2%). Even then, 12% of the remaining infections in 2030 were in D. [claim:C056] [evidence:E008]
 
 ## Costs
 
@@ -255,7 +255,7 @@ In this model, treatment in prison is likely to meet the 2030 target for new HCV
 
 **Fig 2. Calibration to the 2015 targets.** (A) HCV antibody prevalence in prison by age. (B) First arrests by age (Central Narcotics Bureau new drug abusers). (C) Active injectors in the community (D and F). Black: target with the 95% range of its likelihood; blue: 95% posterior interval of the model value from the MCMC posterior; orange: neural posterior estimate (cross-check only). [claim:C074] [evidence:E053]
 
-**Fig 3. New infections and HCV deaths, 2015–2030.** Annual new HCV infections (A) and HCV deaths (B) relative to 2015, without treatment, with prison treatment only, and with 8,000 community tests a year from 2026 given 25% or 75% to F. Each value is the annual rate on 31 December of the labelled year, drawn at 1 January of the next year, so the falls start at the vertical lines marking prison treatment (2019) and community screening (2026). Lines are medians and bands are 95% uncertainty intervals across 2,000 posterior draws. Dashed lines mark the WHO targets. [claim:C075] [evidence:E008,E012]
+**Fig 3. New infections and HCV deaths, 2015–2030.** Annual new HCV infections (A) and HCV deaths (B) relative to 2015, without treatment, with prison treatment only, and with 8,000 community tests a year from 2026 given 25% or 75% to F. Yearly counts are drawn at mid-year and joined by a monotone curve; vertical lines mark the start of prison treatment (2019) and community screening (2026). Lines are medians and bands are 95% uncertainty intervals across 2,000 posterior draws. Dashed lines mark the WHO targets. [claim:C075] [evidence:E008,E012]
 
 **Fig 4. Reductions in 2030 by screening capacity and share of tests given to F.** (A) New infections. (B) HCV deaths. Points are medians and bars are 95% uncertainty intervals. Dashed lines mark the targets; the dotted line is prison treatment only and the solid line is uncapped screening. [claim:C076] [evidence:E008]
 
@@ -265,23 +265,23 @@ In this model, treatment in prison is likely to meet the 2030 target for new HCV
 
 | Policy | Fall in new infections, % (95% UI) | Fall in HCV deaths, % (95% UI) | Draws meeting both targets | Cost, S$ million (95% UI) | [claim:C078] [evidence:E008]
 |---|---|---|---|---|
-| J only | 84.4% (67.9%–90.4%) | 54.4% (51.6%–57.0%) | 0.0% | 34.3 (25.5–48.9) | [claim:C079] [evidence:E008]
-| J + 600/year, 25% to F | 85.6% (70.0%–91.2%) | 56.1% (53.4%–58.7%) | 0.0% | 41.6 (32.1–56.8) | [claim:C080] [evidence:E008]
-| J + 600/year, 50% to F | 86.7% (71.9%–91.9%) | 55.7% (52.9%–58.3%) | 0.0% | 39.4 (30.1–54.4) | [claim:C081] [evidence:E008]
-| J + 600/year, 75% to F | 87.7% (73.7%–92.5%) | 55.3% (52.4%–57.9%) | 0.0% | 37.0 (28.1–51.9) | [claim:C082] [evidence:E008]
-| J + 1,000/year, 25% to F | 86.3% (71.3%–91.7%) | 57.2% (54.5%–59.7%) | 0.0% | 46.2 (36.3–62.1) | [claim:C083] [evidence:E008]
-| J + 1,000/year, 50% to F | 88.0% (74.3%–92.8%) | 56.5% (53.7%–59.1%) | 0.0% | 42.6 (33.1–57.8) | [claim:C084] [evidence:E008]
-| J + 1,000/year, 75% to F | 89.6% (77.1%–93.7%) | 55.8% (52.9%–58.4%) | 0.0% | 38.7 (29.6–53.6) | [claim:C085] [evidence:E008]
-| J + 2,000/year, 25% to F | 88.0% (74.3%–92.8%) | 59.8% (57.2%–62.3%) | 0.0% | 57.3 (46.2–74.1) | [claim:C086] [evidence:E008]
-| J + 2,000/year, 50% to F | 91.0% (79.7%–94.6%) | 58.5% (55.7%–61.1%) | 0.0% | 50.2 (40.1–66.3) | [claim:C087] [evidence:E008]
-| J + 2,000/year, 75% to F | 93.4% (84.4%–96.2%) | 57.0% (54.1%–59.7%) | 0.0% | 42.6 (33.4–57.4) | [claim:C088] [evidence:E008]
-| J + 5,000/year, 25% to F | 92.3% (82.0%–95.5%) | 66.7% (63.8%–69.1%) | 87.2% | 86.2 (70.9–106.4) | [claim:C089] [evidence:E008]
-| J + 5,000/year, 50% to F | 96.7% (91.3%–98.2%) | 63.7% (60.7%–66.2%) | 15.8% | 70.3 (57.7–87.5) | [claim:C090] [evidence:E008]
-| J + 5,000/year, 75% to F | 98.8% (96.1%–99.4%) | 60.0% (57.0%–62.8%) | 0.0% | 52.4 (42.7–66.7) | [claim:C091] [evidence:E008]
-| J + 8,000/year, 25% to F | 95.3% (88.2%–97.3%) | 72.1% (69.1%–74.5%) | 99.9% | 109.4 (90.9–133.0) | [claim:C092] [evidence:E008]
-| J + 8,000/year, 50% to F | 99.0% (96.8%–99.6%) | 67.9% (64.9%–70.5%) | 97.3% | 87.4 (72.6–106.7) | [claim:C093] [evidence:E008]
-| J + 8,000/year, 75% to F | 99.8% (99.2%–100.0%) | 62.4% (59.5%–65.2%) | 3.6% | 61.8 (51.1–75.8) | [claim:C094] [evidence:E008]
-| J + uncapped screening | 99.9% (99.5%–100.0%) | 88.7% (87.8%–89.6%) | 100.0% | 209.6 (173.4–259.6) | [claim:C095] [evidence:E008]
+| J only | 83.2% (66.5%–89.4%) | 53.1% (50.3%–55.7%) | 0.0% | 34.3 (25.5–48.9) | [claim:C079] [evidence:E008]
+| J + 600/year, 25% to F | 84.5% (68.9%–90.3%) | 54.8% (52.1%–57.4%) | 0.0% | 41.6 (32.1–56.8) | [claim:C080] [evidence:E008]
+| J + 600/year, 50% to F | 85.6% (71.0%–91.0%) | 54.4% (51.6%–57.0%) | 0.0% | 39.4 (30.1–54.4) | [claim:C081] [evidence:E008]
+| J + 600/year, 75% to F | 86.7% (72.9%–91.8%) | 54.0% (51.1%–56.6%) | 0.0% | 37.0 (28.1–51.9) | [claim:C082] [evidence:E008]
+| J + 1,000/year, 25% to F | 85.2% (70.3%–90.8%) | 55.9% (53.2%–58.4%) | 0.0% | 46.2 (36.3–62.1) | [claim:C083] [evidence:E008]
+| J + 1,000/year, 50% to F | 87.1% (73.5%–92.0%) | 55.3% (52.5%–57.8%) | 0.0% | 42.6 (33.1–57.8) | [claim:C084] [evidence:E008]
+| J + 1,000/year, 75% to F | 88.8% (76.3%–93.1%) | 54.5% (51.7%–57.2%) | 0.0% | 38.7 (29.6–53.6) | [claim:C085] [evidence:E008]
+| J + 2,000/year, 25% to F | 87.1% (73.5%–92.0%) | 58.5% (55.9%–61.0%) | 0.0% | 57.3 (46.2–74.1) | [claim:C086] [evidence:E008]
+| J + 2,000/year, 50% to F | 90.3% (79.0%–94.0%) | 57.2% (54.4%–59.8%) | 0.0% | 50.2 (40.1–66.3) | [claim:C087] [evidence:E008]
+| J + 2,000/year, 75% to F | 92.9% (83.9%–95.7%) | 55.8% (52.8%–58.5%) | 0.0% | 42.6 (33.4–57.4) | [claim:C088] [evidence:E008]
+| J + 5,000/year, 25% to F | 91.7% (81.6%–95.0%) | 65.4% (62.5%–67.8%) | 60.1% | 86.2 (70.9–106.4) | [claim:C089] [evidence:E008]
+| J + 5,000/year, 50% to F | 96.3% (91.0%–97.9%) | 62.4% (59.4%–65.0%) | 2.5% | 70.3 (57.7–87.5) | [claim:C090] [evidence:E008]
+| J + 5,000/year, 75% to F | 98.6% (95.9%–99.3%) | 58.7% (55.8%–61.6%) | 0.0% | 52.4 (42.7–66.7) | [claim:C091] [evidence:E008]
+| J + 8,000/year, 25% to F | 94.8% (87.9%–97.0%) | 70.8% (67.8%–73.2%) | 99.9% | 109.4 (90.9–133.0) | [claim:C092] [evidence:E008]
+| J + 8,000/year, 50% to F | 98.8% (96.6%–99.5%) | 66.6% (63.6%–69.2%) | 87.2% | 87.4 (72.6–106.7) | [claim:C093] [evidence:E008]
+| J + 8,000/year, 75% to F | 99.8% (99.1%–99.9%) | 61.2% (58.2%–64.0%) | 0.3% | 61.8 (51.1–75.8) | [claim:C094] [evidence:E008]
+| J + uncapped screening | 99.9% (99.4%–100.0%) | 88.3% (87.4%–89.2%) | 100.0% | 209.6 (173.4–259.6) | [claim:C095] [evidence:E008]
 
 UI, uncertainty interval across posterior draws. Costs are 2026 Singapore dollars for J, F and X, discounted at 3% a year to 2026. [claim:C096] [evidence:E001]
 

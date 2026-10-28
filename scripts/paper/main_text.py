@@ -22,6 +22,7 @@ def checks(f):
     assert all(abs(v[st] - 1) < 1e-6 for v in f.quota_use.values() for st in "FX"), "a quota is not fully used"
     assert min(f.mort_pass, key=lambda k: F(s[k]["total_discounted_cost_2026_2030_sgd"])) == "S5000_F25"
     assert F(s["S5000_F50"]["joint_pass_probability"]) < 0.2
+    assert 0.5 < F(s["S5000_F25"]["joint_pass_probability"]) < 0.75 and F(s["S5000_F25"]["mortality_reduction"]) < 0.67, "S5000_F25 is no longer narrow"
     assert f.rhat_max < 1.01 and f.n_ovl == 13
     assert F(f.strata["population_J"]["median"]) > 2 * f.j_obs_2015, "modelled prison size no longer far above observed"
     assert f.prior_dominated == [5, 6, 13]
@@ -146,7 +147,7 @@ def build(reg, f):
         f"Within that capacity, people with chronic infection started treatment at a rate that gives a {pct(f.cfg['fx_annual_start_probability'], 0)} annual probability. Sofosbuvir–velpatasvir without ribavirin was assumed, and people in D were never treated.", ("config", "scen_code", "setup"), kind="method")
     d.h(2, "Outcomes")
     d.p("The primary outcomes were the reductions in 2030, compared with 2015, of annual new HCV infections among PWID and of annual HCV deaths. "
-        "New infections were the annual number of infections in D and F. HCV deaths were liver deaths in decompensated cirrhosis and hepatocellular carcinoma, plus the excess non-liver deaths of viraemic people over the rate of non-viraemic people.", ("scen_code",), kind="method")
+        "New infections were the number of infections in D and F during the calendar year. HCV deaths were the liver deaths in decompensated cirrhosis and hepatocellular carcinoma during the year, plus the excess non-liver deaths of viraemic people over the rate of non-viraemic people. The 2015 values were the yearly numbers at the calibrated equilibrium.", ("scen_code",), kind="method")
     d.p("A policy met a target if the median reduction was at least 80% for infections or 65% for deaths. We also report the share of posterior draws in which both targets were met.", ("scen_code", "config"), kind="method")
     d.h(2, "Costs")
     d.p(f"We costed antibody tests (S${f.cfg['unit_cost_sgd']['antibody']}), RNA tests (S${f.cfg['unit_cost_sgd']['rna']}), one consultation per treatment start (S${f.cfg['unit_cost_sgd']['consultation']}) and a 12-week sofosbuvir–velpatasvir course (S${F(f.costev[0]['base_cost_sgd']):,.0f}) in 2026 Singapore dollars, from published charges and a published price (S1 Text, Table H) [@wong2019; @nhg_dsc; @parkway_rna; @sgd_rate].",
@@ -187,7 +188,7 @@ def build(reg, f):
     d.p(f"All {len(f.finite)} finite screening policies met the incidence target at the median, but only {cap_word(len(f.mort_pass)).lower()} met the mortality target (Fig 4 and Table 1). "
         f"With {caps[-1]:,} tests a year, the fall in deaths was {red(P8, 'mortality_reduction')} with 25% to F and {red(P85, 'mortality_reduction')} with 50% to F; both targets were met in {pct(P8['joint_pass_probability'], 1)} and {pct(P85['joint_pass_probability'], 0)} of draws.",
         OUT, unc="moderate")
-    d.p(f"With 5,000 tests a year and 25% to F, deaths fell by {red(P5, 'mortality_reduction')}, and both targets were met in {pct(P5['joint_pass_probability'], 0)} of draws. With 50% to F at the same capacity, deaths fell by {red(P550, 'mortality_reduction')} and both targets were met in only {pct(P550['joint_pass_probability'], 0)} of draws.",
+    d.p(f"With 5,000 tests a year and 25% to F, deaths fell by {red(P5, 'mortality_reduction')}, only {100 * (F(P5['mortality_reduction']) - 0.65):.1f} percentage points above the target, and both targets were met in {pct(P5['joint_pass_probability'], 0)} of draws, so this policy met the targets only narrowly. With 50% to F at the same capacity, deaths fell by {red(P550, 'mortality_reduction')} and both targets were met in only {pct(P550['joint_pass_probability'], 0)} of draws.",
         OUT, unc="moderate")
     d.p("At every capacity, giving a larger share of tests to F increased the fall in new infections and reduced the fall in deaths. All quotas were used in full in every year and group.", ("summary", "annual"), unc="moderate")
     d.p(f"This trade-off follows from the two groups. At the start of 2026, {n0(f.f_eligible)} people in F were eligible for screening, of whom {fchr} had chronic infection; in X, {n0(f.x_eligible)} were eligible and {xchr} had chronic infection. "

@@ -224,7 +224,7 @@ The solver located the moment in each year at which a group used its capacity an
 
 In J, every entrant not on treatment (u, a, c, r) was counted as having an antibody test and every antibody-positive entrant (a, c, r) an RNA test; each treatment start was costed as one course and one consultation. [claim:C211] [evidence:E002]
 
-New infections in a year were the instantaneous annual rate of infection (u and r to a, in D and F) at the end of the year. HCV deaths were the liver deaths in stages 3 and 4 plus $(\sigma_v - \sigma_n)\mu_i$ times the number of viraemic people. Both were compared with their 2015 values. [claim:C212] [evidence:E002,E033]
+New infections in a year were the infections (u and r to a, in D and F) during that calendar year, and HCV deaths the liver deaths in stages 3 and 4 plus $(\sigma_v - \sigma_n)\mu_i$ times the number of viraemic people, summed over the year (trapezoid rule over the daily solver output). The 2015 values were one year at the calibrated equilibrium; the 2016 values, still without treatment, differed from them by less than 0.1%. Both were compared with their 2015 values. [claim:C212] [evidence:E002,E033]
 
 For each of 2,000 posterior draws (sampling seed fixed), we ran the 2015 equilibrium, the shared 2016–2025 history and all 17 scenarios to 2030; 2,000 of 2,000 draws were valid. [claim:C213] [evidence:E008,E050,E002]
 
@@ -251,22 +251,22 @@ Table I gives every scenario. Fig D shows which policies met each target at the 
 
 | Policy | Draws meeting incidence target | Draws meeting mortality target | Treatment starts in F and X, 2026–2030 | Extra cost over J only, S$ million | [claim:C223] [evidence:E008]
 |---|---|---|---|---|
-| J only | 78.0% | 0.0% | 0 (0–0) | 0.0 (0.0–0.0) | [claim:C224] [evidence:E008]
-| J + 600/year, 25% to F | 83.4% | 0.0% | 213 (176–257) | 7.1 (5.9–8.6) | [claim:C225] [evidence:E008]
-| J + 600/year, 50% to F | 87.1% | 0.0% | 187 (154–226) | 4.9 (4.1–5.9) | [claim:C226] [evidence:E008]
-| J + 600/year, 75% to F | 90.2% | 0.0% | 158 (128–201) | 2.7 (2.2–3.1) | [claim:C227] [evidence:E008]
-| J + 1,000/year, 25% to F | 86.2% | 0.0% | 350 (290–422) | 11.7 (9.7–14.2) | [claim:C228] [evidence:E008]
-| J + 1,000/year, 50% to F | 90.8% | 0.0% | 305 (252–370) | 8.1 (6.7–9.7) | [claim:C229] [evidence:E008]
-| J + 1,000/year, 75% to F | 94.8% | 0.0% | 253 (206–321) | 4.3 (3.6–5.1) | [claim:C230] [evidence:E008]
-| J + 2,000/year, 25% to F | 90.8% | 0.0% | 675 (560–813) | 22.7 (18.7–27.4) | [claim:C231] [evidence:E008]
-| J + 2,000/year, 50% to F | 97.3% | 0.0% | 583 (481–705) | 15.6 (12.9–18.7) | [claim:C232] [evidence:E008]
-| J + 2,000/year, 75% to F | 99.2% | 0.0% | 465 (379–586) | 8.1 (6.6–9.7) | [claim:C233] [evidence:E008]
-| J + 5,000/year, 25% to F | 98.5% | 88.7% | 1,521 (1,260–1,834) | 51.4 (42.3–61.9) | [claim:C234] [evidence:E008]
-| J + 5,000/year, 50% to F | 99.9% | 16.0% | 1,278 (1,058–1,538) | 35.6 (29.3–42.8) | [claim:C235] [evidence:E008]
+| J only | 71.2% | 0.0% | 0 (0–0) | 0.0 (0.0–0.0) | [claim:C224] [evidence:E008]
+| J + 600/year, 25% to F | 79.0% | 0.0% | 213 (176–257) | 7.1 (5.9–8.6) | [claim:C225] [evidence:E008]
+| J + 600/year, 50% to F | 84.2% | 0.0% | 187 (154–226) | 4.9 (4.1–5.9) | [claim:C226] [evidence:E008]
+| J + 600/year, 75% to F | 88.1% | 0.0% | 158 (128–201) | 2.7 (2.2–3.1) | [claim:C227] [evidence:E008]
+| J + 1,000/year, 25% to F | 82.4% | 0.0% | 350 (290–422) | 11.7 (9.7–14.2) | [claim:C228] [evidence:E008]
+| J + 1,000/year, 50% to F | 89.3% | 0.0% | 305 (252–370) | 8.1 (6.7–9.7) | [claim:C229] [evidence:E008]
+| J + 1,000/year, 75% to F | 93.8% | 0.0% | 253 (206–321) | 4.3 (3.6–5.1) | [claim:C230] [evidence:E008]
+| J + 2,000/year, 25% to F | 89.3% | 0.0% | 675 (560–813) | 22.7 (18.7–27.4) | [claim:C231] [evidence:E008]
+| J + 2,000/year, 50% to F | 96.5% | 0.0% | 583 (481–705) | 15.6 (12.9–18.7) | [claim:C232] [evidence:E008]
+| J + 2,000/year, 75% to F | 99.1% | 0.0% | 465 (379–586) | 8.1 (6.6–9.7) | [claim:C233] [evidence:E008]
+| J + 5,000/year, 25% to F | 98.4% | 61.5% | 1,521 (1,260–1,834) | 51.4 (42.3–61.9) | [claim:C234] [evidence:E008]
+| J + 5,000/year, 50% to F | 99.9% | 2.5% | 1,278 (1,058–1,538) | 35.6 (29.3–42.8) | [claim:C235] [evidence:E008]
 | J + 5,000/year, 75% to F | 100.0% | 0.0% | 926 (763–1,142) | 17.8 (13.9–21.8) | [claim:C236] [evidence:E008]
 | J + 8,000/year, 25% to F | 99.9% | 100.0% | 2,196 (1,823–2,654) | 74.7 (61.4–90.0) | [claim:C237] [evidence:E008]
-| J + 8,000/year, 50% to F | 100.0% | 97.3% | 1,820 (1,512–2,192) | 52.7 (43.2–63.5) | [claim:C238] [evidence:E008]
-| J + 8,000/year, 75% to F | 100.0% | 3.6% | 1,252 (1,040–1,524) | 27.1 (20.6–33.2) | [claim:C239] [evidence:E008]
+| J + 8,000/year, 50% to F | 100.0% | 87.2% | 1,820 (1,512–2,192) | 52.7 (43.2–63.5) | [claim:C238] [evidence:E008]
+| J + 8,000/year, 75% to F | 100.0% | 0.3% | 1,252 (1,040–1,524) | 27.1 (20.6–33.2) | [claim:C239] [evidence:E008]
 | J + uncapped screening | 100.0% | 100.0% | 4,511 (3,684–5,633) | 174.6 (142.6–219.0) | [claim:C240] [evidence:E008]
 
 Cost sensitivity: with all unit prices halved or increased by half, the discounted cost of 5,000 tests a year with 25% to F was S$43.1 million or S$129.2 million; epidemiological results do not change. [claim:C241] [evidence:E008,E001]

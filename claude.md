@@ -313,3 +313,12 @@ outputs were backed up to the session scratchpad only (not in the repo).
   from current prison processing by up to 0.5 pp; death-rate and contact-matrix sources; CHEERS wording).
 - NPE: gate FAIL accepted (user); user plans to delete NPE later (`sbc_mcmc.R` depends on NPE SBC files).
 
+
+## Yearly counts for the WHO outcomes (2026-10-28)
+- Trajectories and 2030 results are now events **summed over each calendar year** (`annual_events()` in
+  `model_metrics.R`, trapezoid rule on daily output), not the 31 December rate, which overstated 2030 reductions.
+  2015 = one year at the equilibrium rate (2016 count within 0.1%, checked in `scenarios_2026.R`).
+- Rerun: reductions about 1.3 pp lower. J only incidence 83.2% (66.5–89.4), mortality 53.1%. Same median pass set,
+  but S5000_F25 is narrow (65.4%, joint 60%); S8000_F50 66.6% (87%); S8000_F25 70.8% (99.85%).
+- Trajectory figures: yearly counts at mid-year joined by a monotone PCHIP curve, ticks at 1 January.
+- Manuscript, S1 Text and the scenarios README updated; `build_paper.py` asserts S5000_F25 stays narrow.
