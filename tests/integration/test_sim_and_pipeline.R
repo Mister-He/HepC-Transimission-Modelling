@@ -188,6 +188,13 @@ cs0 <- calib_summary(cal_out, pm_cal)
 check_equal(lp0, -nlp(rep(0, N_THETA)) - nll_prev(cs0$p_sero) - nll_first_arrests(cs0$first_arrests) -
               nll_community(cs0$community_pwid),
             tol = 1e-8, "the MCMC log posterior is prior + seroprevalence + first arrests + community")
+# A run that is not at equilibrium (30 model years) is penalised by Nelder-Mead and outside the MCMC support.
+short_data <- cal_data; short_data$t_end <- 30
+short_eq <- simulate_theta(rep(0, N_THETA), e$params, short_data)$eq
+check_true(!short_eq$pass, "a 30-year run fails the equilibrium check")
+check_true(make_objective(e$params, short_data)(rep(0, N_THETA)) > 1e3, "Nelder-Mead penalises a failed equilibrium")
+check_identical(log_posterior_exact(rep(0, N_THETA), e$params, short_data)$lp, -Inf,
+                "the MCMC rejects a failed equilibrium")
 
 # Entry scales: doubling every entry scale doubles first arrests and community PWID and leaves
 # seroprevalence unchanged (transmission depends on the infectious share only).
