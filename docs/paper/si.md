@@ -123,7 +123,7 @@ The community estimate refers to 2017; because entry is constant and treatment s
 | $\theta_7$–$\theta_{12}$ | Log entry scale $s_i$, one per age group | Half-normal(0, 1) | 1–100 |
 | $\theta_{13}$ | Log first-arrest factor $c$ | Normal(0, 0.5) | 0.5–100 |
 
-The prior was fixed before fitting and did not use the data. The same prior was used for the mode search, the MCMC and the neural posterior.
+The prior was fixed before fitting and did not use the data. The same prior was used for the mode search and the MCMC.
 
 ## 4.3 Likelihood
 
@@ -193,12 +193,6 @@ For each of 4,000 posterior draws we computed the modelled 2015 targets. The 95%
 
 Direct simulation-based calibration [@talts2018]: we reran the MCMC (one chain of 45,000 evaluations, 15,000 warm-up) on 8 data sets simulated from prior draws. Pooled over 104 ranks, 95% interval coverage was 0.95, 90% coverage 0.94 and the mean rank 0.47. With 8 data sets this guards only against gross miscalibration.
 
-Neural posterior estimation [@greenberg2019; @sbi2020]: we simulated 50,000 parameter sets from the prior by Latin hypercube sampling (49,941 valid), added observation noise from the likelihood, and trained an ensemble of 5 masked autoregressive flows [@papamakarios2017].
-
-Its simulation-based calibration on 998 data sets gave 95% coverage of 0.926 to 0.962, but the rank histograms of $\theta_{2}$, $\theta_{10}$, $\theta_{11}$ were not uniform, so the neural posterior failed its predeclared quality check (Fig B).
-
-Of 4,000 neural posterior draws, 24% failed the equilibrium check. Compared with the MCMC, the neural posterior intervals were on average 1.28 times as wide, and 15% of parameters met all agreement criteria (Fig C). We therefore used the MCMC posterior for every result and report the neural posterior only as a failed cross-check.
-
 # 5. Model population in 2015
 
 **Table G. Modelled population in 2015 (median and 95% credible interval across posterior draws).**
@@ -245,7 +239,7 @@ Costs were counted in the year they occurred and discounted at 3% a year to 2026
 
 # 8. Additional results
 
-Table I gives every scenario. Fig D shows which policies met each target at the median, Fig E the costs and treatment starts by group, and Fig F the yearly screening cascade in F and X.
+Table I gives every scenario. Fig C shows which policies met each target at the median, Fig D the costs and treatment starts by group, and Fig E the yearly screening cascade in F and X.
 
 **Table I. All scenarios, 2030 and 2026–2030 totals (median and 95% uncertainty interval).**
 
@@ -273,7 +267,7 @@ Cost sensitivity: with all unit prices halved or increased by half, the discount
 
 # 9. Software and reproducibility
 
-The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan, convergence diagnostics the R package posterior, and the neural posterior the sbi package [@sbi2020]. Figures were drawn with matplotlib from the saved outputs.
+The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan and convergence diagnostics the R package posterior. Figures were drawn with matplotlib from the saved outputs.
 
 Analysis commands, run times and expected outputs are listed in docs/training.md in the repository. This appendix and the main text were generated from the saved outputs by scripts/build_paper.py; drafting followed the procedures of Scientific Agent Skills [@kassis2026].
 
@@ -283,23 +277,19 @@ Analysis commands, run times and expected outputs are listed in docs/training.md
 
 ![](output/calibration/mcmc_reference/mcmc_traceplots.png){width=95%}
 
-**Fig B. Rank histograms of the neural posterior's simulation-based calibration.** 998 data sets, 20 bins; the band is the 99% range under uniformity.
+**Fig B. Marginal posterior densities of the 13 parameters from the MCMC.**
 
-![](output/calibration/npe_lhs/sbc_rank_histograms.png){width=95%}
+![](output/calibration/mcmc_reference/figures/marginals.png){width=95%}
 
-**Fig C. Marginal posteriors from the MCMC (grey) and the neural posterior (orange).**
-
-![](output/calibration/npe_vs_mcmc/figures/marginals.png){width=95%}
-
-**Fig D. Target attainment in 2030 by policy.** Median reductions in new infections and HCV deaths, and whether both targets were met.
+**Fig C. Target attainment in 2030 by policy.** Median reductions in new infections and HCV deaths, and whether both targets were met.
 
 ![](output/scenarios_2026/scenario_target_heatmap.png){width=95%}
 
-**Fig E. Costs and treatment starts, 2026–2030.** (A) Discounted costs by group. (B) Undiscounted treatment courses by group. Bars are medians of each group; whiskers are 95% uncertainty intervals of the total.
+**Fig D. Costs and treatment starts, 2026–2030.** (A) Discounted costs by group. (B) Undiscounted treatment courses by group. Bars are medians of each group; whiskers are 95% uncertainty intervals of the total.
 
 ![](output/scenarios_2026/scenario_cumulative_costs.png){width=95%}
 
-**Fig F. Screening cascade in F and X by year.** Number screened, RNA tests, RNA-positive people, chronic infections found and treatment starts, by capacity (columns) and share of tests given to F (rows).
+**Fig E. Screening cascade in F and X by year.** Number screened, RNA tests, RNA-positive people, chronic infections found and treatment starts, by capacity (columns) and share of tests given to F (rows).
 
 ![](output/scenarios_2026/scenario_care_cascade.png){width=95%}
 

@@ -9,7 +9,7 @@ Executable model and analysis code. Each script starts with a short description.
   - targets, J-stratum summaries and the equilibrium check;
   - the likelihood;
   - Nelder–Mead (`calibrate_nm.R`);
-  - prior sampling, by LHS or at random (`prior_sampling.R`; LHS for NPE training, random for SBC);
+  - prior sampling, by LHS or at random (`prior_sampling.R`; random draws for the MCMC SBC);
   - the exact log posterior and adaptive Metropolis sampler (`mcmc.R`).
 
 Workflow, in order:
@@ -17,9 +17,6 @@ Workflow, in order:
 1. **Posterior mode:** `run_calibration.R`, a Nelder–Mead multi-start fit run in parallel with `--cores`.
 2. **Production posterior:** `run_mcmc_reference.R`, the reference MCMC.
 3. **Cross-validation only** (nothing here feeds the production path):
-   - `run_npe.R` and `npe_train.py`: single-round NPE (5-network ensemble) trained on Latin hypercube
-     prior simulations, with SBC and its coverage gate.
-   - `compare_npe_mcmc.R`: NPE versus reference MCMC, for parameters and policy outcomes.
    - `sbc_mcmc.R`: a small direct SBC of the reference MCMC.
 4. **Checks:**
    - `predict_2015_posterior.R`: 2015 predictions by stratum.

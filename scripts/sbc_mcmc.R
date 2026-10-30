@@ -4,9 +4,9 @@
 # run_mcmc_reference.R on K synthetic datasets and ranks the true parameters in each
 # posterior. Cross-validation only; nothing here feeds the production path.
 #
-# True parameters and noise-free outputs are the first K rows of the NPE SBC set
-# (output/calibration/npe_lhs/theta_sbc.csv, x_sbc.csv: prior draws that pass the
-# equilibrium check). Observations follow the MCMC likelihood: seroprevalence
+# True parameters are the first K random prior draws (prior_sampling.R) whose simulation passes
+# the equilibrium check; they and their noise-free outputs are saved as theta_true.csv and
+# x_true.csv. Observations follow the MCMC likelihood: seroprevalence
 # ~ Beta(p * phi, (1 - p) * phi), first arrests ~ negative binomial(size, mu), community PWID
 # ~ log-normal, with the settings of the targets file. Each dataset gets one chain with the
 # production sampler settings, --n-warmup warmup proposals and --max-evals evaluations.
@@ -20,22 +20,37 @@ K <- as.integer(arg("--n-datasets", "8")); MAX_EVALS <- as.integer(arg("--max-ev
 N_WARMUP <- as.integer(arg("--n-warmup", "15000"))
 CORES <- as.integer(arg("--cores", "8")); SEED <- as.integer(arg("--seed", "20261201"))
 FIT <- arg("--fit", "output/calibration/r_20261027_agepop/fit.rds")
-NPE <- "output/calibration/npe_lhs"; OUT <- "output/calibration/npe_vs_mcmc/mcmc_sbc"
-source("scripts/calibration/likelihood.R"); source("scripts/calibration/targets.R")
+OUT <- "output/calibration/mcmc_sbc"
+old <- setwd("scripts/model"); setup_env <- new.env(parent = globalenv())
+sys.source("setup.R", setup_env); setwd(old)
+Rcpp::sourceCpp("scripts/model/sim.cpp")
+for (f in c("targets.R", "model_metrics.R", "equilibrium.R", "likelihood.R", "prior_sampling.R"))
+  source(file.path("scripts/calibration", f))
 TH <- paste0("theta", 1:N_THETA)
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
+base <- targets <- read_targets("data/calibration_targets.json")  # equilibrium_data() reads targets
+check_fit_current(readRDS(FIT), setup_env$params, equilibrium_data(setup_env$data))
 
-theta <- as.matrix(read.csv(file.path(NPE, "theta_sbc.csv"))[, TH]); x <- as.matrix(read.csv(file.path(NPE, "x_sbc.csv")))
-stopifnot(K <= nrow(theta), nrow(x) == nrow(theta))  # indexing past the end would pad with NA rows
-theta <- theta[seq_len(K), , drop = FALSE]; x <- x[seq_len(K), , drop = FALSE]
-base <- read_targets("data/calibration_targets.json")
-ss <- jsonlite::fromJSON(file.path(NPE, "simulation_summary.json"))  # the NPE SBC set must share prior and phi
+# Noise-free 2015 summaries (6 seroprevalences, 6 first arrests, community PWID), or NULL when the
+# draw fails the equilibrium check (outside the MCMC target's support).
+simulate <- function(theta) {
+  pm <- build_params(theta, setup_env$params)
+  out <- tryCatch(run_sim(pm, equilibrium_data(setup_env$data)), error = function(e) NULL)
+  if (is.null(out)) return(NULL)
+  cs <- calib_summary(out, pm); eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
+  if (!summary_ok(out, cs) || is.null(eq) || !eq$pass) return(NULL)
+  c(cs$p_sero, cs$first_arrests, cs$community_pwid)
+}
 ps <- prior_spec()
-stopifnot(isTRUE(all.equal(ss$prior_mean, ps$mean)), isTRUE(all.equal(ss$prior_sd, ps$sd)),
-          isTRUE(all.equal(ss$theta_lo, ps$lo)), isTRUE(all.equal(ss$theta_hi, ps$hi)),
-          isTRUE(all.equal(ss$beta_precision, base$beta_precision)),
-          isTRUE(all.equal(ss$first_arrests_nb_size, base$first_arrests_nb_size)),
-          isTRUE(all.equal(ss$community_pwid_log_sd, base$community_pwid_log_sd)))
+cand <- sample_prior_random(4L * K, ps$mean, ps$sd, SEED, ps$lo, ps$hi)
+sims <- parallel::mclapply(seq_len(nrow(cand)), function(i) simulate(cand[i, ]), mc.cores = CORES)
+ok <- which(!vapply(sims, is.null, logical(1)))
+stopifnot(length(ok) >= K)  # too many equilibrium failures: raise the 4 * K candidates
+ok <- ok[seq_len(K)]
+theta <- cand[ok, , drop = FALSE]; colnames(theta) <- TH; x <- do.call(rbind, sims[ok])
+write.csv(theta, file.path(OUT, "theta_true.csv"), row.names = FALSE)
+write.csv(x, file.path(OUT, "x_true.csv"), row.names = FALSE)
+cat(length(ok), "of", max(ok), "candidate prior draws pass the equilibrium check\n")
 set.seed(SEED)
 for (k in seq_len(K)) {
   phi <- base$beta_precision

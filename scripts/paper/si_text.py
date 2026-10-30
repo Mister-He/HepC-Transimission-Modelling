@@ -110,7 +110,7 @@ def build(reg, f):
     d.p("| $\\theta_1$–$\\theta_6$ | Log contact multiplier, one per age group | Normal(0, 1.5) | 0.01–1,000 |", ("likelihood",), kind="method")
     d.p("| $\\theta_7$–$\\theta_{12}$ | Log entry scale $s_i$, one per age group | Half-normal(0, 1) | 1–100 |", ("likelihood",), kind="method")
     d.p("| $\\theta_{13}$ | Log first-arrest factor $c$ | Normal(0, 0.5) | 0.5–100 |", ("likelihood",), kind="method")
-    d.p("The prior was fixed before fitting and did not use the data. The same prior was used for the mode search, the MCMC and the neural posterior.", ("likelihood",), kind="method")
+    d.p("The prior was fixed before fitting and did not use the data. The same prior was used for the mode search and the MCMC.", ("likelihood",), kind="method")
     d.h(2, "4.3 Likelihood")
     d.p(f"Seroprevalence: each observed value $y_i$ follows Beta($p_i\\phi$, $(1-p_i)\\phi$) around the modelled value $p_i$, with $\\phi$ = {f.tg['beta_precision']}. "
         f"First arrests: each count follows a negative binomial distribution with mean equal to the modelled flow $c\\,\\lambda^{{(3)}}_i D_i$ and size {f.tg['first_arrests_nb_size']}. "
@@ -160,15 +160,6 @@ def build(reg, f):
     m = f.msbc["all"]
     d.p(f"Direct simulation-based calibration [@talts2018]: we reran the MCMC (one chain of 45,000 evaluations, 15,000 warm-up) on {m['n_datasets']} data sets simulated from prior draws. Pooled over {13 * int(m['n_datasets'])} ranks, 95% interval coverage was {F(m['coverage_95']):.2f}, 90% coverage {F(m['coverage_90']):.2f} and the mean rank {F(m['mean_rank']):.2f}. With {m['n_datasets']} data sets this guards only against gross miscalibration.",
         ("mcmc_sbc",), unc="moderate")
-    ns = f.npe_sim; acc_ = f.npe_acc["npe_lhs"]
-    sbc = f.npe_sbc
-    d.p(f"Neural posterior estimation [@greenberg2019; @sbi2020]: we simulated {ns['n_attempted']:,} parameter sets from the prior by Latin hypercube sampling ({ns['n_valid']:,} valid), added observation noise from the likelihood, and trained an ensemble of {f.npe_cfg['n_ensemble']} masked autoregressive flows [@papamakarios2017].",
-        ("npe_sim", "npe_cfg"), kind="method")
-    bad = ", ".join(f"$\\theta_{{{x[5:]}}}$" for x in f.npe_bad_shape)
-    d.p(f"Its simulation-based calibration on {int(F(sbc[0]['n_sbc'])):,} data sets gave 95% coverage of {min(F(x['coverage_95']) for x in sbc):.3f} to {max(F(x['coverage_95']) for x in sbc):.3f}, but the rank histograms of {bad} were not uniform, so the neural posterior failed its predeclared quality check (Fig B).",
-        ("npe_sbc",), unc="moderate")
-    d.p(f"Of {f.npe_checked:,} neural posterior draws, {pct(1 - f.npe_pass_eq / f.npe_checked, 0)} failed the equilibrium check. Compared with the MCMC, the neural posterior intervals were on average {F(acc_['mean_width95_ratio']):.2f} times as wide, and {pct(acc_['share_pass_all'], 0)} of parameters met all agreement criteria (Fig C). We therefore used the MCMC posterior for every result and report the neural posterior only as a failed cross-check.",
-        ("npe_support", "npe_acc"), unc="moderate")
 
     # ---------------- 5 population ----------------
     d.h(1, "5. Model population in 2015")
@@ -208,7 +199,7 @@ def build(reg, f):
 
     # ---------------- 8 additional results ----------------
     d.h(1, "8. Additional results")
-    d.p(f"Table I gives every scenario. Fig D shows which policies met each target at the median, Fig E the costs and treatment starts by group, and Fig F the yearly screening cascade in F and X.", ("summary",))
+    d.p(f"Table I gives every scenario. Fig C shows which policies met each target at the median, Fig D the costs and treatment starts by group, and Fig E the yearly screening cascade in F and X.", ("summary",))
     d.p("**Table I. All scenarios, 2030 and 2026–2030 totals (median and 95% uncertainty interval).**", ("summary",), kind="result")
     d.p("| Policy | Draws meeting incidence target | Draws meeting mortality target | Treatment starts in F and X, 2026–2030 | Extra cost over J only, S$ million |", ("summary",), kind="result")
     d.raw("|---|---|---|---|---|")
@@ -221,23 +212,21 @@ def build(reg, f):
 
     # ---------------- 9 software ----------------
     d.h(1, "9. Software and reproducibility")
-    d.p("The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan, convergence diagnostics the R package posterior, and the neural posterior the sbi package [@sbi2020]. Figures were drawn with matplotlib from the saved outputs.", ("sim", "figures"), kind="method")
+    d.p("The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan and convergence diagnostics the R package posterior. Figures were drawn with matplotlib from the saved outputs.", ("sim", "figures"), kind="method")
     d.p("Analysis commands, run times and expected outputs are listed in docs/training.md in the repository. This appendix and the main text were generated from the saved outputs by scripts/build_paper.py; drafting followed the procedures of Scientific Agent Skills [@kassis2026].", ("figures",), kind="declaration")
 
     # ---------------- figures ----------------
     d.h(1, "Figures")
     d.p(f"**Fig A. MCMC trace plots.** Stored draws of the 13 parameters for each of the {f.mcfg['n_chains']} chains after warm-up.", ("mcmc_cfg",), kind="result")
     d.raw(f"![]({dict(SI_FIGURES)['Fig A']}){{width=95%}}")
-    d.p(f"**Fig B. Rank histograms of the neural posterior's simulation-based calibration.** {int(F(sbc[0]['n_sbc'])):,} data sets, 20 bins; the band is the 99% range under uniformity.", ("npe_sbc",), kind="result")
+    d.p("**Fig B. Marginal posterior densities of the 13 parameters from the MCMC.**", ("mcmc_cfg",), kind="result")
     d.raw(f"![]({dict(SI_FIGURES)['Fig B']}){{width=95%}}")
-    d.raw("**Fig C. Marginal posteriors from the MCMC (grey) and the neural posterior (orange).**")
+    d.p("**Fig C. Target attainment in 2030 by policy.** Median reductions in new infections and HCV deaths, and whether both targets were met.", ("summary",), kind="result")
     d.raw(f"![]({dict(SI_FIGURES)['Fig C']}){{width=95%}}")
-    d.p("**Fig D. Target attainment in 2030 by policy.** Median reductions in new infections and HCV deaths, and whether both targets were met.", ("summary",), kind="result")
+    d.p("**Fig D. Costs and treatment starts, 2026–2030.** (A) Discounted costs by group. (B) Undiscounted treatment courses by group. Bars are medians of each group; whiskers are 95% uncertainty intervals of the total.", ("stratum_tot","summary"), kind="result")
     d.raw(f"![]({dict(SI_FIGURES)['Fig D']}){{width=95%}}")
-    d.p("**Fig E. Costs and treatment starts, 2026–2030.** (A) Discounted costs by group. (B) Undiscounted treatment courses by group. Bars are medians of each group; whiskers are 95% uncertainty intervals of the total.", ("stratum_tot","summary"), kind="result")
+    d.raw("**Fig E. Screening cascade in F and X by year.** Number screened, RNA tests, RNA-positive people, chronic infections found and treatment starts, by capacity (columns) and share of tests given to F (rows).")
     d.raw(f"![]({dict(SI_FIGURES)['Fig E']}){{width=95%}}")
-    d.raw("**Fig F. Screening cascade in F and X by year.** Number screened, RNA tests, RNA-positive people, chronic infections found and treatment starts, by capacity (columns) and share of tests given to F (rows).")
-    d.raw(f"![]({dict(SI_FIGURES)['Fig F']}){{width=95%}}")
     d.h(1, "References")
     d.raw("::: {#refs}\n:::")
     return d
@@ -245,9 +234,8 @@ def build(reg, f):
 
 SI_FIGURES = [  # (label, repository path)
     ("Fig A", "output/calibration/mcmc_reference/mcmc_traceplots.png"),
-    ("Fig B", "output/calibration/npe_lhs/sbc_rank_histograms.png"),
-    ("Fig C", "output/calibration/npe_vs_mcmc/figures/marginals.png"),
-    ("Fig D", "output/scenarios_2026/scenario_target_heatmap.png"),
-    ("Fig E", "output/scenarios_2026/scenario_cumulative_costs.png"),
-    ("Fig F", "output/scenarios_2026/scenario_care_cascade.png"),
+    ("Fig B", "output/calibration/mcmc_reference/figures/marginals.png"),
+    ("Fig C", "output/scenarios_2026/scenario_target_heatmap.png"),
+    ("Fig D", "output/scenarios_2026/scenario_cumulative_costs.png"),
+    ("Fig E", "output/scenarios_2026/scenario_care_cascade.png"),
 ]

@@ -112,7 +112,7 @@ The likelihood combined a beta distribution for each seroprevalence (precision 1
 
 A multistart Nelder–Mead search found the posterior mode. We then sampled the posterior with an adaptive random-walk Metropolis algorithm [@haario2001]: 8 chains started from independent prior draws, each with 60,000 model runs, of which 20,000 were warm-up. Convergence was checked with rank-normalised R-hat and effective sample sizes [@vehtari2021]. [claim:C031] [evidence:E040,E007,E041,E042]
 
-We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets, and compared the posterior with neural posterior estimation [@greenberg2019; @sbi2020] as a cross-check (S1 Text, Section 4). [claim:C032] [evidence:E043,E044,E045]
+We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets (S1 Text, Section 4). [claim:C032] [evidence:E043]
 
 ## Policy scenarios
 
@@ -130,17 +130,17 @@ A policy met a target if the median reduction was at least 80% for infections or
 
 ## Costs
 
-We costed antibody tests (S$25.31), RNA tests (S$307), one consultation per treatment start (S$25) and a 12-week sofosbuvir–velpatasvir course (S$40,405) in 2026 Singapore dollars, from published charges and a published price (S1 Text, Table H) [@wong2019; @nhg_dsc; @parkway_rna; @sgd_rate]. [claim:C038] [evidence:E016,E001,E046,E047,E048,E049]
+We costed antibody tests (S$25.31), RNA tests (S$307), one consultation per treatment start (S$25) and a 12-week sofosbuvir–velpatasvir course (S$40,405) in 2026 Singapore dollars, from published charges and a published price (S1 Text, Table H) [@wong2019; @nhg_dsc; @parkway_rna; @sgd_rate]. [claim:C038] [evidence:E016,E001,E044,E045,E046,E047]
 
 Costs for 2026–2030 in all three groups (J, F and X) were discounted at 3% a year to 2026. Unit prices were varied together by a factor of 0.5 and 1.5 in a sensitivity analysis. These are charges, not costs to the health system. [claim:C039] [evidence:E001,E016]
 
 ## Uncertainty
 
-For each of 2,000 posterior draws we ran every scenario and computed every outcome. We report medians and 95% uncertainty intervals (UI; 2.5th to 97.5th percentiles) across draws. These intervals reflect parameter uncertainty only. [claim:C040] [evidence:E008,E050]
+For each of 2,000 posterior draws we ran every scenario and computed every outcome. We report medians and 95% uncertainty intervals (UI; 2.5th to 97.5th percentiles) across draws. These intervals reflect parameter uncertainty only. [claim:C040] [evidence:E008,E048]
 
 ## Software
 
-The model was written in C++ and called from R through Rcpp [@rcpp2011]; rate models used Stan. Code and generated results are in the project repository. [claim:C041] [evidence:E051]
+The model was written in C++ and called from R through Rcpp [@rcpp2011]; rate models used Stan. Code and generated results are in the project repository. [claim:C041] [evidence:E049]
 
 ## Ethics statement
 
@@ -150,15 +150,15 @@ The model was written in C++ and called from R through Rcpp [@rcpp2011]; rate mo
 
 ## Calibration and the 2015 population
 
-The posterior chains converged (largest R-hat 1.004; smallest bulk effective sample size 2,158). The model reproduced the age pattern of seroprevalence in prison, and the 95% posterior intervals of all 13 modelled targets overlapped the target ranges (Fig 2). [claim:C043] [evidence:E052,E053]
+The posterior chains converged (largest R-hat 1.004; smallest bulk effective sample size 2,158). The model reproduced the age pattern of seroprevalence in prison, and the 95% posterior intervals of all 13 modelled targets overlapped the target ranges (Fig 2). [claim:C043] [evidence:E050,E051]
 
-At ages 30 and over, modelled first arrests were higher than the recorded counts (for example 324 against 292 at ages 30–39 at the posterior mode), because entry could not fall below the recorded counts and the entry scales settled at their lower bound (posterior medians 1.09 to 1.15 below age 60). [claim:C044] [evidence:E054,E015]
+At ages 30 and over, modelled first arrests were higher than the recorded counts (for example 324 against 292 at ages 30–39 at the posterior mode), because entry could not fall below the recorded counts and the entry scales settled at their lower bound (posterior medians 1.09 to 1.15 below age 60). [claim:C044] [evidence:E052,E015]
 
 The modelled number of active injectors in the community was 7,957 (7,062–9,298), below the survey estimate of 11,000 but within its range. The first-arrest factor c was 2.78 (95% credible interval 1.55–5.49), so first arrest was faster than re-arrest. [claim:C045] [evidence:E013,E015,E006]
 
 In 2015 the model had 57,742 people who had ever injected (95% credible interval 52,350–66,850): 1,130 in D, 9,741 in J, 6,802 in F and 40,035 in X. The modelled prison population was not a calibration target and was much larger than the 3,367 people with a screening result recorded in prison in 2015. [claim:C046] [evidence:E013,E014]
 
-In 2015 the model had 637 (547–755) new infections and 307 (261–368) HCV deaths per year. Without treatment, both stayed at their 2015 level until 2030. [claim:C047] [evidence:E012,E055]
+In 2015 the model had 637 (547–755) new infections and 307 (261–368) HCV deaths per year. Without treatment, both stayed at their 2015 level until 2030. [claim:C047] [evidence:E012,E053]
 
 ## Prison treatment alone
 
@@ -196,13 +196,13 @@ The two WHO targets pull screening in different directions. Tests given to peopl
 
 This suggests that the people who matter most for HCV mortality are not those most visible to drug services. People who have stopped injecting may no longer be in contact with prison or drug services, and reaching them may need testing in primary care or other community settings [@hsiang2022]. [claim:C061] [evidence:E031]
 
-Part of the modelled HCV mortality is excess non-liver death among viraemic people, based on mortality ratios from a cohort of people who use drugs [@vansanten2014]. Evidence that viraemic infection raises mortality from causes other than liver disease supports this [@lee2012; @cepeda2022], but the excess is not found in every cohort [@piselli2021]; with a smaller excess, deaths would depend more on cirrhosis and liver cancer. [claim:C062] [evidence:E035,E056,E057,E058]
+Part of the modelled HCV mortality is excess non-liver death among viraemic people, based on mortality ratios from a cohort of people who use drugs [@vansanten2014]. Evidence that viraemic infection raises mortality from causes other than liver disease supports this [@lee2012; @cepeda2022], but the excess is not found in every cohort [@piselli2021]; with a smaller excess, deaths would depend more on cirrhosis and liver cancer. [claim:C062] [evidence:E035,E054,E055,E056]
 
 We extend earlier modelling for Singapore [@chaillon2021] by separating released people by injecting status and by modelling screening capacity explicitly. This separation gives a reason why the mortality target may be harder to meet than the incidence target. [claim:C063] [evidence:E032]
 
 ## Strengths and limitations
 
-The model was calibrated with a full Bayesian method that converged well, and every policy result carries posterior uncertainty from 2,000 draws. Prison flows were estimated from individual prison records rather than assumed, and screening capacity was modelled explicitly, so treatment depends on how many people are found. [claim:C064] [evidence:E052,E008,E009]
+The model was calibrated with a full Bayesian method that converged well, and every policy result carries posterior uncertainty from 2,000 draws. Prison flows were estimated from individual prison records rather than assumed, and screening capacity was modelled explicitly, so treatment depends on how many people are found. [claim:C064] [evidence:E050,E008,E009]
 
 The study has important limitations. First, the modelled prison population (9,741) was about 3 times the number of screened people recorded in prison in 2015. The prison size was not fitted, and the model may keep people in prison or in contact with it for too long, which would favour prison treatment. [claim:C065] [evidence:E013,E014]
 
@@ -214,7 +214,7 @@ Fourth, screening was an aggregate approximation: tests were spread across each 
 
 Fifth, costs were published charges and a published drug price carried forward without inflation, not payer costs, and follow-up visits were excluded. Our uncertainty intervals cover model parameters only, not structural assumptions, prices or uptake. [claim:C069] [evidence:E016,E001]
 
-Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference 0.5 percentage points), and the neural posterior used as a cross-check failed its calibration check (S1 Text, Section 4). [claim:C070] [evidence:E006,E014,E059]
+Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference 0.5 percentage points). [claim:C070] [evidence:E006,E014]
 
 ## Conclusions
 
@@ -238,7 +238,7 @@ In this model, treatment in prison is likely to meet the 2030 target for new HCV
 
 # Use of artificial intelligence
 
-[AI use statement: to be completed and approved by the authors. Draft: Claude (Anthropic) was used to write and revise analysis code and to draft and revise the text, figures and supporting information, with procedures from Scientific Agent Skills [@kassis2026]. The authors are to state that they checked all content, data, code, references and conclusions, and take responsibility for them.] [claim:C072] [evidence:E060]
+[AI use statement: to be completed and approved by the authors. Draft: Claude (Anthropic) was used to write and revise analysis code and to draft and revise the text, figures and supporting information, with procedures from Scientific Agent Skills [@kassis2026]. The authors are to state that they checked all content, data, code, references and conclusions, and take responsibility for them.] [claim:C072] [evidence:E057]
 
 # Acknowledgments
 
@@ -253,7 +253,7 @@ In this model, treatment in prison is likely to meet the 2030 target for new HCV
 
 **Fig 1. Model structure.** People who inject drugs enter D (never imprisoned) and move to J (prison) at first arrest. On release they move to F (still injecting) or X (stopped). People in F can be re-arrested. Transmission occurs only in D and F. Treatment is given in J from 2019 and community screening is offered to F and X from 2026. [claim:C073] [evidence:E033,E001]
 
-**Fig 2. Calibration to the 2015 targets.** (A) HCV antibody prevalence in prison by age. (B) First arrests by age (Central Narcotics Bureau new drug abusers). (C) Active injectors in the community (D and F). Black: target with the 95% range of its likelihood; blue: 95% posterior interval of the model value from the MCMC posterior; orange: neural posterior estimate (cross-check only). [claim:C074] [evidence:E053]
+**Fig 2. Calibration to the 2015 targets.** (A) HCV antibody prevalence in prison by age. (B) First arrests by age (Central Narcotics Bureau new drug abusers). (C) Active injectors in the community (D and F). Black: target with the 95% range of its likelihood; blue: 95% posterior interval of the model value from the MCMC posterior; orange: neural posterior estimate (cross-check only). [claim:C074] [evidence:E051]
 
 **Fig 3. New infections and HCV deaths, 2015–2030.** Annual new HCV infections (A) and HCV deaths (B) relative to 2015, without treatment, with prison treatment only, and with 8,000 community tests a year from 2026 given 25% or 75% to F. Yearly counts are drawn at mid-year and joined by a monotone curve; vertical lines mark the start of prison treatment (2019) and community screening (2026). Lines are medians and bands are 95% uncertainty intervals across 2,000 posterior draws. Dashed lines mark the WHO targets. [claim:C075] [evidence:E008,E012]
 

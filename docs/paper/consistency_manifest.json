@@ -102,8 +102,8 @@
       "analysis_intent": "descriptive",
       "sample_size": 4000,
       "evidence_ids": [
-        "E052",
-        "E053"
+        "E050",
+        "E051"
       ],
       "reported_sections": [
         "Results: Calibration and the 2015 population"

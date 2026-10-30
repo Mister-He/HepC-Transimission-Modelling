@@ -3,7 +3,7 @@
 # the reference MCMC posterior, plus posterior summaries.
 # =============================================================================
 
-# Exact target shared with NPE and Nelder-Mead: the truncated Normal prior of likelihood.R
+# Exact target shared with Nelder-Mead: the truncated Normal prior of likelihood.R
 # (-nlp, up to a constant), the three likelihood terms (nll_targets), and the 2015 equilibrium check
 # as a hard support restriction (failure -> -Inf, no penalty).
 # Returns list(lp, ode) so that ODE calls can be counted separately.

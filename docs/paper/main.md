@@ -112,7 +112,7 @@ The likelihood combined a beta distribution for each seroprevalence (precision 1
 
 A multistart Nelder–Mead search found the posterior mode. We then sampled the posterior with an adaptive random-walk Metropolis algorithm [@haario2001]: 8 chains started from independent prior draws, each with 60,000 model runs, of which 20,000 were warm-up. Convergence was checked with rank-normalised R-hat and effective sample sizes [@vehtari2021].
 
-We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets, and compared the posterior with neural posterior estimation [@greenberg2019; @sbi2020] as a cross-check (S1 Text, Section 4).
+We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets (S1 Text, Section 4).
 
 ## Policy scenarios
 
@@ -214,7 +214,7 @@ Fourth, screening was an aggregate approximation: tests were spread across each 
 
 Fifth, costs were published charges and a published drug price carried forward without inflation, not payer costs, and follow-up visits were excluded. Our uncertainty intervals cover model parameters only, not structural assumptions, prices or uptake.
 
-Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference 0.5 percentage points), and the neural posterior used as a cross-check failed its calibration check (S1 Text, Section 4).
+Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference 0.5 percentage points).
 
 ## Conclusions
 

@@ -5,8 +5,7 @@
 # export_figure: PNG at 300 dpi + SVG with editable text). Widths follow the
 # skill's PLOS snapshot (full 190.5 mm, text column 132 mm).
 # Inputs: output/scenarios_2026/*.csv (scenarios_2026.R), output/calibration/
-# {mcmc_reference,npe_lhs,npe_vs_mcmc}/ (run_mcmc_reference.R, run_npe.R,
-# plot_calibration.R, predict_2015_posterior.R, compare_npe_mcmc.R),
+# mcmc_reference/ (run_mcmc_reference.R, plot_calibration.R, predict_2015_posterior.R),
 # data/calibration_targets.json. Nothing is re-simulated.
 # Usage: python scripts/figures.py [ROOT] [--skill-dir DIR] [--only NAME ...]
 # =============================================================================
@@ -230,8 +229,7 @@ if want("calibration_agepop"):
     # plot_calibration.R): Beta seroprevalence, negative binomial first arrests, log-normal community.
     chk = pd.read_csv(ROOT / "figures/calibration_interval_overlap.csv")
     srcs = {"Target (likelihood, 95% range)": (None, "black", "^"),
-            "Reference MCMC (production)": (CAL / "mcmc_reference/model_prediction_2015_age_draws.csv", "#0072B2", "s"),
-            "Single-round NPE (50,000 LHS)": (CAL / "npe_lhs/model_prediction_2015_age_draws.csv", "#D55E00", "o")}
+            "Reference MCMC": (CAL / "mcmc_reference/model_prediction_2015_age_draws.csv", "#0072B2", "s")}
     panels = [("seroprevalence", [f"p{i}" for i in range(1, 7)], "HCV seroprevalence in prison, 2015", pct),
               ("first_arrests", [f"fa{i}" for i in range(1, 7)], "First arrests per year, 2015\n(CNB new drug abusers)", comma),
               ("community_pwid", ["community"], "Community PWID (D + F)", comma)]
@@ -249,10 +247,9 @@ if want("calibration_agepop"):
                     dr = pd.read_csv(f); dr = dr[dr.equilibrium_pass.astype(bool)]
                     v = dr[cols].to_numpy()
                     est, lo, hi = np.median(v, 0), np.quantile(v, .025, 0), np.quantile(v, .975, 0)
-                    who = "MCMC" if "MCMC" in name else "NPE"
-                    assert np.allclose(lo, c[f"{who}_lower"], rtol=1e-6) and np.allclose(hi, c[f"{who}_upper"], rtol=1e-6), \
+                    assert np.allclose(lo, c["MCMC_lower"], rtol=1e-6) and np.allclose(hi, c["MCMC_upper"], rtol=1e-6), \
                         "interval drift"
-                xs = np.arange(n) + (j - 1) * 0.22
+                xs = np.arange(n) + (j - 0.5) * 0.22
                 ax.errorbar(xs, est, yerr=[est - lo, hi - est], fmt=mk, color=col, ms=4.5, elinewidth=1,
                             capsize=2, label=name)
             ax.set(xticks=range(n), xticklabels=ages if n == 6 else ["All ages"], ylim=(0, None), ylabel=ylab)
@@ -260,7 +257,7 @@ if want("calibration_agepop"):
                 ax.set_xlabel("Age group (years)")
             ax.yaxis.set_major_formatter(fmt)
             panel_label(ax, letter)
-        fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=3)
+        fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=2)
         save(fig, ROOT / "figures/calibration_agepop",
              ["data/calibration_targets.json", "figures/calibration_interval_overlap.csv",
               "*/model_prediction_2015_age_draws.csv (median, 2.5-97.5%)"])
@@ -510,28 +507,11 @@ if want("model_prediction_2015_strata"):
                       fontsize=8)
         save(fig, CAL / "mcmc_reference/model_prediction_2015_strata", ["model_prediction_2015_strata.csv"])
 
-if want("sbc_rank_histograms"):
-    ranks = np.load(CAL / "npe_lhs/sbc_ranks.npy"); n, nb = len(ranks), 20
-    lo, hi = stats.binom.ppf([0.005, 0.995], n, 1 / nb)
-    with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(3, 5, figsize=(FULL * MM, 110 * MM), layout="constrained", sharex=True, sharey=True)
-        for ax in axes.flat[ranks.shape[1]:]:
-            ax.set_visible(False)
-        for i, ax in zip(range(ranks.shape[1]), axes.flat):
-            ax.axhspan(lo, hi, color="#56B4E9", alpha=0.3, lw=0)
-            ax.hist(ranks[:, i], bins=nb, range=(0, 1), color="0.45", edgecolor="white", lw=0.5)
-            ax.set_title(f"θ{i + 1}", fontsize=8)
-        fig.supxlabel(f"Normalised rank of the true parameter ({n} SBC datasets, {nb} bins); "
-                      "band = 99% range under uniformity", fontsize=8)
-        fig.supylabel("Datasets per bin", fontsize=8)
-        save(fig, CAL / "npe_lhs/sbc_rank_histograms", ["npe_lhs/sbc_ranks.npy"])
-
-CMP = CAL / "npe_vs_mcmc/figures"
+CMP = CAL / "mcmc_reference/figures"
 if want("marginals") or want("pairs"):
     ref = pd.read_csv(CAL / "mcmc_reference/mcmc_draws.csv")[TH]
-    npe = pd.read_csv(CAL / "npe_lhs/posterior_samples_npe.csv")[TH]
+    CMP.mkdir(exist_ok=True)
     rng = np.random.default_rng(1)
-    LEG = [Patch(fc="0.8", label="Reference MCMC"), Line2D([], [], color="#D55E00", label="NPE, 50,000 LHS")]
 
 if want("marginals"):
     with style_context("default", palette_name="okabe_ito_on_white"):
@@ -539,46 +519,24 @@ if want("marginals"):
         for ax in axes.flat[len(TH):]:
             ax.set_visible(False)
         for ax, t in zip(axes.flat, TH):
-            a, b = ref[t].to_numpy(), npe[t].to_numpy()
-            g = np.linspace(min(a.min(), b.min()), max(a.max(), b.max()), 300)
-            ax.fill_between(g, stats.gaussian_kde(a, "silverman")(g), color="0.8", lw=0)
-            ax.plot(g, stats.gaussian_kde(b, "silverman")(g), color="#D55E00", lw=1)
+            a = ref[t].to_numpy()
+            g = np.linspace(a.min(), a.max(), 300)
+            ax.fill_between(g, stats.gaussian_kde(a, "silverman")(g), color="0.7", lw=0)
             ax.set_title(f"θ{t[5:]}", fontsize=8); ax.set_yticks([])
         fig.supxlabel("θ (log scale); Gaussian KDE, Silverman bandwidth", fontsize=8)
         fig.supylabel("Density", fontsize=8)
-        fig.legend(handles=LEG, loc="outside upper center", ncols=2)
-        save(fig, CMP / "marginals", ["mcmc_reference/mcmc_draws.csv", "npe_lhs/posterior_samples_npe.csv"])
-
-if want("accuracy"):
-    pc = pd.read_csv(CAL / "npe_vs_mcmc/parameter_comparison.csv").set_index("parameter").loc[TH[::-1]]
-    with style_context("default", palette_name="okabe_ito_on_white"):
-        fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 80 * MM), layout="constrained", sharey=True)
-        for ax, (c, band, xl) in zip(axes, [("smd", (-.1, .1), "Standardised mean difference vs reference"),
-                                            ("width95_ratio", (.9, 1.1), "95% interval width ratio vs reference")]):
-            ax.axvspan(*band, color="0.85", lw=0, label="Tolerance")
-            ax.plot(pc[c], range(len(TH)), "o", color="#D55E00", ms=4, label="NPE, 50,000 LHS")
-            ax.set_xlabel(xl)
-        axes[0].set(yticks=range(len(TH)), yticklabels=[f"θ{t[5:]}" for t in pc.index])
-        fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=2)
-        save(fig, CMP / "accuracy", ["npe_vs_mcmc/parameter_comparison.csv"])
+        save(fig, CMP / "marginals", ["mcmc_reference/mcmc_draws.csv"])
 
 if want("pairs"):
     with style_context("default", palette_name="okabe_ito_on_white"):
         fig, axes = plt.subplots(2, 2, figsize=(COL * MM, 125 * MM), layout="constrained")
         for ax, (u, v) in zip(axes.flat, [("theta1", "theta13"), ("theta6", "theta13"), ("theta7", "theta13"),
                                           ("theta8", "theta13")]):
-            sets = [(ref, "0.2", "-"), (npe, "#D55E00", "--")]
-            xy = [s[[u, v]].to_numpy()[rng.choice(len(s), 5000, replace=False)].T for s, _, _ in sets]
-            allp = np.hstack(xy)
-            gx, gy = np.meshgrid(*[np.linspace(allp[i].min(), allp[i].max(), 120) for i in (0, 1)])
-            for (s, col, ls), pts in zip(sets, xy):
-                zz = stats.gaussian_kde(pts)(np.vstack([gx.ravel(), gy.ravel()])).reshape(gx.shape)
-                ax.contour(gx, gy, zz, levels=6, colors=col, linestyles=ls, linewidths=0.8)
+            pts = ref[[u, v]].to_numpy()[rng.choice(len(ref), 5000, replace=False)].T
+            gx, gy = np.meshgrid(*[np.linspace(pts[i].min(), pts[i].max(), 120) for i in (0, 1)])
+            zz = stats.gaussian_kde(pts)(np.vstack([gx.ravel(), gy.ravel()])).reshape(gx.shape)
+            ax.contour(gx, gy, zz, levels=6, colors="0.2", linewidths=0.8)
             ax.set(xlabel=f"θ{u[5:]}", ylabel=f"θ{v[5:]}")
-        fig.legend(handles=[Line2D([], [], color="0.2", label="Reference MCMC"),
-                            Line2D([], [], color="#D55E00", ls="--", label="NPE, 50,000 LHS")],
-                   loc="outside lower center", ncols=2)
-        save(fig, CMP / "pairs", ["mcmc_reference/mcmc_draws.csv", "npe_lhs/posterior_samples_npe.csv",
-                                  "5,000 draws each; 2D Gaussian KDE, 6 levels"])
+        save(fig, CMP / "pairs", ["mcmc_reference/mcmc_draws.csv", "5,000 draws; 2D Gaussian KDE, 6 levels"])
 
 print("\n".join(f"wrote {w}.png/.svg" for w in written))

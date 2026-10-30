@@ -18,7 +18,7 @@ ENTRY_LO <- rep(1, 6); ENTRY_HI <- rep(100, 6)
 C_LO <- 0.5; C_HI <- 100
 THETA_LO <- log(c(CONTACT_LO, ENTRY_LO, C_LO)); THETA_HI <- log(c(CONTACT_HI, ENTRY_HI, C_HI))
 
-# Fixed prior, shared by Nelder-Mead (posterior mode), the reference MCMC and NPE. It does not
+# Fixed prior, shared by Nelder-Mead (posterior mode), the reference MCMC and the MCMC SBC. It does not
 # depend on the data: independent Normal on theta, truncated to the bounds.
 # - theta1-6 (log contact scales relative to setup.R's C_contact): Normal(0, 1.5); 95% range
 #   of a scale 0.05-19.

@@ -340,7 +340,7 @@ if (any(errors)) stop("Draw failed: ",conditionMessage(results[[which(errors)[1]
 valid <- !vapply(results,function(r) isTRUE(r$invalid),logical(1))
 cat("Valid draws:",sum(valid),"of",length(valid),"(equilibrium failures:",sum(!valid),")\n")
 draw_seed <- draw_table$seed[valid]; results <- results[valid]
-MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))  # the NPE cross-validation policy run passes 0
+MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))
 stopifnot(length(results) > 0, length(results)>=MIN_VALID_SHARE*length(valid))
 writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid))), file.path(OUT,"draw_validity.txt"))
 collect <- function(name) lapply(results,`[[`,name)

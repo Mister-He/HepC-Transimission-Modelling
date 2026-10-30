@@ -5,9 +5,8 @@ Production calibration path:
 2. **Reference MCMC** gives the production posterior.
 3. **Scenarios** run on draws from that posterior.
 
-Cross-validation only (nothing here feeds the production path): single-round NPE trained on
-50,000 Latin hypercube prior simulations, with simulation-based calibration (SBC), and a small
-direct MCMC SBC.
+Check only (nothing here feeds the production path): a small direct simulation-based
+calibration (SBC) of the MCMC. The NPE cross-validation was removed on 2026-10-30.
 
 Outputs are in `output/calibration/` (see its `README.md`). Run the steps in this order; each step
 reads the previous step's output. Model design: `docs/first_arrest_multiplier.md`, calibration
@@ -48,7 +47,7 @@ Rscript scripts/model/update_rate_params.R    # writes lambda2, lambda3 and pi_r
   lower bound); `c` 0.5–100 (user decision: first arrest at least half the re-arrest rate).
 - **Prior (fixed, not centred on any fit):** independent Normal, truncated to the bounds:
   θ1–θ6 ~ N(0, 1.5), θ7–θ12 ~ N(0, 1) truncated at 0 (half-normal), θ13 ~ N(0, 0.5)
-  (`prior_spec()`; density `nlp()`, shared by Nelder–Mead, MCMC and NPE).
+  (`prior_spec()`; density `nlp()`, shared by Nelder–Mead and MCMC).
 - **Likelihood (`nll_targets()`), three independent terms** (`data/calibration_targets.json`):
   - seroprevalence: each age group's observed 2015 prison seroprevalence is
     `Beta(p·φ, (1−p)·φ)` around the model value `p`, φ = 100 (`beta_precision`);
@@ -62,13 +61,11 @@ Rscript scripts/model/update_rate_params.R    # writes lambda2, lambda3 and pi_r
     infectious share), so entry is pinned by the two count targets. `c` is pinned by the tension
     between them: a low `c` keeps more people in D (raising D + F) but shifts first arrests to
     older ages.
-- **Support:** draws outside the bounds and equilibrium failures are excluded (MCMC gives −∞;
-  NPE drops the simulation and counts it).
+- **Support:** draws outside the bounds and equilibrium failures are excluded (MCMC gives −∞).
 - **Solver:** RK4 with `dt = 1/365`.
 - **Mortality:** general-population `mu` × PWID SMR by state: 9.52 viraemic (a, c, t), 4.73
   otherwise (van Santen 2014). In DC and HCC the liver excess `mu_DC`/`mu_HCC` is added, and after
   SVR only that liver excess is multiplied by ψ (0.5 DC, 0.37 HCC).
-- **Details:** see `output/calibration/npe_vs_mcmc/model_audit.md`.
 
 ## 1. Deterministic calibration (posterior mode)
 
@@ -124,60 +121,19 @@ Rscript scripts/run_mcmc_reference.R   # about 5 hours on 8 cores
   prior). θ12 (60+ entry) is at 0.60.
 - `--targets` swaps the target file. The MCMC SBC uses it.
 
-## 3. Cross-validation: single-round NPE with SBC
-
-```bash
-Rscript scripts/run_npe.R --step all --n-sims 50000 --seed 20261012 --train-seed 20261013 \
-  --n-sbc 1000 --n-cores 10 --threads 4 --python /path/to/python
-```
-
-- **LHS design** (`scripts/calibration/prior_sampling.R`): a 50,000 × 13 design with one point per
-  stratum, mapped through the truncated Normal inverse CDF of each parameter's prior.
-- **Simulations:** draws outside the bounds, non-finite results and equilibrium failures are dropped
-  and counted, never replaced. This run (2026-10-27): 49,941 valid, 47 equilibrium failures and 12
-  non-finite (`simulation_summary.json`).
-- **Summaries (13):** 6 seroprevalences with Beta(φ = 100) noise (logit-transformed), 6 first
-  arrests with negative binomial (size 50) noise (`log1p`), and D + F with log-normal (SD 0.245)
-  noise (log).
-- **Network:** an equal-weight ensemble of 5 MAFs (50×5), each with batch 256, Adam lr 5e-4,
-  validation fraction 0.10, patience 20, ≤ 250 epochs, gradient clipping 5.0, CPU only. Posterior
-  draws outside the bounds are rejected (at most 100 rounds, then an error). Training takes
-  about 10 minutes (152–236 epochs per member).
-- **Output:** 20,000 posterior draws.
-- **SBC:** 1,000 independent prior datasets (998 pass equilibrium), with ranks of the true value in
-  1,000 posterior draws.
-  - **Gate:** cov95 in [0.85, 1] and cov90 in [0.75, 1] for every parameter, and no systematically
-    skewed rank histogram.
-  - **Result (2026-10-27):** cov95 0.926–0.962 and cov90 0.871–0.917 (all pass), but three
-    rank shapes fail: θ2 (20–29 contact, mean rank 0.463, 4.0 SE low), θ11 (50–59 entry, 0.456,
-    4.8 SE low) and θ10 (40–49 entry, outer-10% share 0.129, 3.1 SE high). Gate FAIL
-    (`NPE_NOT_OK.txt`). The entry scales have posteriors piled at their lower bound, which a
-    flow with rejection sampling fits poorly. The NPE is cross-validation only, so it was not
-    retrained.
-- **Comparison with the reference MCMC (2026-10-27):** NPE draws that fail the equilibrium check
-  are dropped first (945 of 4,000, 24%). At the observed data the NPE does not match the MCMC
-  (2 of 13 parameters pass all checks; 95% intervals on average 28% wider, range 0.92–2.25×;
-  worst mean difference 1.08 SD). Policy medians agree within 5.4% (J-only incidence) and 1.3%
-  for mortality; the joint-pass probability at 5,000/yr F25% differs by 34 pp and cost by 9%. See
-  `output/calibration/npe_vs_mcmc/report.md`.
-
-  ```bash
-  Rscript scripts/compare_npe_mcmc.R --policy-cores 7
-  ```
-
-## 4. Optional: direct MCMC SBC
+## 3. Optional: direct MCMC SBC
 
 ```bash
 Rscript scripts/sbc_mcmc.R --n-datasets 8 --cores 8   # 15,000 warmup, 45,000 evaluations; about 1.8 hours
 ```
 
-- The truths are the first 8 NPE SBC datasets, with synthetic targets drawn from the three
-  likelihood terms. Each dataset gets one 45,000-evaluation chain.
+- The truths are the first 8 random prior draws (`prior_sampling.R`) that pass the equilibrium
+  check (`theta_true.csv`), with synthetic targets drawn from the three likelihood terms. Each dataset gets one 45,000-evaluation chain.
 - **Result (2026-10-27):** pooled cov95 0.952 and cov90 0.942 over 104 ranks; mean rank 0.467; max split
   R-hat 1.015 (one chain per dataset). Lowest per-parameter cov95: θ6, 6 of 8.
 - **Limitation:** 8 datasets are a check against gross miscalibration only, not a full SBC.
 
-## 5. 2015 predictions and calibration figure
+## 4. 2015 predictions and calibration figure
 
 ```bash
 Rscript scripts/predict_2015_posterior.R --max-draws 4000 --cores 14
@@ -191,13 +147,12 @@ Rscript scripts/plot_calibration.R --cores 14 --max-draws 2000
   (`output/prison_2015_counts.csv`).
 - **Calibration figure:** `figures/calibration_agepop.png` has three panels (seroprevalence,
   first arrests, community PWID). Each target is shown with the 95% range of its likelihood,
-  against 95% posterior intervals of the model values (no observation noise) from the reference MCMC and
-  the NPE (LHS; 1,527 of 2,000 NPE draws pass equilibrium).
+  against 95% posterior intervals of the model values (no observation noise) from the reference MCMC.
 - **Overlap check:** `figures/calibration_interval_overlap.csv` records whether each 95% interval
-  overlaps its target (MCMC: 13 of 13; NPE: 13 of 13). The posterior medians of first
+  overlaps its target (MCMC: 13 of 13). The posterior medians of first
   arrests sit above the CNB counts at ages 30+, but within the negative binomial range.
 
-## 6. 2026 treatment scenarios
+## 5. 2026 treatment scenarios
 
 ```bash
 Rscript scripts/scenarios_2026.R --root . --draws-per-seed 2000 --cores 4 --sample-seed 20261005
@@ -212,7 +167,7 @@ Rscript scripts/scenarios_2026.R --root . --draws-per-seed 2000 --cores 4 --samp
   - `--min-valid-share` sets the share of draws that must pass equilibrium.
 - **More detail:** see `output/scenarios_2026/README.md`.
 
-## 7. Manuscript
+## 6. Manuscript
 
 ```bash
 python scripts/figures.py .   # redraws every figure (PNG + editable SVG)

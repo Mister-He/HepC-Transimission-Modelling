@@ -3,7 +3,7 @@
 # run_mcmc_reference.R — reference MCMC calibration: adaptive random-walk Metropolis
 # on the exact posterior, with convergence, adaptation and proposal diagnostics.
 #
-# Target (shared with single-round NPE): the fixed truncated Normal prior of likelihood.R
+# Target: the fixed truncated Normal prior of likelihood.R
 # (prior_spec()) on the 13 log-scale parameters, the seroprevalence, first-arrest and
 # community-PWID likelihood (nll_targets), and the 2015 equilibrium check as a hard
 # restriction. Defaults: 8 prior-started chains, 20,000 warmup proposals with adaptation from

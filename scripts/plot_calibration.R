@@ -2,7 +2,7 @@
 # =============================================================================
 # plot_calibration.R — compares the calibration target intervals (seroprevalence and first
 # arrests by age, community PWID) with posterior predictive intervals of the model values from
-# the reference MCMC posterior and single-round NPE (calibration figure).
+# the reference MCMC posterior (calibration figure).
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -20,10 +20,7 @@ fit_path <- normalizePath(arg("--fit", file.path(root,
   "output/calibration/r_20261027_agepop/fit.rds")), mustWork = TRUE)
 mcmc_file <- normalizePath(arg("--mcmc-file", file.path(root,
   "output/calibration/mcmc_reference/mcmc_draws.csv")), mustWork = TRUE)
-npe_file <- normalizePath(arg("--npe-file", file.path(root,
-  "output/calibration/npe_lhs/posterior_samples_npe.csv")), mustWork = TRUE)
 MCMC_LABEL <- arg("--mcmc-label", "Reference MCMC (production)")
-NPE_LABEL <- arg("--npe-label", "Single-round NPE (50,000 LHS)")
 out_file <- file.path(root, arg("--out", "figures/calibration_agepop.png"))
 cores <- as.integer(arg("--cores", "4"))
 max_draws <- as.integer(arg("--max-draws", "2000"))
@@ -97,7 +94,6 @@ model_inputs <- c(file.path(root, c("scripts/model/setup.R", "scripts/model/sim.
   "data/calibration_targets.json", "scripts/calibration/likelihood.R",
   "scripts/calibration/model_metrics.R", "scripts/calibration/equilibrium.R")), fit_path)
 cache_for <- function(f) file.path(dirname(f), "model_prediction_2015_age_draws.csv")
-npe <- simulate_or_load(load_draws(npe_file), cache_for(npe_file), "NPE posterior", c(npe_file, model_inputs))
 mcmc <- simulate_or_load(load_draws(mcmc_file), cache_for(mcmc_file), "MCMC posterior", c(mcmc_file, model_inputs))
 
 # One row per target: measure, label, column of the predictive draws, and the target interval.
@@ -136,9 +132,9 @@ target_intervals <- function() {
              lower = tt$target_lower, upper = tt$target_upper, n_draws = NA_integer_)
 }
 
-source_levels <- c("Target", MCMC_LABEL, NPE_LABEL)
-source_shapes <- setNames(c(17, 15, 16), source_levels)
-source_cols <- setNames(c("black", "#0072B2", "#D55E00"), source_levels)
+source_levels <- c("Target", MCMC_LABEL)
+source_shapes <- setNames(c(17, 15), source_levels)
+source_cols <- setNames(c("black", "#0072B2"), source_levels)
 
 panel <- function(d, which, y_label, title, formatter, groups) {
   d <- d[d$measure == which, ]
@@ -155,7 +151,7 @@ panel <- function(d, which, y_label, title, formatter, groups) {
     theme_classic(base_size = 11) + theme(legend.position = "bottom")
 }
 
-d_all <- rbind(target_intervals(), summarise_draws(mcmc, MCMC_LABEL), summarise_draws(npe, NPE_LABEL))
+d_all <- rbind(target_intervals(), summarise_draws(mcmc, MCMC_LABEL))
 figure <- (panel(d_all, "seroprevalence", "HCV seroprevalence in prison", "Seroprevalence, 2015",
                  function(x) paste0(round(100 * x), "%"), age_names) /
            panel(d_all, "first_arrests", "People per year", "First arrests (CNB new drug abusers), 2015",
@@ -165,13 +161,11 @@ figure <- (panel(d_all, "seroprevalence", "HCV seroprevalence in prison", "Serop
   plot_layout(widths = c(3, 1), guides = "collect") & theme(legend.position = "bottom")
 ggsave(out_file, figure, width = 10, height = 7, dpi = 300, bg = "white")
 
-tt <- target_table(); sm <- summarise_draws(mcmc, "MCMC"); sn <- summarise_draws(npe, "NPE")
+tt <- target_table(); sm <- summarise_draws(mcmc, "MCMC")
 check <- data.frame(measure = tt$measure, age_group = tt$group, target = tt$target,
   target_lower = tt$target_lower, target_upper = tt$target_upper,
-  NPE_lower = sn$lower, NPE_upper = sn$upper, MCMC_lower = sm$lower, MCMC_upper = sm$upper)
-check$NPE_overlap <- check$NPE_upper >= check$target_lower & check$NPE_lower <= check$target_upper
+  MCMC_lower = sm$lower, MCMC_upper = sm$upper)
 check$MCMC_overlap <- check$MCMC_upper >= check$target_lower & check$MCMC_lower <= check$target_upper
 write.csv(check, file.path(dirname(out_file), "calibration_interval_overlap.csv"), row.names = FALSE)
-message("Wrote ", out_file, "; NPE draws used: ",
-        sum(as.logical(npe$equilibrium_pass)), "; MCMC draws used: ",
+message("Wrote ", out_file, "; MCMC draws used: ",
         sum(as.logical(mcmc$equilibrium_pass)), "; MCMC overlaps: ", sum(check$MCMC_overlap), "/", nrow(check))

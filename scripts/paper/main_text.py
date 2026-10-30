@@ -136,7 +136,7 @@ def build(reg, f):
     d.p(f"The likelihood combined a beta distribution for each seroprevalence (precision {f.tg['beta_precision']}), a negative binomial distribution for each first-arrest count (size {f.tg['first_arrests_nb_size']}) and a log-normal distribution for the community estimate (log-scale standard deviation {f.tg['community_pwid_log_sd']}, taken from its confidence interval).", ("likelihood", "targets"), kind="method")
     d.p(f"A multistart Nelder–Mead search found the posterior mode. We then sampled the posterior with an adaptive random-walk Metropolis algorithm [@haario2001]: {f.mcfg['n_chains']} chains started from independent prior draws, each with {f.mcfg['max_evals_per_chain']:,} model runs, of which {f.mcfg['n_warmup']:,} were warm-up. "
         f"Convergence was checked with rank-normalised R-hat and effective sample sizes [@vehtari2021].", ("nm_cfg", "mcmc_cfg"), kind="method")
-    d.p("We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets, and compared the posterior with neural posterior estimation [@greenberg2019; @sbi2020] as a cross-check (S1 Text, Section 4).", kind="method")
+    d.p("We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets (S1 Text, Section 4).", kind="method")
 
     d.h(2, "Policy scenarios")
     d.p(f"All scenarios share the same history: no treatment until 2018 and treatment in prison from 2019, at a rate that gives a {pct(f.cfg['j_annual_start_probability'], 3)} annual probability of starting treatment for people with chronic infection in J. "
@@ -220,8 +220,8 @@ def build(reg, f):
     d.p("Third, we assumed that released people who are eventually re-arrested return to injecting and that the others stop permanently, and that there is no transmission in prison. Relapse after a long gap would put more infections back into F.", ("setup", "sim"), kind="interpretive", unc="high")
     d.p("Fourth, screening was an aggregate approximation: tests were spread across each group in proportion to its HCV states, with perfect linkage within capacity and no loss to follow-up. Real programmes will find and treat fewer people for the same number of tests.", ("scen_code",), kind="interpretive", unc="high")
     d.p("Fifth, costs were published charges and a published drug price carried forward without inflation, not payer costs, and follow-up visits were excluded. Our uncertainty intervals cover model parameters only, not structural assumptions, prices or uptake.", ("costev", "config"), kind="interpretive", unc="high")
-    d.p(f"Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference {100 * f.sero_max_diff:.1f} percentage points), and the neural posterior used as a cross-check failed its calibration check (S1 Text, Section 4).",
-        ("targets", "prison", "npe_sbc"), kind="result", unc="moderate")
+    d.p(f"Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference {100 * f.sero_max_diff:.1f} percentage points).",
+        ("targets", "prison"), kind="result", unc="moderate")
     d.h(2, "Conclusions")
     d.p("In this model, treatment in prison is likely to meet the 2030 target for new HCV infections among people who inject drugs in Singapore, but not the target for HCV deaths. "
         "Reducing deaths requires finding and treating people who have stopped injecting after release, which needs community testing on a scale of thousands of people a year.",

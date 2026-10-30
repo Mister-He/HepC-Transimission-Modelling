@@ -29,10 +29,7 @@ class Facts:
             "mcmc_cfg": C + "mcmc_reference/mcmc_run_config.json", "mcmc_diag": C + "mcmc_reference/mcmc_diagnostics.csv",
             "mcmc_chain": C + "mcmc_reference/mcmc_chain_summary.csv", "mcmc_par": C + "mcmc_reference/mcmc_parameter_summary.csv",
             "strata": C + "mcmc_reference/model_prediction_2015_strata.csv", "overlap": "figures/calibration_interval_overlap.csv",
-            "mcmc_sbc": C + "npe_vs_mcmc/mcmc_sbc/mcmc_sbc_summary.csv", "npe_sim": C + "npe_lhs/simulation_summary.json",
-            "npe_sbc": C + "npe_lhs/sbc_summary.csv", "npe_acc": C + "npe_vs_mcmc/accuracy_summary.csv",
-            "npe_pol": C + "npe_vs_mcmc/policy_comparison.csv", "npe_support": C + "npe_vs_mcmc/npe_support.txt",
-            "npe_cfg": C + "npe_lhs/npe_config.json", "stratum_tot": S + "scenario_stratum_totals.csv",
+            "mcmc_sbc": C + "mcmc_sbc/mcmc_sbc_summary.csv", "stratum_tot": S + "scenario_stratum_totals.csv",
             "sps": "data/sps.csv and output/cleaned_data.rds (record-level, not distributed)",
             "stan_release": "scripts/model/release_rate.stan", "stan_rearrest": "scripts/model/rearrest_rate.stan",
             "preprocess": "scripts/model/preprocess.R", "figures": "scripts/figures.py",
@@ -46,10 +43,7 @@ class Facts:
         self.mdiag = [x for x in r(self.files["mcmc_diag"]) if x["subset"] == "all_retained"]
         self.mchain = r(self.files["mcmc_chain"]); self.mpar = {x["parameter"]: x for x in r(self.files["mcmc_par"])}
         self.strata = {x["measure"]: x for x in r(self.files["strata"])}; self.ovl = r(self.files["overlap"])
-        self.msbc = {x["parameter"]: x for x in r(self.files["mcmc_sbc"])}; self.npe_sim = j(self.files["npe_sim"])
-        self.npe_sbc = r(self.files["npe_sbc"]); self.npe_acc = {x["run"]: x for x in r(self.files["npe_acc"])}
-        self.npe_pol = r(self.files["npe_pol"]); self.npe_cfg = j(self.files["npe_cfg"])
-        self.npe_support = dict(l.split() for l in open(os.path.join(root, self.files["npe_support"])))
+        self.msbc = {x["parameter"]: x for x in r(self.files["mcmc_sbc"])}
         self.setup_txt = open(os.path.join(root, self.files["setup"])).read()
         self.valid = dict(l.split() for l in open(os.path.join(root, self.files["draws_valid"])))
         self._rates()
@@ -134,8 +128,6 @@ class Facts:
         self.mcse_max = max(F(x["mcse_mean"]) / F(x["sd"]) for x in self.mdiag)
         self.acc = [F(x["acceptance"]) for x in self.mchain]
         self.n_ovl = sum(x["MCMC_overlap"] == "TRUE" for x in self.ovl)
-        self.npe_bad_shape = [x["parameter"] for x in self.npe_sbc if x["rank_shape"] != "uniform"]
-        self.npe_pass_eq = int(self.npe_support["npe_draws_equilibrium_pass"]); self.npe_checked = int(self.npe_support["npe_draws_checked"])
         self.inc_order_ok = all(
             [F(s[f"S{cap}_F{x}"]["incidence_reduction"]) for x in (25, 50, 75)] ==
             sorted(F(s[f"S{cap}_F{x}"]["incidence_reduction"]) for x in (25, 50, 75)) for cap in self.cfg["annual_screening_totals"])
@@ -160,7 +152,7 @@ if __name__ == "__main__":
               "fx_death_share_2026", "fx_death_share_2030", "d_inc_share_sinf", "d_inc_share_j", "base_inc", "base_mort",
               "base_fx_death_share", "drug_share_5000", "j_obs_2015", "screened_2015", "positive_2015", "sero_max_diff",
               "c_post", "prior_dominated", "sd_ratio", "rhat_max", "ess_bulk_min", "ess_tail_min", "mcse_max", "acc", "n_ovl",
-              "npe_bad_shape", "npe_pass_eq", "npe_checked", "inc_order_ok", "mort_order_ok", "tau_j", "tau_fx", "rate_ci",
+              "inc_order_ok", "mort_order_ok", "tau_j", "tau_fx", "rate_ci",
               "rate_rhat", "entry_post", "contact_post"]:
         print(k, getattr(f, k))
     print("nm", [(x["start_id"], round(F(x["objective"]), 2)) for x in f.nm])

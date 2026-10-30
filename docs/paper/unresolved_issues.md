@@ -19,5 +19,3 @@ the manuscript shows each as a bracketed placeholder or states it as a limitatio
    be checked against the official checklist; items 19 and 21 are not addressed.
 9. The author summary headings follow the usual PLOS Medicine format; check them against the
    current author guidelines (the live guidelines page did not describe them).
-10. The neural posterior cross-check failed its calibration check; its policy comparison was run
-   before the recovered-DC model fix and is not reported.

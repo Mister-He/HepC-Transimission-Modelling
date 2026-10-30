@@ -1062,61 +1062,6 @@
       }
     },
     {
-      "source_type": "conference_paper",
-      "title": "Automatic posterior transformation for likelihood-free inference",
-      "authors": [
-        "Greenberg, David",
-        "Nonnenmacher, Marcel",
-        "Macke, Jakob"
-      ],
-      "year": 2019,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "[to be recorded by the verifying author]",
-      "confidentiality": "public",
-      "evidence_id": "E044",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "journal_article",
-      "title": "sbi: A toolkit for simulation-based inference",
-      "authors": [
-        "Tejero-Cantero, Alvaro",
-        "Boelts, Jan",
-        "Deistler, Michael",
-        "Lueckmann, Jan-Matthis",
-        "Durkan, Conor",
-        "Gonçalves, Pedro"
-      ],
-      "year": 2020,
-      "identifiers": {
-        "doi": "10.21105/joss.02505",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "[to be recorded by the verifying author]",
-      "confidentiality": "public",
-      "evidence_id": "E045",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
       "source_type": "journal_article",
       "title": "Economic evaluation of direct‐acting antivirals for the treatment of genotype 3 hepatitis C infection in Singapore",
       "authors": [
@@ -1137,7 +1082,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E046",
+      "evidence_id": "E044",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1161,7 +1106,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E047",
+      "evidence_id": "E045",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1185,7 +1130,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E048",
+      "evidence_id": "E046",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1209,7 +1154,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E049",
+      "evidence_id": "E047",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1231,7 +1176,7 @@
       },
       "locator": "output/scenarios_2026/draw_validity.txt",
       "confidentiality": "public",
-      "evidence_id": "E050",
+      "evidence_id": "E048",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1256,7 +1201,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E051",
+      "evidence_id": "E049",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1278,7 +1223,7 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_diagnostics.csv",
       "confidentiality": "public",
-      "evidence_id": "E052",
+      "evidence_id": "E050",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1300,7 +1245,7 @@
       },
       "locator": "figures/calibration_interval_overlap.csv",
       "confidentiality": "public",
-      "evidence_id": "E053",
+      "evidence_id": "E051",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1322,7 +1267,7 @@
       },
       "locator": "output/calibration/r_20261027_agepop/predictions.csv",
       "confidentiality": "public",
-      "evidence_id": "E054",
+      "evidence_id": "E052",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1344,7 +1289,7 @@
       },
       "locator": "output/scenarios_2026/no_treatment_trajectory.csv",
       "confidentiality": "public",
-      "evidence_id": "E055",
+      "evidence_id": "E053",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1373,7 +1318,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E056",
+      "evidence_id": "E054",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1402,7 +1347,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E057",
+      "evidence_id": "E055",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1431,29 +1376,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E058",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/calibration/npe_lhs/sbc_summary.csv",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/calibration/npe_lhs/sbc_summary.csv",
-      "confidentiality": "public",
-      "evidence_id": "E059",
+      "evidence_id": "E056",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1481,7 +1404,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E060",
+      "evidence_id": "E057",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1510,7 +1433,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E061",
+      "evidence_id": "E058",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1536,7 +1459,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E062",
+      "evidence_id": "E059",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1564,7 +1487,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E063",
+      "evidence_id": "E060",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1593,7 +1516,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E064",
+      "evidence_id": "E061",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1622,7 +1545,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E065",
+      "evidence_id": "E062",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1649,7 +1572,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E066",
+      "evidence_id": "E063",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1678,7 +1601,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E067",
+      "evidence_id": "E064",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1706,7 +1629,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E068",
+      "evidence_id": "E065",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1735,7 +1658,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E069",
+      "evidence_id": "E066",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1764,7 +1687,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E070",
+      "evidence_id": "E067",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1793,7 +1716,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E071",
+      "evidence_id": "E068",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1822,7 +1745,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E072",
+      "evidence_id": "E069",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1844,7 +1767,7 @@
       },
       "locator": "scripts/model/preprocess.R",
       "confidentiality": "public",
-      "evidence_id": "E073",
+      "evidence_id": "E070",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1866,7 +1789,7 @@
       },
       "locator": "scripts/model/release_rate.stan",
       "confidentiality": "public",
-      "evidence_id": "E074",
+      "evidence_id": "E071",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1888,7 +1811,7 @@
       },
       "locator": "scripts/model/rearrest_rate.stan",
       "confidentiality": "public",
-      "evidence_id": "E075",
+      "evidence_id": "E072",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1910,7 +1833,7 @@
       },
       "locator": "output/calibration/r_20261027_agepop/solutions.csv",
       "confidentiality": "public",
-      "evidence_id": "E076",
+      "evidence_id": "E073",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1932,7 +1855,7 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_chain_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E077",
+      "evidence_id": "E074",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1942,7 +1865,7 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/calibration/npe_vs_mcmc/mcmc_sbc/mcmc_sbc_summary.csv",
+      "title": "Project repository file output/calibration/mcmc_sbc/mcmc_sbc_summary.csv",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -1952,123 +1875,9 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/calibration/npe_vs_mcmc/mcmc_sbc/mcmc_sbc_summary.csv",
+      "locator": "output/calibration/mcmc_sbc/mcmc_sbc_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E078",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/calibration/npe_lhs/simulation_summary.json",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/calibration/npe_lhs/simulation_summary.json",
-      "confidentiality": "public",
-      "evidence_id": "E079",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/calibration/npe_lhs/npe_config.json",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/calibration/npe_lhs/npe_config.json",
-      "confidentiality": "public",
-      "evidence_id": "E080",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "conference_paper",
-      "title": "Masked autoregressive flow for density estimation",
-      "authors": [
-        "Papamakarios, George",
-        "Pavlakou, Theo",
-        "Murray, Iain"
-      ],
-      "year": 2017,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "[to be recorded by the verifying author]",
-      "confidentiality": "public",
-      "evidence_id": "E081",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/calibration/npe_vs_mcmc/npe_support.txt",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/calibration/npe_vs_mcmc/npe_support.txt",
-      "confidentiality": "public",
-      "evidence_id": "E082",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/calibration/npe_vs_mcmc/accuracy_summary.csv",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/calibration/npe_vs_mcmc/accuracy_summary.csv",
-      "confidentiality": "public",
-      "evidence_id": "E083",
+      "evidence_id": "E075",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -2090,7 +1899,7 @@
       },
       "locator": "scripts/figures.py",
       "confidentiality": "public",
-      "evidence_id": "E084",
+      "evidence_id": "E076",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -2112,7 +1921,7 @@
       },
       "locator": "output/scenarios_2026/scenario_stratum_totals.csv",
       "confidentiality": "public",
-      "evidence_id": "E085",
+      "evidence_id": "E077",
       "verification": {
         "source_opened": false,
         "status": "unverified",
