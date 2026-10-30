@@ -130,7 +130,7 @@ config <- list(
   fitted_parameters = N_THETA, 
   optimizer = "Nelder-Mead",
   target_source = "data/calibration_targets.json",
-  inflow_rule = "entry scale (theta7-12) x CNB 2015 age-specific counts (setup.R beta), held constant in every year",
+  inflow_rule = "entry scale (theta7-12) x setup.R beta (CNB 2015 age-specific counts x heroin/methamphetamine share), held constant in every year",
   best_objective = best$objective, 
   equilibrium_pass = eq_best$pass,
   viraemic_share_2015 = viraemic_share(out_best),  # reported only; it varies over time

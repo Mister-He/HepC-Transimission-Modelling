@@ -13,6 +13,9 @@ equilibrium_data <- function(data, t_end = targets$equilibrium_horizon_years) {
   data$t_start <- 0; data$t_end <- t_end; data$save_every <- round(1 / data$dt); data
 }
 
+EQ_COMP <- state_cols(0:3); EQ_HCV <- state_cols(0:3, 1:4)
+EQ_DC <- state_cols(0:3, k = 3); EQ_HCC <- state_cols(0:3, k = 4)
+
 check_equilibrium <- function(out, t_lag = 10,
                               crit_log_pop = 0.01,
                               crit_prev = 0.005,
@@ -29,19 +32,12 @@ check_equilibrium <- function(out, t_lag = 10,
   log_ratio   <- abs(log(s_T$N_hat / s_T5$N_hat))
   prev_change <- abs(s_T$p_sero - s_T5$p_sero)
 
-  # All-state convergence: total HCV, DC, HCC, and every compartment (idx from model_metrics.R).
-  comp_idx <- as.vector(sapply(0:3, function(s) sapply(1:4, function(k)
-    sapply(0:4, function(h) sapply(0:5, function(i) idx(s, k, h, i))))))
-  comp_T  <- out[row_T, comp_idx]
-  comp_T5 <- out[row_T5, comp_idx]
+  # All-state convergence: total HCV, DC, HCC, and every compartment (state_cols from model_metrics.R).
+  comp_T  <- out[row_T, EQ_COMP]
+  comp_T5 <- out[row_T5, EQ_COMP]
   max_comp_log_ratio <- max(abs(log(pmax(comp_T, 1e-6) / pmax(comp_T5, 1e-6))))
 
-  hcv_idx <- as.vector(sapply(0:3, function(s) sapply(1:4, function(k)
-    sapply(1:4, function(h) sapply(0:5, function(i) idx(s, k, h, i))))))
-  dc_idx <- as.vector(sapply(0:3, function(s) sapply(0:4, function(h)
-    sapply(0:5, function(i) idx(s, 3, h, i)))))
-  hcc_idx <- as.vector(sapply(0:3, function(s) sapply(0:4, function(h)
-    sapply(0:5, function(i) idx(s, 4, h, i)))))
+  hcv_idx <- EQ_HCV; dc_idx <- EQ_DC; hcc_idx <- EQ_HCC
   state_log_ratio <- max(
     abs(log(sum(out[row_T, hcv_idx]) / sum(out[row_T5, hcv_idx]))),
     abs(log(sum(out[row_T, dc_idx]) / sum(out[row_T5, dc_idx]))),

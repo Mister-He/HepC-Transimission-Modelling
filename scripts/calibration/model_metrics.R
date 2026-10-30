@@ -7,20 +7,18 @@
 idx <- function(s, k, h, i)
   s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 
-j_pop_idx <- function(i) as.vector(sapply(1:4, function(k)
-  sapply(0:4, function(h) idx(1, k, h, i - 1L))))
-j_sero_idx <- function(i) as.vector(sapply(1:4, function(k)
-  sapply(1:4, function(h) idx(1, k, h, i - 1L))))
-stratum_idx <- function(s, i) as.vector(sapply(1:4, function(k)
-  sapply(0:4, function(h) idx(s, k, h, i - 1L))))
-j_viremic_idx <- function(i) as.vector(sapply(1:4, function(k)
-  sapply(1:3, function(h) idx(1, k, h, i - 1L))))
+# Columns of the run output (time is column 1) for strata s, HCV states h, liver stages k and ages
+# i (0-5), age varying fastest, then h, k and s. Callers' sums depend on this order; keep it.
+state_cols <- function(s, h = 0:4, k = 1:4, i = 0:5) {
+  g <- expand.grid(i = i, h = h, k = k, s = s)
+  idx(g$s, g$k, g$h, g$i)
+}
 
 J_summary_at <- function(out, row) {
   age     <- seq_along(targets$age_groups)
-  N       <- vapply(age, function(i) sum(out[row, j_pop_idx(i)]), numeric(1))
-  sero    <- vapply(age, function(i) sum(out[row, j_sero_idx(i)]), numeric(1))
-  viremic <- vapply(age, function(i) sum(out[row, j_viremic_idx(i)]), numeric(1))
+  N       <- vapply(age, function(i) sum(out[row, state_cols(1, 0:4, i = i - 1L)]), numeric(1))
+  sero    <- vapply(age, function(i) sum(out[row, state_cols(1, 1:4, i = i - 1L)]), numeric(1))
+  viremic <- vapply(age, function(i) sum(out[row, state_cols(1, 1:3, i = i - 1L)]), numeric(1))
   data.frame(age_group = targets$age_groups,
   	     N_hat     = N,
              p_sero    = sero / N,
@@ -43,12 +41,12 @@ J_summary_final <- function(out) J_summary_at(out, summary_row(out))
 # Calibration summaries at a row (default: the final, 2015, row):
 # - p_sero: J seroprevalence by age;
 # - first_arrests: D -> J flow per year by age, c_first * lambda3_i * D_i (pm = the run's params);
-# - community_pwid: D + F, all ages (injecting, not in prison). Entry is constant and treatment
-#   starts in 2019, so the 2015 equilibrium value also stands for the 2017 survey year.
+# - community_pwid: D + F, all ages (injecting, not in prison). Entry is constant and nobody is
+#   treated before 2019 in any analysis, so the 2015 equilibrium value also stands for the 2017 survey year.
 calib_summary <- function(out, pm, row = summary_row(out)) {
   age <- seq_along(targets$age_groups)
-  D <- vapply(age, function(i) sum(out[row, stratum_idx(0, i)]), numeric(1))
-  F <- vapply(age, function(i) sum(out[row, stratum_idx(2, i)]), numeric(1))
+  D <- vapply(age, function(i) sum(out[row, state_cols(0, i = i - 1L)]), numeric(1))
+  F <- vapply(age, function(i) sum(out[row, state_cols(2, i = i - 1L)]), numeric(1))
   list(p_sero = J_summary_at(out, row)$p_sero,
        first_arrests = pm$c_first * pm$lambda3 * D,
        community_pwid = sum(D) + sum(F))

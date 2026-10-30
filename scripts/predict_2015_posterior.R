@@ -44,10 +44,8 @@ if (MAX_DRAWS > 0 && nrow(draws) > MAX_DRAWS) {
   set.seed(20261011); draws <- draws[sample.int(nrow(draws), MAX_DRAWS), , drop = FALSE]
 }
 
-state_idx <- function(s, states) as.vector(sapply(1:4, function(k)
-  sapply(states, function(h) sapply(0:5, function(i) idx(s, k, h, i) - 1L))))
-population_idx <- lapply(0:3, state_idx, states = 0:4)
-active_idx <- lapply(0:3, state_idx, states = 1:3)
+population_idx <- lapply(0:3, function(s) state_cols(s) - 1L)  # state = output row without time
+active_idx <- lapply(0:3, function(s) state_cols(s, 1:3) - 1L)
 
 one_prediction <- function(theta) {
   tryCatch({

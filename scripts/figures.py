@@ -339,9 +339,10 @@ if want("scenario_target_heatmap"):
 
 # ---------------------------------------------------------------- J coverage grid
 if want("jcov_heatmap") and JCOV.exists():
+    # full-coverage column = the main run (J from 2026), whatever --scen-dir points to
     levels = sorted((float(dict(l.split() for l in (d / "draw_validity.txt").read_text().splitlines())
-                               ["j_annual_start_probability"]), d) for d in JCOV.iterdir() if (d / "draw_validity.txt").exists())
-    levels.append((float(RUN["j_annual_start_probability"]), SC))
+                               ["j_annual_start_probability"]), d)
+                    for d in [*JCOV.iterdir(), ROOT / "output/scenarios_2026"] if (d / "draw_validity.txt").exists())
     grid = {p: pd.read_csv(d / "scenario_2030_summary.csv").set_index("scenario_id").loc[order] for p, d in levels}
     with style_context("default", palette_name="okabe_ito_on_white"):
         fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 150 * MM), layout="constrained", sharey=True)

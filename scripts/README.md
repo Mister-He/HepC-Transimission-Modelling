@@ -9,7 +9,7 @@ Executable model and analysis code. Each script starts with a short description.
   - targets, J-stratum summaries and the equilibrium check;
   - the likelihood;
   - Nelder–Mead (`calibrate_nm.R`);
-  - prior sampling, by LHS or at random (`prior_sampling.R`; random draws for the MCMC SBC);
+  - random prior draws (`prior_sampling.R`; MCMC starts and the MCMC SBC);
   - the exact log posterior and adaptive Metropolis sampler (`mcmc.R`).
 
 Workflow, in order:

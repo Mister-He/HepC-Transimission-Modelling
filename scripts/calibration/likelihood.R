@@ -68,23 +68,26 @@ summary_ok <- function(out, cs) {
     all(is.finite(cs$first_arrests)) && is.finite(cs$community_pwid) && cs$community_pwid > 0
 }
 
+# One 2015 snapshot for theta, shared by Nelder-Mead, the MCMC and the MCMC SBC: list(cs = target
+# summaries, eq = equilibrium check, NULL if the check errors), or NULL when the simulation fails
+# or its summaries are not finite and positive (outside the support).
+simulate_theta <- function(theta, base_params, data) {
+  pm <- tryCatch(build_params(theta, base_params), error = function(e) NULL)
+  out <- if (!is.null(pm)) tryCatch(run_sim(pm, data), error = function(e) NULL)
+  if (is.null(out) || nrow(out) < 2) return(NULL)
+  cs <- calib_summary(out, pm)
+  if (!summary_ok(out, cs)) return(NULL)
+  list(cs = cs, eq = tryCatch(check_equilibrium(out), error = function(e) NULL))
+}
+
 # Nelder-Mead objective: negative log posterior (likelihood + prior), so the best fit is the
 # posterior mode; failed equilibrium adds a large penalty.
-make_objective <- function(base_params, data, equilibrium_penalty = TRUE) {
+make_objective <- function(base_params, data) {
   function(theta) {
     if (!within_bounds(theta)) return(1e12 + BOUND_PENALTY_FACTOR * bound_barrier(theta))
-    pm <- tryCatch(build_params(theta, base_params), error = function(e) NULL)
-    out <- if (!is.null(pm)) tryCatch(run_sim(pm, data), error = function(e) NULL) else NULL
-    if (is.null(out)) return(1e12)
-    cs <- calib_summary(out, pm)
-    if (!summary_ok(out, cs)) return(1e12)
-    value <- nll_targets(cs) + nlp(theta)
-    if (equilibrium_penalty) {
-      eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
-      if (is.null(eq)) return(1e12)
-      if (!eq$pass) value <- value + EQ_PENALTY_FACTOR * eq$violation
-    }
-    value
+    r <- simulate_theta(theta, base_params, data)
+    if (is.null(r) || is.null(r$eq)) return(1e12)
+    nll_targets(r$cs) + nlp(theta) + if (r$eq$pass) 0 else EQ_PENALTY_FACTOR * r$eq$violation
   }
 }
 

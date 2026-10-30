@@ -34,12 +34,9 @@ check_fit_current(readRDS(FIT), setup_env$params, equilibrium_data(setup_env$dat
 # Noise-free 2015 summaries (6 seroprevalences, 6 first arrests, community PWID), or NULL when the
 # draw fails the equilibrium check (outside the MCMC target's support).
 simulate <- function(theta) {
-  pm <- build_params(theta, setup_env$params)
-  out <- tryCatch(run_sim(pm, equilibrium_data(setup_env$data)), error = function(e) NULL)
-  if (is.null(out)) return(NULL)
-  cs <- calib_summary(out, pm); eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
-  if (!summary_ok(out, cs) || is.null(eq) || !eq$pass) return(NULL)
-  c(cs$p_sero, cs$first_arrests, cs$community_pwid)
+  r <- simulate_theta(theta, setup_env$params, equilibrium_data(setup_env$data))
+  if (is.null(r) || is.null(r$eq) || !r$eq$pass) return(NULL)
+  c(r$cs$p_sero, r$cs$first_arrests, r$cs$community_pwid)
 }
 ps <- prior_spec()
 cand <- sample_prior_random(4L * K, ps$mean, ps$sd, SEED, ps$lo, ps$hi)

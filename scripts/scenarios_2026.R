@@ -14,7 +14,7 @@ config <- jsonlite::fromJSON(file.path(ROOT, "data/scenario_policy_config.json")
 # Main analysis: J from 2026; sensitivity: --j-start-year 2019. --j-probability sets J coverage.
 J_START <- as.integer(arg("--j-start-year", config$j_start_year))
 J_PROB <- as.numeric(arg("--j-probability", config$j_annual_start_probability))
-stopifnot(config$policy_start_year == 2026, J_START >= 2016, J_START <= config$policy_start_year,
+stopifnot(config$policy_start_year == 2026, J_START >= 2017, J_START <= config$policy_start_year,  # 2016 is the equilibrium check
           J_PROB >= 0, J_PROB < 1,
           config$end_year == 2030,
           identical(as.numeric(config$annual_screening_totals),c(600,1000,2000,5000,8000)),
@@ -47,8 +47,7 @@ draw_table <- do.call(rbind, lapply(seq_along(posterior_all), function(k) {
 # annual_events() (yearly new infections and HCV deaths) lives in model_metrics.R.
 
 strata <- c("D", "J", "F", "X")
-idx_state <- function(s, h) as.vector(sapply(1:4, function(k) sapply(0:5, function(i) idx(s,k,h,i)-1L)))
-sum_state <- function(y, s, h=0:4) sum(y[unlist(lapply(h, function(x) idx_state(s,x)))])
+sum_state <- function(y, s, h=0:4) sum(y[unlist(lapply(h, function(x) state_cols(s,x)-1L))])  # h outer: keeps the sum order
 state_from <- function(z) as.numeric(z[nrow(z),2:481])
 set_tau <- function(pm, s, rate) { pm$tau_by_stratum[(s*4+1):(s*4+4)] <- rate; pm }
 tau_j <- -log1p(-J_PROB)
@@ -162,6 +161,17 @@ stopifnot(nrow(scenario_table)==17,sum(scenario_table$scenario_type=="finite")==
           !any(scenario_table$screening_total==800))
 
 known_pass <- function(ratio,threshold) ifelse(is.finite(ratio),ratio<=threshold,NA)
+join_pass <- function(a,b) ifelse(is.na(a)|is.na(b),NA,a & b)
+# WHO 2030 targets: incidence at most 20% and HCV deaths at most 35% of 2015 (whole model and F/X).
+add_pass <- function(x) {
+  x$who_incidence_pass <- known_pass(x$incidence_ratio_2015,.2)
+  x$who_mortality_pass <- known_pass(x$mortality_ratio_2015,.35)
+  x$who_joint_pass <- join_pass(x$who_incidence_pass,x$who_mortality_pass)
+  x$fx_incidence_pass <- known_pass(x$fx_incidence_ratio_2015,.2)
+  x$fx_mortality_pass <- known_pass(x$fx_mortality_ratio_2015,.35)
+  x$fx_joint_pass <- join_pass(x$fx_incidence_pass,x$fx_mortality_pass)
+  x
+}
 
 # One full policy analysis for one posterior parameter vector. Returns list(invalid = TRUE) if the
 # 2015 snapshot is not at equilibrium (NULL is reserved for a worker that died).
@@ -195,7 +205,6 @@ initial <- state_from(snapshot)
 base_rates <- rate_row(rbind(c(149,initial),c(150,initial)),2015,"common_history")  # 2015 is at equilibrium: one year at the snapshot's rate
 history <- list(); hist_j_starts <- numeric(); y <- initial
 for (year in 2016:2025) {
-  before <- y
   z <- run_year(y,year,if (year<J_START) pre_pm else j_pm)
   y <- state_from(z)
   history[[as.character(year)]] <- rate_row(z,year,"common_history")
@@ -256,16 +265,7 @@ safe_ratio <- function(x,denominator) if (is.finite(denominator) && denominator>
   x/denominator else rep(NA_real_,length(x))
 for (metric in c("incidence","mortality","fx_incidence","fx_mortality"))
   trajectories[[paste0(metric,"_ratio_2015")]] <- safe_ratio(trajectories[[metric]],as.numeric(b[[metric]]))
-trajectories$who_incidence_pass <- known_pass(trajectories$incidence_ratio_2015,.2)
-trajectories$who_mortality_pass <- known_pass(trajectories$mortality_ratio_2015,.35)
-trajectories$who_joint_pass <- ifelse(is.na(trajectories$who_incidence_pass) |
-  is.na(trajectories$who_mortality_pass),NA,
-  trajectories$who_incidence_pass & trajectories$who_mortality_pass)
-trajectories$fx_incidence_pass <- known_pass(trajectories$fx_incidence_ratio_2015,.2)
-trajectories$fx_mortality_pass <- known_pass(trajectories$fx_mortality_ratio_2015,.35)
-trajectories$fx_joint_pass <- ifelse(is.na(trajectories$fx_incidence_pass) |
-  is.na(trajectories$fx_mortality_pass),NA,
-  trajectories$fx_incidence_pass & trajectories$fx_mortality_pass)
+trajectories <- add_pass(trajectories)
 endpoint <- subset(trajectories,year==2030)
 endpoint <- endpoint[match(scenario_table$scenario_id,endpoint$scenario_id),]
 fxsum <- aggregate(cbind(actual_screened,antibody_tests,rna_tests,rna_positive,
@@ -356,7 +356,7 @@ no_treatment <- agg_draws(collect("no_tx"),c("scenario_id","year"))
 write.csv(no_treatment,file.path(OUT,"no_treatment_trajectory.csv"),row.names=FALSE)
 endpoint_draws <- collect("endpoint")
 endpoint <- agg_draws(endpoint_draws,"scenario_id")
-# Draw-level 2030 endpoints for key outcomes (used for Monte Carlo error in the benchmark).
+# Draw-level 2030 endpoints for key outcomes.
 key_cols <- c("scenario_id","incidence_reduction","mortality_reduction","who_incidence_pass",
   "who_mortality_pass","who_joint_pass","total_discounted_cost_2026_2030_sgd","fx_treatment_starts")
 write.csv(do.call(rbind,lapply(seq_along(endpoint_draws),function(i)
@@ -366,17 +366,7 @@ treatment <- agg_draws(collect("treatment"),c("scenario_id","stratum"))
 item_totals <- agg_draws(collect("item_totals"),"scenario_id")
 stratum_totals <- agg_draws(collect("stratum_totals"),c("scenario_id","stratum"))
 # Pass flags use the median reductions shown in the figures; *_prob columns give the share of draws passing.
-join_pass <- function(a,b) ifelse(is.na(a)|is.na(b),NA,a & b)
-for (d in c("trajectories","endpoint")) {
-  x <- get(d)
-  x$who_incidence_pass <- known_pass(x$incidence_ratio_2015,.2)
-  x$who_mortality_pass <- known_pass(x$mortality_ratio_2015,.35)
-  x$who_joint_pass <- join_pass(x$who_incidence_pass,x$who_mortality_pass)
-  x$fx_incidence_pass <- known_pass(x$fx_incidence_ratio_2015,.2)
-  x$fx_mortality_pass <- known_pass(x$fx_mortality_ratio_2015,.35)
-  x$fx_joint_pass <- join_pass(x$fx_incidence_pass,x$fx_mortality_pass)
-  assign(d,x)
-}
+trajectories <- add_pass(trajectories); endpoint <- add_pass(endpoint)
 endpoint <- merge(endpoint,scenario_table,by="scenario_id",sort=FALSE)
 endpoint <- endpoint[match(scenario_table$scenario_id,endpoint$scenario_id),]
 rownames(endpoint) <- NULL

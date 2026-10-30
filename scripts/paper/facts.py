@@ -53,10 +53,10 @@ class Facts:
         self.drug = [x for x in r(self.files["drug"]) if x["year"] == "2015" and x["abuser_group"] == "new"]
         self.j2019 = {x["scenario_id"]: x for x in r(self.files["j2019"])}; self.j2019_traj = r(self.files["j2019_traj"])
         self.jcov = {p: {x["scenario_id"]: x for x in r(d + "scenario_2030_summary.csv")} for p, d in self.jcov_dirs.items()}
-        self.jcov[self.cfg["j_annual_start_probability"]] = self.summ
         self.setup_txt = open(os.path.join(root, self.files["setup"])).read()
         self.valid = dict(l.split() for l in open(os.path.join(root, self.files["draws_valid"])))
         self.j_start = self.valid["j_start_year"]
+        self.jcov[F(self.valid["j_annual_start_probability"])] = self.summ  # the main run's own coverage
         self._rates()
         self._derive()
 

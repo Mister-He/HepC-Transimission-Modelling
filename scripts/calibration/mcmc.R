@@ -8,17 +8,10 @@
 # as a hard support restriction (failure -> -Inf, no penalty).
 # Returns list(lp, ode) so that ODE calls can be counted separately.
 log_posterior_exact <- function(theta, base_params, data) {
-  lprior <- -nlp(theta)
   if (!within_bounds(theta)) return(list(lp = -Inf, ode = 0L))
-  pm <- tryCatch(build_params(theta, base_params), error = function(e) NULL)
-  if (is.null(pm)) return(list(lp = -Inf, ode = 0L))
-  out <- tryCatch(run_sim(pm, data), error = function(e) NULL)
-  if (is.null(out) || nrow(out) < 2) return(list(lp = -Inf, ode = 1L))
-  cs <- calib_summary(out, pm)
-  if (!summary_ok(out, cs)) return(list(lp = -Inf, ode = 1L))
-  eq <- tryCatch(check_equilibrium(out), error = function(e) NULL)
-  if (is.null(eq) || !eq$pass) return(list(lp = -Inf, ode = 1L))
-  list(lp = lprior - nll_targets(cs), ode = 1L)
+  r <- simulate_theta(theta, base_params, data)
+  if (is.null(r) || is.null(r$eq) || !r$eq$pass) return(list(lp = -Inf, ode = 1L))
+  list(lp = -nlp(theta) - nll_targets(r$cs), ode = 1L)
 }
 
 # Adaptive random-walk Metropolis with a fixed evaluation budget (Haario et al. 2001 style).

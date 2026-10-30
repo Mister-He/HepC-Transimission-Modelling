@@ -15,8 +15,9 @@ all_idx <- as.vector(sapply(0:3, function(s) sapply(1:4, function(k)
 check_identical(length(all_idx), 480L, "five-state model has 480 compartments")
 check_identical(length(unique(all_idx)), 480L, "compartment indices are unique")
 check_true(all(all_idx >= 2 & all(all_idx <= 481)), "indices fit output")
-check_equal(length(j_pop_idx(1)), 20L, "J population includes r")
-check_equal(length(j_sero_idx(1)), 16L, "J seropositive states are a,c,t,r")
+check_identical(state_cols(0:3), all_idx, "state_cols keeps the nested order (age fastest, then h, k, s)")
+check_equal(length(state_cols(1, 0:4, i = 0)), 20L, "J population includes r")
+check_equal(length(state_cols(1, 1:4, i = 0)), 16L, "J seropositive states are a,c,t,r")
 
 out <- matrix(0, nrow = 1, ncol = 481); out[1, 1] <- 150
 out[1, idx(1, 1, 0, 3)] <- 50
