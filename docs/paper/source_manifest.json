@@ -115,6 +115,28 @@
     },
     {
       "source_type": "dataset",
+      "title": "Project repository file data/singstat_drug_abusers_by_drug.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "data/singstat_drug_abusers_by_drug.csv",
+      "confidentiality": "public",
+      "evidence_id": "E006",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
       "title": "Project repository file data/calibration_targets.json",
       "authors": [],
       "year": 2026,
@@ -127,7 +149,7 @@
       },
       "locator": "data/calibration_targets.json",
       "confidentiality": "public",
-      "evidence_id": "E006",
+      "evidence_id": "E007",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -149,7 +171,7 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_run_config.json",
       "confidentiality": "public",
-      "evidence_id": "E007",
+      "evidence_id": "E008",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -171,7 +193,7 @@
       },
       "locator": "output/scenarios_2026/scenario_2030_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E008",
+      "evidence_id": "E009",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -193,7 +215,7 @@
       },
       "locator": "output/rearrest_rate_fit.rds",
       "confidentiality": "public",
-      "evidence_id": "E009",
+      "evidence_id": "E010",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -215,28 +237,6 @@
       },
       "locator": "data/sps.csv and output/cleaned_data.rds (record-level, not distributed)",
       "confidentiality": "restricted",
-      "evidence_id": "E010",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/scenarios_2026/scenario_annual_services_costs.csv",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/scenarios_2026/scenario_annual_services_costs.csv",
-      "confidentiality": "public",
       "evidence_id": "E011",
       "verification": {
         "source_opened": false,
@@ -247,7 +247,7 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/scenarios_2026/scenario_trajectories.csv",
+      "title": "Project repository file output/scenarios_2026_jcov/",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -257,9 +257,31 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/scenarios_2026/scenario_trajectories.csv",
+      "locator": "output/scenarios_2026_jcov/",
       "confidentiality": "public",
       "evidence_id": "E012",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026_j2019/scenario_2030_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026_j2019/scenario_2030_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E013",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -281,7 +303,7 @@
       },
       "locator": "output/calibration/mcmc_reference/model_prediction_2015_strata.csv",
       "confidentiality": "public",
-      "evidence_id": "E013",
+      "evidence_id": "E014",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -303,7 +325,7 @@
       },
       "locator": "output/prison_2015_counts.csv",
       "confidentiality": "restricted",
-      "evidence_id": "E014",
+      "evidence_id": "E015",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -324,28 +346,6 @@
         "url": ""
       },
       "locator": "output/calibration/mcmc_reference/mcmc_parameter_summary.csv",
-      "confidentiality": "public",
-      "evidence_id": "E015",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/scenarios_2026/cost_evidence.csv",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/scenarios_2026/cost_evidence.csv",
       "confidentiality": "public",
       "evidence_id": "E016",
       "verification": {
@@ -912,28 +912,6 @@
       }
     },
     {
-      "source_type": "software",
-      "title": "Project repository file scripts/calibration/likelihood.R",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "scripts/calibration/likelihood.R",
-      "confidentiality": "public",
-      "evidence_id": "E038",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
       "source_type": "webpage",
       "title": "Number of drug abusers by age group, annual",
       "authors": [
@@ -949,6 +927,30 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
+      "evidence_id": "E038",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Number of drug abusers by main drug abused, annual (table M891521)",
+      "authors": [
+        "Singapore Department of Statistics"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://tablebuilder.singstat.gov.sg/table/TS/M891521"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
       "evidence_id": "E039",
       "verification": {
         "source_opened": false,
@@ -958,8 +960,8 @@
       }
     },
     {
-      "source_type": "dataset",
-      "title": "Project repository file output/calibration/r_20261027_agepop/run_config.json",
+      "source_type": "software",
+      "title": "Project repository file scripts/calibration/likelihood.R",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -969,9 +971,31 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/calibration/r_20261027_agepop/run_config.json",
+      "locator": "scripts/calibration/likelihood.R",
       "confidentiality": "public",
       "evidence_id": "E040",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/r_20261030_agepop/run_config.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/r_20261030_agepop/run_config.json",
+      "confidentiality": "public",
+      "evidence_id": "E041",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -997,7 +1021,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E041",
+      "evidence_id": "E042",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1025,7 +1049,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E042",
+      "evidence_id": "E043",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1053,7 +1077,29 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E043",
+      "evidence_id": "E044",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/cost_evidence.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/cost_evidence.csv",
+      "confidentiality": "public",
+      "evidence_id": "E045",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1082,7 +1128,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E044",
+      "evidence_id": "E046",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1106,7 +1152,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E045",
+      "evidence_id": "E047",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1130,7 +1176,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E046",
+      "evidence_id": "E048",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1154,7 +1200,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E047",
+      "evidence_id": "E049",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1176,7 +1222,7 @@
       },
       "locator": "output/scenarios_2026/draw_validity.txt",
       "confidentiality": "public",
-      "evidence_id": "E048",
+      "evidence_id": "E050",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1201,7 +1247,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E049",
+      "evidence_id": "E051",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1223,7 +1269,7 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_diagnostics.csv",
       "confidentiality": "public",
-      "evidence_id": "E050",
+      "evidence_id": "E052",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1245,7 +1291,7 @@
       },
       "locator": "figures/calibration_interval_overlap.csv",
       "confidentiality": "public",
-      "evidence_id": "E051",
+      "evidence_id": "E053",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1255,7 +1301,7 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/calibration/r_20261027_agepop/predictions.csv",
+      "title": "Project repository file output/calibration/r_20261030_agepop/predictions.csv",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -1265,9 +1311,31 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/calibration/r_20261027_agepop/predictions.csv",
+      "locator": "output/calibration/r_20261030_agepop/predictions.csv",
       "confidentiality": "public",
-      "evidence_id": "E052",
+      "evidence_id": "E054",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/scenario_trajectories.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/scenario_trajectories.csv",
+      "confidentiality": "public",
+      "evidence_id": "E055",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1289,7 +1357,29 @@
       },
       "locator": "output/scenarios_2026/no_treatment_trajectory.csv",
       "confidentiality": "public",
-      "evidence_id": "E053",
+      "evidence_id": "E056",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026/scenario_annual_services_costs.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026/scenario_annual_services_costs.csv",
+      "confidentiality": "public",
+      "evidence_id": "E057",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1318,7 +1408,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E054",
+      "evidence_id": "E058",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1347,7 +1437,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E055",
+      "evidence_id": "E059",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1376,7 +1466,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E056",
+      "evidence_id": "E060",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1404,7 +1494,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E057",
+      "evidence_id": "E061",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1433,7 +1523,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E058",
+      "evidence_id": "E062",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1459,7 +1549,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E059",
+      "evidence_id": "E063",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1487,7 +1577,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E060",
+      "evidence_id": "E064",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1516,7 +1606,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E061",
+      "evidence_id": "E065",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1545,7 +1635,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E062",
+      "evidence_id": "E066",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1572,7 +1662,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E063",
+      "evidence_id": "E067",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1601,7 +1691,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E064",
+      "evidence_id": "E068",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1629,7 +1719,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E065",
+      "evidence_id": "E069",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1658,7 +1748,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E066",
+      "evidence_id": "E070",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1687,7 +1777,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E067",
+      "evidence_id": "E071",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1716,7 +1806,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E068",
+      "evidence_id": "E072",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1745,7 +1835,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E069",
+      "evidence_id": "E073",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1767,7 +1857,7 @@
       },
       "locator": "scripts/model/preprocess.R",
       "confidentiality": "public",
-      "evidence_id": "E070",
+      "evidence_id": "E074",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1789,7 +1879,7 @@
       },
       "locator": "scripts/model/release_rate.stan",
       "confidentiality": "public",
-      "evidence_id": "E071",
+      "evidence_id": "E075",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1811,7 +1901,7 @@
       },
       "locator": "scripts/model/rearrest_rate.stan",
       "confidentiality": "public",
-      "evidence_id": "E072",
+      "evidence_id": "E076",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1821,7 +1911,7 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/calibration/r_20261027_agepop/solutions.csv",
+      "title": "Project repository file output/calibration/r_20261030_agepop/solutions.csv",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -1831,9 +1921,9 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/calibration/r_20261027_agepop/solutions.csv",
+      "locator": "output/calibration/r_20261030_agepop/solutions.csv",
       "confidentiality": "public",
-      "evidence_id": "E073",
+      "evidence_id": "E077",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1855,7 +1945,7 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_chain_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E074",
+      "evidence_id": "E078",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1877,7 +1967,29 @@
       },
       "locator": "output/calibration/mcmc_sbc/mcmc_sbc_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E075",
+      "evidence_id": "E079",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026_j2019/scenario_trajectories.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026_j2019/scenario_trajectories.csv",
+      "confidentiality": "public",
+      "evidence_id": "E080",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1899,7 +2011,7 @@
       },
       "locator": "scripts/figures.py",
       "confidentiality": "public",
-      "evidence_id": "E076",
+      "evidence_id": "E081",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1921,7 +2033,7 @@
       },
       "locator": "output/scenarios_2026/scenario_stratum_totals.csv",
       "confidentiality": "public",
-      "evidence_id": "E077",
+      "evidence_id": "E082",
       "verification": {
         "source_opened": false,
         "status": "unverified",

@@ -21,7 +21,7 @@ Items follow the CHEERS 2022 statement [@cheers2022]; the item wording and the l
 | 17 | Analytics and assumptions | Methods; S1 Text Sections 1, 4 and 6 |
 | 18 | Characterising heterogeneity | Results by group (D, J, F, X) and age; S1 Text Section 5 |
 | 19 | Characterising distributional effects | Not addressed |
-| 20 | Characterising uncertainty | Methods, Uncertainty; S1 Text Section 8 (price sensitivity) |
+| 20 | Characterising uncertainty | Methods, Uncertainty and Policy scenarios (prison coverage, start in 2019); S1 Text Sections 8 and 9 |
 | 21 | Approach to engagement with patients and others affected by the study | Not addressed: no engagement (to be confirmed by the authors) |
 | 22 | Study parameters | S1 Text Tables A, B, D and H |
 | 23 | Summary of main results | Results; Table 1 |

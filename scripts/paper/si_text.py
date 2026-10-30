@@ -30,7 +30,7 @@ def build(reg, f):
     d.h(2, "1.4 Natural history and treatment")
     d.p("Acute infection lasts on average $\\iota_1$; a share $\\kappa$ clears to r and the rest become chronic. Chronic people progress from stage 1 to 2 and from stage 2 to 3 or 4, and from 3 to 4, at rates $p^{*} = (\\rho\\, r_3 + 1 - \\rho)\\,p$ that weight the genotype 3 relative risk $r_3$ by the genotype 3 share $\\rho$. Recovered people in stages 2 and 3 progress at $\\phi\\, p^{*}$.",
         ("sim", "setup"), kind="method")
-    d.p("Chronic people start treatment at rate $\\tau_{s,k}$ (zero in D and before 2019). Treatment lasts on average $\\iota_2$; a share $\\alpha_k$ (sustained virological response) moves to r and the rest return to c.", ("sim",), kind="method")
+    d.p("Chronic people start treatment at rate $\\tau_{s,k}$ (zero in D, and zero before prison treatment starts: 2026 in the main analysis, 2019 in the sensitivity analysis). Treatment lasts on average $\\iota_2$; a share $\\alpha_k$ (sustained virological response) moves to r and the rest return to c.", ("sim",), kind="method")
     d.h(2, "1.5 Mortality")
     d.p("Everyone dies at the background rate $\\mu_i\\,\\sigma_h$, where $\\mu_i$ is the 2015 Singapore death rate in age group $i$ and $\\sigma_h$ is the standardised mortality ratio of people who use drugs: $\\sigma_v$ for viraemic states (a, c, t) and $\\sigma_n$ for others (u, r). People in stages 3 and 4 also die of liver disease at $\\mu_{DC}$ or $\\mu_{HCC}$, multiplied by $\\psi_{DC}$ or $\\psi_{HCC}$ after treatment (states t and r).",
         ("sim", "setup"), kind="method")
@@ -64,7 +64,8 @@ def build(reg, f):
         ["Release rate by age (per year)", "; ".join(f"{x:.3f}" for x in lam2), [], "Prison records (Section 3)"],
         ["Re-arrest rate by age (per year)", "; ".join(f"{x:.3f}" for x in lam3), [], "Prison records (Section 3)"],
         ["Probability of eventual re-arrest, $\\pi$", f"{st('pi_recid')}", [], "Prison records (Section 3)"],
-        ["Entry into D by age, $\\beta_i$ (per year)", "; ".join(str(x) for x in f.cnb_counts), ["singstat_drug"], ""],
+        ["Entry into D by age, $\\beta_i$ (per year)", "; ".join(f"{x:.1f}" for x in f.beta), ["singstat_drug", "singstat_m891521"],
+         f"2015 new drug abusers × {f.pwid_share:.4f}, the share mainly using heroin or methamphetamine"],
     ]
     d.raw("| Parameter | Value | Source |")
     d.raw("|---|---|---|")
@@ -98,11 +99,14 @@ def build(reg, f):
     d.raw("|---|---|---|---|---|---|---|")
     d.p("| HCV antibody prevalence in prison | " + " | ".join(f"{100 * x:.1f}%" for x in f.tg["seroprevalence"]) + " |", ("targets",))
     d.p("| People screened in prison (end of 2015) | " + " | ".join(x["screened"] for x in f.prison) + " |", ("prison",))
-    d.p("| First arrests (new drug abusers) | " + " | ".join(str(x) for x in f.cnb_counts) + " |", ("cnb", "targets"))
+    d.p("| New drug abusers (Central Narcotics Bureau) | " + " | ".join(str(x) for x in f.cnb_counts) + " |", ("cnb",))
+    d.p(f"| First arrests (new drug abusers × {f.pwid_share:.4f}, rounded) | " + " | ".join(str(x) for x in f.tg["first_arrests"]) + " |", ("cnb", "drug", "targets"))
     d.p(f"Community injectors (D + F, all ages): {f.tg['community_pwid']:,} (95% confidence interval 6,500–17,000) [@teo2019].", ("targets",))
+    d.p(f"The share {f.pwid_share:.4f} = ({f.new_heroin} + {f.new_meth:,}) / {f.new_total:,} is the share of the 2015 new drug abusers whose main drug was heroin or methamphetamine [@singstat_m891521]. The drug table has no age breakdown, so the same share was used at every age. It scales both the entry into D (unrounded) and the first-arrest target (rounded).",
+        ("drug", "setup", "targets"), kind="method")
     d.p(f"The seroprevalence targets are stored in the targets file. Recomputing them from the current processing of the prison records (positive divided by screened, Table C) gives values that differ by up to {100 * f.sero_max_diff:.1f} percentage points; the reason is not recorded and should be resolved by the authors.",
         ("targets", "prison"), kind="result", unc="moderate")
-    d.p(f"The community estimate refers to {f.tg['community_pwid_year']}; because entry is constant and treatment starts in 2019, the modelled 2015 value is used for that year.", ("targets", "sim"), kind="method")
+    d.p(f"The community estimate refers to {f.tg['community_pwid_year']}; because entry is constant and nobody is treated before 2019 in any analysis, the modelled 2015 value is used for that year.", ("targets", "sim"), kind="method")
     d.h(2, "4.2 Parameters and prior")
     d.raw("**Table D. Calibrated parameters and prior.**")
     d.p("| Parameter | Meaning | Prior on $\\theta$ | Bounds of the scale |", ("likelihood",), kind="result")
@@ -175,13 +179,14 @@ def build(reg, f):
 
     # ---------------- 6 scenarios ----------------
     d.h(1, "6. Scenario implementation")
-    d.p(f"Treatment in J from 2019 used the rate $\\tau_J = -\\ln(1 - {f.cfg['j_annual_start_probability']}) = {f.tau_j:.2f}$ per year for people with chronic infection in every stage and age. From 2026, people in F and X started at $\\tau_{{FX}} = -\\ln(1 - {f.cfg['fx_annual_start_probability']}) = {f.tau_fx:.2f}$ per year, but only until that year's capacity was used.",
-        ("config", "scen_code"), kind="method")
+    d.p(f"Treatment in J started on 1 January {f.j_start} in the main analysis (2019 in the sensitivity analysis) at the rate $\\tau_J = -\\ln(1 - {f.cfg['j_annual_start_probability']}) = {f.tau_j:.2f}$ per year for people with chronic infection in every stage and age. "
+        f"In the coverage analysis the annual probability $p$ was {', '.join(str(p) for p in sorted(f.jcov))}, with $\\tau_J = -\\ln(1 - p)$. From 2026, people in F and X started at $\\tau_{{FX}} = -\\ln(1 - {f.cfg['fx_annual_start_probability']}) = {f.tau_fx:.2f}$ per year, but only until that year's capacity was used.",
+        ("config", "scen_code", "jcov", "j2019"), kind="method")
     d.p("At the start of each year, for each of F and X, $N = u + a + c + r$ people were eligible. The number screened was the smaller of the quota and $N$. Antibody tests equalled the number screened; RNA tests equalled screened times $(a + c + r)/N$; chronic infections found, and so the year's treatment capacity, equalled screened times $c/N$.",
         ("scen_code",), kind="method")
     d.p("The solver located the moment in each year at which a group used its capacity and then stopped new starts in that group for the rest of the year. Unused capacity was not moved between F and X or carried over. The same person can be counted as screened in more than one year, and the model counts treatment courses, not people.", ("sim", "scen_code"), kind="method")
     d.p("In J, every entrant not on treatment (u, a, c, r) was counted as having an antibody test and every antibody-positive entrant (a, c, r) an RNA test; each treatment start was costed as one course and one consultation.", ("scen_code",), kind="method")
-    d.p("New infections in a year were the infections (u and r to a, in D and F) during that calendar year, and HCV deaths the liver deaths in stages 3 and 4 plus $(\\sigma_v - \\sigma_n)\\mu_i$ times the number of viraemic people, summed over the year (trapezoid rule over the daily solver output). The 2015 values were one year at the calibrated equilibrium; the 2016 values, still without treatment, differed from them by less than 0.1%. Both were compared with their 2015 values.", ("scen_code", "sim"), kind="method")
+    d.p(f"New infections in a year were the infections (u and r to a, in D and F) during that calendar year, and HCV deaths the liver deaths in stages 3 and 4 plus $(\\sigma_v - \\sigma_n)\\mu_i$ times the number of viraemic people, summed over the year (trapezoid rule over the daily solver output). The 2015 values were one year at the calibrated equilibrium; in the main analysis the 2016–2025 values, still without treatment, differed from them by at most {100 * f.history_dev:.2f}%. Both were compared with their 2015 values.", ("scen_code", "sim", "traj"), kind="method")
     d.p(f"For each of {f.ndraw:,} posterior draws (sampling seed fixed), we ran the 2015 equilibrium, the shared 2016–2025 history and all {len(s)} scenarios to 2030; {int(f.valid['draws_valid']):,} of {int(f.valid['draws_requested']):,} draws were valid.", ("summary", "draws_valid", "scen_code"))
 
     # ---------------- 7 costs ----------------
@@ -210,8 +215,21 @@ def build(reg, f):
     p5 = s["S5000_F25"]
     d.p(f"Cost sensitivity: with all unit prices halved or increased by half, the discounted cost of 5,000 tests a year with 25% to F was S${F(p5['cost_x0_5_sgd']) / 1e6:.1f} million or S${F(p5['cost_x1_5_sgd']) / 1e6:.1f} million; epidemiological results do not change.", ("summary", "config"), unc="moderate")
 
-    # ---------------- 9 software ----------------
-    d.h(1, "9. Software and reproducibility")
+    # ---------------- 9 sensitivity: prison treatment from 2019 ----------------
+    d.h(1, "9. Sensitivity analysis: prison treatment from 2019")
+    sens = f.j2019
+    d.p(f"This analysis repeats the main analysis with treatment in J from 1 January 2019 at the same coverage; community screening of F and X still starts in 2026. It uses the same {int(F(sens['J_only']['n_posterior_draws'])):,} posterior draws (Table J; Fig F).", ("j2019", "scen_code"), kind="method")
+    d.p("**Table J. Sensitivity analysis with prison treatment from 2019: reductions in 2030 compared with 2015 and probability of meeting both targets.**", ("j2019",), kind="result")
+    d.p("| Policy | Fall in new infections, % (95% UI) | Fall in HCV deaths, % (95% UI) | Draws meeting both targets |", ("j2019",), kind="result")
+    d.raw("|---|---|---|---|")
+    for k in ["J_only"] + [f"S{c}_F{x}" for c in caps for x in shares] + ["SInf"]:
+        r = sens[k]
+        d.p(f"| {scen_label(r)} | {col(r, 'incidence_reduction', scale=100, d=1, suf='%').replace(' (95% UI ', ' (')} | {col(r, 'mortality_reduction', scale=100, d=1, suf='%').replace(' (95% UI ', ' (')} | {pct(r['joint_pass_probability'], 1)} |", ("j2019",), unc="moderate")
+    jt = lambda y: f.tr("J_only", y, f.j2019_traj)
+    d.p(f"With prison treatment from 2019, new infections under J only were {pct(jt(2025)['incidence_ratio_2015'], 0)} of the 2015 level by 2025, against {pct(f.tr('J_only', 2025)['incidence_ratio_2015'], 0)} in the main analysis.", ("j2019_traj", "traj"), unc="moderate")
+
+    # ---------------- 10 software ----------------
+    d.h(1, "10. Software and reproducibility")
     d.p("The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan and convergence diagnostics the R package posterior. Figures were drawn with matplotlib from the saved outputs.", ("sim", "figures"), kind="method")
     d.p("Analysis commands, run times and expected outputs are listed in docs/training.md in the repository. This appendix and the main text were generated from the saved outputs by scripts/build_paper.py; drafting followed the procedures of Scientific Agent Skills [@kassis2026].", ("figures",), kind="declaration")
 
@@ -227,6 +245,8 @@ def build(reg, f):
     d.raw(f"![]({dict(SI_FIGURES)['Fig D']}){{width=95%}}")
     d.raw("**Fig E. Screening cascade in F and X by year.** Number screened, RNA tests, RNA-positive people, chronic infections found and treatment starts, by capacity (columns) and share of tests given to F (rows).")
     d.raw(f"![]({dict(SI_FIGURES)['Fig E']}){{width=95%}}")
+    d.p("**Fig F. Sensitivity analysis with prison treatment from 2019.** (A) New infections and HCV deaths relative to 2015 (medians), 2015–2030; the dotted line marks the start of prison treatment (2019) and the dashed line the start of community screening (2026). (B) Reductions in 2030 by policy, with 95% uncertainty intervals.", ("j2019", "j2019_traj"), kind="result")
+    d.raw(f"![]({dict(SI_FIGURES)['Fig F']}){{width=95%}}")
     d.h(1, "References")
     d.raw("::: {#refs}\n:::")
     return d
@@ -238,4 +258,5 @@ SI_FIGURES = [  # (label, repository path)
     ("Fig C", "output/scenarios_2026/scenario_target_heatmap.png"),
     ("Fig D", "output/scenarios_2026/scenario_cumulative_costs.png"),
     ("Fig E", "output/scenarios_2026/scenario_care_cascade.png"),
+    ("Fig F", "output/scenarios_2026_j2019/scenario_target_trajectories.png"),
 ]

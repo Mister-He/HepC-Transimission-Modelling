@@ -2,7 +2,7 @@
 # =============================================================================
 # build_paper.py — builds the PLOS Medicine submission files from the saved outputs:
 #   docs/main.docx, docs/Supplementary Information.docx (S1 Text), docs/S1_Checklist.docx,
-#   docs/paper/figures/Fig1-4.tif, and the evidence registries in docs/paper/
+#   docs/paper/figures/Fig1-5.tif, and the evidence registries in docs/paper/
 #   (claims.csv, source_manifest.json, *_audit.md, ...), then runs the scientific-writing
 #   skill's local audits if the skill is installed.
 # Prose lives in scripts/paper/main_text.py and si_text.py; every number is read from
@@ -20,7 +20,8 @@ import main_text, si_text
 DOCS, PAPER = os.path.join(ROOT, "docs"), os.path.join(ROOT, "docs", "paper")
 SKILL = os.path.expanduser("~/.claude/skills/scientific-writing/scripts")
 MAIN_FIGS = [("Fig1", "output/scenarios_2026/paper_fig1_schematic.png"), ("Fig2", "figures/calibration_agepop.png"),
-             ("Fig3", "output/scenarios_2026/paper_fig2_trajectories.png"), ("Fig4", "output/scenarios_2026/paper_fig3_allocation.png")]
+             ("Fig3", "output/scenarios_2026/paper_fig2_trajectories.png"), ("Fig4", "output/scenarios_2026/paper_fig3_allocation.png"),
+             ("Fig5", "output/scenarios_2026_jcov/jcov_heatmap.png")]
 
 CHEERS = [  # item, topic, where it is addressed (item wording to be checked against the official checklist)
     ("1", "Title", "Title page"), ("2", "Abstract", "Abstract"), ("3", "Background and objectives", "Introduction, last paragraph"),
@@ -36,7 +37,7 @@ CHEERS = [  # item, topic, where it is addressed (item wording to be checked aga
     ("17", "Analytics and assumptions", "Methods; S1 Text Sections 1, 4 and 6"),
     ("18", "Characterising heterogeneity", "Results by group (D, J, F, X) and age; S1 Text Section 5"),
     ("19", "Characterising distributional effects", "Not addressed"),
-    ("20", "Characterising uncertainty", "Methods, Uncertainty; S1 Text Section 8 (price sensitivity)"),
+    ("20", "Characterising uncertainty", "Methods, Uncertainty and Policy scenarios (prison coverage, start in 2019); S1 Text Sections 8 and 9"),
     ("21", "Approach to engagement with patients and others affected by the study", "Not addressed: no engagement (to be confirmed by the authors)"),
     ("22", "Study parameters", "S1 Text Tables A, B, D and H"), ("23", "Summary of main results", "Results; Table 1"),
     ("24", "Effect of uncertainty", "Results (uncertainty intervals and probabilities); S1 Text Table I"),

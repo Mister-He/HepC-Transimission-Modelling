@@ -11,35 +11,55 @@ CAL = ("mcmc_par", "mcmc_diag", "mcmc_cfg")
 
 def checks(f):
     """The narrative below is written for these results; stop the build if they change."""
-    s = f.summ
-    assert len(f.inc_pass) == 15, "not every finite policy meets the incidence target"
-    assert set(f.mort_pass) == {"S5000_F25", "S8000_F25", "S8000_F50"}, "mortality-passing set changed"
-    assert s["J_only"]["who_incidence_pass"] == "TRUE" and s["J_only"]["who_mortality_pass"] != "TRUE"
+    s, sens = f.summ, f.j2019
+    assert f.j_start == "2026" and f.j2019_valid() == "2019"
+    assert set(f.inc_pass) == {"S8000_F25", "S5000_F50", "S8000_F50", "S5000_F75", "S8000_F75"}, "incidence-passing set changed"
+    assert f.mort_pass == [], "a finite policy now meets the mortality target"
+    assert s["J_only"]["who_incidence_pass"] != "TRUE" and s["J_only"]["who_mortality_pass"] != "TRUE"
     assert s["SInf"]["who_joint_pass"] == "TRUE"
+    best = max(f.finite, key=lambda k: F(s[k]["mortality_reduction"]))
+    assert best == "S8000_F25" and F(s[best]["joint_pass_probability"]) < 0.1, "best finite policy changed"
+    assert all(F(s[k]["joint_pass_probability"]) == 0 for k in f.finite if k != "S8000_F25")
     assert f.inc_order_ok and f.mort_order_ok, "F/X ordering of the reductions changed"
-    assert f.x_chronic_share > 0.85 and f.fx_death_share_2026 > 0.95, "X / F+X shares changed"
-    assert f.x_chronic / f.x_eligible > f.f_chronic / f.f_eligible, "X no longer has the higher chronic share"
-    assert all(abs(v[st] - 1) < 1e-6 for v in f.quota_use.values() for st in "FX"), "a quota is not fully used"
-    assert min(f.mort_pass, key=lambda k: F(s[k]["total_discounted_cost_2026_2030_sgd"])) == "S5000_F25"
-    assert F(s["S5000_F50"]["joint_pass_probability"]) < 0.2
-    assert 0.5 < F(s["S5000_F25"]["joint_pass_probability"]) < 0.75 and F(s["S5000_F25"]["mortality_reduction"]) < 0.67, "S5000_F25 is no longer narrow"
+    assert 0.65 < f.x_chronic_share < 0.75 and f.fx_death_share_2026 > 0.85, "X / F+X shares changed"
+    assert f.f_chronic / f.f_eligible > f.x_chronic / f.x_eligible, "F no longer has the higher chronic share"
+    assert all(abs(v[st] - 1) < 1e-6 for k, v in f.quota_use.items() for st in "FX" if (k, st) != ("S8000_F75", "F"))
+    assert 0.99 < f.quota_use["S8000_F75"]["F"] < 1, "F quota use at 8,000/F75 changed"
+    assert f.history_dev < 1e-3, "the main run is not flat before 2026"
     assert f.rhat_max < 1.01 and f.n_ovl == 13
     assert F(f.strata["population_J"]["median"]) > 2 * f.j_obs_2015, "modelled prison size no longer far above observed"
     assert f.prior_dominated == [5, 6, 13]
     assert all(abs(F(f.tr("no_treatment", 2030, f.notx)[c]) - 1) < 0.01 for c in ("incidence_ratio_2015", "mortality_ratio_2015"))
+    # J coverage grid: reductions rise with coverage; only uncapped screening meets the mortality target
+    lv = sorted(f.jcov)
+    assert all([F(f.jcov[p][k][c]) for p in lv] == sorted(F(f.jcov[p][k][c]) for p in lv)
+               for k in s for c in ("incidence_reduction", "mortality_reduction"))
+    assert all([k for k in f.jcov[p] if f.jcov[p][k]["who_mortality_pass"] == "TRUE"] == ["SInf"] for p in lv)
+    assert [k for k in f.jcov[0.0] if f.jcov[0.0][k]["who_incidence_pass"] == "TRUE"] == ["S8000_F75", "SInf"]
+    assert abs(F(f.jcov[0.0]["J_only"]["incidence_reduction"])) < 0.005
+    # sensitivity: prison treatment from 2019
+    assert sens["J_only"]["who_incidence_pass"] == "TRUE" and sens["J_only"]["who_mortality_pass"] != "TRUE"
+    assert {k for k in f.finite if sens[k]["who_mortality_pass"] == "TRUE"} == {"S5000_F25", "S8000_F25", "S8000_F50"}
+    assert all(sens[k]["who_incidence_pass"] == "TRUE" for k in f.finite)
 
 
 def build(reg, f):
     from registry import Doc
     checks(f)
     d = Doc(reg, "main")
-    s = f.summ; J, P5, P8, P85, P550, INF = (s[k] for k in ("J_only", "S5000_F25", "S8000_F25", "S8000_F50", "S5000_F50", "SInf"))
+    s = f.summ; J, P8, P85, P875, INF = (s[k] for k in ("J_only", "S8000_F25", "S8000_F50", "S8000_F75", "SInf"))
+    sens = f.j2019; SJ, S5, S8, S85 = (sens[k] for k in ("J_only", "S5000_F25", "S8000_F25", "S8000_F50"))
     caps = f.cfg["annual_screening_totals"]; shares = [round(100 * x) for x in f.cfg["f_allocation_fractions"]]
-    cnb_total = sum(f.cnb_counts)
+    levels = sorted(f.jcov); J0 = f.jcov[0.0]
+    beta_total = sum(f.beta)
     jpred = f.strata["population_J"]; df = f.strata["population_current_PWID"]; ever = f.strata["population_ever_PWID"]
     xs, fx26 = pct(f.x_chronic_share, 0), pct(f.fx_death_share_2026, 0)
     fchr, xchr = pct(f.f_chronic / f.f_eligible, 1), pct(f.x_chronic / f.x_eligible, 1)
     b15 = f.tr("J_only", 2015)
+    inc_cheapest = min(f.inc_pass, key=lambda k: F(s[k]["total_discounted_cost_2026_2030_sgd"]))
+    jstarts26 = F(f.an("J_only", 2026, "J")["treatment_starts"])
+    JC = ("jcov",) + OUT
+    SENS = ("j2019",)
 
     # ---------------- front matter ----------------
     d.raw("---\ntitle: \"Prison treatment and post-release screening for hepatitis C among people who inject drugs in Singapore: A modelling study\"\n---")
@@ -51,38 +71,38 @@ def build(reg, f):
     # ---------------- abstract ----------------
     d.h(1, "Abstract")
     d.h(2, "Background")
-    d.p("Hepatitis C virus (HCV) infection in Singapore is concentrated among people who inject drugs (PWID), many of whom cycle through prison, where treatment expanded from 2019. "
-        "We asked whether prison treatment alone can meet the World Health Organization 2030 targets (80% fewer new infections and 65% fewer HCV deaths than in 2015), and how limited community screening should be shared after release.",
+    d.p("Hepatitis C virus (HCV) infection in Singapore is concentrated among people who inject drugs (PWID), many of whom cycle through prison. "
+        "We asked whether treatment in prison, alone or with community screening of released people from 2026, can meet the World Health Organization 2030 targets (80% fewer new infections and 65% fewer HCV deaths than in 2015), and how limited screening should be shared after release.",
         ("config", "scen_code", "who2022strategy"), kind="factual")
     d.h(2, "Methods and findings")
     d.p(f"We built an age-structured model of PWID never imprisoned (D), in prison (J), and released and still injecting (F) or stopped (X), with prison rates estimated from records of {n0(f.sps_people)} people. "
-        f"We calibrated it by Markov chain Monte Carlo to 2015 prison seroprevalence, first arrests and a survey estimate of active injectors, and projected {len(f.finite)} policies screening {caps[0]:,} to {caps[-1]:,} released people a year from 2026 ({shares[0]}%–{shares[2]}% of tests to F) over {f.ndraw:,} posterior draws.",
-        ("setup", "cnb", "targets", "mcmc_cfg", "config", "summary", "rates", "sps"), kind="method")
-    d.p(f"Prison treatment alone reduced new infections in 2030 by {red(J, 'incidence_reduction', first=True)} but HCV deaths by only {red(J, 'mortality_reduction')}. "
-        f"In 2026, {xs} of chronic infections among released people were in X, and F and X accounted for {fx26} of HCV deaths. "
-        f"All screening policies met the incidence target; the mortality target was met only with {int(F(P5['screening_total'])):,} tests a year and 25% to F ({red(P5, 'mortality_reduction').replace(' (95% UI ', ', 95% UI ').rstrip(')')}; both targets in {pct(P5['joint_pass_probability'], 0)} of draws) or {caps[-1]:,} tests with 25% or 50% to F. "
-        f"Moving tests from F to X increased the fall in deaths and reduced the fall in infections. "
-        f"The cheapest passing policy cost {money(P5, 'total_discounted_cost_2026_2030_sgd')} over 2026–2030, mostly for drugs. "
+        f"We calibrated it by Markov chain Monte Carlo to 2015 prison seroprevalence, first arrests of new heroin and methamphetamine users and a survey estimate of active injectors. "
+        f"In the main analysis nothing changed from 2015 until 2026, when treatment in prison and {len(f.finite)} community screening policies ({caps[0]:,} to {caps[-1]:,} tests a year, {shares[0]}%–{shares[2]}% to F) began; we varied prison treatment coverage and, in a sensitivity analysis, started prison treatment in 2019. Results are over {f.ndraw:,} posterior draws.",
+        ("setup", "cnb", "drug", "targets", "mcmc_cfg", "config", "summary", "rates", "sps"), kind="method")
+    d.p(f"Prison treatment alone from 2026 reduced new infections in 2030 by {red(J, 'incidence_reduction', first=True)} and HCV deaths by {red(J, 'mortality_reduction')}. "
+        f"{cap_word(len(f.inc_pass))} of {len(f.finite)} screening policies met the incidence target, but none met the mortality target; the best, {caps[-1]:,} tests a year with 25% to F, reduced deaths by {red(P8, 'mortality_reduction')}, and only uncapped screening of all released people met both targets. "
+        f"Moving tests from F to X increased the fall in deaths and reduced the fall in infections. Lower prison treatment coverage reduced every effect. "
+        f"Had prison treatment started in 2019, it alone would have reduced new infections by {red(SJ, 'incidence_reduction')}, meeting the incidence target, and {caps[-2]:,} tests a year with 25% to F would have met both targets in {pct(S5['joint_pass_probability'], 0)} of draws. "
         f"Limitations include a modelled prison population ({n0(jpred['median'])}) far above the {f.j_obs_2015:,} screened people recorded, weakly identified entry parameters, charge-based costs and parameter-only uncertainty.",
-        ("summary", "annual", "traj", "strata", "prison", "mcmc_par", "costev"), unc="moderate", intent="exploratory")
+        ("summary", "jcov", "j2019", "strata", "prison", "mcmc_par"), unc="moderate", intent="exploratory")
     d.h(2, "Conclusions")
-    d.p("In this model, prison treatment is likely to meet the 2030 target for new HCV infections among PWID in Singapore but not the target for deaths, which required screening several thousand released people a year, mostly people who have stopped injecting.",
-        ("summary",), kind="interpretive", unc="moderate")
+    d.p("In this model, starting HCV treatment for PWID in Singapore in 2026 is too late for prison treatment and capped community screening to meet the 2030 target for HCV deaths; the incidence target needs thousands of community tests a year in addition to prison treatment.",
+        OUT + SENS, kind="interpretive", unc="moderate")
 
     # ---------------- author summary ----------------
     d.h(1, "Author summary")
     d.h(2, "Why was this study done?")
-    d.p("- Most hepatitis C infections in Singapore are among people who inject drugs, and many of them spend time in prison, where treatment expanded from 2019.", ("config", "winslow2007", "prison2021"), kind="factual")
-    d.p("- It is unclear whether prison treatment alone can meet the WHO 2030 elimination targets, which ask for large falls in both new infections and deaths.", ("who2022strategy",), kind="factual")
+    d.p("- Most hepatitis C infections in Singapore are among people who inject drugs, and many of them spend time in prison.", ("winslow2007", "prison2021"), kind="factual")
+    d.p("- It is unclear whether treatment in prison, with or without community screening after release, can meet the WHO 2030 elimination targets, which ask for large falls in both new infections and deaths.", ("who2022strategy",), kind="factual")
     d.raw("- Community screening capacity is limited, and it is not known whether it should go to released people who still inject or to those who have stopped.")
     d.h(2, "What did the researchers do and find?")
-    d.p(f"- We built a model of hepatitis C among people who inject drugs that follows them into and out of prison, and fitted it to prison and national data from 2015.", ("targets",), kind="method")
-    d.p(f"- In the model, prison treatment alone cut new infections by about {round(100 * F(J['incidence_reduction']))}% by 2030 but deaths by only about {round(100 * F(J['mortality_reduction']))}%, because most deaths occur among released people who have stopped injecting, whom prison treatment does not reach again.",
-        ("summary", "traj"), unc="moderate")
-    d.p(f"- The death target was met only when {int(F(P5['screening_total'])):,} or more released people were screened each year, with most tests going to people who have stopped injecting.", ("summary",), unc="moderate")
+    d.p("- We built a model of hepatitis C among people who inject drugs that follows them into and out of prison, and fitted it to prison and national data from 2015.", ("targets",), kind="method")
+    d.p(f"- If treatment starts in 2026, prison treatment alone cut new infections by about {round(100 * F(J['incidence_reduction']))}% and deaths by about {round(100 * F(J['mortality_reduction']))}% by 2030. With up to {caps[-1]:,} community tests a year, several policies met the infection target but none met the death target.",
+        OUT, unc="moderate")
+    d.p(f"- If prison treatment had started in 2019, it alone would have met the infection target, and {caps[-2]:,} or more community tests a year, mostly for people who have stopped injecting, would have met the death target.", SENS, unc="moderate")
     d.h(2, "What do these findings mean?")
-    d.raw("- Prison treatment can prevent most new infections, but it cannot by itself prevent most hepatitis C deaths.")
-    d.raw("- Finding and treating people who have stopped injecting, through community testing outside prison, is needed to reduce deaths.")
+    d.p("- Time matters: the later treatment starts, the less any policy can achieve by 2030.", OUT + SENS, kind="interpretive", unc="moderate")
+    d.raw("- Prison treatment prevents many new infections, but most hepatitis C deaths are among released people who have stopped injecting, who need community testing.")
     d.raw("- These results come from a model with important uncertainties, including the size of the community population and the costs, and should be checked against programme data.")
 
     # ---------------- abbreviations (PLOS: non-standard ones, alphabetical) ----------------
@@ -96,12 +116,12 @@ def build(reg, f):
     d.p("WHO set targets for 2030 to eliminate viral hepatitis as a public health threat, including large reductions in new HCV infections and in HCV deaths compared with 2015 [@who2022strategy; @who2023validation].", kind="factual")
     d.p("Direct-acting antivirals cure most people treated [@pawlotsky2020], and treating people who inject drugs can also prevent onward transmission [@martin2013; @dore2021].", kind="factual", join=True)
     d.p("In Singapore, people who inject drugs are a key population for HCV [@winslow2007; @cda_hcv], and their number has been estimated at about 11,000 [@teo2019].", ("targets",), kind="factual")
-    d.p("Many of them pass through prison, and treatment in prison with direct-acting antivirals expanded from 2019 [@prison2021; @tan2023].", ("config",), kind="factual", join=True)
+    d.p("Many of them pass through prison, where treatment with direct-acting antivirals has been offered [@prison2021; @tan2023].", kind="factual", join=True)
     d.p("Prison offers a setting where people can be found and treated, but linkage to care after release is often poor [@clink2022; @eckhardt2022].", kind="factual")
     d.p("Community testing programmes in Singapore have been described in policy statements [@moh2024ett; @moh2025ett; @cda_programme], and point-of-care testing can improve linkage to care [@hsiang2022].", kind="factual", join=True)
     d.p("A previous model examined what is needed to eliminate HCV in Singapore [@chaillon2021]. Our model adds the distinction between released people who return to injecting and those who stop.", kind="interpretive", join=True)
     d.p("This distinction matters for policy. People who still inject keep transmitting and are often re-arrested, so prison treatment reaches them again. People who have stopped do not transmit, but they may carry long-standing infections that progress to cirrhosis and liver cancer, and they are less likely to return to prison.", ("rates", "sim"), kind="interpretive")
-    d.p("We used a calibrated transmission model to estimate whether prison treatment alone can meet the WHO 2030 targets for PWID in Singapore, and how a fixed annual number of community screening tests should be split between released people who still inject and those who have stopped.", ("config", "scen_code"), kind="method")
+    d.p("We used a calibrated transmission model to estimate whether prison treatment and community screening starting in 2026 can meet the WHO 2030 targets for PWID in Singapore, how a fixed annual number of community screening tests should be split between released people who still inject and those who have stopped, how the answer depends on prison treatment coverage, and what an earlier start in prison would have achieved.", ("config", "scen_code"), kind="method")
 
     # ---------------- methods ----------------
     d.h(1, "Methods")
@@ -127,9 +147,12 @@ def build(reg, f):
     d.p("We assumed that people who are eventually re-arrested return to injecting (F) and that the others stop (X). The first-arrest rate from D was the re-arrest rate multiplied by a calibrated factor c.", ("setup", "sim"), kind="method")
 
     d.h(2, "Entry and calibration targets")
-    d.p(f"Entry into D by age was the number of new drug abusers recorded by the Central Narcotics Bureau in 2015 ({', '.join(str(x) for x in f.cnb_counts)} by age group; {cnb_total:,} in total) [@singstat_drug], multiplied by a calibrated scale of at least 1, and was held constant in every year.", ("cnb", "likelihood"), kind="method")
-    d.p(f"We calibrated the model to three 2015 targets (S1 Text, Table C): HCV antibody prevalence by age among people in prison at the end of 2015 with a result from the December 2014 to February 2016 screening exercise ({f.screened_2015:,} people); the same Central Narcotics Bureau counts as the annual number of first arrests by age; "
-        f"and {f.tg['community_pwid']:,} active injectors in the community (95% confidence interval 6,500–17,000), a network scale-up estimate [@teo2019], compared with the modelled number in D and F.", ("targets", "prison", "cnb"), kind="method")
+    d.p(f"The Central Narcotics Bureau recorded {sum(f.cnb_counts):,} new drug abusers in 2015 ({', '.join(str(x) for x in f.cnb_counts)} by age group) [@singstat_drug]. "
+        f"Of the {f.new_total:,} new abusers that year, {f.new_heroin} mainly used heroin and {f.new_meth:,} methamphetamine [@singstat_m891521], the drugs most often injected in Singapore; we took this share ({pct(f.pwid_share)}) as the share of new abusers who inject, the same at every age, because the drug table has no age breakdown.",
+        ("cnb", "drug", "setup"), kind="method")
+    d.p(f"Entry into D by age was these counts multiplied by {pct(f.pwid_share)} ({beta_total:,.0f} a year in total) and by a calibrated scale of at least 1, and was held constant in every year.", ("setup", "likelihood", "drug"), kind="method", join=True)
+    d.p(f"We calibrated the model to three 2015 targets (S1 Text, Table C): HCV antibody prevalence by age among people in prison at the end of 2015 with a result from the December 2014 to February 2016 screening exercise ({f.screened_2015:,} people); first arrests by age, the same counts multiplied by {pct(f.pwid_share)} and rounded ({', '.join(str(x) for x in f.tg['first_arrests'])}); "
+        f"and {f.tg['community_pwid']:,} active injectors in the community (95% confidence interval 6,500–17,000), a network scale-up estimate [@teo2019], compared with the modelled number in D and F.", ("targets", "prison", "cnb", "drug"), kind="method")
     d.h(2, "Calibration")
     d.p(f"We estimated 13 parameters on the log scale: six multipliers of the contact matrix (one per age group), six entry scales and the first-arrest factor c. Priors were fixed before fitting: normal with mean 0 and standard deviation 1.5 for the contact multipliers, half-normal with standard deviation 1 for the entry scales, and normal with mean 0 and standard deviation 0.5 for log c, each truncated to wide bounds (S1 Text, Table D).",
         ("likelihood",), kind="method")
@@ -139,9 +162,11 @@ def build(reg, f):
     d.p("We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets (S1 Text, Section 4).", kind="method")
 
     d.h(2, "Policy scenarios")
-    d.p(f"All scenarios share the same history: no treatment until 2018 and treatment in prison from 2019, at a rate that gives a {pct(f.cfg['j_annual_start_probability'], 3)} annual probability of starting treatment for people with chronic infection in J. "
-        f"From 2026, we added community screening for F and X. We compared prison treatment only (J only), {len(f.finite)} finite policies ({', '.join(f'{c:,}' for c in caps)} tests per year, with {shares[0]}%, {shares[1]}% or {shares[2]}% given to F and the rest to X), and uncapped screening of everyone in F and X each year as a reference.",
+    d.p(f"In the main analysis, nobody was treated before 2026, so the model stayed at its 2015 equilibrium until then. From 2026, people with chronic infection in J were treated at a rate that gives a {pct(f.cfg['j_annual_start_probability'], 3)} annual probability of starting treatment, and community screening of F and X began. "
+        f"We compared no treatment, prison treatment only (J only), {len(f.finite)} finite policies ({', '.join(f'{c:,}' for c in caps)} tests per year, with {shares[0]}%, {shares[1]}% or {shares[2]}% given to F and the rest to X), and uncapped screening of everyone in F and X each year as a reference.",
         ("config", "scen_code"), kind="method")
+    d.p(f"To show how much depends on prison treatment, we repeated all {len(s)} policies with an annual probability of starting treatment in J of {', '.join(pct(p, 0) for p in levels[:-1])} and {pct(levels[-1], 3)} ({len(levels) * len(s)} combinations).", ("config", "jcov", "scen_code"), kind="method")
+    d.p("In a sensitivity analysis, prison treatment started in 2019 instead, at the main coverage, and community screening still started in 2026.", ("j2019", "scen_code"), kind="method")
     d.p(f"The smallest capacity, {caps[0]} tests per year, was set with reference to a public community testing programme [@moh2024ett]; the other capacities and shares are illustrative and are not announced policies.", ("config",), kind="method")
     d.p("At the start of each year, the tests given to F or X were applied to people not on treatment, in proportion to their HCV states. Each antibody-positive person had an RNA test, and the number of chronic infections found set that year's treatment capacity in the group. "
         f"Within that capacity, people with chronic infection started treatment at a rate that gives a {pct(f.cfg['fx_annual_start_probability'], 0)} annual probability. Sofosbuvir–velpatasvir without ribavirin was assumed, and people in D were never treated.", ("config", "scen_code", "setup"), kind="method")
@@ -166,66 +191,79 @@ def build(reg, f):
     d.p(f"The posterior chains converged (largest R-hat {f.rhat_max:.3f}; smallest bulk effective sample size {n0(f.ess_bulk_min)}). The model reproduced the age pattern of seroprevalence in prison, and the 95% posterior intervals of all {f.n_ovl} modelled targets overlapped the target ranges (Fig 2).",
         ("mcmc_diag", "overlap"), unc="moderate")
     pred = f.nm_pred
-    d.p(f"At ages 30 and over, modelled first arrests were higher than the recorded counts (for example {F(pred[2]['first_arrests_hat']):.0f} against {pred[2]['first_arrests_target']} at ages 30–39 at the posterior mode), because entry could not fall below the recorded counts and the entry scales settled at their lower bound (posterior medians {min(v[0] for v in f.entry_post.values()):.2f} to {max(v[0] for k, v in f.entry_post.items() if k < 12):.2f} below age 60).",
+    d.p(f"At ages 30 and over, modelled first arrests were higher than the targets (for example {F(pred[2]['first_arrests_hat']):.0f} against {pred[2]['first_arrests_target']} at ages 30–39 at the posterior mode), because entry could not fall below the scaled counts and the entry scales settled near their lower bound (posterior medians {min(v[0] for v in f.entry_post.values()):.2f} to {max(v[0] for k, v in f.entry_post.items() if k < 12):.2f} below age 60).",
         ("nm_pred", "mcmc_par"), unc="moderate")
     d.p(f"The modelled number of active injectors in the community was {interval(df['median'], df['lower_95'], df['upper_95'])}, below the survey estimate of {f.tg['community_pwid']:,} but within its range. The first-arrest factor c was {f.c_post[0]:.2f} (95% credible interval {f.c_post[1]:.2f}–{f.c_post[2]:.2f}), so first arrest was faster than re-arrest.",
         ("strata", "mcmc_par", "targets"), unc="moderate")
     d.p(f"In 2015 the model had {n0(ever['median'])} people who had ever injected (95% credible interval {n0(ever['lower_95'])}–{n0(ever['upper_95'])}): {n0(f.strata['population_D']['median'])} in D, {n0(jpred['median'])} in J, {n0(f.strata['population_F']['median'])} in F and {n0(f.strata['population_X']['median'])} in X. "
         f"The modelled prison population was not a calibration target and was much larger than the {f.j_obs_2015:,} people with a screening result recorded in prison in 2015.", ("strata", "prison"), unc="moderate")
-    d.p(f"In 2015 the model had {interval(b15['incidence'], b15['incidence_lo'], b15['incidence_hi'])} new infections and {interval(b15['mortality'], b15['mortality_lo'], b15['mortality_hi'])} HCV deaths per year. Without treatment, both stayed at their 2015 level until 2030.",
+    d.p(f"In 2015 the model had {interval(b15['incidence'], b15['incidence_lo'], b15['incidence_hi'])} new infections and {interval(b15['mortality'], b15['mortality_lo'], b15['mortality_hi'])} HCV deaths per year. Without treatment, both stayed at their 2015 level until 2030 (within {100 * f.history_dev:.2f}% until 2025).",
         ("traj", "notx"), unc="moderate")
 
     d.h(2, "Prison treatment alone")
-    j25 = f.tr("J_only", 2025)
-    d.p(f"With treatment in prison from 2019, new infections fell steadily (Fig 3). By 2025 they were {pct(j25['incidence_ratio_2015'], 0)} of the 2015 level, and by 2030 the reduction was {red(J, 'incidence_reduction')}, meeting the incidence target at the median and in {pct(J['who_incidence_pass_prob'], 0)} of draws.",
-        TRJ + OUT, unc="moderate")
-    d.p(f"HCV deaths fell less: by {red(J, 'mortality_reduction')} in 2030. No posterior draw met the mortality target with prison treatment alone.", OUT, unc="moderate")
-    d.p(f"The reason is where infections remain. Released people who still inject are often re-arrested and treated again in prison, but people who have stopped injecting are never re-arrested in the model. In 2026, under prison treatment only, {xs} of the {n0(f.x_chronic + f.f_chronic)} people with chronic infection in F and X were in X, and F and X together accounted for {fx26} of all HCV deaths.",
-        ("annual", "traj"), unc="moderate")
+    d.p(f"With treatment in prison from 2026, {n0(jstarts26)} people started treatment in J in 2026, as the infections accumulated since 2015 were treated, and fewer in later years. "
+        f"New infections fell by {red(J, 'incidence_reduction')} by 2030 and HCV deaths by {red(J, 'mortality_reduction')} (Fig 3). No posterior draw met either target.",
+        ("annual",) + TRJ + OUT, unc="moderate")
+    d.p(f"In 2026, {xs} of the {n0(f.x_chronic + f.f_chronic)} people with chronic infection in F and X were in X, and F and X together accounted for {fx26} of all HCV deaths. People in X are never re-arrested in the model, so prison treatment does not reach them.",
+        ("annual", "traj", "sim"), unc="moderate")
     d.p(f"People in D, who had never been imprisoned, accounted for {pct(f.d_inc_share_j, 0)} of new infections in 2030 under prison treatment only; no policy in this study reached them.", OUT, unc="moderate")
 
     d.h(2, "Community screening policies")
-    d.p(f"All {len(f.finite)} finite screening policies met the incidence target at the median, but only {cap_word(len(f.mort_pass)).lower()} met the mortality target (Fig 4 and Table 1). "
-        f"With {caps[-1]:,} tests a year, the fall in deaths was {red(P8, 'mortality_reduction')} with 25% to F and {red(P85, 'mortality_reduction')} with 50% to F; both targets were met in {pct(P8['joint_pass_probability'], 1)} and {pct(P85['joint_pass_probability'], 0)} of draws.",
+    d.p(f"{cap_word(len(f.inc_pass))} of the {len(f.finite)} finite screening policies met the incidence target at the median (Fig 4 and Table 1): {caps[-1]:,} tests a year with any share to F, and {caps[-2]:,} tests with 50% or 75% to F. None met the mortality target. "
+        f"The largest fall in deaths among finite policies was {red(P8, 'mortality_reduction')}, with {caps[-1]:,} tests and 25% to F; both targets were met in {pct(P8['joint_pass_probability'], 1)} of draws, and in no draw for any other finite policy.",
         OUT, unc="moderate")
-    d.p(f"With 5,000 tests a year and 25% to F, deaths fell by {red(P5, 'mortality_reduction')}, only {100 * (F(P5['mortality_reduction']) - 0.65):.1f} percentage points above the target, and both targets were met in {pct(P5['joint_pass_probability'], 0)} of draws, so this policy met the targets only narrowly. With 50% to F at the same capacity, deaths fell by {red(P550, 'mortality_reduction')} and both targets were met in only {pct(P550['joint_pass_probability'], 0)} of draws.",
-        OUT, unc="moderate")
-    d.p("At every capacity, giving a larger share of tests to F increased the fall in new infections and reduced the fall in deaths. All quotas were used in full in every year and group.", ("summary", "annual"), unc="moderate")
-    d.p(f"This trade-off follows from the two groups. At the start of 2026, {n0(f.f_eligible)} people in F were eligible for screening, of whom {fchr} had chronic infection; in X, {n0(f.x_eligible)} were eligible and {xchr} had chronic infection. "
-        "A test given to X therefore found more chronic infections, whereas a test given to F found fewer infections but in people who could transmit.", ("annual",), unc="moderate")
-    d.p(f"Uncapped screening of everyone in F and X each year reduced new infections by {red(INF, 'incidence_reduction')} and deaths by {red(INF, 'mortality_reduction')}. Even then, {pct(f.d_inc_share_sinf, 0)} of the remaining infections in 2030 were in D.", OUT, unc="moderate")
+    d.p(f"At every capacity, giving a larger share of tests to F increased the fall in new infections and reduced the fall in deaths. All quotas were used in full, except the F quota with {caps[-1]:,} tests and 75% to F ({pct(f.quota_use['S8000_F75']['F'], 1)} used over 2026–2030), where screening ran out of eligible people in F.",
+        ("summary", "annual"), unc="moderate")
+    d.p(f"At the start of 2026, {n0(f.f_eligible)} people in F were eligible for screening, of whom {fchr} had chronic infection; in X, {n0(f.x_eligible)} were eligible and {xchr} had chronic infection. "
+        "A test given to F therefore found more chronic infections, in people who could transmit, but people in F are re-arrested and can be treated in prison, whereas people in X can be reached only by community screening; this is a likely reason why tests given to X prevented more deaths.", ("annual", "rates", "sim"), kind="interpretive", unc="moderate")
+    d.p(f"Uncapped screening of everyone in F and X each year reduced new infections by {red(INF, 'incidence_reduction')} and deaths by {red(INF, 'mortality_reduction')}, and was the only policy that met both targets. Even then, {pct(f.d_inc_share_sinf, 0)} of the remaining infections in 2030 were in D.", OUT, unc="moderate")
+
+    d.h(2, "Prison treatment coverage")
+    d.p(f"Every reduction rose with the coverage of prison treatment (Fig 5 and Table 2). Without prison treatment, deaths fell by {red(J0['S8000_F25'], 'mortality_reduction')} with {caps[-1]:,} tests and 25% to F, and only {caps[-1]:,} tests with 75% to F met the incidence target, reducing new infections by {red(J0['S8000_F75'], 'incidence_reduction')}. "
+        f"At {pct(levels[1], 0)} coverage, {cap_word(sum(f.jcov[levels[1]][k]['who_incidence_pass'] == 'TRUE' for k in f.finite)).lower()} finite policies met the incidence target, and at {pct(levels[2], 0)} the same {cap_word(len(f.inc_pass)).lower()} as at full coverage.",
+        JC, unc="moderate")
+    d.p(f"At no coverage did a finite policy meet the mortality target, while uncapped screening met it even without prison treatment, reducing deaths by {red(J0['SInf'], 'mortality_reduction')}.", JC, unc="moderate")
+
+    d.h(2, "Sensitivity analysis: prison treatment from 2019")
+    d.p(f"Had prison treatment started in 2019, prison treatment alone would have reduced new infections by {red(SJ, 'incidence_reduction')} and deaths by {red(SJ, 'mortality_reduction')} by 2030, meeting the incidence target at the median. "
+        f"All {len(f.finite)} finite policies would then have met the incidence target, and three would have met the mortality target: {caps[-2]:,} tests with 25% to F, which reduced deaths by {red(S5, 'mortality_reduction')} and met both targets in {pct(S5['joint_pass_probability'], 0)} of draws, and {caps[-1]:,} tests with 25% or 50% to F, which met both targets in {pct(S8['joint_pass_probability'], 1)} and {pct(S85['joint_pass_probability'], 1)} of draws (S1 Text, Section 9).",
+        SENS, unc="moderate")
 
     d.h(2, "Costs")
-    d.p(f"Discounted costs for 2026–2030 were {money(J, 'total_discounted_cost_2026_2030_sgd')} with prison treatment only. The cheapest policy that met both targets at the median, 5,000 tests a year with 25% to F, cost {money(P5, 'total_discounted_cost_2026_2030_sgd')}, or {money(P5, 'incremental_discounted_cost_vs_j_only_sgd')} more than prison treatment only.",
-        OUT, unc="moderate")
-    d.p(f"Drugs made up {pct(f.drug_share_5000, 0)} of the cost of this policy, so the total scales almost directly with the drug price. With {caps[-1]:,} tests a year and 25% to F, the cost was {money(P8, 'total_discounted_cost_2026_2030_sgd')}; S1 Text, Section 8 gives all policies.", ("annual", "summary"), unc="moderate")
+    d.p(f"Discounted costs for 2026–2030 were {money(J, 'total_discounted_cost_2026_2030_sgd')} with prison treatment only, mostly for drugs and mostly in 2026. The cheapest policy that met the incidence target, {int(F(s[inc_cheapest]['screening_total'])):,} tests a year with {round(100 * F(s[inc_cheapest]['f_share']))}% to F, cost {money(s[inc_cheapest], 'total_discounted_cost_2026_2030_sgd')}, or {money(s[inc_cheapest], 'incremental_discounted_cost_vs_j_only_sgd')} more than prison treatment only.",
+        OUT + ("annual",), unc="moderate")
+    d.p(f"Uncapped screening, the only policy that met both targets, cost {money(INF, 'total_discounted_cost_2026_2030_sgd')}. Drugs made up {pct(f.drug_share_5000, 0)} of the cost of 5,000 tests a year with 25% to F, so totals scale almost directly with the drug price; S1 Text, Section 8 gives all policies.", ("annual", "summary"), unc="moderate")
 
     # ---------------- discussion ----------------
     d.h(1, "Discussion")
-    d.p(f"In this model of PWID in Singapore, prison treatment from 2019 was enough to reduce new HCV infections by more than four fifths by 2030, but it reduced HCV deaths by only about half. "
-        f"The gap arises because released people account for nearly all HCV deaths, and most of their chronic infections are among people who have stopped injecting, whom prison treatment does not reach again. Meeting the mortality target required community screening of several thousand released people a year, with most tests given to people who have stopped injecting.",
-        OUT + ("annual",), kind="interpretive", unc="moderate")
-    d.p("The two WHO targets pull screening in different directions. Tests given to people who still inject prevent more infections, while tests given to people who have stopped prevent more deaths. Because prison treatment already achieves the incidence target at the median, the binding target in Singapore is mortality, and screening policy should be judged mainly by the deaths it prevents.",
+    d.p(f"In this model of PWID in Singapore, starting HCV treatment in 2026 left too little time to meet the WHO 2030 mortality target with prison treatment and capped community screening. "
+        f"Prison treatment from 2026 reduced new infections by about half and deaths by about a third. Up to {caps[-1]:,} community tests a year could meet the incidence target, but only screening of every released person each year met the mortality target.",
         OUT, kind="interpretive", unc="moderate")
+    d.p("Timing was decisive. With the same prison treatment starting in 2019, prison treatment alone met the incidence target, and several thousand community tests a year met the mortality target. Each year without treatment adds to the pool of chronic infections that progress to cirrhosis and liver cancer, and deaths fall more slowly than infections after treatment begins.",
+        SENS + OUT, kind="interpretive", unc="moderate")
+    d.p("The two WHO targets pull screening in different directions. Tests given to people who still inject prevent more infections, while tests given to people who have stopped prevent more deaths. Because the mortality target was harder to meet in every analysis, screening policy should be judged mainly by the deaths it prevents.",
+        OUT + SENS, kind="interpretive", unc="moderate")
     d.p("This suggests that the people who matter most for HCV mortality are not those most visible to drug services. People who have stopped injecting may no longer be in contact with prison or drug services, and reaching them may need testing in primary care or other community settings [@hsiang2022].", kind="interpretive")
     d.p("Part of the modelled HCV mortality is excess non-liver death among viraemic people, based on mortality ratios from a cohort of people who use drugs [@vansanten2014]. Evidence that viraemic infection raises mortality from causes other than liver disease supports this [@lee2012; @cepeda2022], but the excess is not found in every cohort [@piselli2021]; with a smaller excess, deaths would depend more on cirrhosis and liver cancer.", kind="interpretive")
     d.p("We extend earlier modelling for Singapore [@chaillon2021] by separating released people by injecting status and by modelling screening capacity explicitly. This separation gives a reason why the mortality target may be harder to meet than the incidence target.", kind="interpretive")
     d.h(2, "Strengths and limitations")
     d.p(f"The model was calibrated with a full Bayesian method that converged well, and every policy result carries posterior uncertainty from {f.ndraw:,} draws. Prison flows were estimated from individual prison records rather than assumed, and screening capacity was modelled explicitly, so treatment depends on how many people are found.",
         ("mcmc_diag", "summary", "rates"), kind="interpretive", unc="moderate")
-    d.p(f"The study has important limitations. First, the modelled prison population ({n0(jpred['median'])}) was about {F(jpred['median']) / f.j_obs_2015:.0f} times the number of screened people recorded in prison in 2015. The prison size was not fitted, and the model may keep people in prison or in contact with it for too long, which would favour prison treatment.",
+    d.p(f"The study has important limitations. First, the modelled prison population ({n0(jpred['median'])}) was about {F(jpred['median']) / f.j_obs_2015:.1f} times the number of screened people recorded in prison in 2015. The prison size was not fitted, and the model may keep people in prison or in contact with it for too long, which would favour prison treatment.",
         ("strata", "prison"), kind="interpretive", unc="high")
-    d.p(f"Second, the entry and first-arrest parameters were weakly identified. Central Narcotics Bureau counts include people who do not inject, the entry scales settled at their lower bound, and the posterior of c was only modestly narrower than its prior (standard deviation {pct(f.sd_ratio[12], 0)} of the prior's). The size of the community population that never enters prison is therefore uncertain.",
-        ("mcmc_par", "mcmc_cfg", "cnb"), kind="interpretive", unc="high")
-    d.p("Third, we assumed that released people who are eventually re-arrested return to injecting and that the others stop permanently, and that there is no transmission in prison. Relapse after a long gap would put more infections back into F.", ("setup", "sim"), kind="interpretive", unc="high")
-    d.p("Fourth, screening was an aggregate approximation: tests were spread across each group in proportion to its HCV states, with perfect linkage within capacity and no loss to follow-up. Real programmes will find and treat fewer people for the same number of tests.", ("scen_code",), kind="interpretive", unc="high")
-    d.p("Fifth, costs were published charges and a published drug price carried forward without inflation, not payer costs, and follow-up visits were excluded. Our uncertainty intervals cover model parameters only, not structural assumptions, prices or uptake.", ("costev", "config"), kind="interpretive", unc="high")
+    d.p(f"Second, the main analysis assumes that nobody was treated before 2026. Treatment in prison has in fact been offered [@prison2021; @tan2023], but its start and coverage are not recorded in the project data. The sensitivity analysis with full coverage from 2019 shows how much an earlier start changes the results; the real history probably lies between the two analyses.",
+        ("j2019", "config"), kind="interpretive", unc="high")
+    d.p(f"Third, the entry and first-arrest parameters were weakly identified. We took the share of new drug abusers who mainly use heroin or methamphetamine ({pct(f.pwid_share)}) as the share who inject, the same at every age; not all of them inject, and some users of other drugs do. The entry scales settled near their lower bound, and the posterior of c was only modestly narrower than its prior (standard deviation {pct(f.sd_ratio[12], 0)} of the prior's).",
+        ("mcmc_par", "mcmc_cfg", "cnb", "drug"), kind="interpretive", unc="high")
+    d.p("Fourth, we assumed that released people who are eventually re-arrested return to injecting and that the others stop permanently, and that there is no transmission in prison. Relapse after a long gap would put more infections back into F.", ("setup", "sim"), kind="interpretive", unc="high")
+    d.p("Fifth, screening was an aggregate approximation: tests were spread across each group in proportion to its HCV states, with perfect linkage within capacity and no loss to follow-up. Real programmes will find and treat fewer people for the same number of tests.", ("scen_code",), kind="interpretive", unc="high")
+    d.p("Sixth, costs were published charges and a published drug price carried forward without inflation, not payer costs, and follow-up visits were excluded. Our uncertainty intervals cover model parameters only, not structural assumptions, prices or uptake.", ("costev", "config"), kind="interpretive", unc="high")
     d.p(f"Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference {100 * f.sero_max_diff:.1f} percentage points).",
         ("targets", "prison"), kind="result", unc="moderate")
     d.h(2, "Conclusions")
-    d.p("In this model, treatment in prison is likely to meet the 2030 target for new HCV infections among people who inject drugs in Singapore, but not the target for HCV deaths. "
-        "Reducing deaths requires finding and treating people who have stopped injecting after release, which needs community testing on a scale of thousands of people a year.",
-        OUT, kind="interpretive", unc="moderate")
+    d.p("In this model, treatment for PWID in Singapore that starts in 2026 can meet the 2030 target for new HCV infections only with prison treatment and thousands of community tests a year, and cannot meet the target for HCV deaths without screening every released person. "
+        "Reducing deaths requires finding and treating people who have stopped injecting after release, and every year of delay makes the target harder to reach.",
+        OUT + SENS, kind="interpretive", unc="moderate")
 
     # ---------------- statements ----------------
     d.h(1, "Data availability")
@@ -245,14 +283,15 @@ def build(reg, f):
 
     # ---------------- figure and table legends ----------------
     d.h(1, "Figure captions")
-    d.p("**Fig 1. Model structure.** People who inject drugs enter D (never imprisoned) and move to J (prison) at first arrest. On release they move to F (still injecting) or X (stopped). People in F can be re-arrested. Transmission occurs only in D and F. Treatment is given in J from 2019 and community screening is offered to F and X from 2026.", ("sim", "config"), kind="method")
-    d.p("**Fig 2. Calibration to the 2015 targets.** (A) HCV antibody prevalence in prison by age. (B) First arrests by age (Central Narcotics Bureau new drug abusers). (C) Active injectors in the community (D and F). Black: target with the 95% range of its likelihood; blue: 95% posterior interval of the model value from the MCMC posterior; orange: neural posterior estimate (cross-check only).", ("overlap",), kind="result")
-    d.p(f"**Fig 3. New infections and HCV deaths, 2015–2030.** Annual new HCV infections (A) and HCV deaths (B) relative to 2015, without treatment, with prison treatment only, and with {caps[-1]:,} community tests a year from 2026 given 25% or 75% to F. Yearly counts are drawn at mid-year and joined by a monotone curve; vertical lines mark the start of prison treatment (2019) and community screening (2026). Lines are medians and bands are 95% uncertainty intervals across {f.ndraw:,} posterior draws. Dashed lines mark the WHO targets.", OUT + TRJ, kind="result")
+    d.p("**Fig 1. Model structure.** People who inject drugs enter D (never imprisoned) and move to J (prison) at first arrest. On release they move to F (still injecting) or X (stopped). People in F can be re-arrested. Transmission occurs only in D and F. In the main analysis, treatment is given in J and community screening is offered to F and X from 2026.", ("sim", "config"), kind="method")
+    d.p("**Fig 2. Calibration to the 2015 targets.** (A) HCV antibody prevalence in prison by age. (B) First arrests by age (Central Narcotics Bureau new drug abusers, scaled to heroin and methamphetamine users). (C) Active injectors in the community (D and F). Black: target with the 95% range of its likelihood; blue: 95% posterior interval of the model value from the MCMC posterior.", ("overlap",), kind="result")
+    d.p(f"**Fig 3. New infections and HCV deaths, 2015–2030.** Annual new HCV infections (A) and HCV deaths (B) relative to 2015, without treatment, with prison treatment only, and with {caps[-1]:,} community tests a year given 25% or 75% to F, all from 2026. Yearly counts are drawn at mid-year and joined by a monotone curve; the vertical line marks 2026. Lines are medians and bands are 95% uncertainty intervals across {f.ndraw:,} posterior draws. Dashed lines mark the WHO targets.", OUT + TRJ, kind="result")
     d.p("**Fig 4. Reductions in 2030 by screening capacity and share of tests given to F.** (A) New infections. (B) HCV deaths. Points are medians and bars are 95% uncertainty intervals. Dashed lines mark the targets; the dotted line is prison treatment only and the solid line is uncapped screening.", OUT, kind="result")
+    d.p("**Fig 5. Reductions in 2030 by prison treatment coverage.** Median reductions in new infections (A) and HCV deaths (B) compared with 2015, for each policy (rows) and annual probability of starting treatment in prison from 2026 (columns). Bold values meet the target.", JC, kind="result")
 
-    # ---------------- table 1 ----------------
+    # ---------------- tables ----------------
     d.h(1, "Tables")
-    d.p("**Table 1. Reductions in 2030 compared with 2015, probability of meeting both WHO targets, and discounted costs for 2026–2030.**", OUT, kind="result")
+    d.p("**Table 1. Reductions in 2030 compared with 2015, probability of meeting both WHO targets, and discounted costs for 2026–2030 (main analysis).**", OUT, kind="result")
     rows = []
     for k in ["J_only"] + [f"S{c}_F{x}" for c in caps for x in shares] + ["SInf"]:
         r = s[k]
@@ -261,9 +300,15 @@ def build(reg, f):
                      pct(r["joint_pass_probability"], 1), col(r, "total_discounted_cost_2026_2030_sgd", scale=1e-6, d=1).replace(" (95% UI ", " (")])
     d.table(["Policy", "Fall in new infections, % (95% UI)", "Fall in HCV deaths, % (95% UI)", "Draws meeting both targets", "Cost, S$ million (95% UI)"], rows, OUT)
     d.p("UI, uncertainty interval across posterior draws. Costs are 2026 Singapore dollars for J, F and X, discounted at 3% a year to 2026.", ("config",), kind="method")
+    d.p("**Table 2. Median falls in new infections and HCV deaths in 2030 by annual probability of starting treatment in prison from 2026.**", JC, kind="result")
+    rows = []
+    for k in ["J_only"] + [f"S{c}_F{x}" for c in caps for x in shares] + ["SInf"]:
+        rows.append([scen_label(s[k])] + [f"{pct(f.jcov[p][k]['incidence_reduction'])} / {pct(f.jcov[p][k]['mortality_reduction'])}" for p in levels])
+    d.table(["Policy"] + [f"{pct(p, 0) if p < 0.999 else pct(p, 3)} in prison" for p in levels], rows, JC)
+    d.p("Each cell gives the fall in new infections / the fall in HCV deaths (medians across posterior draws). The last column is the main analysis (Table 1). Targets: 80% and 65%.", JC, kind="method")
 
     # ---------------- supporting information ----------------
     d.h(1, "Supporting information")
-    d.p("**S1 Text. Technical appendix.** Model equations, parameters, prison rate estimation, calibration and its checks, the 2015 model population, scenario implementation, costs and additional results.", ("sim",), kind="declaration")
+    d.p("**S1 Text. Technical appendix.** Model equations, parameters, prison rate estimation, calibration and its checks, the 2015 model population, scenario implementation, costs, additional results and the sensitivity analysis with prison treatment from 2019.", ("sim",), kind="declaration")
     d.p("**S1 Checklist. CHEERS 2022 checklist.**", ("cheers2022",), kind="declaration")
     return d

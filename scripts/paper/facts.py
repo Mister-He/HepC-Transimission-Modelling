@@ -24,8 +24,8 @@ class Facts:
             "setup": "scripts/model/setup.R", "sim": "scripts/model/sim.cpp",
             "likelihood": "scripts/calibration/likelihood.R", "equilibrium": "scripts/calibration/equilibrium.R",
             "scen_code": "scripts/scenarios_2026.R", "rates": "output/rearrest_rate_fit.rds",
-            "release": "output/release_rate_fit.rds", "nm": C + "r_20261027_agepop/solutions.csv",
-            "nm_cfg": C + "r_20261027_agepop/run_config.json", "nm_pred": C + "r_20261027_agepop/predictions.csv",
+            "release": "output/release_rate_fit.rds", "nm": C + "r_20261030_agepop/solutions.csv",
+            "nm_cfg": C + "r_20261030_agepop/run_config.json", "nm_pred": C + "r_20261030_agepop/predictions.csv",
             "mcmc_cfg": C + "mcmc_reference/mcmc_run_config.json", "mcmc_diag": C + "mcmc_reference/mcmc_diagnostics.csv",
             "mcmc_chain": C + "mcmc_reference/mcmc_chain_summary.csv", "mcmc_par": C + "mcmc_reference/mcmc_parameter_summary.csv",
             "strata": C + "mcmc_reference/model_prediction_2015_strata.csv", "overlap": "figures/calibration_interval_overlap.csv",
@@ -33,7 +33,13 @@ class Facts:
             "sps": "data/sps.csv and output/cleaned_data.rds (record-level, not distributed)",
             "stan_release": "scripts/model/release_rate.stan", "stan_rearrest": "scripts/model/rearrest_rate.stan",
             "preprocess": "scripts/model/preprocess.R", "figures": "scripts/figures.py",
+            "drug": "data/singstat_drug_abusers_by_drug.csv",
+            "j2019": "output/scenarios_2026_j2019/scenario_2030_summary.csv",
+            "j2019_traj": "output/scenarios_2026_j2019/scenario_trajectories.csv",
+            "jcov": "output/scenarios_2026_jcov/",
         }
+        JC = self.files["jcov"]
+        self.jcov_dirs = {0.0: JC + "j000/", 0.5: JC + "j050/", 0.9: JC + "j090/"}  # plus the main run
         self.summ = {x["scenario_id"]: x for x in r(self.files["summary"])}
         self.traj = r(self.files["traj"]); self.notx = r(self.files["notx"]); self.ann = r(self.files["annual"])
         self.costev = r(self.files["costev"]); self.cfg = j(self.files["config"]); self.tg = j(self.files["targets"])
@@ -44,8 +50,13 @@ class Facts:
         self.mchain = r(self.files["mcmc_chain"]); self.mpar = {x["parameter"]: x for x in r(self.files["mcmc_par"])}
         self.strata = {x["measure"]: x for x in r(self.files["strata"])}; self.ovl = r(self.files["overlap"])
         self.msbc = {x["parameter"]: x for x in r(self.files["mcmc_sbc"])}
+        self.drug = [x for x in r(self.files["drug"]) if x["year"] == "2015" and x["abuser_group"] == "new"]
+        self.j2019 = {x["scenario_id"]: x for x in r(self.files["j2019"])}; self.j2019_traj = r(self.files["j2019_traj"])
+        self.jcov = {p: {x["scenario_id"]: x for x in r(d + "scenario_2030_summary.csv")} for p, d in self.jcov_dirs.items()}
+        self.jcov[self.cfg["j_annual_start_probability"]] = self.summ
         self.setup_txt = open(os.path.join(root, self.files["setup"])).read()
         self.valid = dict(l.split() for l in open(os.path.join(root, self.files["draws_valid"])))
+        self.j_start = self.valid["j_start_year"]
         self._rates()
         self._derive()
 
@@ -60,6 +71,9 @@ class Facts:
 
     def an(self, sid, yr, st):
         return next(x for x in self.ann if x["scenario_id"] == sid and int(F(x["year"])) == yr and x["stratum"] == st)
+
+    def j2019_valid(self):
+        return dict(l.split() for l in open(os.path.join(self.root, "output/scenarios_2026_j2019/draw_validity.txt")))["j_start_year"]
 
     def _rates(self):
         # Posterior mean and 95% interval of the Stan rate fits (aggregate summaries only).
@@ -96,6 +110,9 @@ class Facts:
         self.fx_death_share_2030 = F(j30["fx_mortality"]) / F(j30["mortality"])
         self.d_inc_share_sinf = 1 - F(s["SInf"]["fx_incidence"]) / F(s["SInf"]["incidence"])
         self.d_inc_share_j = 1 - F(s["J_only"]["fx_incidence"]) / F(s["J_only"]["incidence"])
+        # largest drift from 2015 before 2026 (no treatment before then in the main run)
+        self.history_dev = max(abs(F(x[c]) - 1) for x in self.traj if 2016 <= int(F(x["year"])) < int(self.j_start)
+                               for c in ("incidence_ratio_2015", "mortality_ratio_2015"))
         b = self.tr("J_only", 2015)
         self.base_inc, self.base_mort = F(b["incidence"]), F(b["mortality"])
         self.base_fx_death_share = F(b["fx_mortality"]) / F(b["mortality"])
@@ -105,6 +122,11 @@ class Facts:
         rr = [x for x in self.ann if x["scenario_id"] == "S5000_F25"]
         self.drug_share_5000 = sum(F(x["discounted_cost_daa_sgd"]) for x in rr) / sum(F(x["discounted_cost_total_sgd"]) for x in rr)
         self.cnb_counts = [int(x["new_drug_abusers"]) for x in self.cnb]
+        n = {x["main_drug"]: int(x["count"]) for x in self.drug}
+        self.new_total, self.new_heroin, self.new_meth = n["Total"], n["Heroin"], n["Methamphetamine"]
+        self.pwid_share = (self.new_heroin + self.new_meth) / self.new_total
+        self.beta = [c * self.pwid_share for c in self.cnb_counts]  # setup.R beta (unrounded)
+        assert self.tg["first_arrests"] == [round(b) for b in self.beta], "first-arrest target is not round(CNB x share)"
         self.j_obs_2015 = sum(int(x["n_in_prison"]) for x in self.prison)
         self.screened_2015 = sum(int(x["screened"]) for x in self.prison)
         self.positive_2015 = sum(int(x["positive"]) for x in self.prison)
@@ -153,7 +175,7 @@ if __name__ == "__main__":
               "base_fx_death_share", "drug_share_5000", "j_obs_2015", "screened_2015", "positive_2015", "sero_max_diff",
               "c_post", "prior_dominated", "sd_ratio", "rhat_max", "ess_bulk_min", "ess_tail_min", "mcse_max", "acc", "n_ovl",
               "inc_order_ok", "mort_order_ok", "tau_j", "tau_fx", "rate_ci",
-              "rate_rhat", "entry_post", "contact_post"]:
+              "rate_rhat", "entry_post", "contact_post", "pwid_share", "beta", "j_start"]:
         print(k, getattr(f, k))
     print("nm", [(x["start_id"], round(F(x["objective"]), 2)) for x in f.nm])
     print("quota_use", {k: {a: round(b, 4) for a, b in v.items()} for k, v in f.quota_use.items()})

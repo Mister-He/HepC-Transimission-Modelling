@@ -322,3 +322,26 @@ outputs were backed up to the session scratchpad only (not in the repo).
   but S5000_F25 is narrow (65.4%, joint 60%); S8000_F50 66.6% (87%); S8000_F25 70.8% (99.85%).
 - Trajectory figures: yearly counts at mid-year joined by a monotone PCHIP curve, ticks at 1 January.
 - Manuscript, S1 Text and the scenarios README updated; `build_paper.py` asserts S5000_F25 stays narrow.
+
+## PWID share of inflow + treatment from 2026 (2026-10-30, `docs/pwid_inflow_main_analysis.md`) — current state
+- **NPE removed** (code, tests, outputs, manuscript text; commit `16e9b8d`). MCMC SBC now in
+  `output/calibration/mcmc_sbc/` and draws its own prior truths.
+- **Inflow:** entry `beta` = CNB 2015 new drug abusers × 0.861 (heroin 113 + methamphetamine 1,014 of
+  1,309 new abusers, SingStat M891521; `data/singstat_drug_abusers_by_drug.csv`), same share at every
+  age, unrounded; first-arrest target = same, rounded (221, 554, 251, 81, 18, 1).
+- **Recalibrated:** fit `r_20261030_agepop` (7/8 starts agree, `c` 2.11, D + F 6,786); MCMC R-hat ≤ 1.004,
+  bulk ESS ≥ 2,137; `c` 2.59 (1.45–5.24); prior-dominated θ5, θ6, θ13; MCMC SBC cov95 0.92. 2015 J 8,493
+  (observed 3,367), ever-PWID 50,494. Superseded `r_20261027_agepop` removed.
+- **Scenario design (user decision):** main analysis = no treatment before 2026; J treatment (99.995%/yr)
+  and F/X screening from 2026. `scenarios_2026.R --j-start-year/--j-probability`;
+  `j_start_year` 2026 in the config. Coverage grid 0/50/90% in `output/scenarios_2026_jcov/`
+  (heatmap `jcov_heatmap.png`); sensitivity J from 2019 in `output/scenarios_2026_j2019/`.
+- **Results:** main J only −49.8% (37.7–56.9) incidence, −32.6% deaths. 5 finite policies meet incidence;
+  none meets mortality (best 8,000/yr F25% 62.6%, joint 5.7%); only no cap meets both. F holds the
+  higher chronic share among eligible people in 2026 (33% vs 14%), but X-directed tests still cut more
+  deaths. 8,000/yr F75% leaves 0.5% of the F quota unused. Sensitivity reproduces the old pass set.
+- **Manuscript** rewritten for the new design (Table 2 + Fig 5 coverage; S1 Text Section 9 sensitivity);
+  new bib `singstat_m891521`; `checks()` asserts all of the above.
+- **Figures:** `figures.py --scen-dir` redraws a run's figures; `jcov_heatmap` added; `year_fit` no longer
+  duplicates the 2026 anchor when J starts in 2026.
+- Next per `docs/instructions.md`: ponytail audit → refactor → review, one commit per step, no push.
