@@ -19,11 +19,11 @@
   "beta_precision": 100,
   "equilibrium_horizon_years": 150,
   "first_arrests": [
-    257,
-    644,
-    292,
-    94,
-    21,
+    221,
+    554,
+    251,
+    81,
+    18,
     1
   ],
   "first_arrests_nb_size": 50,

@@ -1,5 +1,5 @@
 {
-  "run_id": "r_20261027_agepop",
+  "run_id": "r_20261030_agepop",
   "seed": 20261001,
   "maxit": 5000,
   "nm_restarts": 5,
@@ -12,15 +12,15 @@
   "optimizer": "Nelder-Mead",
   "target_source": "data/calibration_targets.json",
   "inflow_rule": "entry scale (theta7-12) x CNB 2015 age-specific counts (setup.R beta), held constant in every year",
-  "best_objective": 18.7996,
+  "best_objective": 18.7658,
   "equilibrium_pass": true,
-  "viraemic_share_2015": 0.1828,
+  "viraemic_share_2015": 0.1813,
   "smr_viraemic": 9.52,
   "smr_nonviraemic": 4.73,
-  "c_first": 2.2807,
-  "entry_scales": [1.0904, 1.133, 1.0002, 1, 1.0031, 1],
-  "community_pwid": 7719.5921,
-  "git_sha": "152e1bc787fcf90394aaaac2afd6b79ab2fb145f",
-  "setup_md5": "6e375d335a4f5aa75c1be904784c2948",
-  "sim_cpp_md5": "cee8afa7438963d377c962555c8412d6"
+  "c_first": 2.105,
+  "entry_scales": [1.1139, 1.139, 1.001, 1.003, 1, 1],
+  "community_pwid": 6785.5842,
+  "git_sha": "16e9b8d03745c74b15c332f9844fe396d14f463e",
+  "setup_md5": "d7a66c7715669382ae4690792c752cf9",
+  "sim_cpp_md5": "3710b05fdd07ca2e1954b3c0fcb65aa9"
 }

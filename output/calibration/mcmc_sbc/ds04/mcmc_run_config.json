@@ -1,6 +1,6 @@
 {
-  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261027_agepop/fit.rds",
-  "targets": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/npe_vs_mcmc/mcmc_sbc/targets_ds04.json",
+  "fit": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/r_20261030_agepop/fit.rds",
+  "targets": "/Users/yichenhe/Documents/Work/HepC-Transimission-Modelling/output/calibration/mcmc_sbc/targets_ds04.json",
   "sampler": "adaptive random-walk Metropolis (arwm_budget, scripts/calibration/mcmc.R)",
   "n_chains": 1,
   "cores": 1,
@@ -28,9 +28,9 @@
     "prior_variance": 20264205,
     "chain": "SEED+1000+i (initial prior draws and sampling)"
   },
-  "startup_sec": 3.005,
+  "startup_sec": 4.746,
   "pre_chain_sec": 0.00600000000000023,
-  "method_sec": 6614.463,
-  "cpu_sec_total": 6611.911,
+  "method_sec": 6341.439,
+  "cpu_sec_total": 6340.023,
   "r_version": "R version 4.5.1 (2025-06-13)"
 }

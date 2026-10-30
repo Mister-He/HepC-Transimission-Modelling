@@ -157,7 +157,9 @@ params <- list(
   
 
   # ── Population entry rates (per year, age-varying) ────────────────────────
-  # SingStat/CNB 2015 new-drug-abuser counts; build_params() multiplies them by the calibrated
+  # SingStat/CNB 2015 new-drug-abuser counts by age times the share whose main drug was heroin or
+  # methamphetamine ((113 + 1014) / 1309, SingStat M891521; no age split, so one share for all
+  # ages), as a proxy for people who inject. build_params() multiplies them by the calibrated
   # entry scales (theta7-12). Held constant in every year (2015 equilibrium and 2016-2030 projection).
   beta = c(
     257, # age group 1
@@ -166,7 +168,7 @@ params <- list(
     94,  # age group 4
     21,  # age group 5
     1    # age group 6
-  )
+  ) * (113 + 1014) / 1309
 )
 
 # =============================================================================

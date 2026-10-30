@@ -198,7 +198,7 @@ check_equal(cs_x2$community_pwid, 2 * cs0$community_pwid, tol = 1e-6, "doubling 
 check_equal(cs_x2$p_sero, cs0$p_sero, tol = 1e-6, "doubling entry leaves seroprevalence unchanged")
 
 # The stored fit matches the current model, and a model change is detected.
-fit_path <- file.path(root, "output/calibration/r_20261027_agepop/fit.rds")
+fit_path <- file.path(root, "output/calibration/r_20261030_agepop/fit.rds")
 if (file.exists(fit_path)) {
   fit <- readRDS(fit_path)
   check_true(isTRUE(check_fit_current(fit, e$params, e$data)), "stored fit matches setup.R and sim.cpp")
