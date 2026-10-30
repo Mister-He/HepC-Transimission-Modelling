@@ -1,6 +1,6 @@
 {
   "policy_start_year": 2026,
-  "j_start_year": 2019,
+  "j_start_year": 2026,
   "end_year": 2030,
   "annual_screening_totals": [600, 1000, 2000, 5000, 8000],
   "f_allocation_fractions": [0.25, 0.5, 0.75],

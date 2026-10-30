@@ -1,16 +1,21 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# scenarios_2026.R — 2026–2030 policy analysis (J treatment from 2019, F/X screening
-# quotas from 2026): runs every scenario per posterior draw and reports medians and 95% UIs.
+# scenarios_2026.R — 2026–2030 policy analysis (J treatment from --j-start-year, default the
+# config's 2026, at annual start probability --j-probability; F/X screening quotas from 2026): runs
+# every scenario per posterior draw and reports medians and 95% UIs.
 # =============================================================================
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i+1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261027_agepop/fit.rds")), mustWork = TRUE)
+FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261030_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/scenarios_2026"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 config <- jsonlite::fromJSON(file.path(ROOT, "data/scenario_policy_config.json"))
-stopifnot(config$policy_start_year == 2026, config$j_start_year == 2019,
+# Main analysis: J from 2026; sensitivity: --j-start-year 2019. --j-probability sets J coverage.
+J_START <- as.integer(arg("--j-start-year", config$j_start_year))
+J_PROB <- as.numeric(arg("--j-probability", config$j_annual_start_probability))
+stopifnot(config$policy_start_year == 2026, J_START >= 2016, J_START <= config$policy_start_year,
+          J_PROB >= 0, J_PROB < 1,
           config$end_year == 2030,
           identical(as.numeric(config$annual_screening_totals),c(600,1000,2000,5000,8000)),
           config$discount_base_year==2026,config$discount_rate==0.03)
@@ -46,7 +51,7 @@ idx_state <- function(s, h) as.vector(sapply(1:4, function(k) sapply(0:5, functi
 sum_state <- function(y, s, h=0:4) sum(y[unlist(lapply(h, function(x) idx_state(s,x)))])
 state_from <- function(z) as.numeric(z[nrow(z),2:481])
 set_tau <- function(pm, s, rate) { pm$tau_by_stratum[(s*4+1):(s*4+4)] <- rate; pm }
-tau_j <- -log1p(-config$j_annual_start_probability)
+tau_j <- -log1p(-J_PROB)
 tau_fx <- -log1p(-config$fx_annual_start_probability)
 run_year <- function(y0, year, pm, cap=rep(Inf,4)) {
   d <- setup_env$data
@@ -185,22 +190,22 @@ rate_row <- function(z, year, id) {
     fx_population=sum(sapply(2:3,function(s) sum_state(y,s))),
     stringsAsFactors=FALSE)
 }
-# Same calibrated 2015 state and same 2019--2025 J-treated history for every policy.
+# Same calibrated 2015 state and same 2016--2025 history (J treated from J_START) for every policy.
 initial <- state_from(snapshot)
 base_rates <- rate_row(rbind(c(149,initial),c(150,initial)),2015,"common_history")  # 2015 is at equilibrium: one year at the snapshot's rate
 history <- list(); hist_j_starts <- numeric(); y <- initial
 for (year in 2016:2025) {
   before <- y
-  z <- run_year(y,year,if (year<2019) pre_pm else j_pm)
+  z <- run_year(y,year,if (year<J_START) pre_pm else j_pm)
   y <- state_from(z)
   history[[as.character(year)]] <- rate_row(z,year,"common_history")
-  if (year>=2019) hist_j_starts <- c(hist_j_starts,z[nrow(z),483])
+  if (year>=J_START) hist_j_starts <- c(hist_j_starts,z[nrow(z),483])
 }
 common_2026_state <- y
 history_trajectory <- do.call(rbind,c(list(base_rates),history))
 stopifnot(abs(history$`2016`$incidence/base_rates$incidence-1)<1e-3,  # equilibrium check of the 2015 base
           abs(history$`2016`$mortality/base_rates$mortality-1)<1e-3)
-stopifnot(length(hist_j_starts)==7,all(hist_j_starts>0))
+stopifnot(length(hist_j_starts)==config$policy_start_year-J_START,J_PROB==0 || all(hist_j_starts>0))
 run_policy <- function(row) {
   id <- row$scenario_id; y <- common_2026_state
   rows <- list(); trajectories <- list()
@@ -219,7 +224,7 @@ run_policy <- function(row) {
   }
   list(process=add_cost(do.call(rbind,rows)),trajectory=do.call(rbind,trajectories),end_state=y)
 }
-# Counterfactual with no treatment in any stratum, 2015-2030 (shows the effect of J treatment from 2019).
+# Counterfactual with no treatment in any stratum, 2015-2030 (shows the effect of J treatment).
 no_tx <- list(base_rates); y <- initial
 for (year in 2016:2030) {
   z <- run_year(y,year,pre_pm); y <- state_from(z)
@@ -342,7 +347,8 @@ cat("Valid draws:",sum(valid),"of",length(valid),"(equilibrium failures:",sum(!v
 draw_seed <- draw_table$seed[valid]; results <- results[valid]
 MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))
 stopifnot(length(results) > 0, length(results)>=MIN_VALID_SHARE*length(valid))
-writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid))), file.path(OUT,"draw_validity.txt"))
+writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid)),
+             paste("j_start_year", J_START), paste("j_annual_start_probability", J_PROB)), file.path(OUT,"draw_validity.txt"))
 collect <- function(name) lapply(results,`[[`,name)
 process <- agg_draws(collect("process"),c("scenario_id","year","stratum"))
 trajectories <- agg_draws(collect("trajectories"),c("scenario_id","year"))
@@ -494,7 +500,7 @@ p_traj <- ggplot()+
   geom_hline(yintercept=1,linetype=3,colour="grey35",linewidth=.4)+
   geom_hline(data=trajectory_limits,aes(yintercept=threshold),
     linetype=2,colour="black",linewidth=.45)+
-  geom_vline(xintercept=2019,linetype=3,colour="grey65",linewidth=.35)+
+  geom_vline(xintercept=J_START,linetype=3,colour="grey65",linewidth=.35)+
   geom_vline(xintercept=2026,linetype=2,colour="grey65",linewidth=.35)+
   geom_line(data=common_lines,aes(year,baseline_ratio,group=indicator),
     colour="grey25",linewidth=.8)+
@@ -504,13 +510,13 @@ p_traj <- ggplot()+
   scale_colour_manual(values=line_colours,drop=FALSE)+
   scale_linetype_manual(values=c(`F 25%`="solid",`F 50%`="22",
     `F 75%`="13",Reference="solid"),drop=FALSE)+
-  scale_x_continuous(breaks=c(2015,2019,2026,2030),limits=c(2015,2030))+
+  scale_x_continuous(breaks=sort(unique(c(2015,J_START,2026,2030))),limits=c(2015,2030))+
   scale_y_continuous(labels=scales::percent,limits=c(0,1.2),
     breaks=seq(0,1.2,.2))+
   labs(x="Calendar year",y="Annual events relative to 2015",
     colour="Annual F/X screening",linetype="F allocation",
     title="A  WHO impact indicators, 2015–2030",
-    subtitle="Annualized events / 2015; dotted 2019: J starts; dashed 2026: F/X starts")+
+    subtitle=paste0("Annualized events / 2015; dotted ",J_START,": J starts; dashed 2026: F/X starts"))+
   nature_theme()+theme(legend.position="bottom",legend.title.position="left")
 
 # A single 2030 attainment data frame drives both the heatmap and pie filter.

@@ -23,6 +23,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("root", nargs="?", default=".")
 ap.add_argument("--skill-dir", default=str(Path.home() / ".claude/skills/scientific-visualization"))
 ap.add_argument("--only", nargs="*", help="figure names (file stems) to draw; default all")
+ap.add_argument("--scen-dir", default="output/scenarios_2026", help="scenario output folder (main or a sensitivity run)")
 args = ap.parse_args()
 ROOT = Path(args.root).resolve()
 SKILL = Path(args.skill_dir).expanduser()
@@ -41,7 +42,10 @@ from matplotlib.ticker import FuncFormatter, PercentFormatter  # noqa: E402
 from figure_export import export_figure  # noqa: E402
 from style_presets import style_context  # noqa: E402
 
-SC = ROOT / "output/scenarios_2026"
+SC = ROOT / args.scen_dir
+JCOV = ROOT / "output/scenarios_2026_jcov"  # J-coverage grid: one scenarios_2026.R run per level
+RUN = dict(l.split() for l in (SC / "draw_validity.txt").read_text().splitlines())
+J0 = int(RUN["j_start_year"])  # first year of prison (J) treatment in this run
 CAL = ROOT / "output/calibration"
 MM = 1 / 25.4
 FULL, COL = 190.5, 132.0  # PLOS widths (mm), skill snapshot accessed 2026-10-01
@@ -113,7 +117,7 @@ if want("paper_fig1_schematic"):
         ax.text(5.7, 1.0, "Release,\nstop injecting", ha="right", va="center")
         ax.text(4.9, 4.05, "Re-arrest", ha="center")
         note = dict(boxstyle="round,pad=0.3", fc="white", ec="0.6", lw=0.6)
-        ax.text(4, 0.3, "Treatment in J from 2019", ha="center", color=STRATUM["J"], fontweight="bold", bbox=note)
+        ax.text(4, 0.3, f"Treatment in J from {J0}", ha="center", color=STRATUM["J"], fontweight="bold", bbox=note)
         ax.text(7.6, 4.5, "Screening quotas for F and X from 2026", ha="center", color=STRATUM["F"],
                 fontweight="bold", bbox=note)
         ax.text(1, 3.2, "Transmission in D and F only", ha="center", color="0.15", bbox=note)
@@ -122,17 +126,17 @@ if want("paper_fig1_schematic"):
 # Trajectory rows are events summed over each calendar year (scenarios_2026.R rate_row). They are
 # drawn at mid-year and joined by a monotone (PCHIP) curve, which does not overshoot the yearly values.
 # Ticks mark 1 January; the 2030 count sits at mid-2030.
-YEAR_TICKS = dict(xticks=[2015, 2019, 2026, 2030], xlim=(2015, 2030.5), xlabel="Calendar year")
+YEAR_TICKS = dict(xticks=sorted({2015, J0, 2026, 2030}), xlim=(2015, 2030.5), xlabel="Calendar year")
 
 
 def year_fit(s, col, jonly=None):
-    """2015 is at equilibrium and nothing is treated before 1 January 2019, so the curve is flat from
+    """2015 is at equilibrium and nothing is treated before 1 January of J0, so the curve is flat from
     1 January 2015 to then; a policy curve (jonly = the J-only rows) leaves the J-only curve at
     1 January 2026."""
     x, y = list(s.year + 0.5), list(s[col])
-    if s.year.min() <= 2018:
-        x += [2015.0, 2019.0]; y += [float(s.loc[s.year == 2015, col].iloc[0]), float(s.loc[s.year == 2018, col].iloc[0])]
-    if jonly is not None:
+    if s.year.min() < J0:
+        x += [2015.0, float(J0)]; y += [float(s.loc[s.year == 2015, col].iloc[0]), float(s.loc[s.year == J0 - 1, col].iloc[0])]
+    if jonly is not None and 2026.0 not in x:  # when J0 = 2026 the flat history already ends there
         x.append(2026.0); y.append(float(year_fit(jonly, col)(2026.0)))
     o = np.argsort(x)
     return PchipInterpolator(np.array(x)[o], np.array(y)[o])
@@ -165,7 +169,7 @@ if want("paper_fig2_trajectories"):
                 ax.plot(*curve(s, m, **k), color=col, ls=ls, lw=1.3, label=lab)
             ax.axhline(thr, color="black", ls="--", lw=0.7)
             ax.text(2015.2, thr, f"2030 target ({thr:.0%} of 2015)", va="bottom", fontsize=7)
-            for x in (2019, 2026):
+            for x in sorted({J0, 2026}):
                 ax.axvline(x, color="0.6", ls=":", lw=0.7)
             ax.set(ylim=(0, 1.4), **YEAR_TICKS)
             ax.yaxis.set_major_formatter(pct); panel_label(ax, title)
@@ -275,7 +279,7 @@ if want("scenario_target_trajectories"):
         ta = top.subplots(1, 2, sharey=True); ba = bot.subplots(1, 2, sharey=True)
         for ax, (m, name, thr) in zip(ta, [("incidence_ratio_2015", "Incidence", .2), ("mortality_ratio_2015", "Mortality", .35)]):
             ax.axhline(1, color="0.35", ls=":", lw=0.6); ax.axhline(thr, color="black", ls="--", lw=0.7)
-            ax.axvline(2019, color="0.65", ls=":", lw=0.6); ax.axvline(2026, color="0.65", ls="--", lw=0.6)
+            ax.axvline(J0, color="0.65", ls=":", lw=0.6); ax.axvline(2026, color="0.65", ls="--", lw=0.6)
             h = traj[traj.scenario_id == "J_only"]
             ax.plot(*curve(h, m, stop=2026.0), color="0.15", lw=1.3)
             for sid in order:
@@ -288,7 +292,7 @@ if want("scenario_target_trajectories"):
             ax.set(ylim=(0, 1.2), **YEAR_TICKS)
             ax.yaxis.set_major_formatter(pct); ax.set_title(name)
         ta[0].set_ylabel("Annual events relative to 2015")
-        top.suptitle("A  WHO impact indicators, 2015–2030 (medians). Dotted 2019: J treatment starts; "
+        top.suptitle(f"A  WHO impact indicators, 2015–2030 (medians). J treatment starts {J0}; "
                      "dashed 2026: F/X screening starts", x=0.01, ha="left", fontweight="bold", fontsize=8)
         h1 = [Line2D([], [], color=CAP_COL[c], label=f"{c:,}/yr") for c in caps] + \
              [Line2D([], [], color="0.35", label="J only"), Line2D([], [], color="black", label="No cap")]
@@ -332,6 +336,28 @@ if want("scenario_target_heatmap"):
             sp.set_visible(False)
         ax.set_xlabel("2030 reduction versus 2015 (median)\nTargets: incidence ≥80%, mortality ≥65%; joint needs both")
         save(fig, SC / "scenario_target_heatmap", ["scenario_2030_summary.csv"])
+
+# ---------------------------------------------------------------- J coverage grid
+if want("jcov_heatmap") and JCOV.exists():
+    levels = sorted((float(dict(l.split() for l in (d / "draw_validity.txt").read_text().splitlines())
+                               ["j_annual_start_probability"]), d) for d in JCOV.iterdir() if (d / "draw_validity.txt").exists())
+    levels.append((float(RUN["j_annual_start_probability"]), SC))
+    grid = {p: pd.read_csv(d / "scenario_2030_summary.csv").set_index("scenario_id").loc[order] for p, d in levels}
+    with style_context("default", palette_name="okabe_ito_on_white"):
+        fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 150 * MM), layout="constrained", sharey=True)
+        for ax, (col, title, thr, cmap) in zip(axes, [
+                ("incidence_reduction", "A  New infections, 2030 reduction (median; target 80%)", 0.8, "Greens"),
+                ("mortality_reduction", "B  HCV deaths, 2030 reduction (median; target 65%)", 0.65, "Blues")]):
+            z = np.array([[float(grid[p].loc[sid, col]) for p, _ in levels] for sid in order])  # imshow row 0 is the top
+            ax.imshow(z, cmap=cmap, vmin=0, vmax=1, aspect="auto")
+            for (r, c), v in np.ndenumerate(z):  # bold = median meets the target
+                ax.text(c, r, f"{v:.1%}", ha="center", va="center", fontsize=7,
+                        color="white" if v > 0.6 else "black", fontweight="bold" if v >= thr else "normal")
+            ax.set(xticks=range(len(levels)), xticklabels=[f"{p:.0%}" if p < .999 else f"{p:.3%}" for p, _ in levels],
+                   xlabel="Annual probability of starting treatment in prison (J), from 2026")
+            panel_label(ax, title)
+        axes[0].set(yticks=range(len(order)), yticklabels=ylab[::-1])
+        save(fig, JCOV / "jcov_heatmap", [str(Path(d.relative_to(ROOT)) / "scenario_2030_summary.csv") for _, d in levels])
 
 # ---------------------------------------------------------------- Fig S7 cost bars
 if want("scenario_cumulative_costs"):
