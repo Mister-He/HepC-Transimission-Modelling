@@ -344,4 +344,6 @@ outputs were backed up to the session scratchpad only (not in the repo).
   new bib `singstat_m891521`; `checks()` asserts all of the above.
 - **Figures:** `figures.py --scen-dir` redraws a run's figures; `jcov_heatmap` added; `year_fit` no longer
   duplicates the 2026 anchor when J starts in 2026.
-- Next per `docs/instructions.md`: ponytail audit → refactor → review, one commit per step, no push.
+- **Ponytail pass (2026-10-30):** audit → refactor `9eb048a` (`simulate_theta()`, `state_cols()`, `add_pass()`,
+  LHS removed; fixes: heatmap no longer overwritten by `--scen-dir` runs, Table 2 main-column label from the
+  run, `--j-start-year` ≥ 2017) → review fix (equilibrium-failure test). Outputs byte-identical; tests pass.
