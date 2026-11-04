@@ -1,0 +1,5 @@
+draws_requested 2000
+draws_valid 2000
+j_start_year 2026
+j_annual_start_probability 0.99995
+param_override {"rho":0.5,"alpha_NC":0.98206,"alpha_DC_neg":0.675,"alpha_DC_pos":0.8958,"alpha_HCC":0.8958}
