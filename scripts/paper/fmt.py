@@ -37,6 +37,10 @@ def interval(m, lo, hi, d=0, scale=1.0):
     return f"{f(m)} ({f(lo)}–{f(hi)})"
 
 
+def lc(s):  # lower-case the first letter unless it starts an abbreviation (GT3, NC, PWID)
+    return s[0].lower() + s[1:] if s[1:2].islower() or s[1:2] == "-" else s
+
+
 def cap_word(n):
     return WORDS[n].capitalize() if n < len(WORDS) else f"{n}"
 

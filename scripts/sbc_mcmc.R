@@ -19,7 +19,7 @@ ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE); setwd(ROOT)
 K <- as.integer(arg("--n-datasets", "8")); MAX_EVALS <- as.integer(arg("--max-evals", "45000"))
 N_WARMUP <- as.integer(arg("--n-warmup", "15000"))
 CORES <- as.integer(arg("--cores", "8")); SEED <- as.integer(arg("--seed", "20261201"))
-FIT <- arg("--fit", "output/calibration/r_20261030_agepop/fit.rds")
+FIT <- arg("--fit", "output/calibration/r_20261103_agepop/fit.rds")
 OUT <- "output/calibration/mcmc_sbc"
 old <- setwd("scripts/model"); setup_env <- new.env(parent = globalenv())
 sys.source("setup.R", setup_env); setwd(old)

@@ -83,15 +83,17 @@ event_rates <- function(Y, pm) {
   gam <- t(pm$q * (pm$C_contact %*% t(share)))  # force of infection by age
   sus <- inj & comp$h %in% c(0, 4)
   inc <- gam[, comp$age + 1, drop = FALSE] * Y * rep(sus, each = nrow(Y))
-  # HCV deaths: liver deaths in DC/HCC plus the non-liver excess of viraemic people (a, c, t)
-  # over the non-viraemic rate, mu * (smr_viraemic - smr_nonviraemic); cure removes both.
-  treated <- comp$h %in% c(3, 4)
-  liver <- ifelse(comp$k == 3, pm$mu_DC * ifelse(treated, pm$psi_DC, 1),
-                  ifelse(comp$k == 4, pm$mu_HCC * ifelse(treated, pm$psi_HCC, 1), 0))
+  # HCV deaths for the WHO target (mortality, fx_mortality): liver deaths in DC/HCC only, the
+  # deaths from HCV-related cirrhosis and liver cancer that the WHO indicator counts.
+  # hcv_mortality (secondary) adds the extrahepatic excess of viraemic people (a, c, t),
+  # mu * (smr_viraemic - smr_nonviraemic).
+  cured <- comp$h == 4  # psi applies after SVR only (r), not during treatment (t)
+  liver <- ifelse(comp$k == 3, pm$mu_DC * ifelse(cured, pm$psi_DC, 1),
+                  ifelse(comp$k == 4, pm$mu_HCC * ifelse(cured, pm$psi_HCC, 1), 0))
   excess <- ifelse(comp$h %in% 1:3, pm$mu[comp$age + 1] * (pm$smr_viraemic - pm$smr_nonviraemic), 0)
-  w <- liver + excess
-  cbind(incidence = rowSums(inc), mortality = as.vector(Y %*% w),
-        fx_incidence = rowSums(inc[, comp$s == 2, drop = FALSE]), fx_mortality = as.vector(Y %*% (w * (comp$s >= 2))))
+  cbind(incidence = rowSums(inc), mortality = as.vector(Y %*% liver),
+        fx_incidence = rowSums(inc[, comp$s == 2, drop = FALSE]), fx_mortality = as.vector(Y %*% (liver * (comp$s >= 2))),
+        hcv_mortality = as.vector(Y %*% (liver + excess)))
 }
 
 # Instantaneous rates at one state.

@@ -74,13 +74,14 @@ std::vector<double> rhs(double time, const std::vector<double> &y,
   auto mortality = [&](int k, int h, int age) {
     // General-population rate times the PWID SMR of the state: viraemic (a, c,
     // t) or non-viraemic (u, r). Liver deaths in DC/HCC are added on top; the
-    // SVR modifiers psi scale only those liver deaths, not the background rate.
+    // post-SVR modifiers psi scale only the liver deaths of cured people (r),
+    // not the background rate and not people still on treatment (t).
     double base =
         p.mu[age] * ((h >= 1 && h <= 3) ? p.smr_viraemic : p.smr_nonviraemic);
     if (k == 3)
-      return ((h == 3 || h == 4) ? p.psi_DC : 1.0) * p.mu_DC + base;
+      return (h == 4 ? p.psi_DC : 1.0) * p.mu_DC + base;
     if (k == 4)
-      return ((h == 3 || h == 4) ? p.psi_HCC : 1.0) * p.mu_HCC + base;
+      return (h == 4 ? p.psi_HCC : 1.0) * p.mu_HCC + base;
     return base;
   };
   auto progression = [&](int from, int to) {
@@ -405,7 +406,9 @@ NumericMatrix run_sim(List params_r, List data_r) {
   p.beta.assign(beta.begin(), beta.end());
   double t_start = as<double>(data_r["t_start"]),
          t_end = as<double>(data_r["t_end"]), dt = as<double>(data_r["dt"]);
-  int n_steps = static_cast<int>((t_end - t_start) / dt) + 1;
+  // Whole steps in [t_start, t_end]; the 1e-9 guard stops a ratio such as 364.9999999 (floating
+  // point) from losing the last step. A genuinely fractional ratio still truncates.
+  int n_steps = static_cast<int>(std::floor((t_end - t_start) / dt + 1e-9)) + 1;
   // Optional thinning: store every save_every-th step (and the last); default 1 = every step.
   const int save_every = data_r.containsElementNamed("save_every")
                              ? as<int>(data_r["save_every"])

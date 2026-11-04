@@ -5,9 +5,11 @@
 #   docker build -t hepc-model:r .
 #   docker run --rm -v "$PWD":/workspace hepc-model:r
 #
-# The Python NPE stack (sbi/torch) is intentionally not included; it is heavy
-# and only needed for scripts/run_npe.R. See docker-compose.yml for how to
-# run the R pipeline.
+# Covers the R pipeline (tests, calibration, MCMC, scenarios). Not included:
+# cmdstanr/CmdStan (only scripts/model/preprocess.R, which also needs the
+# untracked data/sps.csv), ragg (legacy --figures true pies only) and the
+# Python figure/manuscript stack (requirements.txt). rocker/r-ver pins CRAN to
+# a dated snapshot, so package versions are fixed by the image tag.
 # =============================================================================
 
 FROM rocker/r-ver:4.4.1
@@ -22,7 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gfortran \
     && rm -rf /var/lib/apt/lists/*
 
-RUN install2.r Rcpp RcppArmadillo dplyr ggplot2 MASS patchwork
+RUN install2.r Rcpp RcppArmadillo jsonlite posterior writexl dplyr lubridate \
+    ggplot2 patchwork scales tidyr viridisLite
 
 WORKDIR /workspace
 COPY . .

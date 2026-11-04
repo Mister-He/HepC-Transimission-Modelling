@@ -2,7 +2,7 @@
 # si_text.py — S1 Text (technical appendix) for the PLOS Medicine article. Numbers come from
 # Facts; parameter values are read from setup.R.
 # =============================================================================
-from fmt import F, pct, ui, col, red, money, n0, interval, cap_word, scen_label, WORDS
+from fmt import F, pct, ui, col, red, money, n0, interval, cap_word, scen_label, WORDS, lc
 
 AGES = ["<20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
@@ -32,7 +32,7 @@ def build(reg, f):
         ("sim", "setup"), kind="method")
     d.p("Chronic people start treatment at rate $\\tau_{s,k}$ (zero in D, and zero before prison treatment starts: 2026 in the main analysis, 2019 in the sensitivity analysis). Treatment lasts on average $\\iota_2$; a share $\\alpha_k$ (sustained virological response) moves to r and the rest return to c.", ("sim",), kind="method")
     d.h(2, "1.5 Mortality")
-    d.p("Everyone dies at the background rate $\\mu_i\\,\\sigma_h$, where $\\mu_i$ is the 2015 Singapore death rate in age group $i$ and $\\sigma_h$ is the standardised mortality ratio of people who use drugs: $\\sigma_v$ for viraemic states (a, c, t) and $\\sigma_n$ for others (u, r). People in stages 3 and 4 also die of liver disease at $\\mu_{DC}$ or $\\mu_{HCC}$, multiplied by $\\psi_{DC}$ or $\\psi_{HCC}$ after treatment (states t and r).",
+    d.p("Each cause of death has one route. Everyone dies of causes other than liver disease at $\\mu_i\\,\\sigma_h$, where $\\mu_i$ is the 2015 Singapore death rate in age group $i$ and $\\sigma_n$ is the standardised mortality ratio of people who use drugs without HCV or HIV infection, which contains almost no liver deaths; viraemic people (a, c, t) have $\\sigma_v = \\sigma_n$ times the hazard ratio of extrahepatic death for viraemic infection. Liver deaths occur only in stages 3 and 4, at $\\mu_{DC}$ or $\\mu_{HCC}$, multiplied by $\\psi_{DC}$ or $\\psi_{HCC}$ after cure (state r only; people on treatment keep the untreated rate). $\\psi$ are adjusted hazard ratios of liver-related death for sustained virological response against none.",
         ("sim", "setup"), kind="method")
     d.h(2, "1.6 Numerical solution and equilibrium")
     d.p("The equations were integrated with a fourth-order Runge–Kutta method and a step of one day. Negative values were set to zero after each step, and ageing was applied after each step. Each run started from a seed population in D and ran for 150 model years; model year 150 is 2015.", ("sim", "setup", "targets"), kind="method")
@@ -55,12 +55,16 @@ def build(reg, f):
         ["Sustained response, stage 4", f"{st('alpha_HCC')}", [], "Assumed equal to stage 3 with ribavirin"],
         ["Progression, stage 1 to 2 (per year)", f"{st('p_NC_CC')}", ["thein2008"], ""],
         ["Progression, stage 2 to 3; 2 to 4; 3 to 4 (per year)", f"{st('p_CC_DC')}; {st('p_CC_HCC')}; {st('p_DC_HCC')}", ["lim2018"], ""],
-        ["Genotype 3 relative risk, to cirrhosis; to carcinoma", f"{st('r3_NC_CC')}; {st('r3_CC_HCC')}", ["kanwal2014"], ""],
+        ["Genotype 3 relative risk, to cirrhosis; to carcinoma", f"{st('r3_NC_CC')}; {st('r3_CC_HCC')}", ["kanwal2014"],
+         "Derived from the genotype-specific hazard ratios: genotype 3 against a prevalence-weighted geometric mean of genotypes 1, 2 and 4"],
         ["Relative progression after cure, 2 to 3; 2 to 4; 3 to 4", f"{st('phi_CC_DC')}; {st('phi_CC_HCC')}; {st('phi_DC_HCC')}", ["vandermeer2012", "morgan2013"], "last value assumed"],
         ["Liver mortality, stage 3; stage 4 (per year)", f"{st('mu_DC')}; {st('mu_HCC')}", ["lim2018"], ""],
-        ["Relative liver mortality after cure, stage 3; stage 4", f"{st('psi_DC')}; {st('psi_HCC')}", ["premkumar2024", "dang2020"], ""],
-        ["Mortality ratio, viraemic; non-viraemic", f"{st('smr_viraemic')}; {st('smr_nonviraemic')}", ["vansanten2014"], ""],
-        ["Background death rate by age (per 1,000 per year)", "; ".join(f"{1000 * m:.2f}" for m in mu), [], "Singapore 2015 death rates (source to be cited)"],
+        ["Relative liver mortality after cure, stage 3; stage 4", f"{st('psi_DC')}; {st('psi_HCC')}", ["pageaux2022", "dang2020"], "liver-related death"],
+        ["Mortality ratio of people who use drugs, $\\sigma_n$ (HCV and HIV uninfected)", f"{st('smr_nonviraemic')}", ["vansanten2014"], "All-cause; applied to everyone"],
+        ["Extrahepatic mortality hazard ratio, viraemic", f"{st('smr_viraemic') / st('smr_nonviraemic'):.2f}", ["lee2012"],
+         "HCV RNA positive against antibody negative, adjusted; $\\sigma_v = \\sigma_n \\times$ this ratio"],
+        ["Background death rate by age (per 1,000 per year)", "; ".join(f"{1000 * m:.2f}" for m in mu), ["singstat_m810141", "singstat_m810011"],
+         "Singapore residents, 2015; 60+ is the population-weighted rate for ages 60–74"],
         ["Release rate by age (per year)", "; ".join(f"{x:.3f}" for x in lam2), [], "Prison records (Section 3)"],
         ["Re-arrest rate by age (per year)", "; ".join(f"{x:.3f}" for x in lam3), [], "Prison records (Section 3)"],
         ["Probability of eventual re-arrest, $\\pi$", f"{st('pi_recid')}", [], "Prison records (Section 3)"],
@@ -98,7 +102,7 @@ def build(reg, f):
     d.p("| Target | <20 | 20–29 | 30–39 | 40–49 | 50–59 | 60+ |", ("targets",), kind="result")
     d.raw("|---|---|---|---|---|---|---|")
     d.p("| HCV antibody prevalence in prison | " + " | ".join(f"{100 * x:.1f}%" for x in f.tg["seroprevalence"]) + " |", ("targets",))
-    d.p("| People screened in prison (end of 2015) | " + " | ".join(x["screened"] for x in f.prison) + " |", ("prison",))
+    d.p("| People screened in prison, end of 2015 (seroprevalence denominator) | " + " | ".join(x["screened"] for x in f.prison) + " |", ("prison",))
     d.p("| New drug abusers (Central Narcotics Bureau) | " + " | ".join(str(x) for x in f.cnb_counts) + " |", ("cnb",))
     d.p(f"| First arrests (new drug abusers × {f.pwid_share:.4f}, rounded) | " + " | ".join(str(x) for x in f.tg["first_arrests"]) + " |", ("cnb", "drug", "targets"))
     d.p(f"Community injectors (D + F, all ages): {f.tg['community_pwid']:,} (95% confidence interval 6,500–17,000) [@teo2019].", ("targets",))
@@ -122,7 +126,8 @@ def build(reg, f):
     d.h(2, "4.4 Posterior mode")
     best = f.nm_best; same = f.nm_same
     d.p(f"A Nelder–Mead search started from $\\theta$ = 0 and {len(f.nm) - 1} random perturbations of it (standard deviation {f.nm_cfg['sd_perturb']} on the log scale), each with up to {f.nm_cfg['maxit']:,} iterations and up to {f.nm_cfg['nm_restarts']} restarts. "
-        f"{cap_word(len(same))} of the {len(f.nm)} starts reached the same mode (negative log posterior {min(F(x['objective']) for x in same):.2f} to {max(F(x['objective']) for x in same):.2f}); the other stopped at {F(f.nm_other[0]['objective']):.1f}.",
+        + (f"{cap_word(len(same))} of the {len(f.nm)} starts reached the same mode (negative log posterior {min(F(x['objective']) for x in same):.2f} to {max(F(x['objective']) for x in same):.2f}); the other stopped at {F(f.nm_other[0]['objective']):.1f}." if f.nm_other else
+         f"All {len(f.nm)} starts reached negative log posteriors within 1 of each other ({min(F(x['objective']) for x in same):.2f} to {max(F(x['objective']) for x in same):.2f})."),
         ("nm", "nm_cfg"), unc="low")
     d.p(f"At the mode, the largest absolute seroprevalence error was {100 * F(best['prevalence_max_abs_err']):.1f} percentage points, the first-arrest factor was {F(best['c_first']):.2f} and the community population was {n0(best['community_pwid'])}.", ("nm",), unc="low")
     d.h(2, "4.5 MCMC")
@@ -146,7 +151,8 @@ def build(reg, f):
         d.p(f"| {names[i - 1]} | {g3(m)} ({g3(lo)}–{g3(hi)}) | {f.sd_ratio[i - 1]:.2f} | {F(g['rhat']):.3f} | {n0(g['ess_bulk'])} | {n0(g['ess_tail'])} |", ("mcmc_par", "mcmc_diag", "mcmc_cfg"), unc="low")
     d.p("SD, standard deviation; ESS, effective sample size. The prior SD is that of the truncated prior.", ("mcmc_cfg",), kind="method")
     pdm = ", ".join(f"$\\theta_{{{i}}}$" for i in f.prior_dominated)
-    d.p(f"For {pdm} the posterior standard deviation was more than 0.7 times the prior's, so these parameters were mainly informed by the prior: the contact multipliers for ages 50–59 and 60 or older, and the first-arrest factor. The posterior median of c ({f.c_post[0]:.2f}) was nevertheless well above the prior median of 1.",
+    pdn = [lc(names[i - 1]) for i in f.prior_dominated]
+    d.p(f"For {pdm} the posterior standard deviation was more than 0.7 times the prior's, so these parameters were mainly informed by the prior ({'; '.join(pdn)}). The posterior median of c ({f.c_post[0]:.2f}) was nevertheless well above the prior median of 1.",
         ("mcmc_par", "mcmc_cfg"), unc="moderate")
     d.p(f"The entry scales were close to their lower bound of 1 for ages under 60 (medians {min(v[0] for k, v in f.entry_post.items() if k < 12):.2f} to {max(v[0] for k, v in f.entry_post.items() if k < 12):.2f}); for ages 60 and over the median was {f.entry_post[12][0]:.2f} (95% credible interval {f.entry_post[12][1]:.2f}–{f.entry_post[12][2]:.2f}).", ("mcmc_par",), unc="moderate")
     d.h(2, "4.6 Fit to the targets")
@@ -175,7 +181,7 @@ def build(reg, f):
     for g in ["D", "J", "F", "X", "current_PWID", "ever_PWID"]:
         a, v = f.strata[f"population_{g}"], f.strata[f"active_hcv_{g}"]
         d.p(f"| {lab[g]} | {interval(a['median'], a['lower_95'], a['upper_95'])} | {interval(v['median'], v['lower_95'], v['upper_95'])} |", ("strata",), unc="moderate")
-    d.p(f"The modelled prison population was not a calibration target. In the prison records, {f.j_obs_2015:,} people held for drug consumption with a screening result were in prison at the end of 2015.", ("strata", "prison"), unc="moderate")
+    d.p(f"The modelled prison population was not a calibration target. In the prison records, {f.j_held_2015:,} people held for drug consumption were in prison at the end of 2015, the population whose release and re-arrest rates the model uses (Section 3); {f.j_obs_2015:,} of them had a screening result and gave the seroprevalence targets.", ("strata", "prison"), unc="moderate")
 
     # ---------------- 6 scenarios ----------------
     d.h(1, "6. Scenario implementation")
@@ -186,7 +192,7 @@ def build(reg, f):
         ("scen_code",), kind="method")
     d.p("The solver located the moment in each year at which a group used its capacity and then stopped new starts in that group for the rest of the year. Unused capacity was not moved between F and X or carried over. The same person can be counted as screened in more than one year, and the model counts treatment courses, not people.", ("sim", "scen_code"), kind="method")
     d.p("In J, every entrant not on treatment (u, a, c, r) was counted as having an antibody test and every antibody-positive entrant (a, c, r) an RNA test; each treatment start was costed as one course and one consultation.", ("scen_code",), kind="method")
-    d.p(f"New infections in a year were the infections (u and r to a, in D and F) during that calendar year, and HCV deaths the liver deaths in stages 3 and 4 plus $(\\sigma_v - \\sigma_n)\\mu_i$ times the number of viraemic people, summed over the year (trapezoid rule over the daily solver output). The 2015 values were one year at the calibrated equilibrium; in the main analysis the 2016–2025 values, still without treatment, differed from them by at most {100 * f.history_dev:.2f}%. Both were compared with their 2015 values.", ("scen_code", "sim", "traj"), kind="method")
+    d.p(f"New infections in a year were the infections (u and r to a, in D and F) during that calendar year, and HCV deaths the liver deaths in stages 3 and 4 (deaths from HCV-related decompensated cirrhosis and liver cancer, the deaths counted by the WHO target), summed over the year (trapezoid rule over the daily solver output). The 2015 values were one year at the calibrated equilibrium; in the main analysis the 2016–2025 values, still without treatment, differed from them by at most {100 * f.history_dev:.2f}%. Both were compared with their 2015 values.", ("scen_code", "sim", "traj"), kind="method")
     d.p(f"For each of {f.ndraw:,} posterior draws (sampling seed fixed), we ran the 2015 equilibrium, the shared 2016–2025 history and all {len(s)} scenarios to 2030; {int(f.valid['draws_valid']):,} of {int(f.valid['draws_requested']):,} draws were valid.", ("summary", "draws_valid", "scen_code"))
 
     # ---------------- 7 costs ----------------
@@ -228,8 +234,118 @@ def build(reg, f):
     jt = lambda y: f.tr("J_only", y, f.j2019_traj)
     d.p(f"With prison treatment from 2019, new infections under J only were {pct(jt(2025)['incidence_ratio_2015'], 0)} of the 2015 level by 2025, against {pct(f.tr('J_only', 2025)['incidence_ratio_2015'], 0)} in the main analysis.", ("j2019_traj", "traj"), unc="moderate")
 
-    # ---------------- 10 software ----------------
-    d.h(1, "10. Software and reproducibility")
+    # ---------------- 10 secondary outcome: liver and extrahepatic deaths ----------------
+    order = ["J_only"] + [f"S{c}_F{x}" for c in caps for x in shares] + ["SInf"]
+    d.h(1, "10. Secondary outcome: liver and extrahepatic HCV deaths")
+    d.p("The WHO mortality target counts deaths from HCV-related cirrhosis and liver cancer, so the primary outcome counts liver deaths only. As a secondary outcome we added the extrahepatic excess deaths of viraemic people, $(\\sigma_v - \\sigma_n)\\mu_i$ times the number of viraemic people, summed over each year (Table K).",
+        ("scen_code", "sim", "setup"), kind="method")
+    sec_pass = [k for k in f.finite if F(s[k]["hcv_mortality_reduction"]) >= 0.65]
+    d.p(f"With extrahepatic deaths included, {WORDS[len(sec_pass)] if len(sec_pass) < len(WORDS) else len(sec_pass)} of the {len(f.finite)} finite policies reduced HCV deaths by 65% or more at the median"
+        + (f" ({', '.join(scen_label(s[k]) for k in sec_pass)})" if sec_pass else "") + f"; prison treatment only reduced them by {red(s['J_only'], 'hcv_mortality_reduction')}.",
+        ("summary",), unc="moderate")
+    d.p("**Table K. Fall in HCV deaths in 2030 compared with 2015 by death definition (main analysis).**", ("summary",), kind="result")
+    d.p("| Policy | Liver deaths (primary), % (95% UI) | Liver and extrahepatic deaths, % (95% UI) |", ("summary",), kind="result")
+    d.raw("|---|---|---|")
+    for k in order:
+        r = s[k]
+        d.p(f"| {scen_label(r)} | {red(r, 'mortality_reduction').replace(' (95% UI ', ' (')} | {red(r, 'hcv_mortality_reduction').replace(' (95% UI ', ' (')} |", ("summary",), unc="moderate")
+
+    # ---------------- 11 sensitivity: observed inflow ----------------
+    inf = f.inflow
+    d.h(1, "11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025")
+    d.p("The main analysis holds entry into D at its 2015 level in every year. Here entry in each age group from 2016 to 2025 followed the Central Narcotics Bureau count of new drug abusers in that year relative to 2015 [@singstat_drug], and the 2025 level was held to 2030; the 2015 equilibrium, the calibration and the posterior draws are unchanged (Table L; Fig H).",
+        ("cnb", "inflow", "scen_code"), kind="method")
+    inc_p = [k for k in f.finite if inf[k]["who_incidence_pass"] == "TRUE"]; mort_p = [k for k in f.finite if inf[k]["who_mortality_pass"] == "TRUE"]
+    d.p(f"Prison treatment only reduced new infections by {red(inf['J_only'], 'incidence_reduction')} and liver deaths by {red(inf['J_only'], 'mortality_reduction')} (main analysis {pct(s['J_only']['incidence_reduction'])} and {pct(s['J_only']['mortality_reduction'])}). "
+        f"{cap_word(len(inc_p))} finite policies met the incidence target (main analysis {len(f.inc_pass)}) and {WORDS[len(mort_p)] if len(mort_p) < len(WORDS) else len(mort_p)} met the mortality target (main analysis {len(f.mort_pass)}).",
+        ("inflow", "summary"), unc="moderate")
+    d.p("**Table L. Sensitivity analysis with observed entry, 2016–2025: reductions in 2030 compared with 2015 and probability of meeting both targets.**", ("inflow",), kind="result")
+    d.p("| Policy | Fall in new infections, % (95% UI) | Fall in liver deaths, % (95% UI) | Draws meeting both targets |", ("inflow",), kind="result")
+    d.raw("|---|---|---|---|")
+    for k in order:
+        r = inf[k]
+        d.p(f"| {scen_label(r)} | {red(r, 'incidence_reduction').replace(' (95% UI ', ' (')} | {red(r, 'mortality_reduction').replace(' (95% UI ', ' (')} | {pct(r['joint_pass_probability'], 1)} |", ("inflow",), unc="moderate")
+
+    # ---------------- 12 sensitivity: genotype 3 share ----------------
+    g1, g5 = f.gt3[0.1], f.gt3[0.5]
+    d.h(1, "12. Sensitivity analysis: share of genotype 3")
+    d.p(f"The main analysis assumes that {pct(st('rho'), 0)} of infections are genotype 3 [@zhao2019]. Here the share was {pct(0.1, 0)} or {pct(0.5, 0)}. The share moves the genotype-weighted progression rates and the cure rates (Section 1.4): with RBV-free treatment, cure in decompensated cirrhosis was {pct(f.gt3_par[0.1]['alpha_DC_neg'], 1)} at {pct(0.1, 0)} and {pct(f.gt3_par[0.5]['alpha_DC_neg'], 1)} at {pct(0.5, 0)}, against {pct(st('alpha_DC_neg'), 1)} in the main analysis. "
+        "The calibrated parameters and the posterior draws were not refitted (Table M).", ("gt3", "setup", "zhao2019"), kind="method")
+    inc_same = all([k for k in g if g[k]["who_incidence_pass"] == "TRUE"] == [k for k in s if s[k]["who_incidence_pass"] == "TRUE"] for g in (g1, g5))
+    d.p(f"Prison treatment only reduced liver deaths by {red(g1['J_only'], 'mortality_reduction')} at {pct(0.1, 0)} and {red(g5['J_only'], 'mortality_reduction')} at {pct(0.5, 0)} (main analysis {pct(s['J_only']['mortality_reduction'])}); uncapped screening reduced them by {pct(g1['SInf']['mortality_reduction'])} and {pct(g5['SInf']['mortality_reduction'])}. "
+        + ("The same policies met each target as in the main analysis." if inc_same else "The policies meeting the incidence target differed from the main analysis."),
+        ("gt3", "summary"), unc="moderate")
+    d.p("**Table M. Sensitivity analysis with a genotype 3 share of 10% and 50%: falls in 2030 compared with 2015 (median, 95% UI).**", ("gt3",), kind="result")
+    d.p("| Policy | New infections, 10% | Liver deaths, 10% | New infections, 50% | Liver deaths, 50% |", ("gt3",), kind="result")
+    d.raw("|---|---|---|---|---|")
+    for k in order:
+        cells = [red(g[k], c).replace(' (95% UI ', ' (') for g in (g1, g5) for c in ("incidence_reduction", "mortality_reduction")]
+        d.p(f"| {scen_label(s[k])} | " + " | ".join(cells) + " |", ("gt3",), unc="moderate")
+
+    # ---------------- 13 one-way sensitivity of the fixed inputs ----------------
+    d.h(1, "13. One-way sensitivity analysis of the fixed inputs")
+    d.p("The uncertainty intervals cover the 13 calibrated parameters only. To show how much the fixed inputs matter, we held the calibrated parameters at the posterior mode (Section 4.4) and set each fixed input in turn to the low and the high end of its range, without refitting, running all 17 policies each time (Table N; Fig G). "
+        "Ranges are the intervals of the technical parameter table where given, and otherwise from the literature; prison rates use the 95% credible intervals of the rate models (Table B). Inputs from one estimate were moved together (the two genotype 3 relative risks for cirrhosis, the two for carcinoma, and progression to carcinoma from stages 2 and 3). Treatment duration and background death rates were not varied.",
+        ("tornado_code", "tornado_ranges", "grebely2014", "pageaux2022"), kind="method")
+    d.p("**Table N. Fixed inputs varied in the one-way sensitivity analysis.**", ("tornado_ranges",), kind="result")
+    d.p("| Input | Base | Low | High | Source of range |", ("tornado_ranges",), kind="result")
+    d.raw("|---|---|---|---|---|")
+    for x in f.tor_ranges:
+        d.p(f"| {x['label']} | {x['base']} | {x['low']} | {x['high']} | {x['source']} |", ("tornado_ranges",), kind="method")
+    tb = {x["scenario_id"]: x for x in f.tor if x["run"] == "base"}
+    lab = {x["input"]: x["label"] for x in f.tor_ranges}
+    L = lambda i: lc(lab[i]).replace(" (years)", "")
+    best = max(f.finite, key=lambda k: F(tb[k]["mortality_reduction"]))
+    for sid in ("J_only", best):
+        rr = [x for x in f.tor if x["scenario_id"] == sid and x["run"] != "base"]
+        lo_i = min(rr, key=lambda x: F(x["incidence_reduction"])); hi_i = max(rr, key=lambda x: F(x["incidence_reduction"]))
+        lo_m = min(rr, key=lambda x: F(x["mortality_reduction"])); hi_m = max(rr, key=lambda x: F(x["mortality_reduction"]))
+        d.p(f"For {scen_label(s[sid]).lower() if sid == 'J_only' else scen_label(s[sid])}, the fall in new infections at the mode was {pct(tb[sid]['incidence_reduction'])} and ranged from {pct(lo_i['incidence_reduction'])} ({L(lo_i['input'])}, {lo_i['side']}) to {pct(hi_i['incidence_reduction'])} ({L(hi_i['input'])}, {hi_i['side']}); "
+            f"the fall in liver deaths was {pct(tb[sid]['mortality_reduction'])} and ranged from {pct(lo_m['mortality_reduction'])} ({L(lo_m['input'])}, {lo_m['side']}) to {pct(hi_m['mortality_reduction'])} ({L(hi_m['input'])}, {hi_m['side']}).",
+            ("tornado",), unc="moderate")
+    flips = {}
+    for x in f.tor_flips:
+        flips.setdefault(x["input"], set()).add(x["side"])
+    end = lambda sd: "both ends" if len(sd) == 2 else f"{next(iter(sd))} end"
+    d.p((f"Pass or fail at the mode changed for at least one policy when one of these inputs was moved: {'; '.join(f'{L(i)} ({end(sd)})' for i, sd in sorted(flips.items()))} (output/tornado/pass_flips.csv)." if flips else
+         "No input changed whether any policy met a target at the mode.")
+        + (f" With {' or '.join(f'{L(x["run"].rsplit("_", 1)[0])} at its {x["run"].rsplit("_", 1)[1]} end' for x in f.tor_failed)}, the 2015 snapshot was not at equilibrium after 150 years and the run was excluded." if f.tor_failed else ""),
+        ("tornado_flips", "tornado"), unc="moderate")
+
+    # ---------------- 14 assumptions and limitations ----------------
+    d.h(1, "14. Assumptions and limitations")
+    d.p("Table O lists the main assumptions of the model and analysis, the basis for each and its likely effect on the results. Where the direction of an effect is not clear, the table says so.", kind="method")
+    d.raw("**Table O. Main assumptions, their basis and likely effect on the results.**")
+    d.raw("| Area | Assumption | Basis | Likely effect |")
+    d.raw("|---|---|---|---|")
+    jpm = F(f.strata["population_J"]["median"])
+    rows = [
+        (f"| Who injects | New drug abusers whose main drug was heroin or methamphetamine ({pct(f.pwid_share)}) are the people who start injecting | {f.new_heroin} heroin and {f.new_meth:,} methamphetamine of {f.new_total:,} new abusers in 2015 [@singstat_m891521]; the table records the main drug, not the route of use | Non-injecting users of these drugs raise entry; injectors of other drugs are missed. Net direction unknown |", ("drug",)),
+        ("| Who injects | The same share at every age | The drug table has no age breakdown | Direction unknown; the entry scales can raise entry in any age group |", ("drug", "likelihood")),
+        ("| Entry | Entry into D is at least the scaled 2015 count and is the same in every year, before and after 2015 | Only 2015 counts were used; entry scales are bounded below by 1 | A fall in new injectors after 2015 would make the reductions larger than modelled; a rise would make them smaller |", ("setup", "sim", "likelihood")),
+        ("| Steady state | The epidemic was at equilibrium in 2015 after 150 model years with constant parameters | Needed to start the model without historical data (Section 1.6) | Past trends are ignored; the 2016–2025 history without treatment stays at the 2015 level |", ("sim", "equilibrium")),
+        (f"| First arrest | The first-arrest rate is $c$ times the re-arrest rate, with the same age pattern | The records contain only people who were arrested; $c$ is calibrated | $c$ is mainly informed by its prior (posterior SD {pct(f.sd_ratio[12], 0)} of the prior's) |", ("setup", "mcmc_par")),
+        (f"| Release | Released people who will be re-arrested ({pct(f.rate_ci[('pi', 1)][0])}) return to injecting (F); the others stop permanently (X) and are never re-arrested | Cure-type survival model of re-arrest (Section 3) | Relapse after a long gap would put more infections into F; people in X can be reached only by community screening |", ("rates", "setup")),
+        (f"| Prison rates | Release and re-arrest rates are constant over time and the same in every HCV state | Estimated from records of people held for drug consumption, admissions {f.sps_first}–{f.sps_last} | Direction unknown |", ("rates", "sps", "setup")),
+        (f"| Prison population | J represents everyone held for drug consumption, and its seroprevalence is that of the screened subset | Modelled {n0(jpm)} against {f.j_held_2015:,} people held for drug consumption at the end of 2015, of whom {f.j_obs_2015:,} were screened | If people screened differ from the other people held, the prison seroprevalence targets, and so transmission, are biased; direction unknown |", ("strata", "prison")),
+        ("| Transmission | Only people in D and F transmit and are infected; there is no transmission in prison or after people stop injecting | Model structure (Section 1.2) | Any transmission in prison would add infections that prison treatment could prevent |", ("sim",)),
+        ("| Mixing | Contact depends only on age, through a base matrix with a calibrated multiplier per age group, and is the same for D and F; reinfection occurs at the same rate as first infection | Model structure (Section 1.2) | High-risk networks are not represented; direction unknown |", ("sim", "setup")),
+        ("| Natural history | Progression, clearance and treatment efficacy come from the literature, with a fixed genotype mix | Table A | Not included in the uncertainty intervals; Section 13 varies each value one at a time, and Section 12 the genotype mix |", ("setup", "tornado")),
+        (f"| Mortality | All PWID, including those who stopped injecting, die of causes other than liver disease at the 2015 Singapore rate (ages 60–74 for the oldest group) times {st('smr_nonviraemic')}, and viraemic people times {st('smr_viraemic') / st('smr_nonviraemic'):.2f} more; liver deaths occur only in decompensated cirrhosis and liver cancer | Mortality ratio of people who use drugs without HCV [@vansanten2014]; extrahepatic hazard ratio of viraemic infection from a general-population cohort [@lee2012] | The extrahepatic excess is not found in every cohort [@piselli2021]; it does not enter the WHO outcome (Section 10) |", ("setup", "sim")),
+        ("| Seroprevalence targets | Antibody prevalence among people in prison with a screening result represents people in J by age | Prison records, December 2014 to February 2016 (Section 4.1) | Targets differ from the current processing of the records by up to " + f"{100 * f.sero_max_diff:.1f} percentage points |", ("targets", "prison")),
+        (f"| Community target | The {f.tg['community_pwid_year']} network scale-up estimate applies to 2015 | Entry is constant and there is no treatment before 2019 in any analysis | Small if the injecting population changed little between 2015 and {f.tg['community_pwid_year']} |", ("targets",)),
+        ("| Treatment history | Nobody was treated before 2026 in the main analysis | Start and coverage of treatment in prison are not recorded in the project data [@prison2021; @tan2023] | Understates past treatment; the sensitivity analysis (Section 9) gives the other bound |", ("config", "j2019")),
+        (f"| Prison treatment | People with chronic infection in J start treatment with annual probability {f.cfg['j_annual_start_probability']} in the main analysis | Policy assumption; varied from 0 in the coverage analysis | Close to the most that prison treatment can achieve in the model |", ("config", "jcov")),
+        ("| Screening | Tests are spread over each group in proportion to its HCV states, with perfect linkage within capacity, no loss to follow-up and repeat screening allowed; D is never screened or treated | Aggregate model (Section 6) | Real programmes will find and treat fewer people for the same number of tests |", ("scen_code",)),
+        ("| Targets | Reductions are measured against the modelled 2015 yearly numbers, and a target is met if the median reduction reaches it | WHO 2030 targets for incidence and mortality | Results depend on the modelled 2015 level, not on observed counts |", ("scen_code", "config")),
+        ("| Costs | Published charges and a published drug price, not inflated and not payer costs; follow-up visits, tests of cure and care navigation are excluded | Section 7 | Totals scale almost directly with the drug price |", ("costev", "config")),
+        ("| Uncertainty | Intervals reflect posterior uncertainty in the 13 calibrated parameters only, given the fixed inputs; the model is deterministic | Section 4 | Fixed inputs, structural, price and uptake uncertainty are not included, so intervals are likely too narrow; Section 13 shows the effect of each fixed input |", ("summary", "mcmc_cfg", "tornado")),
+    ]
+    for text, ev in rows:
+        d.p(text, ev, kind="method", unc="high")
+
+    # ---------------- 14 software ----------------
+    d.h(1, "15. Software and reproducibility")
     d.p("The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan and convergence diagnostics the R package posterior. Figures were drawn with matplotlib from the saved outputs.", ("sim", "figures"), kind="method")
     d.p("Analysis commands, run times and expected outputs are listed in docs/training.md in the repository. This appendix and the main text were generated from the saved outputs by scripts/build_paper.py; drafting followed the procedures of Scientific Agent Skills [@kassis2026].", ("figures",), kind="declaration")
 
@@ -247,6 +363,10 @@ def build(reg, f):
     d.raw(f"![]({dict(SI_FIGURES)['Fig E']}){{width=95%}}")
     d.p("**Fig F. Sensitivity analysis with prison treatment from 2019.** (A) New infections and HCV deaths relative to 2015 (medians), 2015–2030; the dotted line marks the start of prison treatment (2019) and the dashed line the start of community screening (2026). (B) Reductions in 2030 by policy, with 95% uncertainty intervals.", ("j2019", "j2019_traj"), kind="result")
     d.raw(f"![]({dict(SI_FIGURES)['Fig F']}){{width=95%}}")
+    d.p("**Fig G. One-way sensitivity of the 2030 reductions to the fixed inputs.** Prison treatment only (A, B) and the finite policy with the largest fall in liver deaths (C, D). Bars show the result with each input at the low (blue) or high (orange) end of its range; the solid line is the result at the posterior mode and the dashed line the WHO target.", ("tornado",), kind="result")
+    d.raw(f"![]({dict(SI_FIGURES)['Fig G']}){{width=95%}}")
+    d.p("**Fig H. Sensitivity analysis with observed entry of new drug abusers, 2016–2025.** (A) New infections and HCV deaths relative to 2015 (medians), 2015–2030; the dashed line marks the start of prison treatment and community screening (2026). (B) Reductions in 2030 by policy, with 95% uncertainty intervals.", ("inflow", "inflow_traj"), kind="result")
+    d.raw(f"![]({dict(SI_FIGURES)['Fig H']}){{width=95%}}")
     d.h(1, "References")
     d.raw("::: {#refs}\n:::")
     return d
@@ -259,4 +379,6 @@ SI_FIGURES = [  # (label, repository path)
     ("Fig D", "output/scenarios_2026/scenario_cumulative_costs.png"),
     ("Fig E", "output/scenarios_2026/scenario_care_cascade.png"),
     ("Fig F", "output/scenarios_2026_j2019/scenario_target_trajectories.png"),
+    ("Fig G", "output/tornado/tornado.png"),
+    ("Fig H", "output/scenarios_2026_inflow/scenario_target_trajectories.png"),
 ]

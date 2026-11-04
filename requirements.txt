@@ -1,0 +1,7 @@
+# Python packages for scripts/figures.py and scripts/build_paper.py (Python >= 3.11).
+# Versions as stated in docs/training.md; figures.py also needs the scientific-visualization
+# skill files (see REVIEW_REPORT.md R-09).
+matplotlib==3.11.2
+pillow==12.3.0
+pandas
+scipy

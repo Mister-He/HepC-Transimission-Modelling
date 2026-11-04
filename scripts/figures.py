@@ -566,4 +566,34 @@ if want("pairs"):
             ax.set(xlabel=f"θ{u[5:]}", ylabel=f"θ{v[5:]}")
         save(fig, CMP / "pairs", ["mcmc_reference/mcmc_draws.csv", "5,000 draws; 2D Gaussian KDE, 6 levels"])
 
+# ---------------------------------------------------------------- one-way sensitivity (tornado.R)
+TOR = ROOT / "output/tornado"
+if want("tornado") and (TOR / "tornado_results.csv").exists():
+    t = pd.read_csv(TOR / "tornado_results.csv")
+    rng_lab = pd.read_csv(TOR / "ranges.csv").set_index("input")["label"]
+    base = t[t.run == "base"].set_index("scenario_id")
+    best = base.loc[finite_ids, "mortality_reduction"].idxmax()  # finite policy with the largest fall in deaths
+    with style_context("default", palette_name="okabe_ito_on_white"):
+        fig, axes = plt.subplots(2, 2, figsize=(FULL * MM, 170 * MM), layout="constrained")
+        for r, sid in enumerate(["J_only", best]):
+            for c, (col, thr, name) in enumerate([("incidence_reduction", 0.80, "new infections"),
+                                                  ("mortality_reduction", 0.65, "liver deaths")]):
+                ax = axes[r, c]; b0 = base.loc[sid, col]
+                d = t[(t.scenario_id == sid) & (t.run != "base")].pivot(index="input", columns="side", values=col)
+                d = d.reindex(columns=["low", "high"]).fillna(b0)  # a side without equilibrium (failed_runs.csv) shows no bar
+                d = d.assign(span=(d - b0).abs().max(axis=1)).sort_values("span").tail(12)
+                y = np.arange(len(d))
+                for side, colr in [("low", "#0072B2"), ("high", "#D55E00")]:
+                    ax.barh(y, d[side] - b0, left=b0, height=0.7, color=colr, alpha=0.85, label=f"Input at {side} end")
+                ax.axvline(b0, color="0.2", lw=0.8)
+                ax.axvline(thr, color="0.2", lw=0.8, ls=(0, (4, 2)))
+                ax.set(yticks=y, yticklabels=[rng_lab[i] for i in d.index], xlabel=f"2030 reduction in {name} vs 2015")
+                ax.xaxis.set_major_formatter(pct)
+                panel_label(ax, f"{'AB'[c] if r == 0 else 'CD'[c]}  {label[sid]}: {name}")
+        axes[0, 0].legend(loc="lower right", fontsize=7)
+        fig.supxlabel("Solid line: base value; dashed: WHO target (80% incidence, 65% deaths). "
+                      "13 calibrated parameters at the best fit; 12 most influential inputs shown;\n"
+                      "an end without a 2015 equilibrium (failed_runs.csv) has no bar.", fontsize=7)
+        save(fig, TOR / "tornado", ["output/tornado/tornado_results.csv", "output/tornado/ranges.csv"])
+
 print("\n".join(f"wrote {w}.png/.svg" for w in written))

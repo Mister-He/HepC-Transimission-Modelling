@@ -34,7 +34,7 @@ CHEERS = [  # item, topic, where it is addressed (item wording to be checked aga
     ("14", "Measurement and valuation of resources and costs", "Methods, Costs; S1 Text Table H"),
     ("15", "Currency, price date, and conversion", "Methods, Costs; S1 Text Section 7"),
     ("16", "Rationale and description of model", "Methods, Model structure; S1 Text Section 1"),
-    ("17", "Analytics and assumptions", "Methods; S1 Text Sections 1, 4 and 6"),
+    ("17", "Analytics and assumptions", "Methods; Discussion, Strengths and limitations; S1 Text Sections 1, 4, 6 and 10"),
     ("18", "Characterising heterogeneity", "Results by group (D, J, F, X) and age; S1 Text Section 5"),
     ("19", "Characterising distributional effects", "Not addressed"),
     ("20", "Characterising uncertainty", "Methods, Uncertainty and Policy scenarios (prison coverage, start in 2019); S1 Text Sections 8 and 9"),
@@ -110,7 +110,7 @@ def registries(f):
                 "guideline_id": "cheers-2022", "schema_version": "1.0", "items": [
         {"topic_id": "population-setting-perspective", "status": "addressed", "locations": ["Methods: Model structure", "Methods: Policy scenarios", "Methods: Costs"]},
         {"topic_id": "effects-costs-and-currency", "status": "addressed", "locations": ["Methods: Outcomes", "Methods: Costs", "S1 Text Section 7"]},
-        {"topic_id": "model-assumptions-and-uncertainty", "status": "addressed", "locations": ["Methods: Uncertainty", "S1 Text Sections 1, 4, 6"]},
+        {"topic_id": "model-assumptions-and-uncertainty", "status": "addressed", "locations": ["Methods: Uncertainty", "S1 Text Sections 1, 4, 6, 10"]},
         {"topic_id": "engagement-results-and-conflicts", "status": "missing", "locations": []}]}
     manifest = {"schema_version": "1.0", "document_id": "hcv-pwid-singapore-plos-medicine", "study_design": "health_economic_evaluation",
                 "draft_status": "draft", "submission_ready": False,
@@ -169,12 +169,22 @@ the manuscript shows each as a bracketed placeholder or states it as a limitatio
    must open each source, check the claim, record the locator, and mark it verified.
 6. The stored seroprevalence targets differ from positive/screened in the current prison-record
    processing by up to {sero:.1f} percentage points; the provenance of the targets is not recorded.
-7. Sources still to be cited: Singapore 2015 age-specific death rates; the base contact matrix;
-   the WHO 2030 target wording (80% and 65% falls from 2015) against the WHO documents cited.
+7. Sources still to be cited: the base contact matrix; the WHO 2030 target wording (80% and 65%
+   falls from 2015) against the WHO documents cited.
 8. The CHEERS 2022 item wording in S1 Checklist was written from memory of the statement and must
    be checked against the official checklist; items 19 and 21 are not addressed.
 9. The author summary headings follow the usual PLOS Medicine format; check them against the
    current author guidelines (the live guidelines page did not describe them).
+10. The post-SVR liver mortality ratios are adjusted hazard ratios of liver-related death for SVR
+    against no SVR: psi_DC 0.40 (0.17-0.96, Pageaux 2022) and psi_HCC 0.34 (0.13-0.88, Dang 2020),
+    read from the abstracts. SVR-versus-no-SVR comparisons may favour cure (healthier patients reach
+    SVR); neither cohort is of PWID. The fall in liver deaths is most sensitive to these inputs (S1 Text
+    Section 13). The technical PDF's psi_DC 0.45 (cited to Premkumar 2024, whose abstract reports no
+    such ratio) is no longer used.
+11. The Lim 2018 progression values are annual probabilities used as rates (1-2% difference).
+12. docs/AGENTS.md and docs/equations.tex (protected) still describe the old mortality design; only
+    their inflow passages were updated. The technical PDF applies psi to people on treatment (t) only;
+    the model applies it to cured people (r) only (author decision 2026-11-04).
 """
 
 

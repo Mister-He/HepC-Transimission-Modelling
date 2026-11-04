@@ -2,13 +2,12 @@
 # ci.yml — CI for the HCV PWID compartmental model (R + Rcpp)
 #
 # Runs on every push / pull request:
-#   r-tests            install R packages, compile src/sim.cpp, run
+#   r-tests            install R packages, compile scripts/model/sim.cpp, run
 #                      tests/unit and tests/integration
-#   python-npe-syntax  syntax-check scripts/npe_train.py
+#   python-syntax      syntax-check the Python figure and manuscript scripts
 #
-# Heavy compute (full multi-start calibration, NPE training) is intentionally
-# NOT part of CI; those are run on demand via scripts/run_calibration.R and
-# scripts/run_npe.R.
+# Heavy compute (multi-start calibration, reference MCMC, scenarios) is
+# intentionally NOT part of CI; see docs/training.md.
 # =============================================================================
 
 name: CI
@@ -65,8 +64,8 @@ jobs:
       - name: Integration tests
         run: Rscript scripts/run_tests.R --scope integration
 
-  python-npe-syntax:
-    name: Python NPE syntax check
+  python-syntax:
+    name: Python syntax check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -77,5 +76,5 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Syntax check npe_train.py
-        run: python -m py_compile scripts/npe_train.py
+      - name: Syntax check scripts/*.py and scripts/paper/*.py
+        run: python -m py_compile scripts/*.py scripts/paper/*.py

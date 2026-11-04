@@ -150,15 +150,18 @@ data = data %>%
 # Save the cleaned data for future analysis
 saveRDS(data, 'output/cleaned_data.rds')
 
-# 2015 prison snapshot of the screened PWID, aggregated by age group (not calibration targets;
-# the manuscript reports the total against the modelled prison population).
+# 2015 prison snapshot, aggregated by age group (not calibration targets). n_held: everyone held
+# for drug consumption on 31 Dec 2015, the population the release and re-arrest rates describe
+# (the manuscript compares its total with the modelled J); n_in_prison: the screened subset.
 time_end = as.Date("2015-12-31")
-in_prison_2015 = data %>%
-    filter(start <= time_end, is.na(end) | end >= time_end, Screening_result != "Not Known")
-counts_2015 = in_prison_2015 %>%
+held_2015 = data %>% filter(start <= time_end, is.na(end) | end >= time_end)
+in_prison_2015 = held_2015 %>% filter(Screening_result != "Not Known")
+count_by_age = function(x, name) x %>%
     mutate(age_group = cut(year(time_end) - YEAR_OF_BIRTH, c(0, 2:6 * 10, Inf), right = FALSE,
                            labels = c("<20", "20-29", "30-39", "40-49", "50-59", "60+"))) %>%
-    count(age_group, name = "n_in_prison")
+    count(age_group, name = name)
+counts_2015 = full_join(count_by_age(held_2015, "n_held"), count_by_age(in_prison_2015, "n_in_prison"),
+                        by = "age_group")
 # Seroprevalence by age at admission, from each person's last record in the snapshot.
 sero_2015 = in_prison_2015 %>%
     group_by(IDENTIFER) %>% slice(n()) %>% ungroup() %>%
@@ -217,6 +220,7 @@ model = cmdstan_model('scripts/model/release_rate.stan')
 ## HMC
 release_fit = model$sample(
     data = data_list,
+    seed = 114514,  # set.seed() does not seed CmdStan
     chains = N_CHAINS,
     iter_warmup = N_BURNIN,
     iter_sampling = N_ITER - N_BURNIN,
@@ -272,6 +276,7 @@ model <- cmdstan_model("scripts/model/rearrest_rate.stan")
 ## HMC
 rearrest_fit <- model$sample(
     data = data_list,
+    seed = 114514,  # set.seed() does not seed CmdStan
     chains = N_CHAINS,
     iter_warmup = N_BURNIN,
     iter_sampling = N_ITER - N_BURNIN,

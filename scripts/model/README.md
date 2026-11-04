@@ -7,9 +7,10 @@ equilibrium convention described in `docs/AGENTS.md`.
 - `sim.cpp`: the ODE right-hand side and RK4 solver.
   - **First-arrest rate:** D -> J at `c_first * lambda3`. The prison records never observe
     the never-arrested, so `c_first` is calibrated (θ7 = log c).
-  - **Mortality:** background deaths are the general-population rate `mu` times a PWID SMR:
-    `smr_viraemic` for states a, c, t and `smr_nonviraemic` for u, r (van Santen 2014). DC and
-    HCC add liver deaths on top. The viraemic share follows the model state over time.
+  - **Mortality (one route per cause, 2026-11-03):** non-liver deaths are the general-population
+    rate `mu` (60+ = ages 60–74) times `smr_nonviraemic` = 4.73 (HCV-uninfected PWID, van Santen
+    2014) for u, r, and `smr_viraemic` = 4.73 × 1.47 (extrahepatic HR, Lee 2012) for a, c, t.
+    Liver deaths come only from `mu_DC`/`mu_HCC` in DC and HCC. The WHO outcome counts liver deaths.
 - `setup.R`: parameters and initial state (source). Entry into D is the CNB 2015 new drug
   abuser count, unscaled, in every model year (no year-by-year schedule).
 - `preprocess.R`, `release_rate.stan`, `rearrest_rate.stan`: clean the prison

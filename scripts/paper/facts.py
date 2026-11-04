@@ -24,8 +24,8 @@ class Facts:
             "setup": "scripts/model/setup.R", "sim": "scripts/model/sim.cpp",
             "likelihood": "scripts/calibration/likelihood.R", "equilibrium": "scripts/calibration/equilibrium.R",
             "scen_code": "scripts/scenarios_2026.R", "rates": "output/rearrest_rate_fit.rds",
-            "release": "output/release_rate_fit.rds", "nm": C + "r_20261030_agepop/solutions.csv",
-            "nm_cfg": C + "r_20261030_agepop/run_config.json", "nm_pred": C + "r_20261030_agepop/predictions.csv",
+            "release": "output/release_rate_fit.rds", "nm": C + "r_20261103_agepop/solutions.csv",
+            "nm_cfg": C + "r_20261103_agepop/run_config.json", "nm_pred": C + "r_20261103_agepop/predictions.csv",
             "mcmc_cfg": C + "mcmc_reference/mcmc_run_config.json", "mcmc_diag": C + "mcmc_reference/mcmc_diagnostics.csv",
             "mcmc_chain": C + "mcmc_reference/mcmc_chain_summary.csv", "mcmc_par": C + "mcmc_reference/mcmc_parameter_summary.csv",
             "strata": C + "mcmc_reference/model_prediction_2015_strata.csv", "overlap": "figures/calibration_interval_overlap.csv",
@@ -37,6 +37,11 @@ class Facts:
             "j2019": "output/scenarios_2026_j2019/scenario_2030_summary.csv",
             "j2019_traj": "output/scenarios_2026_j2019/scenario_trajectories.csv",
             "jcov": "output/scenarios_2026_jcov/",
+            "inflow": "output/scenarios_2026_inflow/scenario_2030_summary.csv",
+            "inflow_traj": "output/scenarios_2026_inflow/scenario_trajectories.csv",
+            "gt3": "output/scenarios_2026_gt3/",
+            "tornado": "output/tornado/tornado_results.csv", "tornado_ranges": "output/tornado/ranges.csv",
+            "tornado_flips": "output/tornado/pass_flips.csv", "tornado_code": "scripts/tornado.R",
         }
         JC = self.files["jcov"]
         self.jcov_dirs = {0.0: JC + "j000/", 0.5: JC + "j050/", 0.9: JC + "j090/"}  # plus the main run
@@ -53,6 +58,12 @@ class Facts:
         self.drug = [x for x in r(self.files["drug"]) if x["year"] == "2015" and x["abuser_group"] == "new"]
         self.j2019 = {x["scenario_id"]: x for x in r(self.files["j2019"])}; self.j2019_traj = r(self.files["j2019_traj"])
         self.jcov = {p: {x["scenario_id"]: x for x in r(d + "scenario_2030_summary.csv")} for p, d in self.jcov_dirs.items()}
+        self.inflow = {x["scenario_id"]: x for x in r(self.files["inflow"])}
+        G3 = self.files["gt3"]  # genotype 3 share sensitivity: summaries and the SVR values used
+        self.gt3 = {rho: {x["scenario_id"]: x for x in r(G3 + d + "/scenario_2030_summary.csv")} for rho, d in ((0.1, "rho010"), (0.5, "rho050"))}
+        self.gt3_par = {rho: r(G3 + d + "/gt3_params.csv")[0] for rho, d in ((0.1, "rho010"), (0.5, "rho050"))}
+        self.tor = r(self.files["tornado"]); self.tor_ranges = r(self.files["tornado_ranges"])
+        self.tor_flips = r(self.files["tornado_flips"]); self.tor_failed = r("output/tornado/failed_runs.csv")
         self.setup_txt = open(os.path.join(root, self.files["setup"])).read()
         self.valid = dict(l.split() for l in open(os.path.join(root, self.files["draws_valid"])))
         self.j_start = self.valid["j_start_year"]
@@ -62,9 +73,9 @@ class Facts:
 
     # ---- helpers ----
     def setup(self, name):
-        v = re.search(rf"^\s*{name}\s*=\s*(c\([^)]*\)|[0-9.eE+-]+)", self.setup_txt, re.M).group(1)
+        v = re.search(rf"^\s*{name}\s*=\s*(c\([^)]*\)|[0-9.eE+-]+(?:\s*\*\s*[0-9.eE+-]+)*)", self.setup_txt, re.M).group(1)
         x = [F(a) for a in re.findall(r"[0-9.]+(?:[eE][+-]?[0-9]+)?", v)]
-        return x if v.startswith("c(") else x[0]
+        return x if v.startswith("c(") else math.prod(x)  # a scalar may be a product, e.g. 4.73 * 1.47
 
     def tr(self, sid, yr, rows=None):
         return next(x for x in (rows or self.traj) if x["scenario_id"] == sid and int(F(x["year"])) == yr)
@@ -127,7 +138,8 @@ class Facts:
         self.pwid_share = (self.new_heroin + self.new_meth) / self.new_total
         self.beta = [c * self.pwid_share for c in self.cnb_counts]  # setup.R beta (unrounded)
         assert self.tg["first_arrests"] == [round(b) for b in self.beta], "first-arrest target is not round(CNB x share)"
-        self.j_obs_2015 = sum(int(x["n_in_prison"]) for x in self.prison)
+        self.j_obs_2015 = sum(int(x["n_in_prison"]) for x in self.prison)  # screened subset
+        self.j_held_2015 = sum(int(x["n_held"]) for x in self.prison)  # everyone held for drug consumption
         self.screened_2015 = sum(int(x["screened"]) for x in self.prison)
         self.positive_2015 = sum(int(x["positive"]) for x in self.prison)
         # Seroprevalence targets against positive/screened in the current preprocessing output.
@@ -172,7 +184,7 @@ if __name__ == "__main__":
     f = Facts(os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "."))
     for k in ["ndraw", "inc_pass", "mort_pass", "f_eligible", "x_eligible", "f_chronic", "x_chronic", "x_chronic_share",
               "fx_death_share_2026", "fx_death_share_2030", "d_inc_share_sinf", "d_inc_share_j", "base_inc", "base_mort",
-              "base_fx_death_share", "drug_share_5000", "j_obs_2015", "screened_2015", "positive_2015", "sero_max_diff",
+              "base_fx_death_share", "drug_share_5000", "j_obs_2015", "j_held_2015", "screened_2015", "positive_2015", "sero_max_diff",
               "c_post", "prior_dominated", "sd_ratio", "rhat_max", "ess_bulk_min", "ess_tail_min", "mcse_max", "acc", "n_ovl",
               "inc_order_ok", "mort_order_ok", "tau_j", "tau_fx", "rate_ci",
               "rate_rhat", "entry_post", "contact_post", "pwid_share", "beta", "j_start"]:

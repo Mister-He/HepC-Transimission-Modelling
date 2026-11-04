@@ -29,11 +29,11 @@ idx <- function(s, k, h, i) s * 4 * 5 * 6 + (k - 1) * 5 * 6 + h * 6 + i + 2L
 #   r3_*      — Kanwal et al. (2014)
 #   phi_*     — van Meer (2012); Morgan et al. (2013)
 #   mu_DC/HCC — Lim et al. (2018)
-#   psi_*     — Premkumar (2024); Dang et al. (2020)
+#   psi_*     — Pageaux et al. (2022); Dang et al. (2020)
 #   pi_recid  — fitted to SPS data (0.724; scripts/model/update_rate_params.R)
 #   lambda2/3 — fitted to SPS data (scripts/model/update_rate_params.R)
 #   c_first   — CALIBRATED first-arrest multiplier (lambda1 = c_first * lambda3)
-#   smr_*     — van Santen et al. (2014)
+#   smr_*     — van Santen et al. (2014); Lee et al. (2012) extrahepatic HR
 #   mu        — SingStat 2015 resident death rates (fixed)
 #   C_contact — base 6 x 6 matrix; row scales calibrated (theta1-6)
 #   beta      — SingStat/CNB 2015 new drug abusers; scaled by the calibrated entry scales (theta7-12)
@@ -107,21 +107,27 @@ params <- list(
   #   30-39 = mean(30-34, 35-39) = 0.45/1000
   #   40-49 = mean(40-44, 45-49) = 1.20/1000
   #   50-59 = mean(50-54, 55-59) = 3.35/1000
-  #   60+   = population-weighted mean over 60-64, 65-69, 70-74, 75-79,
-  #           80-84, 85-89, 90+ (2015 resident population weights)
-  #           = 21.88/1000 (deaths 60+ / population 60+); the earlier value
-  #           (mean of 60-64 and 65-69 only, 8.45/1000) understated the
-  #           open-ended group by excluding ages 70+.
+  #   60+   = population-weighted mean over 60-64, 65-69, 70-74 (2015 resident
+  #           population weights, SingStat M810141 and M810011):
+  #           (6.5*240493 + 10.4*182425 + 18.2*102631) / 525549 = 10.14/1000.
+  #           Ages 75+ are left out (author decision, 2026-11-03): PWID aged 60+ are
+  #           assumed to be mostly under 75; the 60-90+ mean (21.88/1000) is dominated
+  #           by the 75+ bands.
   # Age groups (example boundaries): <20, 20-29, 30-39, 40-49, 50-59, 60+
-  mu = c(0.0002000000, 0.0002500000, 0.0004500000, 0.0012000000, 0.0033500000, 0.0218818000),
+  mu = c(0.0002000000, 0.0002500000, 0.0004500000, 0.0012000000, 0.0033500000, 0.0101386000),
 
-  # ── PWID mortality ratios (background = mu[i] * SMR of the state) ───────
-  # All-cause SMRs vs the age-, sex- and period-matched general population, Amsterdam
-  # Cohort Studies 1985-2012 (van Santen et al. 2014, AIDS 28:2589, Table 3):
-  # HCV-monoinfected 9.52 (8.06-11.26) -> viraemic states a, c, t;
-  # HCV/HIV-uninfected 4.73 (3.47-6.45) -> non-viraemic states u, r.
-  # The viraemic share is not fixed: it follows the model state over time.
-  smr_viraemic = 9.52,
+  # ── PWID mortality (background = mu[i] * SMR of the state) ─────────────
+  # Each cause of death has one route: liver deaths only through mu_DC/mu_HCC (DC/HCC),
+  # all other deaths through mu * SMR.
+  # smr_nonviraemic: all-cause SMR of HCV/HIV-uninfected people who use drugs vs the
+  #   general population, 4.73 (3.47-6.45), Amsterdam Cohort Studies 1985-2012 (van Santen
+  #   et al. 2014, AIDS 28:2589, Table 3); it contains almost no liver deaths. States u, r.
+  # smr_viraemic: the same times the adjusted hazard ratio of extrahepatic death for
+  #   anti-HCV-positive people with detectable HCV RNA vs anti-HCV-negative people, 1.47
+  #   (1.23-1.77) (Lee et al. 2012, J Infect Dis 206:469, Table 3). States a, c, t.
+  # The viraemic excess mu * smr_nonviraemic * 0.47 is extrahepatic HCV death; it is not
+  # part of the WHO outcome (liver deaths) and is reported as a secondary outcome.
+  smr_viraemic = 4.73 * 1.47,
   smr_nonviraemic = 4.73,
 
   # Transmission is constant over time; its level is set by the calibrated contact scales.
@@ -130,9 +136,11 @@ params <- list(
   mu_DC   = 0.130,  # additional mortality in decompensated cirrhosis (Lim 2018)
   mu_HCC  = 0.430,  # additional mortality in HCC                     (Lim 2018)
 
-  # ── SVR mortality modifiers ────────────────────────────────────────────────
-  psi_DC  = 0.5,    # relative mortality risk DC after SVR  (Premkumar 2024)
-  psi_HCC = 0.37,   # relative mortality risk HCC after SVR (Dang 2020)
+  # ── SVR mortality modifiers (cured people, r, only) ────────────────────────
+  # Adjusted hazard ratios of liver-related death, SVR vs no SVR (author decision 2026-11-04;
+  # was 0.5 from Premkumar 2024, whose abstract reports no such ratio, and Dang's all-cause 0.37).
+  psi_DC  = 0.40,   # DC: 0.40 (0.17-0.96), Pageaux et al. 2022 BMC Infect Dis 22:94 (HEPATHER)
+  psi_HCC = 0.34,   # HCC: 0.34 (0.13-0.88), Dang et al. 2020 Hepatology 71:1910
 
   # ── Incarceration rates (per year, age-varying) ────────────────────────────
   # Fitted to SPS records by preprocess.R and written by update_rate_params.R.

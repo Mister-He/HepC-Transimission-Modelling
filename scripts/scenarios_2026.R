@@ -2,18 +2,31 @@
 # =============================================================================
 # scenarios_2026.R — 2026–2030 policy analysis (J treatment from --j-start-year, default the
 # config's 2026, at annual start probability --j-probability; F/X screening quotas from 2026): runs
-# every scenario per posterior draw and reports medians and 95% UIs.
+# every scenario per posterior draw and reports medians and 95% UIs. --inflow observed is a
+# sensitivity analysis with the observed 2016-2025 entry series.
 # =============================================================================
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i+1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
-FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261030_agepop/fit.rds")), mustWork = TRUE)
+FIT <- normalizePath(arg("--fit", file.path(ROOT, "output/calibration/r_20261103_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/scenarios_2026"))
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 config <- jsonlite::fromJSON(file.path(ROOT, "data/scenario_policy_config.json"))
 # Main analysis: J from 2026; sensitivity: --j-start-year 2019. --j-probability sets J coverage.
 J_START <- as.integer(arg("--j-start-year", config$j_start_year))
 J_PROB <- as.numeric(arg("--j-probability", config$j_annual_start_probability))
+# --inflow: "constant" (main analysis; entry held at the 2015 CNB counts) or "observed" (sensitivity:
+# entry_i(year) = entry_i(2015) x CNB new drug abusers_i(year) / 2015 count, 2016-2025 from
+# data/singstat_new_drug_abusers.csv, 2025 held to 2030). The 2015 equilibrium is unchanged.
+INFLOW <- arg("--inflow", "constant")
+stopifnot(INFLOW %in% c("constant", "observed"))
+inflow_factor <- local({
+  x <- read.csv(file.path(ROOT, "data/singstat_new_drug_abusers.csv"))
+  m <- xtabs(new_drug_abusers ~ year + age_group, x)[, c("<20", "20-29", "30-39", "40-49", "50-59", "60+")]
+  stopifnot(all(as.character(2015:2025) %in% rownames(m)), all(m > 0))
+  function(year) if (INFLOW == "constant") rep(1, 6) else
+    as.numeric(m[as.character(min(year, 2025)), ] / m["2015", ])
+})
 stopifnot(config$policy_start_year == 2026, J_START >= 2017, J_START <= config$policy_start_year,  # 2016 is the equilibrium check
           J_PROB >= 0, J_PROB < 1,
           config$end_year == 2030,
@@ -29,6 +42,14 @@ source(file.path(ROOT, "scripts/calibration/likelihood.R"))
 targets <- read_targets(file.path(ROOT, "data/calibration_targets.json"))
 fit <- readRDS(FIT)
 check_fit_current(fit, setup_env$params, setup_env$data)
+# --param-file: an .rds named list replacing fixed inputs of the fitted model (one-way sensitivity,
+# scripts/tornado.R). The 13 calibrated parameters are kept, not refitted.
+PARAM_FILE <- arg("--param-file")
+if (!is.null(PARAM_FILE)) {
+  override <- readRDS(PARAM_FILE)
+  stopifnot(length(override) > 0, all(names(override) %in% names(fit$base_params)))
+  fit$base_params <- modifyList(fit$base_params, override)
+}
 # --posterior-files: comma-separated CSVs with columns theta1..theta13; each file is one
 # sampling group. Default: the reference MCMC posterior.
 posterior_files <- strsplit(arg("--posterior-files", "output/calibration/mcmc_reference/mcmc_draws.csv"), ",")[[1]]
@@ -56,6 +77,7 @@ run_year <- function(y0, year, pm, cap=rep(Inf,4)) {
   d <- setup_env$data
   d$y0 <- y0; d$t_start <- 150+year-2016; d$t_end <- d$t_start+1
   d$treatment_capacity <- cap
+  pm$beta <- pm$beta * inflow_factor(year)
   z <- run_sim(pm,d)
   if (abs(z[nrow(z),1]-d$t_end)>1e-6) stop("Annual simulation lost endpoint")
   z
@@ -194,7 +216,7 @@ fx_pm <- set_tau(set_tau(j_pm, 2, tau_fx), 3, tau_fx)
 rate_row <- function(z, year, id) {
   r <- annual_events(z,j_pm); y <- state_from(z)
   data.frame(scenario_id=id, year=year, incidence=r["incidence"], mortality=r["mortality"],
-    fx_incidence=r["fx_incidence"], fx_mortality=r["fx_mortality"],
+    fx_incidence=r["fx_incidence"], fx_mortality=r["fx_mortality"], hcv_mortality=r["hcv_mortality"],
     viremic=sum(sapply(0:3,function(s) sum_state(y,s,1:3))),
     total=sum(y), fx_viremic=sum(sapply(2:3,function(s) sum_state(y,s,1:3))),
     fx_population=sum(sapply(2:3,function(s) sum_state(y,s))),
@@ -212,8 +234,9 @@ for (year in 2016:2025) {
 }
 common_2026_state <- y
 history_trajectory <- do.call(rbind,c(list(base_rates),history))
-stopifnot(abs(history$`2016`$incidence/base_rates$incidence-1)<1e-3,  # equilibrium check of the 2015 base
-          abs(history$`2016`$mortality/base_rates$mortality-1)<1e-3)
+stopifnot(INFLOW!="constant" ||  # equilibrium check of the 2015 base (observed inflow moves 2016 by design)
+          (abs(history$`2016`$incidence/base_rates$incidence-1)<1e-3 &&
+           abs(history$`2016`$mortality/base_rates$mortality-1)<1e-3))
 stopifnot(length(hist_j_starts)==config$policy_start_year-J_START,J_PROB==0 || all(hist_j_starts>0))
 run_policy <- function(row) {
   id <- row$scenario_id; y <- common_2026_state
@@ -240,7 +263,7 @@ for (year in 2016:2030) {
   no_tx[[as.character(year)]] <- rate_row(z,year,"no_treatment")
 }
 no_tx <- do.call(rbind,no_tx); no_tx$scenario_id <- "no_treatment"; rownames(no_tx) <- NULL
-for (metric in c("incidence","mortality","fx_incidence","fx_mortality"))
+for (metric in c("incidence","mortality","fx_incidence","fx_mortality","hcv_mortality"))
   no_tx[[paste0(metric,"_ratio_2015")]] <- no_tx[[metric]]/base_rates[[metric]]
 runs <- lapply(seq_len(nrow(scenario_table)),function(i) run_policy(scenario_table[i,]))
 process <- do.call(rbind,lapply(runs,`[[`,"process"))
@@ -263,7 +286,7 @@ stopifnot(all(is.finite(process$cost_total_sgd)),all(process$cost_total_sgd>=0),
 b <- base_rates[1,]
 safe_ratio <- function(x,denominator) if (is.finite(denominator) && denominator>0)
   x/denominator else rep(NA_real_,length(x))
-for (metric in c("incidence","mortality","fx_incidence","fx_mortality"))
+for (metric in c("incidence","mortality","fx_incidence","fx_mortality","hcv_mortality"))
   trajectories[[paste0(metric,"_ratio_2015")]] <- safe_ratio(trajectories[[metric]],as.numeric(b[[metric]]))
 trajectories <- add_pass(trajectories)
 endpoint <- subset(trajectories,year==2030)
@@ -285,6 +308,7 @@ endpoint$incidence_reduction <- 1-endpoint$incidence_ratio_2015
 endpoint$mortality_reduction <- 1-endpoint$mortality_ratio_2015
 endpoint$fx_incidence_reduction <- 1-endpoint$fx_incidence_ratio_2015
 endpoint$fx_mortality_reduction <- 1-endpoint$fx_mortality_ratio_2015
+endpoint$hcv_mortality_reduction <- 1-endpoint$hcv_mortality_ratio_2015  # secondary: liver + extrahepatic deaths
 # Model outputs count expected courses, not distinct people.
 treatment <- aggregate(cbind(treatment_starts,treatment_completions,treatment_cures)~scenario_id+stratum,
                        process,sum)
@@ -348,7 +372,10 @@ draw_seed <- draw_table$seed[valid]; results <- results[valid]
 MIN_VALID_SHARE <- as.numeric(arg("--min-valid-share", 0.9))
 stopifnot(length(results) > 0, length(results)>=MIN_VALID_SHARE*length(valid))
 writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid)),
-             paste("j_start_year", J_START), paste("j_annual_start_probability", J_PROB)), file.path(OUT,"draw_validity.txt"))
+             paste("j_start_year", J_START), paste("j_annual_start_probability", J_PROB),
+             if (INFLOW != "constant") paste("inflow", INFLOW),
+             if (!is.null(PARAM_FILE)) paste("param_override", jsonlite::toJSON(override, auto_unbox = TRUE, digits = NA))),
+           file.path(OUT,"draw_validity.txt"))
 collect <- function(name) lapply(results,`[[`,name)
 process <- agg_draws(collect("process"),c("scenario_id","year","stratum"))
 trajectories <- agg_draws(collect("trajectories"),c("scenario_id","year"))
@@ -358,7 +385,8 @@ endpoint_draws <- collect("endpoint")
 endpoint <- agg_draws(endpoint_draws,"scenario_id")
 # Draw-level 2030 endpoints for key outcomes.
 key_cols <- c("scenario_id","incidence_reduction","mortality_reduction","who_incidence_pass",
-  "who_mortality_pass","who_joint_pass","total_discounted_cost_2026_2030_sgd","fx_treatment_starts")
+  "who_mortality_pass","who_joint_pass","total_discounted_cost_2026_2030_sgd","fx_treatment_starts",
+  "hcv_mortality_reduction")
 write.csv(do.call(rbind,lapply(seq_along(endpoint_draws),function(i)
   cbind(draw=i,seed=draw_seed[i],endpoint_draws[[i]][,intersect(key_cols,names(endpoint_draws[[i]]))]))),
   file.path(OUT,"scenario_2030_draws.csv"),row.names=FALSE)
@@ -393,6 +421,7 @@ ui_text <- function(col,scale=1,digits=1,prefix="",suffix="") {
 }
 endpoint$incidence_reduction_text <- ui_text("incidence_reduction",100,1,suffix="%")
 endpoint$mortality_reduction_text <- ui_text("mortality_reduction",100,1,suffix="%")
+endpoint$hcv_mortality_reduction_text <- ui_text("hcv_mortality_reduction",100,1,suffix="%")
 endpoint$total_cost_text <- ui_text("total_discounted_cost_2026_2030_sgd",1e-6,2,prefix="S$",suffix="m")
 endpoint$incremental_cost_text <- ui_text("incremental_discounted_cost_vs_j_only_sgd",1e-6,2,prefix="S$",suffix="m")
 endpoint$fx_starts_text <- ui_text("fx_treatment_starts",1,0)
@@ -409,7 +438,7 @@ stopifnot(nrow(process)==nrow(scenario_table)*5*3)
 writeLines(paste0("Posterior draws: ",DRAWS_PER_SEED," random draws from each posterior file (valid: ",
   paste(paste0("file ",sort(unique(draw_seed)),": ",as.vector(table(draw_seed))),collapse=", "),
   "); sampling seed ",SAMPLE_SEED,". Medians and 95% UIs (2.5th-97.5th percentiles) across draws.\nSources: ",
-  paste(posterior_files,collapse="; ")),file.path(OUT,"calibration_source.txt"))
+  paste(sub(paste0(ROOT,"/"),"",posterior_files,fixed=TRUE),collapse="; ")),file.path(OUT,"calibration_source.txt"))  # repo-relative
 write.csv(scenario_table,file.path(OUT,"scenario_definitions.csv"),row.names=FALSE)
 write.csv(trajectories,file.path(OUT,"scenario_trajectories.csv"),row.names=FALSE)
 write.csv(treatment,file.path(OUT,"scenario_treatment_summary.csv"),row.names=FALSE)

@@ -21,7 +21,7 @@ arg <- function(name, default = NULL) {
 T_SCRIPT0 <- proc.time()[["elapsed"]]
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 FIT <- normalizePath(arg("--fit", file.path(ROOT,
-  "output/calibration/r_20261030_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261103_agepop/fit.rds")), mustWork = TRUE)
 OUT <- file.path(ROOT, arg("--out-dir", "output/calibration/mcmc_reference"))
 N_CHAINS <- as.integer(arg("--n-chains", "8"))
 CORES <- as.integer(arg("--cores", "8"))
@@ -196,7 +196,10 @@ jsonlite::write_json(list(
   integration_dt = DT, seed = SEED,
   seeds = list(prior_variance = SEED + 3000, chain = "SEED+1000+i (initial prior draws and sampling)"),
   startup_sec = startup_sec, pre_chain_sec = pre_chain_sec, method_sec = method_sec,
-  cpu_sec_total = sum(chain_summary$cpu_sec), r_version = R.version.string
+  cpu_sec_total = sum(chain_summary$cpu_sec), r_version = R.version.string,
+  git_sha = tryCatch(system2("git", c("-C", ROOT, "rev-parse", "HEAD"), stdout = TRUE), error = function(e) NA),
+  setup_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/setup.R"))),
+  sim_cpp_md5 = unname(tools::md5sum(file.path(ROOT, "scripts/model/sim.cpp")))
 ), file.path(OUT, "mcmc_run_config.json"), pretty = TRUE, auto_unbox = TRUE, digits = NA)
 writeLines("OK: all chains produced retained output; see mcmc_diagnostics.csv",
            file.path(OUT, "MCMC_STATUS.txt"))

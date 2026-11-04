@@ -46,16 +46,16 @@ check_equal(c(mo[last, idx(1, 1, 0, 2)], mo[last, idx(1, 1, 2, 3)]),
             100 * exp(-0.01 * c(mp$smr_nonviraemic, mp$smr_viraemic) - 0.1),
             tol = 1e-4, "J deaths follow mu * SMR by viraemic status")
 check_true(mp$smr_viraemic > mp$smr_nonviraemic, "viraemic people die faster than non-viraemic")
-# HCV deaths used for the WHO target (rate_components, R) must match sim.cpp's mortality: in X
+# HCV deaths (liver + extrahepatic, rate_components, R) must match sim.cpp's mortality: in X
 # (no infection, no exits) the population falls at total deaths, which are the HCV deaths plus
-# mu * smr_nonviraemic for everyone.
-xd <- fa_data; xd$t_end <- 1 / 365; xd$y0 <- rep(0, 480)
+# mu * smr_nonviraemic for everyone. One tiny step, so the fall is the instantaneous death rate.
+xd <- fa_data; xd$dt <- 1e-6; xd$t_end <- 1e-6; xd$y0 <- rep(0, 480)
 xd$y0[idx(3, rep(1:4, each = 30), rep(rep(0:4, each = 6), 4), rep(0:5, 20)) - 1L] <- 10
 x1 <- run_sim(fa, xd)
 total_deaths <- -(sum(x1[2, -1]) - sum(xd$y0)) / xd$dt
 background <- sum(10 * 20 * fa$mu * fa$smr_nonviraemic)
-check_equal(rate_components(xd$y0, 0, fa)[["mortality"]], total_deaths - background, tol = 1e-3,
-            "rate_components HCV deaths match the sim.cpp mortality terms")
+check_equal(rate_components(xd$y0, 0, fa)[["hcv_mortality"]], total_deaths - background, tol = 1e-5,
+            "rate_components HCV deaths (liver + extrahepatic) match the sim.cpp mortality terms")
 # Yearly counts (annual_events) integrate the same rates over the run: a constant state gives
 # rate x duration, and a falling population gives fewer deaths than the start-of-year rate.
 ys <- runif(480) * 100
@@ -205,7 +205,7 @@ check_equal(cs_x2$community_pwid, 2 * cs0$community_pwid, tol = 1e-6, "doubling 
 check_equal(cs_x2$p_sero, cs0$p_sero, tol = 1e-6, "doubling entry leaves seroprevalence unchanged")
 
 # The stored fit matches the current model, and a model change is detected.
-fit_path <- file.path(root, "output/calibration/r_20261030_agepop/fit.rds")
+fit_path <- file.path(root, "output/calibration/r_20261103_agepop/fit.rds")
 if (file.exists(fit_path)) {
   fit <- readRDS(fit_path)
   check_true(isTRUE(check_fit_current(fit, e$params, e$data)), "stored fit matches setup.R and sim.cpp")

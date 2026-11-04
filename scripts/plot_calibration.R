@@ -17,7 +17,7 @@ arg <- function(name, default = NULL) {
 }
 root <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 fit_path <- normalizePath(arg("--fit", file.path(root,
-  "output/calibration/r_20261030_agepop/fit.rds")), mustWork = TRUE)
+  "output/calibration/r_20261103_agepop/fit.rds")), mustWork = TRUE)
 mcmc_file <- normalizePath(arg("--mcmc-file", file.path(root,
   "output/calibration/mcmc_reference/mcmc_draws.csv")), mustWork = TRUE)
 MCMC_LABEL <- arg("--mcmc-label", "Reference MCMC (production)")
