@@ -279,7 +279,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
   plot and scenario scripts stop if the fit does not match `setup.R`.
 - **Manuscript** rewritten; `build_paper.py` asserts every result claim it makes.
 
-## Redesign: entry scales, first-arrest and community targets (2026-10-27, `docs/redesign_prompt.md`) — current state
+## Redesign: entry scales, first-arrest and community targets (2026-10-27, `docs/redesign_prompt.md`) — superseded
 - **Rates:** rerun, unchanged; `setup.R` not modified.
 - **Model fixes:** ψ mortality fix in `sim.cpp`; `split_by_age` fix in `preprocess.R`.
 - **Calibration (user decisions):** 13 parameters: θ1–θ6 contact N(0, 1.5); θ7–θ12 log entry scales on the CNB 2015
@@ -323,7 +323,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - Trajectory figures: yearly counts at mid-year joined by a monotone PCHIP curve, ticks at 1 January.
 - Manuscript, S1 Text and the scenarios README updated; `build_paper.py` asserts S5000_F25 stays narrow.
 
-## PWID share of inflow + treatment from 2026 (2026-10-30, `docs/pwid_inflow_main_analysis.md`) — current state
+## PWID share of inflow + treatment from 2026 (2026-10-30, `docs/pwid_inflow_main_analysis.md`) — superseded; see "Liver deaths as the WHO outcome" at the end
 - **NPE removed** (code, tests, outputs, manuscript text; commit `16e9b8d`). MCMC SBC now in
   `output/calibration/mcmc_sbc/` and draws its own prior truths.
 - **Inflow:** entry `beta` = CNB 2015 new drug abusers × 0.861 (heroin 113 + methamphetamine 1,014 of
@@ -347,3 +347,41 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - **Ponytail pass (2026-10-30):** audit → refactor `9eb048a` (`simulate_theta()`, `state_cols()`, `add_pass()`,
   LHS removed; fixes: heatmap no longer overwritten by `--scen-dir` runs, Table 2 main-column label from the
   run, `--j-start-year` ≥ 2017) → review fix (equilibrium-failure test). Outputs byte-identical; tests pass.
+
+## Liver deaths as the WHO outcome, mortality fix, recalibration (2026-11-03/04, `REVIEW_REPORT.md` §8) — superseded in part; see "ψ for cured people only" below
+- Branch `review/liver-deaths-recalibration` (from `feature/fixinflow`); nothing committed. Run logs in `logs/`
+  (untracked; `pipeline_20261103.sh` stopped at the main scenario run on a transient EINTR writing
+  `draw_validity.txt`; `pipeline2_20261104.sh` reran the tornado and all six scenario runs).
+- **Model (author decisions):** one route per cause of death. Non-liver deaths = `mu` × `smr_nonviraemic` 4.73
+  (u, r) or × `smr_viraemic` 4.73 × 1.47 (a, c, t; Lee 2012 extrahepatic HR); liver deaths only from
+  `mu_DC`/`mu_HCC`. `mu` for 60+ = ages 60–74 (10.14/1000, SingStat M810141/M810011), was 21.88.
+  GT3 RR 1.36/1.93 kept (derived in technical PDF §2.4); Lim 2018 is non-GT3, so no double count.
+- **Outcomes:** `mortality` = liver deaths (WHO primary, pass/fail); `hcv_mortality` = + extrahepatic excess
+  (secondary, S1 Text §10). Old column `liver_mortality` is gone.
+- **Fit** `r_20261103_agepop`: 8 starts within 1 (19.25), seroprevalence RMSE 0.023 (60+ 0.468 vs 0.429), `c` 2.20.
+  MCMC R-hat ≤ 1.006, bulk ESS ≥ 1,641, 2.0 h; prior-dominated θ5, θ13; SBC cov95 0.952; overlap 13/13.
+  2015 J 8,768 (8,000–10,110) vs 8,725 held (`n_held`, new in `prison_2015_counts.csv`); 3,367 screened.
+- **Scenarios:** J only incidence −51.5%, liver deaths −21.2%. Incidence pass set unchanged (5 finite).
+  No finite policy meets mortality anywhere (main, coverage grid, observed inflow, J from 2019; best 42.2%,
+  55.0% from 2019). No cap passes narrowly (67.1%), fails at J coverage 0 (61.6%).
+- **Tornado** (`scripts/tornado.R`, `output/tornado/`, S1 Text §12, Fig G): 27 inputs at the posterior mode,
+  no refit. Liver deaths most sensitive to ψ_DC, ψ_HCC, p_HCC; no cap fails with ψ_DC/ψ_HCC/φ_CC_DC high or
+  p_HCC low. `q` low and `smr` low runs have no 2015 equilibrium (`failed_runs.csv`).
+- **Manuscript** rewritten for these results (`checks()` asserts them); SI §10–12 new, assumptions →
+  §13. Figures redrawn with matplotlib 3.11.2 (scratch venv). Tests: 8 files, 119 checks pass.
+- **Open:** Premkumar 2024 ψ_DC unverified; protected `docs/AGENTS.md`/`equations.tex` mortality passages
+  still old; `smr_sensitivity/` historical; `r_20261030_agepop/` superseded (not deleted).
+
+## ψ for cured people only, new ψ values, genotype 3 sensitivity (2026-11-04, `REVIEW_REPORT.md` §9) — current state
+- Same branch, nothing committed. Logs: `logs/pipeline3_20261104.sh` (NM rerun, tornado, six scenario runs),
+  `logs/pipeline4_20261104.sh` (genotype 3 runs).
+- **Model (author decisions):** ψ multiplies liver deaths of cured people (r) only; ψ_DC 0.40 (Pageaux 2022),
+  ψ_HCC 0.34 (Dang 2020 liver-related). Calibration provably unchanged (NM rerun identical; MCMC not rerun).
+- **Results:** J only −51.5% / −22.1%; best finite 8,000/yr F25% 44.0%; no cap 71.4%, meets both at every J
+  coverage (65.4% at 0). Only ψ_DC high flips no cap in the tornado. Genotype 3 share 10%/50%
+  (`output/scenarios_2026_gt3/`): same pass sets.
+- **Manuscript:** S1 Text §12 genotype 3 (Table M); tornado §13 (Table N); assumptions §14 (Table O). `checks()`
+  updated. Tests 119/119.
+- **Docs:** `docs/tex_consistency_instructions.md` = how to make `docs/equations.tex` (PDF §3.1–3.5) and the
+  PDF Notation table match the code (not applied; protected file, main TeX not in repo).
+- **SI Fig H** = observed-inflow trajectories (`output/scenarios_2026_inflow/scenario_target_trajectories.png`).

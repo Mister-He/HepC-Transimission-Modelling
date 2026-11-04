@@ -68,14 +68,20 @@ Rscript scripts/model/update_rate_params.R    # writes lambda2, lambda3 and pi_r
     older ages.
 - **Support:** draws outside the bounds and equilibrium failures are excluded (MCMC gives −∞).
 - **Solver:** RK4 with `dt = 1/365`.
-- **Mortality:** general-population `mu` × PWID SMR by state: 9.52 viraemic (a, c, t), 4.73
-  otherwise (van Santen 2014). In DC and HCC the liver excess `mu_DC`/`mu_HCC` is added, and after
-  SVR only that liver excess is multiplied by ψ (0.5 DC, 0.37 HCC).
+- **Mortality (2026-11-03):** each cause of death has one route. Non-liver deaths: general-population
+  `mu` (2015; 60+ = ages 60–74, 10.14/1000) × the SMR of HCV-uninfected people who use drugs, 4.73
+  (van Santen 2014), for u and r; viraemic people (a, c, t) also have the extrahepatic HR 1.47
+  (Lee 2012), so 4.73 × 1.47. Liver deaths: `mu_DC`/`mu_HCC` in DC and HCC only, multiplied by ψ
+  for cured people (r) only, not during treatment (2026-11-04): ψ_DC 0.40 (0.17–0.96, Pageaux 2022) and
+  ψ_HCC 0.34 (0.13–0.88, Dang 2020), adjusted HRs of liver-related death. ψ cannot affect the 2015
+  calibration (nobody is cured before treatment starts); the NM rerun reproduced the fit exactly.
+- **WHO mortality outcome:** liver deaths (DC/HCC) only (`mortality`, `fx_mortality`). Liver plus the
+  viraemic extrahepatic excess (`hcv_mortality`) is a secondary outcome.
 
 ## 1. Deterministic calibration (posterior mode)
 
 ```bash
-Rscript scripts/run_calibration.R --run-id r_20261030_agepop \
+Rscript scripts/run_calibration.R --run-id r_20261103_agepop \
   --maxit 5000 --nm-restarts 5 --n-starts 8 --sd-perturb 0.9 --seed 20261001 --cores 8   # ~2 h
 ```
 
@@ -85,12 +91,13 @@ Rscript scripts/run_calibration.R --run-id r_20261030_agepop \
   (SD 0.9), clipped to the bounds, run in parallel.
 - **Restarts:** each start reruns Nelder–Mead from its own solution while the objective still
   falls by more than 0.001 (`--nm-restarts`, at most 5 restarts).
-- **Result (2026-10-30, 1.2 h on 8 cores):** 7 of 8 starts reach the same mode (objective 18.77–18.84;
-  `perturb_2` stops in a local optimum at 73.1). Best (`perturb_5`): seroprevalence RMSE 0.014, largest
-  error 0.024; `c` 2.11; D + F 6,786 (Teo 11,000, 6,500–17,000).
-  - Entry scales sit at about 1.0–1.15 (lower bound 1).
-  - First arrests are too high at older ages (30–39 281 vs 251; 40–49 99 vs 81; 50–59 25 vs 18;
-    60+ 3.2 vs 1): people who start injecting young age into the older groups before their first
+- **Result (2026-11-03, mortality fix of `REVIEW_REPORT.md` R-01/R-20):** all 8 starts end within 1 of
+  each other (objective 19.25–20.13). Best (`uninformative`, 19.25): seroprevalence RMSE 0.023, largest
+  error 0.040 (60+ 0.468 vs 0.429; 50–59 0.493 vs 0.531); `c` 2.20; D + F 7,096 (Teo 11,000, 6,500–17,000).
+  The previous fit (`r_20261030_agepop`, old mortality) had RMSE 0.014.
+  - Entry scales sit at about 1.0–1.13 (lower bound 1).
+  - First arrests are too high at older ages (30–39 279 vs 251; 40–49 98 vs 81; 50–59 24 vs 18;
+    60+ 3.4 vs 1): people who start injecting young age into the older groups before their first
     arrest, and entry cannot fall below the scaled CNB counts.
 - **SMR sensitivity** (`output/calibration/smr_sensitivity/`) is from the 2026-10-22 7-parameter
   design and was not rerun.
@@ -107,22 +114,22 @@ Rscript scripts/run_mcmc_reference.R   # about 5 hours on 8 cores
   - 60,000 evaluations per chain;
   - draws stored every 10th iteration (`--thin`);
   - seed 20261101;
-  - fit `output/calibration/r_20261030_agepop/fit.rds` (used only to check that the model matches);
+  - fit `output/calibration/r_20261103_agepop/fit.rds` (used only to check that the model matches);
   - output to `output/calibration/mcmc_reference/`.
 - **Sampler:** adaptive random-walk Metropolis (`arwm_budget` in `scripts/calibration/mcmc.R`). The
   initial proposal is `0.1² × diag(prior variance)`; adaptation uses the recent half of warmup
   only. Starts are truncated-prior draws.
-- **Result (2026-10-30, 1.3 hours on 8 cores):**
-  - R-hat ≤ 1.004;
-  - bulk ESS 2,137–3,474 and tail ESS ≥ 2,219;
-  - MCSE of the mean ≤ 0.022 posterior SD;
+- **Result (2026-11-04, 2.0 hours on 8 cores):**
+  - R-hat ≤ 1.006;
+  - bulk ESS 1,641–3,177 and tail ESS ≥ 1,490;
+  - MCSE of the mean ≤ 0.026 posterior SD;
   - acceptance 0.12–0.13 (below the 0.15 flag; mixing is still adequate by ESS).
-- **Posterior:** `c` median 2.59 (95% interval 1.45–5.24) against a prior median of about 1.05;
-  posterior SD 0.78 × the truncated prior SD. Entry scales <20 to 50–59 have medians 1.09–1.17
-  (upper 95% limits 1.41–1.61); 60+ is wider (median 1.50, up to 3.97).
-- **Prior-dominated parameters** (posterior SD above 0.7 × the truncated prior SD): θ5 and θ6
-  (50–59 and 60+ contact scales) and θ13 (`c`, 0.78; its location still moves well above the
-  prior). θ12 (60+ entry) is at 0.62.
+- **Posterior:** `c` median 2.71 (95% interval 1.54–5.23) against a prior median of about 1.05;
+  posterior SD 0.72 × the truncated prior SD. Entry scales <20 to 50–59 have medians 1.08–1.15
+  (upper 95% limits 1.39–1.61); 60+ is wider (median 1.49, up to 4.05).
+- **Prior-dominated parameters** (posterior SD above 0.7 × the truncated prior SD): θ5 (50–59
+  contact scale, 0.74) and θ13 (`c`, 0.72; its location still moves well above the prior). θ6
+  (60+ contact) is at 0.66 and θ12 (60+ entry) at 0.63.
 - `--targets` swaps the target file. The MCMC SBC uses it.
 
 ## 3. Optional: direct MCMC SBC
@@ -133,8 +140,8 @@ Rscript scripts/sbc_mcmc.R --n-datasets 8 --cores 8   # 15,000 warmup, 45,000 ev
 
 - The truths are the first 8 random prior draws (`prior_sampling.R`) that pass the equilibrium
   check (`theta_true.csv`), with synthetic targets drawn from the three likelihood terms. Each dataset gets one 45,000-evaluation chain.
-- **Result (2026-10-30, 1.8 h):** pooled cov95 0.923 and cov90 0.894 over 104 ranks; mean rank 0.490; max split
-  R-hat 1.011 (one chain per dataset). Lowest per-parameter cov95: θ13 (`c`), 6 of 8.
+- **Result (2026-11-04):** pooled cov95 0.952 and cov90 0.894 over 104 ranks; mean rank 0.507; max split
+  R-hat 1.012 (one chain per dataset). Lowest per-parameter cov95: 7 of 8 (θ2, θ8, θ9, θ11, θ13).
 - **Limitation:** 8 datasets are a check against gross miscalibration only, not a full SBC.
 
 ## 4. 2015 predictions and calibration figure
@@ -145,10 +152,10 @@ Rscript scripts/plot_calibration.R --cores 14 --max-draws 2000
 ```
 
 - **Prediction outputs:** `output/calibration/mcmc_reference/model_prediction_2015_strata.*`.
-  Ever-PWID 50,494 (95% interval: 45,344–58,894); D 1,040 (490–1,903); F 5,934 (5,353–6,886);
-  D + F 7,005 (6,125–8,319) against the Teo target 11,000; J 8,493 (7,687–9,783). The prison
-  size is not fitted: the observed 2015 prison count of screened PWID is 3,367
-  (`output/prison_2015_counts.csv`).
+  Ever-PWID 59,599 (95% interval: 53,968–69,269); D 1,000 (511–1,767); F 6,303 (5,736–7,296);
+  D + F 7,332 (6,513–8,610) against the Teo target 11,000; J 8,768 (8,000–10,110). The prison
+  size is not fitted; it is close to the 8,725 people held for drug consumption at the end of 2015
+  (`n_held` in `output/prison_2015_counts.csv`). 3,367 of them had a screening result (`n_in_prison`).
 - **Calibration figure:** `figures/calibration_agepop.png` has three panels (seroprevalence,
   first arrests, community PWID). Each target is shown with the 95% range of its likelihood,
   against 95% posterior intervals of the model values (no observation noise) from the reference MCMC.
@@ -159,13 +166,26 @@ Rscript scripts/plot_calibration.R --cores 14 --max-draws 2000
 ## 5. 2026 treatment scenarios
 
 ```bash
-SC="--root . --draws-per-seed 2000 --cores 8 --sample-seed 20261005"   # ~7.5 min per run on 8 cores
+SC="--root . --draws-per-seed 2000 --cores 8 --sample-seed 20261005"   # ~7.5 min per run on 8 cores, ~3.5 on 14
 Rscript scripts/scenarios_2026.R $SC                                    # main: J from 2026, coverage 99.995%
 Rscript scripts/scenarios_2026.R $SC --j-probability 0   --out-dir output/scenarios_2026_jcov/j000
 Rscript scripts/scenarios_2026.R $SC --j-probability 0.5 --out-dir output/scenarios_2026_jcov/j050
 Rscript scripts/scenarios_2026.R $SC --j-probability 0.9 --out-dir output/scenarios_2026_jcov/j090
 Rscript scripts/scenarios_2026.R $SC --j-start-year 2019 --out-dir output/scenarios_2026_j2019   # sensitivity
+Rscript scripts/scenarios_2026.R $SC --inflow observed --out-dir output/scenarios_2026_inflow       # sensitivity
+# genotype 3 share 10% / 50% (writes gt3_params.rds first; see output/scenarios_2026_gt3/README.md)
+Rscript scripts/scenarios_2026.R $SC --param-file output/scenarios_2026_gt3/rho010/gt3_params.rds --out-dir output/scenarios_2026_gt3/rho010
+Rscript scripts/scenarios_2026.R $SC --param-file output/scenarios_2026_gt3/rho050/gt3_params.rds --out-dir output/scenarios_2026_gt3/rho050
 ```
+
+- **Inflow sensitivity (`--inflow observed`, added by the 2026-11-03 review):** entry into D in 2016–2025
+  follows the observed CNB new drug abusers by age (`data/singstat_new_drug_abusers.csv`) relative to 2015;
+  2025 is held to 2030. The main analysis keeps entry constant.
+- **Secondary death outcome:** every run also reports `hcv_mortality` (liver deaths plus the viraemic
+  extrahepatic excess) and `hcv_mortality_reduction`. Pass/fail uses liver deaths. See `REVIEW_REPORT.md` R-01.
+- **One-way sensitivity (tornado):** `Rscript scripts/tornado.R --root . --cores 14` holds the 13
+  parameters at the Nelder–Mead best fit and sets each fixed input to its low and high value
+  (`output/tornado/ranges.csv`), running all 17 policies each time (`scenarios_2026.R --param-file`).
 
 - **Draws:** 2,000 draws from the reference MCMC posterior (the default `--posterior-files`). The full
   analysis is run per draw, then summarised as the median and 95% UI.
@@ -178,13 +198,22 @@ Rscript scripts/scenarios_2026.R $SC --j-start-year 2019 --out-dir output/scenar
   - `--figures true` also draws the old ggplot figures, into `output/scenarios_2026/legacy/`
     (`scripts/paper_figures.R` writes its legacy versions there too);
   - `--min-valid-share` sets the share of draws that must pass equilibrium.
-- **Results (2026-10-30):** main J only: incidence −49.8% (37.7–56.9), mortality −32.6%. Five finite
-  policies meet incidence (8,000/yr any F share; 5,000/yr F50%/F75%); none meets mortality (best
-  8,000/yr F25% 62.6%, joint 5.7%); only no cap meets both. Coverage grid: every reduction rises with
-  J coverage; no finite policy meets mortality at any coverage. Sensitivity (J from 2019): J only
-  −83.4% / −53.2%; mortality met at 5,000/yr F25% (66.9%, joint 90%), 8,000/yr F25% and F50%.
+- **Results (2026-11-04, ψ for cured people only; mortality = liver deaths only):** main J only: incidence
+  −51.5% (40.6–57.3), liver deaths −22.1% (21.2–23.0). Five finite policies meet incidence (8,000/yr any
+  F share; 5,000/yr F50%/F75%); none meets mortality (best 8,000/yr F25% 44.0%, joint 0%); only no cap
+  meets both (71.4%, 71.3–71.6). Coverage grid: every reduction rises with J coverage; no finite policy
+  meets mortality at any coverage; no cap meets it at every coverage, only just without J treatment
+  (65.4%). Sensitivity (J from 2019): J only −85.0% / −40.8%; no finite policy meets mortality (best
+  8,000/yr F25% 56.1%); only no cap meets both (76.4%). Observed inflow: J only −56.0% / −22.2%; six
+  finite policies meet incidence (adds 2,000/yr F75%), none meets mortality. Genotype 3 share 10% / 50%:
+  same pass sets as the main analysis (J only liver deaths −19.7% / −21.2%).
+- **Tornado (2026-11-04):** `q` low and `smr` low have no 2015 equilibrium (HCV dies out / not converged
+  at 150 years; `output/tornado/failed_runs.csv`). Liver-death reductions move most with `psi_DC`,
+  `psi_HCC` and `p_HCC`; no cap fails the mortality target only with `psi_DC` high (0.96: 59.4%;
+  `pass_flips.csv`).
 - **Figures:** after the runs, `python scripts/figures.py .` (main, includes `jcov_heatmap`), then
-  `python scripts/figures.py . --scen-dir output/scenarios_2026_j2019 --only scenario_target_trajectories paper_fig2_trajectories`.
+  `python scripts/figures.py . --scen-dir output/scenarios_2026_j2019 --only scenario_target_trajectories paper_fig2_trajectories`
+  (same command with `--scen-dir output/scenarios_2026_inflow` for the observed-inflow run).
 - **More detail:** see `output/scenarios_2026/README.md`.
 
 ## 6. Manuscript

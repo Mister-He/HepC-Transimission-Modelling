@@ -1,13 +1,14 @@
 \subsection{Effective Rate Definitions}
 
-The population-entry term is piecewise in model time. The state at model year
-$t=150$ is the equilibrium snapshot mapped to calendar year 2015. Before that
-snapshot, $\beta_i(t)=b_i\,s_i$, where $b_i$ is the 2015 SingStat/CNB
-age-specific new-drug-abuser count and $s_i$ is the calibrated age-specific
-scale. For calendar years 2016--2025, $\beta_i(t)=b_i(y)\,s_i$ uses the
-corresponding SingStat/CNB count; after the latest observed year,
-$b_i(y)=b_i(2025)$ through 2030. This schedule affects the inflow into
-$D_{u,1,i}$ only.
+The population-entry term is constant in model time. The state at model year
+$t=150$ is the equilibrium snapshot mapped to calendar year 2015. In every
+year, before and after that snapshot (2016--2030 projection),
+$\beta_i(t)=b_i\,s_i$, where $b_i$ is the 2015 SingStat/CNB age-specific
+new-drug-abuser count times the heroin/methamphetamine share and $s_i$ is the
+calibrated age-specific scale (main analysis). In a sensitivity analysis,
+calendar years 2016--2025 use $\beta_i(t)=b_i\,s_i\,n_i(y)/n_i(2015)$, where
+$n_i(y)$ is the observed SingStat/CNB count, and $n_i(y)=n_i(2025)$ through
+2030. Entry goes into $D_{u,1,i}$ only.
 
 To account for genotype-3 excess risk, define the effective progression 
 rates for each transition as weighted composites across genotypes:

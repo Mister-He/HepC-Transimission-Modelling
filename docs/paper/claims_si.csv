@@ -1,171 +1,290 @@
 claim_id,section,claim_kind,claim_text_sha256,evidence_ids,verification_status,uncertainty,analysis_intent
-C127,si: 1.1 Compartments,method,9fb6a214465a234a562f189676813fc393ee2b5741e0251c8e83cbaa41b30dff,E033,unverified,not_applicable,descriptive
-C128,si: 1.1 Compartments,method,fd3b13f24fa41423c13fec432acd96bc6e461611218fcaaf1a0f71d10586b515,E033,unverified,not_applicable,descriptive
-C129,si: 1.2 Transmission,method,397f88fe8a8eff2c0ad8989b8c7166f82d02dcd451772216559a60910c61f386,E033;E040,unverified,not_applicable,descriptive
-C130,si: 1.3 Movement between groups,method,acb39751773a8f608f5713d66cb09a7ffa05e6c18a82ee18c31f89b992ba8891,E033;E004;E040,unverified,not_applicable,descriptive
-C131,si: 1.3 Movement between groups,method,d3bb9f9bea2e1c01e3871cf4c6c1be9e682c8d160cf82cc41a8afcca0cc7eb99,E033;E004,unverified,not_applicable,descriptive
-C132,si: 1.4 Natural history and treatment,method,ba992fefc84a16ded1d60de546442c14d9ea47939c577daa07beccca5eb0ce3b,E033;E004,unverified,not_applicable,descriptive
-C133,si: 1.4 Natural history and treatment,method,6820d0329e3a39295d12dbb2302126a0a095b3a0483510df7713fbff2a8361f2,E033,unverified,not_applicable,descriptive
-C134,si: 1.5 Mortality,method,fe44554ecc89cf20dba3c6dfd96df256b4ceb2f810992b66094a258eb453f6de,E033;E004,unverified,not_applicable,descriptive
-C135,si: 1.6 Numerical solution and equilibrium,method,feece5dc75b8f2b1a9c83d9907a8daad5692109fdde504793750cd6ce651cb21,E033;E004;E007,unverified,not_applicable,descriptive
-C136,si: 1.6 Numerical solution and equilibrium,method,7503c63c2041e40490c3c76136eb5aec1ade46ed51579b2b53ab7a93fa950066,E036;E040,unverified,not_applicable,descriptive
-C137,si: 2. Fixed parameters,method,024d24bc0a38a0ba0aa287823fea3f8b4fbc7f2db43d29f2061f2ffd5eff4d3b,E004,unverified,not_applicable,descriptive
-C138,si: 2. Fixed parameters,method,8babc2faf483ce8ed310ba8725b3b29db19c58fbc3ea4cf2da921d033c928c72,E004;E062,unverified,not_applicable,descriptive
-C139,si: 2. Fixed parameters,method,d3b049b691ee154719661c9f55f075a00a0d3724bce11545cc6a626f64f34212,E004;E063,unverified,not_applicable,descriptive
-C140,si: 2. Fixed parameters,method,77239dfe5e0107adbf0653cdcd0c30c8ffdf69894e61873f4dae82946c4d1f92,E004;E064,unverified,not_applicable,descriptive
-C141,si: 2. Fixed parameters,method,490336d72f372441a028bcb3fe1dd362aeaa33c9cba6ef686d4aa8a34ccc5ee6,E004,unverified,not_applicable,descriptive
-C142,si: 2. Fixed parameters,method,ba463b18aa8bb946e64e850a4f6409efc5699602ee2ae53f41453a785864149b,E004;E065,unverified,not_applicable,descriptive
-C143,si: 2. Fixed parameters,method,27a3f2ab0e7e02880a5fa33e1553efd22981cf8e0a30d32fd848cf766f022730,E004;E020,unverified,not_applicable,descriptive
-C144,si: 2. Fixed parameters,method,317318f10cebf39ea9f1aa85ac4493d42f01762cd3ef1fe1f871f1449803b3f0,E004;E066,unverified,not_applicable,descriptive
-C145,si: 2. Fixed parameters,method,d93d85e229f989971cb11aa2ec0cad0deb4509176749ce316ca4ad23a7134885,E004,unverified,not_applicable,descriptive
-C146,si: 2. Fixed parameters,method,57c9bdb0578f04dcdc87bae3d4fc84fc54c70ce0c720365589a75df5c6d7a9f8,E004;E067,unverified,not_applicable,descriptive
-C147,si: 2. Fixed parameters,method,db3cf09bf7cbe72a573a91965bb2cd8d1df716d185e6272b9b5538fca28339d9,E004;E068,unverified,not_applicable,descriptive
-C148,si: 2. Fixed parameters,method,a775bde2c4d5ea80d75a3d236b7d041a6456d1c6039b1993564eb40b672f1ff0,E004;E069,unverified,not_applicable,descriptive
-C149,si: 2. Fixed parameters,method,0582505bc2c85541b9410ce7de6420b0743bd3b3c98b1e820bb9fa94b7f7996d,E004;E070;E071,unverified,not_applicable,descriptive
-C150,si: 2. Fixed parameters,method,89f62597a34b897f2c0bbddb4399e341e7ac002e692a45b3fc10c3cabcdb37a3,E004;E068,unverified,not_applicable,descriptive
-C151,si: 2. Fixed parameters,method,e4d70df841fa4fe42ae770fe462cbe14aa5842af3fcac406d3879007a6bc3162,E004;E072;E073,unverified,not_applicable,descriptive
-C152,si: 2. Fixed parameters,method,e9f27cd1a99c53e415b1213e6819df35ca2e1e1a6aef5f9f5e5990adedad1611,E004;E035,unverified,not_applicable,descriptive
-C153,si: 2. Fixed parameters,method,bd8072ff08841bc2b2bd791274f7d04d21692ee44b1f9dfebc2fbb57af5099ec,E004,unverified,not_applicable,descriptive
-C154,si: 2. Fixed parameters,method,180b93c9344c8d3760f3470862b7ec3158c87b58eb74c4da252a63e2e4ddfa7b,E004,unverified,not_applicable,descriptive
-C155,si: 2. Fixed parameters,method,e0f25adb94e12d47a9c66e229467954519976c3940c6f5a6ea75ae133643a850,E004,unverified,not_applicable,descriptive
-C156,si: 2. Fixed parameters,method,6415d41b8bb0ade1ff242174487ae66b78540e8720fafb26372d2703969c04d9,E004,unverified,not_applicable,descriptive
-C157,si: 2. Fixed parameters,method,d616e378098ffce5d255eb1089779f16b648225fb262129ce3ae44c975b5cbf7,E004;E038;E039,unverified,not_applicable,descriptive
-C158,si: 3. Prison rate estimation,method,074bc3eb4a587976394bb6df10e2ffe2815f0a4c59c95d843d18ec4fc3ac6b4c,E011;E074,unverified,not_applicable,descriptive
-C159,si: 3. Prison rate estimation,method,8b8ccc8bb768ea4a47d9e118e33d749fa4607bdc8d15073aa574eaa363130ab7,E075;E074,unverified,not_applicable,descriptive
-C160,si: 3. Prison rate estimation,method,47dc3fef58dc2914a33eb08bcf1f59e7ecb50207d31be869218474543a3d23d6,E076;E074,unverified,not_applicable,descriptive
-C161,si: 3. Prison rate estimation,method,7d46192cefed3ee011a56458a7e73de77146812a8e2d63013bf39f1552809094,E010;E037;E074,unverified,not_applicable,descriptive
-C162,si: 3. Prison rate estimation,result,40e8c381c1290b5b08de67fae97530a31c1bd6748afb99f3ab55f09ae57e6b26,E010,unverified,not_applicable,descriptive
-C163,si: 3. Prison rate estimation,result,30b7a9ee5215330fe6c091daf7b14a9c3fd9a5be1d11df73c65d0ede75188359,E010,unverified,not_applicable,descriptive
-C164,si: 3. Prison rate estimation,result,869282578cbb46110a7e437a0f8942eb5cdacd9396671364dc815d41669bd9f2,E010;E037,unverified,not_applicable,descriptive
-C165,si: 3. Prison rate estimation,result,bfa1656ca5ecd01027d81bbb70f4685ff24d0cb38650fd690cf9aec3492c4d0d,E010;E037,unverified,not_applicable,descriptive
-C166,si: 3. Prison rate estimation,result,b3ff5fbb80b9da51bda1b1f8235e025ba9138cee30b9b1cdcb7387da00b7fda1,E010;E037,unverified,not_applicable,descriptive
-C167,si: 3. Prison rate estimation,result,aa456ee20216803525e97a9ec8493d526f92cd5bf3d3fca5ee62fbdbf544d270,E010;E037,unverified,not_applicable,descriptive
-C168,si: 3. Prison rate estimation,result,d0e316e39447c00bbd03c64f98d3c3608ec0ff17ab80693b9525433fe9c199dc,E010;E037,unverified,not_applicable,descriptive
-C169,si: 3. Prison rate estimation,result,3bad5047c1ca1933ae4e292c28bc27f7b3758f1a21a3e4442a8ba32d3a0254f3,E010;E037,unverified,not_applicable,descriptive
-C170,si: 3. Prison rate estimation,result,1d4453e9f9b51c5751c86a5cb3a2062ed3f2eca04c8e5faa7ab52c9862ed076b,E010;E004,unverified,not_applicable,descriptive
-C171,si: 3. Prison rate estimation,method,35c32d136731e19ed55c7c85fefc9ac7ded3dd7421473f153520b24a2993f3f3,E074,unverified,not_applicable,descriptive
-C172,si: 4.1 Targets,result,242c5f4af22f86bc2d51b2127e8340643348ae559fb03b8f9c46af6f1377237f,E007,unverified,not_applicable,descriptive
-C173,si: 4.1 Targets,result,a0997c455ab57a6844692328f30e0ee0af3a0c65446ca7090e2f8a8076a41e2d,E007,unverified,not_applicable,descriptive
-C174,si: 4.1 Targets,result,9fffebcd500af0a7d0e224a564207d3a641ff497620a110c6ba961886609b1dd,E007,unverified,not_applicable,descriptive
-C175,si: 4.1 Targets,result,895ac6162204cb60b5ac011bc3ddacf15ffcf2977c309c69283cbeea040e0045,E015,unverified,not_applicable,descriptive
-C176,si: 4.1 Targets,result,3117f7156964c34af4fc67484bcd3acc024870c1f9c02ce632d3797fd4e3a840,E005,unverified,not_applicable,descriptive
-C177,si: 4.1 Targets,result,8019e4f2a06e3e890fc3300926924bb3492fb02a2b98592f934b7f528a33811f,E005;E006;E007,unverified,not_applicable,descriptive
-C178,si: 4.1 Targets,result,bb02294a6242c95f3d3166d804ddc4c8b8408382f60d9fbf303040907488b409,E007;E024,unverified,not_applicable,descriptive
-C179,si: 4.1 Targets,method,1e34edf082cf17889157f6223b0c1f9ffd7b456b67de921d35bdcc3719624d0b,E006;E004;E007;E039,unverified,not_applicable,descriptive
-C180,si: 4.1 Targets,result,03e1134c88e4b6abefdce95edeb0bd8792d9c16d2af3fea71b068a5e6f0061d5,E007;E015,unverified,moderate,descriptive
-C181,si: 4.1 Targets,method,c9e81ffa22a0da6307a265a5b2cb1f4d0d0c45d362737ffac019397708a88ed4,E007;E033,unverified,not_applicable,descriptive
-C182,si: 4.2 Parameters and prior,result,c06fc6e633326bdf3aa4f3246c8a0b2e3ebdd06da5d36c06822a563a38efe8c7,E040,unverified,not_applicable,descriptive
-C183,si: 4.2 Parameters and prior,method,b261e24a596dc3edfe3cd3425a4444fc77f9b93c947949158299395989148932,E040,unverified,not_applicable,descriptive
-C184,si: 4.2 Parameters and prior,method,061b89a6a6eec89cfa079b63163feb5caaf4d7ea0c3cb7587e16794d1bfe8523,E040,unverified,not_applicable,descriptive
-C185,si: 4.2 Parameters and prior,method,ca4d26e998d248c090edadee2dcff35d8b42f0f9eb24878c1dea4d02f244d1a8,E040,unverified,not_applicable,descriptive
-C186,si: 4.2 Parameters and prior,method,d9624c3574cc95d2f9a5bc76647284db95308b1c611d55a8a2b33d2a68c77b5a,E040,unverified,not_applicable,descriptive
-C187,si: 4.3 Likelihood,method,01f536388a1eaf0e4f77a146f9a31b5a99116709fca16dc7a1c07a0fde35bff9,E040;E007;E033,unverified,not_applicable,descriptive
-C188,si: 4.4 Posterior mode,result,2a75f95b27debd8ff874f152c9d310fccc3c0f69f5d7d5e202f73169e8a80162,E077;E041,unverified,low,descriptive
-C189,si: 4.4 Posterior mode,result,893992f709765d72b6ba16037a801097f8cf263a81a22c1616950dc35307a0d5,E077,unverified,low,descriptive
-C190,si: 4.5 MCMC,method,abb411656e10229969d530f6b53a5ed350e0dde5435ba1590f5b53199fcc2d95,E008;E042,unverified,not_applicable,descriptive
-C191,si: 4.5 MCMC,result,424fb1387931eac1f2f78718050a22bb851d087d5b270904a25615e4eed12e82,E008;E078,unverified,low,descriptive
-C192,si: 4.5 MCMC,result,411f22003dcfbb98ae1319403a35bef3e15221583b28b3ad8d2d94066dea011a,E052;E043,unverified,low,descriptive
-C193,si: 4.5 MCMC,result,1bdec3ae323d5447c0c41240297c5babe0b0b60bdbd27e9da134e1fab98861bf,E016,unverified,not_applicable,descriptive
-C194,si: 4.5 MCMC,result,6ab7e2a75720908bcff3cb2e29392c8d89f58c2d83ca891d4ddb91cc74b27b21,E016;E052;E008,unverified,low,descriptive
-C195,si: 4.5 MCMC,result,98d87d373c06044c20dabe475fa5c1b327d49f4da5fe5c0df595fe45b68cb586,E016;E052;E008,unverified,low,descriptive
-C196,si: 4.5 MCMC,result,a7edd9fded77403195a343a54dced59a66ea0b90471066cc70ef5bf13963f152,E016;E052;E008,unverified,low,descriptive
-C197,si: 4.5 MCMC,result,7f73775443f7f62e5232e81814dab82f1c9812ad6790772479e7002dc65854a2,E016;E052;E008,unverified,low,descriptive
-C198,si: 4.5 MCMC,result,3d11a4bca88521f2c6e6a6f94d2bf82c89335038aa78d581b15c07e5a855821f,E016;E052;E008,unverified,low,descriptive
-C199,si: 4.5 MCMC,result,c24597468e4a3708f2b5a6fc6e3fbffa733ee5751525bc183d6fb3b052f117db,E016;E052;E008,unverified,low,descriptive
-C200,si: 4.5 MCMC,result,0384f133adcb924b5c77aaed0a6a161f09eb1c5788e5989e81c34219b0256e5c,E016;E052;E008,unverified,low,descriptive
-C201,si: 4.5 MCMC,result,81578a1ba437efa69b11b1f7f64eea08475d6feef56028ab18022c922e051902,E016;E052;E008,unverified,low,descriptive
-C202,si: 4.5 MCMC,result,e215242eaa4470e87e67329a8a6ea3993d8f20843df0a45f7ba8fb91e30812c7,E016;E052;E008,unverified,low,descriptive
-C203,si: 4.5 MCMC,result,f265a94ae2692eeab77b054bd703e2f4edfa73b4e2441c42ce6047f22fd17ec6,E016;E052;E008,unverified,low,descriptive
-C204,si: 4.5 MCMC,result,b0eda8772eba30043f96f1edd36fdd60513149e155438bf08f157b07e5e0d18c,E016;E052;E008,unverified,low,descriptive
-C205,si: 4.5 MCMC,result,b855a5c35e797e0b44f6dfb1368b757808b1c2fece06341f6f6756d7da520517,E016;E052;E008,unverified,low,descriptive
-C206,si: 4.5 MCMC,result,1e419bbc2158850ae43421790d56a9a0762e6d2b3c4702e844fc6c278769e1ea,E016;E052;E008,unverified,low,descriptive
-C207,si: 4.5 MCMC,method,6caf2bf8d936c5914ed0d64a69766a14624ba0b66df43017392eaeb4ef58f288,E008,unverified,not_applicable,descriptive
-C208,si: 4.5 MCMC,result,d5d2dd521c647184e57b8a729dcdd4521b96a71db252d302032f0eb9b4ebbac7,E016;E008,unverified,moderate,descriptive
-C209,si: 4.5 MCMC,result,6ef1fb1a7de2c2750b62db7b00be1ae2db227f4e7f3627bfae58f01858a141d2,E016,unverified,moderate,descriptive
-C210,si: 4.6 Fit to the targets,result,9931aa7bf4275472b6da52a48942c39ce1830582841d0ace4089b3d9f628c982,E014;E053,unverified,moderate,descriptive
-C211,si: 4.6 Fit to the targets,result,6c07424502961e36a4c2cf8f2a8123262cea36b0e401e335b7de0a49ba2c4f77,E053,unverified,not_applicable,descriptive
-C212,si: 4.6 Fit to the targets,result,a81ed177956ec8f9279e21a56ca20b60f191bf7f5407306176e0501bc116b0ec,E053,unverified,not_applicable,descriptive
-C213,si: 4.6 Fit to the targets,result,4e9d3253c3539a04ecd8f625263059d83edf5508a619e7298ddacc723657b9dd,E053,unverified,moderate,descriptive
-C214,si: 4.6 Fit to the targets,result,fe659d0175c3cc8b03af7cd910f5ee2edd2f73dbc0bf5b98122a847d7b384f6c,E053,unverified,moderate,descriptive
-C215,si: 4.6 Fit to the targets,result,2b762d1044b1b9a43ec4c38ad8a8c3e9cfb52749767062fb24a868ad28b3c202,E053,unverified,moderate,descriptive
-C216,si: 4.6 Fit to the targets,result,6b329a3480cc39e7a24d2bea56702f62f56db1049972aae46196ffd6bf65159a,E053,unverified,moderate,descriptive
-C217,si: 4.6 Fit to the targets,result,ac935490b083db56cd0199beae94238d151f139e5255eeb19b49b3af6273035d,E053,unverified,moderate,descriptive
-C218,si: 4.6 Fit to the targets,result,75c40618df8f109d28b052d6b8d07c1d3a19d1ce3a357642b9bfc2f3d1aa452e,E053,unverified,moderate,descriptive
-C219,si: 4.6 Fit to the targets,result,7a9081b5f36fca8d5c536dcd69e426e06355ed05debe22e8a4a65b1cbfd92082,E053,unverified,moderate,descriptive
-C220,si: 4.6 Fit to the targets,result,3a8bde33bfb501e8fa5c56dc99ca7e81eca98353456ae57cad19c545afca9e11,E053,unverified,moderate,descriptive
-C221,si: 4.6 Fit to the targets,result,c3193bdbd1ccc3dfe342d39c2ec9455affe74397ce91b577be7aa2cf6b21e72d,E053,unverified,moderate,descriptive
-C222,si: 4.6 Fit to the targets,result,08261b9def5c63b25b7710ea90fc44bc7934eb102d0bd2e9b83ad4110b2df1aa,E053,unverified,moderate,descriptive
-C223,si: 4.6 Fit to the targets,result,7296f7dc686472c905d7eb173fa22d5e95ecf937506c1f97306faf57424ee5ed,E053,unverified,moderate,descriptive
-C224,si: 4.6 Fit to the targets,result,89e6d682f6def19f55bf18d2e477a5f2579c96f2c760dcb6b908bbd0f061b7ff,E053,unverified,moderate,descriptive
-C225,si: 4.6 Fit to the targets,result,7663456568722cf48f86d49df576fafd44096f25bd3ca9e9e2714f38eb1c7b1c,E053,unverified,moderate,descriptive
-C226,si: 4.7 Checks of the posterior,result,516fa4c54bef04cfb5986f17fa0299a0cf522cf394861aa3c9f3ef6d89f04c49,E079;E044,unverified,moderate,descriptive
-C227,si: 5. Model population in 2015,result,5a3c5271fc86a1c5454c84e0f7686007360a65469025b22ed7f45323cedf4cfa,E014,unverified,not_applicable,descriptive
-C228,si: 5. Model population in 2015,result,f68286ccdd75def30deb5531c4561b490d2e7509bc1eef5b539b2f6ed2388bef,E014,unverified,moderate,descriptive
-C229,si: 5. Model population in 2015,result,0b1a239865728b6193592344b82bf9165faa37f34ea0d62b4db229545ce77d89,E014,unverified,moderate,descriptive
-C230,si: 5. Model population in 2015,result,ac4707de6046c6b8c61784f639569b9607d8ce30d4d764742ab1242144cfea5c,E014,unverified,moderate,descriptive
-C231,si: 5. Model population in 2015,result,517164d9a6080c59c88322e10e5159e778363e60bc675dce155e56330af8bb88,E014,unverified,moderate,descriptive
-C232,si: 5. Model population in 2015,result,e7d5624630ab926ae9ede60b18235f9060bbfdb06ff70b4d70cc8548c1eb4adf,E014,unverified,moderate,descriptive
-C233,si: 5. Model population in 2015,result,3986d91e9d05d61622d7cafc9b072bad987af7f2601e3c2779c9c4da26bf694d,E014,unverified,moderate,descriptive
-C234,si: 5. Model population in 2015,result,7cebbcadc45f3acc9160e768c0d26cc37f7c9f9a406a00f6e8003f358d7002ce,E014;E015,unverified,moderate,descriptive
-C235,si: 6. Scenario implementation,method,b617d747e8b939bbe52a6c457ba29ee785cc5d65f5d588892bbdca4657350e7a,E001;E002;E012;E013,unverified,not_applicable,descriptive
-C236,si: 6. Scenario implementation,method,1e137b6e1bbb0f245219d57860a7ee3e7854159141eb6a834948c7fc2951502c,E002,unverified,not_applicable,descriptive
-C237,si: 6. Scenario implementation,method,c82da6d6ad7cd686ca96eb121f0f57a26574d28084d4b5c00397891b9e7f58eb,E033;E002,unverified,not_applicable,descriptive
-C238,si: 6. Scenario implementation,method,b72c6d5b45becf65afb2ecc5270ccd43e9205310e2166c62e2c1c5b908cc9dbd,E002,unverified,not_applicable,descriptive
-C239,si: 6. Scenario implementation,method,8098f99722be5778c92dfffa9e578437c3c68449295c81b6ea045af636cc0824,E002;E033;E055,unverified,not_applicable,descriptive
-C240,si: 6. Scenario implementation,result,d6a73154c682223b68becc744d8a34c933082af6684fcd3142e6882dfc265824,E009;E050;E002,unverified,not_applicable,descriptive
-C241,si: 7. Costs,result,eeeb6440c1ff5589082d35a1c9e5b68f941c4a2cb44186f4edd328500672ca5b,E045,unverified,not_applicable,descriptive
-C242,si: 7. Costs,method,f9f492179679f7d80fba6b0933f8298790801976cea5b0f82ca67aa2dcbf9b55,E045;E046;E049,unverified,not_applicable,descriptive
-C243,si: 7. Costs,method,655fe10c1d3af7160c776e8824f2cb106837f24d2be1605a45ec1063855503b7,E045;E047,unverified,not_applicable,descriptive
-C244,si: 7. Costs,method,6142872a2dbe6a34b5458b42cb96091453eb3d4aa1713d5a20048e14f236c720,E045;E048,unverified,not_applicable,descriptive
-C245,si: 7. Costs,method,680c57512d254c05369b79d0cc87f68a5278eedf29e99415339ea3dcd1f2a76e,E045;E047,unverified,not_applicable,descriptive
-C246,si: 7. Costs,method,ee1243fd8e8ea658cf8298e886da9bcedb35cddd56d6c9fc519e309b172cc7a1,E045,unverified,not_applicable,descriptive
-C247,si: 7. Costs,method,6c38eb078a0b87d7ff8507d418087995bc43426544cd7e38dac9a7fe31aff4aa,E001,unverified,not_applicable,descriptive
-C248,si: 8. Additional results,result,d443d6812e245b69a0115983d5e2d5a6d2aba09cfb133c9840cb44c8bb8260da,E009,unverified,not_applicable,descriptive
-C249,si: 8. Additional results,result,a555764d255f36fd5f5f7c06d9a0145c14d3fbbbce2d8683f77054b8a3c2985b,E009,unverified,not_applicable,descriptive
-C250,si: 8. Additional results,result,54741f2f5f3922453369c385fc5cce6789c179ff8d5940eb7ae8eebedfd01736,E009,unverified,not_applicable,descriptive
-C251,si: 8. Additional results,result,abd2c7a5685829bcb25676f6652cd5bb7cdbf35878f6affe7bc3772bfb3fe2cb,E009,unverified,moderate,descriptive
-C252,si: 8. Additional results,result,3254d27aab7b796e20a196a64687f153bc14c25ebf262eed40ddc311804abfae,E009,unverified,moderate,descriptive
-C253,si: 8. Additional results,result,f1e1e715acca19c523c79a4ed074a688b9a6c2522f22d55b1d8787cd672d6267,E009,unverified,moderate,descriptive
-C254,si: 8. Additional results,result,2da836106b09c673bcddf115ece949ecd47dae858ae7ab0cfd8b8f90d2c9dc89,E009,unverified,moderate,descriptive
-C255,si: 8. Additional results,result,5243d98e713258c805584efa8cb51ced31b1e3750e60b842edddaae85b09fef3,E009,unverified,moderate,descriptive
-C256,si: 8. Additional results,result,062f4ddff0429ea93da0d39c0b7d1ebd084807b3878cc2934a2dd0df14051ef2,E009,unverified,moderate,descriptive
-C257,si: 8. Additional results,result,81c80325a97cb9750489f2d39088664d4821076e74fb6ca4e3dbb2b2772be510,E009,unverified,moderate,descriptive
-C258,si: 8. Additional results,result,a1ef0d0d95362f26fd675422f5d69fd36a946ce1e666238194bfc1d7414fdeb0,E009,unverified,moderate,descriptive
-C259,si: 8. Additional results,result,6bf03f30881749cf455a42dfd017986a146a334f4a20c423e3d595d349df1479,E009,unverified,moderate,descriptive
-C260,si: 8. Additional results,result,056207d1cb3fa82be611df453afde6ebdf60f21eafaccc67bdb7ca38092c883f,E009,unverified,moderate,descriptive
-C261,si: 8. Additional results,result,be70d7e0509d9353ec39f922ffdeaae396a4abc28eb8897f4f9dfe493664a08e,E009,unverified,moderate,descriptive
-C262,si: 8. Additional results,result,070f41192e4fb607ee68d571966ac47be1b22f6e1443b86baf7deebb1cd2edbd,E009,unverified,moderate,descriptive
-C263,si: 8. Additional results,result,9435de36a5a57e3dee2c89748aada40173fc1d75fff76449dbc784cc0fb10c6e,E009,unverified,moderate,descriptive
-C264,si: 8. Additional results,result,9aefcadb27327e0d159e93d79de3d116d2be94194dfc14aa15c488e73da38269,E009,unverified,moderate,descriptive
-C265,si: 8. Additional results,result,58dc8e2016b19bcc24f4852d992033dd6b2d5aaf673e38a5e7774439543eb3e7,E009,unverified,moderate,descriptive
-C266,si: 8. Additional results,result,c198b9808744a1f8a46b8a1ac67df75af345cf5ce24a0435359e1cb88c0f51ec,E009,unverified,moderate,descriptive
-C267,si: 8. Additional results,result,c6347d0784d059032b70ba813d7fb06514958524a795c7e7217972df6de7feb7,E009,unverified,moderate,descriptive
-C268,si: 8. Additional results,result,ce770a653b4a14e59ace0fbfa16831f6e4599ddec00e7531c35eed243302969b,E009;E001,unverified,moderate,descriptive
-C269,si: 9. Sensitivity analysis: prison treatment from 2019,method,4ceac115ee691d4767828a0e50a1ee94fe881d22b224897317b4a5a7546e765d,E013;E002,unverified,not_applicable,descriptive
-C270,si: 9. Sensitivity analysis: prison treatment from 2019,result,1b2a88bb93ca60e3008861860472a10d5f53933c60c8ed488646a9e8a09cec87,E013,unverified,not_applicable,descriptive
-C271,si: 9. Sensitivity analysis: prison treatment from 2019,result,dfd9c1b682ad1a0cafb59b29bd0eafea19016051a90374eb9964dd243b1d2e76,E013,unverified,not_applicable,descriptive
-C272,si: 9. Sensitivity analysis: prison treatment from 2019,result,f0860a43b5be85ab1edccecf272453e9e446d61bb76c6b1f732fe05652c772a3,E013,unverified,moderate,descriptive
-C273,si: 9. Sensitivity analysis: prison treatment from 2019,result,d90d67c3d57096446f749cdf041a084a2a48db7a5d1b3eb65cdc64aeb992c11b,E013,unverified,moderate,descriptive
-C274,si: 9. Sensitivity analysis: prison treatment from 2019,result,47b9655471a2e8ee84fda1ed13e9d7245d2218f2cfe48f8b26333b38d79c87ea,E013,unverified,moderate,descriptive
-C275,si: 9. Sensitivity analysis: prison treatment from 2019,result,1531ac8895ebd2288c2edf3b2aa696cb04435caa0f6222ac000a80d349da6abf,E013,unverified,moderate,descriptive
-C276,si: 9. Sensitivity analysis: prison treatment from 2019,result,5688314480b9cada4ad05c57763607edc81c4979d5ba309ca5059a0560b0a7f3,E013,unverified,moderate,descriptive
-C277,si: 9. Sensitivity analysis: prison treatment from 2019,result,18f212d0116a8d7b4fa219be70c24a2902ac0d18b61b3a2dc84778948e1995f3,E013,unverified,moderate,descriptive
-C278,si: 9. Sensitivity analysis: prison treatment from 2019,result,74a4a4d5bb2205ba690cdb9fe05b653ebcdbc4ab07b60a882bc5508991c12db1,E013,unverified,moderate,descriptive
-C279,si: 9. Sensitivity analysis: prison treatment from 2019,result,6fbf0b100fdf976849fb3784393a4b6df95d87ac42c5b51c2aca334d53c06b4b,E013,unverified,moderate,descriptive
-C280,si: 9. Sensitivity analysis: prison treatment from 2019,result,25ec3e12c6b0c730bf82fc20f542d4a8abd8cfda89471b21f658719ea1c6f980,E013,unverified,moderate,descriptive
-C281,si: 9. Sensitivity analysis: prison treatment from 2019,result,690c2d003bb41edcbb05ba31425d7320fb926b2aa4a240a4f12f958e2d4ed980,E013,unverified,moderate,descriptive
-C282,si: 9. Sensitivity analysis: prison treatment from 2019,result,b9b32fd4583c15aaaadd18d4c5e74b80917e59116f2b13ed70994b86aa714ff2,E013,unverified,moderate,descriptive
-C283,si: 9. Sensitivity analysis: prison treatment from 2019,result,2ecc85c1146ebb5df6571c374c13499e9b436c8dd7d4c0e93733eda96367a11d,E013,unverified,moderate,descriptive
-C284,si: 9. Sensitivity analysis: prison treatment from 2019,result,c81ba107728980453fd8ebe41fa2aa3f1060a30aab82c3ba8bdbcf1ab11d4e9c,E013,unverified,moderate,descriptive
-C285,si: 9. Sensitivity analysis: prison treatment from 2019,result,8762390cccb2113031b1ef4df1ee970a9d288fbbb177eaf25c2d24841c2aeb23,E013,unverified,moderate,descriptive
-C286,si: 9. Sensitivity analysis: prison treatment from 2019,result,fde528f41911ad5fee458c558aec618477965d9765b6c2e36da1d7767c1eb781,E013,unverified,moderate,descriptive
-C287,si: 9. Sensitivity analysis: prison treatment from 2019,result,a8a84e3ea09a1a01c23be555089a5c3b74ca5337fec10481141b639b54c3bfdd,E013,unverified,moderate,descriptive
-C288,si: 9. Sensitivity analysis: prison treatment from 2019,result,df71fe1dfdddbf772826a1026cd099d856a306711003cbf76c37e82b0570bc22,E013,unverified,moderate,descriptive
-C289,si: 9. Sensitivity analysis: prison treatment from 2019,result,c88b73340d260d780b4b2c56b59924471b921a461c34cab0328aab0dfbfbda03,E080;E055,unverified,moderate,descriptive
-C290,si: 10. Software and reproducibility,method,03d94c4aa6bb07b1e8a9436b4f94cbaa4aaf365c9b6fc761fa0eeeea597be57b,E033;E081;E051,unverified,not_applicable,descriptive
-C291,si: 10. Software and reproducibility,declaration,a3b388e032683879c0ffd4ec870e61bdefaa9f5af5cc7acaadb00dac3c672a2a,E081;E061,unverified,not_applicable,descriptive
-C292,si: Figures,result,e8bcca8b61d1fca2c96b47721951df49b155b45c31bd7dc0fd807617a2fe7e4d,E008,unverified,not_applicable,descriptive
-C293,si: Figures,result,9c6dcbc637ca39c98eb289f3c424a5808f865ecb69243234aab59c184eb1d611,E008,unverified,not_applicable,descriptive
-C294,si: Figures,result,52967525403c5d8c0255eefef0c55d8e5e5747444a43d0a40dd95c7a23f3457a,E009,unverified,not_applicable,descriptive
-C295,si: Figures,result,2f8e7a98e2110d9f8a1998458c89910bb66e566c11380d48e92a2df27dfd9efe,E082;E009,unverified,not_applicable,descriptive
-C296,si: Figures,result,517e64ff882116b1f3bb97cfb52ca3ffe76433f0c19b8d98c9a3bd31a8a87207,E013;E080,unverified,not_applicable,descriptive
+C129,si: 1.1 Compartments,method,9fb6a214465a234a562f189676813fc393ee2b5741e0251c8e83cbaa41b30dff,E032,unverified,not_applicable,descriptive
+C130,si: 1.1 Compartments,method,fd3b13f24fa41423c13fec432acd96bc6e461611218fcaaf1a0f71d10586b515,E032,unverified,not_applicable,descriptive
+C131,si: 1.2 Transmission,method,397f88fe8a8eff2c0ad8989b8c7166f82d02dcd451772216559a60910c61f386,E032;E041,unverified,not_applicable,descriptive
+C132,si: 1.3 Movement between groups,method,acb39751773a8f608f5713d66cb09a7ffa05e6c18a82ee18c31f89b992ba8891,E032;E004;E041,unverified,not_applicable,descriptive
+C133,si: 1.3 Movement between groups,method,d3bb9f9bea2e1c01e3871cf4c6c1be9e682c8d160cf82cc41a8afcca0cc7eb99,E032;E004,unverified,not_applicable,descriptive
+C134,si: 1.4 Natural history and treatment,method,ba992fefc84a16ded1d60de546442c14d9ea47939c577daa07beccca5eb0ce3b,E032;E004,unverified,not_applicable,descriptive
+C135,si: 1.4 Natural history and treatment,method,6820d0329e3a39295d12dbb2302126a0a095b3a0483510df7713fbff2a8361f2,E032,unverified,not_applicable,descriptive
+C136,si: 1.5 Mortality,method,71aa762561151fbc61cdb41f6fafbce6fedf312ead3a75672b148b97fbefde2c,E032;E004,unverified,not_applicable,descriptive
+C137,si: 1.6 Numerical solution and equilibrium,method,feece5dc75b8f2b1a9c83d9907a8daad5692109fdde504793750cd6ce651cb21,E032;E004;E007,unverified,not_applicable,descriptive
+C138,si: 1.6 Numerical solution and equilibrium,method,7503c63c2041e40490c3c76136eb5aec1ade46ed51579b2b53ab7a93fa950066,E037;E041,unverified,not_applicable,descriptive
+C139,si: 2. Fixed parameters,method,024d24bc0a38a0ba0aa287823fea3f8b4fbc7f2db43d29f2061f2ffd5eff4d3b,E004,unverified,not_applicable,descriptive
+C140,si: 2. Fixed parameters,method,8babc2faf483ce8ed310ba8725b3b29db19c58fbc3ea4cf2da921d033c928c72,E004;E069,unverified,not_applicable,descriptive
+C141,si: 2. Fixed parameters,method,d3b049b691ee154719661c9f55f075a00a0d3724bce11545cc6a626f64f34212,E004;E070,unverified,not_applicable,descriptive
+C142,si: 2. Fixed parameters,method,77239dfe5e0107adbf0653cdcd0c30c8ffdf69894e61873f4dae82946c4d1f92,E004;E071,unverified,not_applicable,descriptive
+C143,si: 2. Fixed parameters,method,490336d72f372441a028bcb3fe1dd362aeaa33c9cba6ef686d4aa8a34ccc5ee6,E004,unverified,not_applicable,descriptive
+C144,si: 2. Fixed parameters,method,ba463b18aa8bb946e64e850a4f6409efc5699602ee2ae53f41453a785864149b,E004;E072,unverified,not_applicable,descriptive
+C145,si: 2. Fixed parameters,method,27a3f2ab0e7e02880a5fa33e1553efd22981cf8e0a30d32fd848cf766f022730,E004;E019,unverified,not_applicable,descriptive
+C146,si: 2. Fixed parameters,method,317318f10cebf39ea9f1aa85ac4493d42f01762cd3ef1fe1f871f1449803b3f0,E004;E073,unverified,not_applicable,descriptive
+C147,si: 2. Fixed parameters,method,d93d85e229f989971cb11aa2ec0cad0deb4509176749ce316ca4ad23a7134885,E004,unverified,not_applicable,descriptive
+C148,si: 2. Fixed parameters,method,57c9bdb0578f04dcdc87bae3d4fc84fc54c70ce0c720365589a75df5c6d7a9f8,E004;E074,unverified,not_applicable,descriptive
+C149,si: 2. Fixed parameters,method,db3cf09bf7cbe72a573a91965bb2cd8d1df716d185e6272b9b5538fca28339d9,E004;E075,unverified,not_applicable,descriptive
+C150,si: 2. Fixed parameters,method,d087fe7573bae781ef3d4c011376ba116435b5fbd5c26ab63afca30097f46452,E004;E076,unverified,not_applicable,descriptive
+C151,si: 2. Fixed parameters,method,0582505bc2c85541b9410ce7de6420b0743bd3b3c98b1e820bb9fa94b7f7996d,E004;E077;E078,unverified,not_applicable,descriptive
+C152,si: 2. Fixed parameters,method,89f62597a34b897f2c0bbddb4399e341e7ac002e692a45b3fc10c3cabcdb37a3,E004;E075,unverified,not_applicable,descriptive
+C153,si: 2. Fixed parameters,method,5ef2695e657cb72f18faa4b92914b29b9c6a09ccc72775648eea7290a6d72572,E004;E079;E080,unverified,not_applicable,descriptive
+C154,si: 2. Fixed parameters,method,58cb7e5dc8dac8169e1eb5e82f4a892d4a312c05dbb216b4b60b0d63760686b5,E004;E035,unverified,not_applicable,descriptive
+C155,si: 2. Fixed parameters,method,b845210e56ff917d032a013dd6166ba635b1c39c1707b4eecf0d46c70f478948,E004;E036,unverified,not_applicable,descriptive
+C156,si: 2. Fixed parameters,method,da6779fd1c39e30f9298116cb763b56efc653eea59f4d3d7488e5544bce4d30b,E004;E034;E081,unverified,not_applicable,descriptive
+C157,si: 2. Fixed parameters,method,180b93c9344c8d3760f3470862b7ec3158c87b58eb74c4da252a63e2e4ddfa7b,E004,unverified,not_applicable,descriptive
+C158,si: 2. Fixed parameters,method,e0f25adb94e12d47a9c66e229467954519976c3940c6f5a6ea75ae133643a850,E004,unverified,not_applicable,descriptive
+C159,si: 2. Fixed parameters,method,6415d41b8bb0ade1ff242174487ae66b78540e8720fafb26372d2703969c04d9,E004,unverified,not_applicable,descriptive
+C160,si: 2. Fixed parameters,method,d616e378098ffce5d255eb1089779f16b648225fb262129ce3ae44c975b5cbf7,E004;E039;E040,unverified,not_applicable,descriptive
+C161,si: 3. Prison rate estimation,method,074bc3eb4a587976394bb6df10e2ffe2815f0a4c59c95d843d18ec4fc3ac6b4c,E011;E082,unverified,not_applicable,descriptive
+C162,si: 3. Prison rate estimation,method,8b8ccc8bb768ea4a47d9e118e33d749fa4607bdc8d15073aa574eaa363130ab7,E083;E082,unverified,not_applicable,descriptive
+C163,si: 3. Prison rate estimation,method,47dc3fef58dc2914a33eb08bcf1f59e7ecb50207d31be869218474543a3d23d6,E084;E082,unverified,not_applicable,descriptive
+C164,si: 3. Prison rate estimation,method,7d46192cefed3ee011a56458a7e73de77146812a8e2d63013bf39f1552809094,E010;E038;E082,unverified,not_applicable,descriptive
+C165,si: 3. Prison rate estimation,result,40e8c381c1290b5b08de67fae97530a31c1bd6748afb99f3ab55f09ae57e6b26,E010,unverified,not_applicable,descriptive
+C166,si: 3. Prison rate estimation,result,30b7a9ee5215330fe6c091daf7b14a9c3fd9a5be1d11df73c65d0ede75188359,E010,unverified,not_applicable,descriptive
+C167,si: 3. Prison rate estimation,result,869282578cbb46110a7e437a0f8942eb5cdacd9396671364dc815d41669bd9f2,E010;E038,unverified,not_applicable,descriptive
+C168,si: 3. Prison rate estimation,result,bfa1656ca5ecd01027d81bbb70f4685ff24d0cb38650fd690cf9aec3492c4d0d,E010;E038,unverified,not_applicable,descriptive
+C169,si: 3. Prison rate estimation,result,b3ff5fbb80b9da51bda1b1f8235e025ba9138cee30b9b1cdcb7387da00b7fda1,E010;E038,unverified,not_applicable,descriptive
+C170,si: 3. Prison rate estimation,result,aa456ee20216803525e97a9ec8493d526f92cd5bf3d3fca5ee62fbdbf544d270,E010;E038,unverified,not_applicable,descriptive
+C171,si: 3. Prison rate estimation,result,d0e316e39447c00bbd03c64f98d3c3608ec0ff17ab80693b9525433fe9c199dc,E010;E038,unverified,not_applicable,descriptive
+C172,si: 3. Prison rate estimation,result,3bad5047c1ca1933ae4e292c28bc27f7b3758f1a21a3e4442a8ba32d3a0254f3,E010;E038,unverified,not_applicable,descriptive
+C173,si: 3. Prison rate estimation,result,1d4453e9f9b51c5751c86a5cb3a2062ed3f2eca04c8e5faa7ab52c9862ed076b,E010;E004,unverified,not_applicable,descriptive
+C174,si: 3. Prison rate estimation,method,35c32d136731e19ed55c7c85fefc9ac7ded3dd7421473f153520b24a2993f3f3,E082,unverified,not_applicable,descriptive
+C175,si: 4.1 Targets,result,242c5f4af22f86bc2d51b2127e8340643348ae559fb03b8f9c46af6f1377237f,E007,unverified,not_applicable,descriptive
+C176,si: 4.1 Targets,result,a0997c455ab57a6844692328f30e0ee0af3a0c65446ca7090e2f8a8076a41e2d,E007,unverified,not_applicable,descriptive
+C177,si: 4.1 Targets,result,9fffebcd500af0a7d0e224a564207d3a641ff497620a110c6ba961886609b1dd,E007,unverified,not_applicable,descriptive
+C178,si: 4.1 Targets,result,cd34e11da6520c4aba8c1ced6b45d9549be1ddb961ffc30c87dcbb958dbf77bc,E042,unverified,not_applicable,descriptive
+C179,si: 4.1 Targets,result,3117f7156964c34af4fc67484bcd3acc024870c1f9c02ce632d3797fd4e3a840,E005,unverified,not_applicable,descriptive
+C180,si: 4.1 Targets,result,8019e4f2a06e3e890fc3300926924bb3492fb02a2b98592f934b7f528a33811f,E005;E006;E007,unverified,not_applicable,descriptive
+C181,si: 4.1 Targets,result,bb02294a6242c95f3d3166d804ddc4c8b8408382f60d9fbf303040907488b409,E007;E023,unverified,not_applicable,descriptive
+C182,si: 4.1 Targets,method,1e34edf082cf17889157f6223b0c1f9ffd7b456b67de921d35bdcc3719624d0b,E006;E004;E007;E040,unverified,not_applicable,descriptive
+C183,si: 4.1 Targets,result,03e1134c88e4b6abefdce95edeb0bd8792d9c16d2af3fea71b068a5e6f0061d5,E007;E042,unverified,moderate,descriptive
+C184,si: 4.1 Targets,method,c9e81ffa22a0da6307a265a5b2cb1f4d0d0c45d362737ffac019397708a88ed4,E007;E032,unverified,not_applicable,descriptive
+C185,si: 4.2 Parameters and prior,result,c06fc6e633326bdf3aa4f3246c8a0b2e3ebdd06da5d36c06822a563a38efe8c7,E041,unverified,not_applicable,descriptive
+C186,si: 4.2 Parameters and prior,method,b261e24a596dc3edfe3cd3425a4444fc77f9b93c947949158299395989148932,E041,unverified,not_applicable,descriptive
+C187,si: 4.2 Parameters and prior,method,061b89a6a6eec89cfa079b63163feb5caaf4d7ea0c3cb7587e16794d1bfe8523,E041,unverified,not_applicable,descriptive
+C188,si: 4.2 Parameters and prior,method,ca4d26e998d248c090edadee2dcff35d8b42f0f9eb24878c1dea4d02f244d1a8,E041,unverified,not_applicable,descriptive
+C189,si: 4.2 Parameters and prior,method,d9624c3574cc95d2f9a5bc76647284db95308b1c611d55a8a2b33d2a68c77b5a,E041,unverified,not_applicable,descriptive
+C190,si: 4.3 Likelihood,method,01f536388a1eaf0e4f77a146f9a31b5a99116709fca16dc7a1c07a0fde35bff9,E041;E007;E032,unverified,not_applicable,descriptive
+C191,si: 4.4 Posterior mode,result,79fb9504ed20e7b5f711d70d39a11abcd055dcc6fa7b92fecb03f1ac2c559477,E085;E043,unverified,low,descriptive
+C192,si: 4.4 Posterior mode,result,bcad24c5ce17516361175a358e689083ee0ec38c60458d2ea9dff6c7d5dd4ad5,E085,unverified,low,descriptive
+C193,si: 4.5 MCMC,method,abb411656e10229969d530f6b53a5ed350e0dde5435ba1590f5b53199fcc2d95,E008;E044,unverified,not_applicable,descriptive
+C194,si: 4.5 MCMC,result,90ebcc5cb2eac440b7b369f2d7e1a6193b3f65d5f780f824b68f66794522747b,E008;E086,unverified,low,descriptive
+C195,si: 4.5 MCMC,result,8480a48486e78b1d17a1827dd2e37ba0ac94a0894551e5a10921d2c9a33d768c,E058;E045,unverified,low,descriptive
+C196,si: 4.5 MCMC,result,1bdec3ae323d5447c0c41240297c5babe0b0b60bdbd27e9da134e1fab98861bf,E014,unverified,not_applicable,descriptive
+C197,si: 4.5 MCMC,result,b3aa83faa52c488072e764cacb54d5b7d3a5b2e48c41af3f01c7e41dbe2518bd,E014;E058;E008,unverified,low,descriptive
+C198,si: 4.5 MCMC,result,f2be24396a51e4ab1310302e2e92092213c1febb4afc543b7a68452fc5f419d0,E014;E058;E008,unverified,low,descriptive
+C199,si: 4.5 MCMC,result,b51f11b1f941440b06d1e073587191797b2ce7e21ab0a582080b6b27e29a4952,E014;E058;E008,unverified,low,descriptive
+C200,si: 4.5 MCMC,result,c95975eadf1f3e06c3116e052f26c89481711060d2789387baf699d7c3f1fba8,E014;E058;E008,unverified,low,descriptive
+C201,si: 4.5 MCMC,result,928e707f18baf6e33dc6d5bc0fd7938fae71b782752d62bf454bd4385f3ab734,E014;E058;E008,unverified,low,descriptive
+C202,si: 4.5 MCMC,result,a340b97e083471b7ce719f58ac7971dd05df37d1933679fe6ecf31cadb3fcd6d,E014;E058;E008,unverified,low,descriptive
+C203,si: 4.5 MCMC,result,b14ff3d510590bdb18943a623aec0186099b3ad52b15ef69768f87675fbb3595,E014;E058;E008,unverified,low,descriptive
+C204,si: 4.5 MCMC,result,2e35d3004e1826314478c34273c7c27342c6ed26022971ef967ace71b5e07cfb,E014;E058;E008,unverified,low,descriptive
+C205,si: 4.5 MCMC,result,7c928e5522c4f94cb6fe7cfc9efd2ec3c8f2e125c87b5ca5486221375f036dab,E014;E058;E008,unverified,low,descriptive
+C206,si: 4.5 MCMC,result,0b732bef47042820307354e78df9d95b741474d0734d5be30dd7318a857ff6a8,E014;E058;E008,unverified,low,descriptive
+C207,si: 4.5 MCMC,result,c56076d36ce0889f441e3b0c0141605be696b0130a4098d045340ddaf1adedf4,E014;E058;E008,unverified,low,descriptive
+C208,si: 4.5 MCMC,result,4c4fcdd1b71939b6845597d578582b9414b29e3a3e0009101e916ce654d02b25,E014;E058;E008,unverified,low,descriptive
+C209,si: 4.5 MCMC,result,471c03d6c02db96508b8b54faa0b16f48d4a0496ed6634112475b7bcf3d01342,E014;E058;E008,unverified,low,descriptive
+C210,si: 4.5 MCMC,method,6caf2bf8d936c5914ed0d64a69766a14624ba0b66df43017392eaeb4ef58f288,E008,unverified,not_applicable,descriptive
+C211,si: 4.5 MCMC,result,89c61651dc45fcb60ffd97b2e2c10de9eb5a2a9d5c2f0fedd25fb959cfa639b4,E014;E008,unverified,moderate,descriptive
+C212,si: 4.5 MCMC,result,a9d292c7a743c1c1f1ea8e1fe2097c9d58584e101413379cb00af9804cb7b7cc,E014,unverified,moderate,descriptive
+C213,si: 4.6 Fit to the targets,result,9931aa7bf4275472b6da52a48942c39ce1830582841d0ace4089b3d9f628c982,E061;E059,unverified,moderate,descriptive
+C214,si: 4.6 Fit to the targets,result,6c07424502961e36a4c2cf8f2a8123262cea36b0e401e335b7de0a49ba2c4f77,E059,unverified,not_applicable,descriptive
+C215,si: 4.6 Fit to the targets,result,a81ed177956ec8f9279e21a56ca20b60f191bf7f5407306176e0501bc116b0ec,E059,unverified,not_applicable,descriptive
+C216,si: 4.6 Fit to the targets,result,2bc8b3d1c6c4f51679998171caa59a06cfd75383cec2789e2f1e237f6c8fbaf5,E059,unverified,moderate,descriptive
+C217,si: 4.6 Fit to the targets,result,97634cd73572d40107c1c8f1e6283a3a4c8db02b539375ed9ca1c6262ca41a57,E059,unverified,moderate,descriptive
+C218,si: 4.6 Fit to the targets,result,f8bb1e660163168a54368d61f1ae9ac56ff7810c796cdcdc8f04553ab98afa60,E059,unverified,moderate,descriptive
+C219,si: 4.6 Fit to the targets,result,efc93bee9f0503da3181ad509787de94c146de53a89a40a6acf302f4bf1a7413,E059,unverified,moderate,descriptive
+C220,si: 4.6 Fit to the targets,result,42c6bdb470d4a77860ace727a841ad9d4ef7154bde8217619d517ab02f289bd7,E059,unverified,moderate,descriptive
+C221,si: 4.6 Fit to the targets,result,88335d623fd06778469764233346a783b0109c8149f7efbb97478c19f615c13a,E059,unverified,moderate,descriptive
+C222,si: 4.6 Fit to the targets,result,38758a26fb87b7a2ea19dbc6462d48647170d645ea99524c62e05c89700cf290,E059,unverified,moderate,descriptive
+C223,si: 4.6 Fit to the targets,result,afcc252fc10ed57195c77ebae7acfb9491bd0713e37421fbdadf0f280ca1f064,E059,unverified,moderate,descriptive
+C224,si: 4.6 Fit to the targets,result,e0960e3c2089cffca5f907953bde1763eb2fc3e12e8535efa498b923107e9932,E059,unverified,moderate,descriptive
+C225,si: 4.6 Fit to the targets,result,fb764f321da52c3a8f109307d4415eaafd68670df6679f430f104c5b14f88eec,E059,unverified,moderate,descriptive
+C226,si: 4.6 Fit to the targets,result,7296f7dc686472c905d7eb173fa22d5e95ecf937506c1f97306faf57424ee5ed,E059,unverified,moderate,descriptive
+C227,si: 4.6 Fit to the targets,result,1577397c810003178e473b609f124a9ea19c4d487fd6dd47cfedbce12e961247,E059,unverified,moderate,descriptive
+C228,si: 4.6 Fit to the targets,result,2898f99c47d90ba60dd3ece8003574e4749233fb1a3e5adf114ee66ca01dedc0,E059,unverified,moderate,descriptive
+C229,si: 4.7 Checks of the posterior,result,bfa83d1a024e4b784483089d4042cf7b70185b0c42d76a61ed5678e77acd6924,E087;E046,unverified,moderate,descriptive
+C230,si: 5. Model population in 2015,result,5a3c5271fc86a1c5454c84e0f7686007360a65469025b22ed7f45323cedf4cfa,E061,unverified,not_applicable,descriptive
+C231,si: 5. Model population in 2015,result,737cc53fb383547840c2963209915dac03d6359b96543d7c0cd48638aa73653a,E061,unverified,moderate,descriptive
+C232,si: 5. Model population in 2015,result,c104bde631d0931ce7a65903af172fc9fc9cba111aeace5a9158224558b0cbc0,E061,unverified,moderate,descriptive
+C233,si: 5. Model population in 2015,result,681040e6ce2bf6d7c86c9286a2ac438e485c3f3a44ab4883f0f9fa3e8452327e,E061,unverified,moderate,descriptive
+C234,si: 5. Model population in 2015,result,6534a4d275ee47769c185dbb471d8051d2922693170fe0f8596bf73c261f7f85,E061,unverified,moderate,descriptive
+C235,si: 5. Model population in 2015,result,e1f532e0027fe90b9a7fc19883173e907be430c7165421c71124612ecb477933,E061,unverified,moderate,descriptive
+C236,si: 5. Model population in 2015,result,596c346c6346a14eb5f25f8750986755436cf6646dce8798a28c1924b272a410,E061,unverified,moderate,descriptive
+C237,si: 5. Model population in 2015,result,9ef59df3609cb1a64622ec52a8f67011ca683f720182ff258cd0cbebaaf0418b,E061;E042,unverified,moderate,descriptive
+C238,si: 6. Scenario implementation,method,b617d747e8b939bbe52a6c457ba29ee785cc5d65f5d588892bbdca4657350e7a,E001;E002;E012;E013,unverified,not_applicable,descriptive
+C239,si: 6. Scenario implementation,method,1e137b6e1bbb0f245219d57860a7ee3e7854159141eb6a834948c7fc2951502c,E002,unverified,not_applicable,descriptive
+C240,si: 6. Scenario implementation,method,c82da6d6ad7cd686ca96eb121f0f57a26574d28084d4b5c00397891b9e7f58eb,E032;E002,unverified,not_applicable,descriptive
+C241,si: 6. Scenario implementation,method,b72c6d5b45becf65afb2ecc5270ccd43e9205310e2166c62e2c1c5b908cc9dbd,E002,unverified,not_applicable,descriptive
+C242,si: 6. Scenario implementation,method,d0fe33db21d92cd8a4f0da93a9e55712edb80370e273a723f0472ac1ea876667,E002;E032;E062,unverified,not_applicable,descriptive
+C243,si: 6. Scenario implementation,result,d6a73154c682223b68becc744d8a34c933082af6684fcd3142e6882dfc265824,E009;E052;E002,unverified,not_applicable,descriptive
+C244,si: 7. Costs,result,eeeb6440c1ff5589082d35a1c9e5b68f941c4a2cb44186f4edd328500672ca5b,E047,unverified,not_applicable,descriptive
+C245,si: 7. Costs,method,f9f492179679f7d80fba6b0933f8298790801976cea5b0f82ca67aa2dcbf9b55,E047;E048;E051,unverified,not_applicable,descriptive
+C246,si: 7. Costs,method,655fe10c1d3af7160c776e8824f2cb106837f24d2be1605a45ec1063855503b7,E047;E049,unverified,not_applicable,descriptive
+C247,si: 7. Costs,method,6142872a2dbe6a34b5458b42cb96091453eb3d4aa1713d5a20048e14f236c720,E047;E050,unverified,not_applicable,descriptive
+C248,si: 7. Costs,method,680c57512d254c05369b79d0cc87f68a5278eedf29e99415339ea3dcd1f2a76e,E047;E049,unverified,not_applicable,descriptive
+C249,si: 7. Costs,method,ee1243fd8e8ea658cf8298e886da9bcedb35cddd56d6c9fc519e309b172cc7a1,E047,unverified,not_applicable,descriptive
+C250,si: 7. Costs,method,6c38eb078a0b87d7ff8507d418087995bc43426544cd7e38dac9a7fe31aff4aa,E001,unverified,not_applicable,descriptive
+C251,si: 8. Additional results,result,d443d6812e245b69a0115983d5e2d5a6d2aba09cfb133c9840cb44c8bb8260da,E009,unverified,not_applicable,descriptive
+C252,si: 8. Additional results,result,a555764d255f36fd5f5f7c06d9a0145c14d3fbbbce2d8683f77054b8a3c2985b,E009,unverified,not_applicable,descriptive
+C253,si: 8. Additional results,result,54741f2f5f3922453369c385fc5cce6789c179ff8d5940eb7ae8eebedfd01736,E009,unverified,not_applicable,descriptive
+C254,si: 8. Additional results,result,abd2c7a5685829bcb25676f6652cd5bb7cdbf35878f6affe7bc3772bfb3fe2cb,E009,unverified,moderate,descriptive
+C255,si: 8. Additional results,result,e18a5197dc7577499ec3fb754e3163a890977ae5173073daf9743b5129da8800,E009,unverified,moderate,descriptive
+C256,si: 8. Additional results,result,5efbb3cbaaee7de63e3a0e4f4e9f78736e25cd8023f65801edd3bf4281c89e9b,E009,unverified,moderate,descriptive
+C257,si: 8. Additional results,result,7d359b5687d8e8a06af624288cd65b708d923f7a9dc55d49546dde42936ca41b,E009,unverified,moderate,descriptive
+C258,si: 8. Additional results,result,7967f4ad3f24c93d01fdd6594a81a6d73c106e8c1b3185295c13114658408112,E009,unverified,moderate,descriptive
+C259,si: 8. Additional results,result,82b09b5480b5b96ee91d8029bba0a01cfd51a884ce622f2e58758975136e65de,E009,unverified,moderate,descriptive
+C260,si: 8. Additional results,result,d87b54b4530d40c99608b14f5b53801ae24c24d100d59c03b8c7a1ebc3446684,E009,unverified,moderate,descriptive
+C261,si: 8. Additional results,result,d383ec1421cb80789786c41fc70996f000ab39291aea66a6e9a39dcf76652202,E009,unverified,moderate,descriptive
+C262,si: 8. Additional results,result,19a717d82590d81aaec32b10610f5fb8d97a13a377599132645c7bd9978e6e26,E009,unverified,moderate,descriptive
+C263,si: 8. Additional results,result,84eb67025948e45f28fb2272f86bb439979c33c08222a8400c3ee5b88c1f1912,E009,unverified,moderate,descriptive
+C264,si: 8. Additional results,result,87dd2aa2aa88f22b8b37b2f5413f7c545b9a1d054299c2f438e7b7c0e0f734c2,E009,unverified,moderate,descriptive
+C265,si: 8. Additional results,result,1ec12eaadc10a855a95f4c3d0a8e7e1002768a58cc3d7b2f748492afdf5ed146,E009,unverified,moderate,descriptive
+C266,si: 8. Additional results,result,5d1a65097d51d083174a4deb04867378d6cf37f76108025469fc6ae41e01c7f9,E009,unverified,moderate,descriptive
+C267,si: 8. Additional results,result,d2fbdd11a4ae301de83fd98e5b6a1023531d573de2d2f3a9c78df5a7af830e16,E009,unverified,moderate,descriptive
+C268,si: 8. Additional results,result,a9fdda7550fb0cfe24e4ad2a33015e83b81625b778e28f1105894b49291888d6,E009,unverified,moderate,descriptive
+C269,si: 8. Additional results,result,a460fd4622026381d09536251eb6e5a5de3d86e7fdfee92b94ee61267a89b2db,E009,unverified,moderate,descriptive
+C270,si: 8. Additional results,result,eafa5c0733e286372ea52442a884c4fb1d080c29e9f148c5c381f21fa1e67f88,E009,unverified,moderate,descriptive
+C271,si: 8. Additional results,result,5db011aafd448a5c9ea67fdd2245b6083ad13e8ce17c205eb63617ae36f86982,E009;E001,unverified,moderate,descriptive
+C272,si: 9. Sensitivity analysis: prison treatment from 2019,method,4ceac115ee691d4767828a0e50a1ee94fe881d22b224897317b4a5a7546e765d,E013;E002,unverified,not_applicable,descriptive
+C273,si: 9. Sensitivity analysis: prison treatment from 2019,result,1b2a88bb93ca60e3008861860472a10d5f53933c60c8ed488646a9e8a09cec87,E013,unverified,not_applicable,descriptive
+C274,si: 9. Sensitivity analysis: prison treatment from 2019,result,dfd9c1b682ad1a0cafb59b29bd0eafea19016051a90374eb9964dd243b1d2e76,E013,unverified,not_applicable,descriptive
+C275,si: 9. Sensitivity analysis: prison treatment from 2019,result,dfd7053dbf1c795140ffd60c72d88d5e343cd95bb3e957f08e4295a30b154d8b,E013,unverified,moderate,descriptive
+C276,si: 9. Sensitivity analysis: prison treatment from 2019,result,ad50cd63bba2dd5e4016241db4bb2fa292770335dc9e65f1c4176450e7360f00,E013,unverified,moderate,descriptive
+C277,si: 9. Sensitivity analysis: prison treatment from 2019,result,a18d377f97a9362e5789f776746cd0ead4ebde5161b1337ecc590da94a4cd53c,E013,unverified,moderate,descriptive
+C278,si: 9. Sensitivity analysis: prison treatment from 2019,result,4cf0daa49679ebef2001bb483118ea3f86821756d232fdb99a0c70a98e13a0e2,E013,unverified,moderate,descriptive
+C279,si: 9. Sensitivity analysis: prison treatment from 2019,result,b46affca1017a31e25203428561a1ee6df4f7b1028fa8c0b4ca8baef0e5e8544,E013,unverified,moderate,descriptive
+C280,si: 9. Sensitivity analysis: prison treatment from 2019,result,33a64db8871bd183350b39780e722b80988adb023a6c3959e3619900deb51ba9,E013,unverified,moderate,descriptive
+C281,si: 9. Sensitivity analysis: prison treatment from 2019,result,dc073322453d063cd837b28113e1225a6f1c0d02748dba177c5fa06420d8a0fc,E013,unverified,moderate,descriptive
+C282,si: 9. Sensitivity analysis: prison treatment from 2019,result,1b2f779e4c20a4ea47b8496d2fa7ca7b4abaa1a433287f8bc9d8505adeb0edf5,E013,unverified,moderate,descriptive
+C283,si: 9. Sensitivity analysis: prison treatment from 2019,result,f0a28aec145c942b5695dbe6762f3c4622fc79ff108ae1b3740398ad89fecfc1,E013,unverified,moderate,descriptive
+C284,si: 9. Sensitivity analysis: prison treatment from 2019,result,bb9590a370b90d0470a3ab40814fbbd5dd27444c929b4086bff7aa0e48bd6a3e,E013,unverified,moderate,descriptive
+C285,si: 9. Sensitivity analysis: prison treatment from 2019,result,57af4850d4d88cfc6dad10ef7d638c8b7abb0e37fc62ed3631a2568f4b231f17,E013,unverified,moderate,descriptive
+C286,si: 9. Sensitivity analysis: prison treatment from 2019,result,3ea130c54f8a92da92a47d14247b8911ff2a2a38d27c7149252051122fa721d5,E013,unverified,moderate,descriptive
+C287,si: 9. Sensitivity analysis: prison treatment from 2019,result,679514cc179256736b836fcaee216cdb902b1c75fd64132d72e02a1c577f7fcf,E013,unverified,moderate,descriptive
+C288,si: 9. Sensitivity analysis: prison treatment from 2019,result,2d5e352b0866877131ae260eb7b5259a38b15fa7a2a313372b6d67ea999473fd,E013,unverified,moderate,descriptive
+C289,si: 9. Sensitivity analysis: prison treatment from 2019,result,26000d5f78797d782afcb05afc6c2a1beaeb48c62b0d2d2887a963d07de72025,E013,unverified,moderate,descriptive
+C290,si: 9. Sensitivity analysis: prison treatment from 2019,result,c67d817a21b1ca482c7d65ab46e6fa0c3f514e33f655ef3cc22fe170a5fa1037,E013,unverified,moderate,descriptive
+C291,si: 9. Sensitivity analysis: prison treatment from 2019,result,13603a3401713badf9478501e8e9c535753c4ea657b14e95607c834b4a921c71,E013,unverified,moderate,descriptive
+C292,si: 9. Sensitivity analysis: prison treatment from 2019,result,71ccefc8d31f04ec89753a5cbc52a44de6883e1c27ae1d5640c0cff0fe748893,E088;E062,unverified,moderate,descriptive
+C293,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,method,c07e9cd263da4ccb01394d7b0d5f733d810ba03b419ee460138014c1a9791a81,E002;E032;E004,unverified,not_applicable,descriptive
+C294,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,bf4eb2b0d342cea84cbe97d85de13afb1e0275171113aae0d44f5fcc233159d6,E009,unverified,moderate,descriptive
+C295,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,1f9726b64c746497e2b764b6dd81bc7ad8108fe22cfefa4f76341a80d5541a78,E009,unverified,not_applicable,descriptive
+C296,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,56390b150dd78fa9efc6651e0c12940c90d9ca3fc9171ac22ad19a36b5243765,E009,unverified,not_applicable,descriptive
+C297,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,5640ab0caa6a02f8058706c73ad300159677a1e2ef965555e785524559c7c1ea,E009,unverified,moderate,descriptive
+C298,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,9cc65a6beb56b21420220372d2851088338166f662ebd97092c799cc1312b407,E009,unverified,moderate,descriptive
+C299,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,b288dfcb0f8b9c496bb91d7624ea28e9977f4825dafc22a6ca64474c0eca834b,E009,unverified,moderate,descriptive
+C300,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,4cca1ee8b57eea2c3e7579ae5b4898c6390e7eba75fb73e97b86141612cb184c,E009,unverified,moderate,descriptive
+C301,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,33632958f6817c2f2e719270352c6b25604d428bfb6d06d653ac02cdb507ebe7,E009,unverified,moderate,descriptive
+C302,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,8788c05c94d836767478c4e7ef83f1b57562899ea02ce5e8adeccf22386fd14e,E009,unverified,moderate,descriptive
+C303,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,c807d7a3bf1d3a63c443b8d05af6885a33a12425da08df553647175a8f5f7ac7,E009,unverified,moderate,descriptive
+C304,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,90a69d11e04f23470e8933b1737d8b3686ac7f4390c8f175efbdf52980380de9,E009,unverified,moderate,descriptive
+C305,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,43b79bfe4849bffb061b2982c2904108901bf5b2881818eac5814ddff5eb909b,E009,unverified,moderate,descriptive
+C306,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,9ce314c599da99686e13746d030d879a86000f94a86d21ad41936303e8233728,E009,unverified,moderate,descriptive
+C307,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,d447b5f9b9771a3323c8dc60d123ee5bc5acb8b48ed14ce17a3cdf2a855cb127,E009,unverified,moderate,descriptive
+C308,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,f96b04072c03b01da7e9659815b4e9af27ae9d86adaf7e76ef797d5dfcd9ac52,E009,unverified,moderate,descriptive
+C309,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,2c30de35dd4f7bc0121b5941e66075019f0c3bb1733f56f34987a7aa8cd1a8c3,E009,unverified,moderate,descriptive
+C310,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,c43027192775ca5404417105616a3b1fd09789dc4e0f605fadf7a7041fc548e3,E009,unverified,moderate,descriptive
+C311,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,629376b1fbc4b1bff2630dc6a5d89d86945064d2b1aef52f719c59deb1193651,E009,unverified,moderate,descriptive
+C312,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,19319706bf91e3ec5629bea26297f0b9153807f2fe6f1b9866db75a7960023b0,E009,unverified,moderate,descriptive
+C313,si: 10. Secondary outcome: liver and extrahepatic HCV deaths,result,6cd35bdf26803d6f98b3dd8ad347d6ee24978aa8eaea3565c2e6967b03fcf122,E009,unverified,moderate,descriptive
+C314,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",method,02e71c3416229a0519775d5829c39406b28c6c331bdce69d1ee45c7d2e0f8908,E005;E055;E002;E039,unverified,not_applicable,descriptive
+C315,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,71e0fdb8672e9dec0c09c446ba296b2b18d1786873410d672c9c1e434b525bac,E055;E009,unverified,moderate,descriptive
+C316,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,6c51b90a2e8c5ea596edfb5076fa5bebfc2957dd9530e9ccdeee577a9ec14176,E055,unverified,not_applicable,descriptive
+C317,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,04fa1f258ee8534993f2657302d4e8aa317ef09aac260b2f648a49e820ac1660,E055,unverified,not_applicable,descriptive
+C318,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,b375c9b267b92e18a13c483edc66b4474e3d4d91f475270f9b16a50eefd92555,E055,unverified,moderate,descriptive
+C319,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,f0675bebe32c2b467304defdd50c5cbdf5d934f8c9aea969db4b6a276c5bc51d,E055,unverified,moderate,descriptive
+C320,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,ca3e94ae31b69919af743b1c157f535a81bddacd8d61ef0bb96a1b49e68133d8,E055,unverified,moderate,descriptive
+C321,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,6b049251efa394edb667e146fb84491723ee2fe04751687902955633874a6835,E055,unverified,moderate,descriptive
+C322,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,9836534b5ba8ba4b9cf2f4be83c3291371f8b96057944dcc5e76d0c012c0b48a,E055,unverified,moderate,descriptive
+C323,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,00b452abee3ad7c74e43e11414fc22a6a7e4bec70ea6bfe7042c24594fed9d4f,E055,unverified,moderate,descriptive
+C324,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,4731b42e54452f4792629afed29861cdd6186b5c9321cc6e755f5a782392902f,E055,unverified,moderate,descriptive
+C325,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,306a685d5f2dc20b991d8d30a5a421bf73933fa44c21b3da63308d1e8644a98b,E055,unverified,moderate,descriptive
+C326,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,9836b0951f9204c4ccb823bea4a21904fc29a7c5964c5d551107efb7f1c24f5a,E055,unverified,moderate,descriptive
+C327,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,54bfbd30fde0bf3fdd1ff89daad3d927b1f7a7f0245224ce09c5d1e9f9cfbe85,E055,unverified,moderate,descriptive
+C328,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,7d73d8743188fa6e41575ee1c02cd23fc05acdab187a58d971bc87e6438d6cf4,E055,unverified,moderate,descriptive
+C329,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,da721f104d5b9916cf65d949740eab9f1c1eaca275f34157657640e15505a36d,E055,unverified,moderate,descriptive
+C330,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,9f204faf119f50d1ab6688a8d29644280c3a554f54409ef9d88926f42541c035,E055,unverified,moderate,descriptive
+C331,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,507730d50d2424bfa4bbc60c922beb6ac3104ac3bad2eb4122336b670a6b5bd1,E055,unverified,moderate,descriptive
+C332,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,e41c42d05bd0260caa061e28a2072166765d60f1d9217fd3436f988b8bd7b9fb,E055,unverified,moderate,descriptive
+C333,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,79e0f1e7f81b60c2fc4d531e112a02eaaea744586ec1aaf93d5ab80ec273ccf3,E055,unverified,moderate,descriptive
+C334,"si: 11. Sensitivity analysis: observed entry of new drug abusers, 2016–2025",result,760556f5f14924ec372d085760189405bea06654aa43a388727a500817137849,E055,unverified,moderate,descriptive
+C335,si: 12. Sensitivity analysis: share of genotype 3,method,73fbe22c0de0a1f23d5f2ce4500a7414ad7463b87dab06a56480be099dbc072f,E056;E004;E072,unverified,not_applicable,descriptive
+C336,si: 12. Sensitivity analysis: share of genotype 3,result,6453fbe75f2b62b8e48e10582b5f6aa7462eff9f46706fb15743e06e6f3ea9b0,E056;E009,unverified,moderate,descriptive
+C337,si: 12. Sensitivity analysis: share of genotype 3,result,ec3afc57929924c83d1fa33a56a627259267eb2f4f6567eb63275661ec42cf9d,E056,unverified,not_applicable,descriptive
+C338,si: 12. Sensitivity analysis: share of genotype 3,result,cab5358c46aa01852b32e6b79fddb3548649161870e4ac38b75db469254f36d5,E056,unverified,not_applicable,descriptive
+C339,si: 12. Sensitivity analysis: share of genotype 3,result,e4482d82bef57161af461c733102e8316c6f3b11d8aa669fc83d5b80f6003684,E056,unverified,moderate,descriptive
+C340,si: 12. Sensitivity analysis: share of genotype 3,result,e8cee8c83be945a4d5c04550cf32d3c4fed4c33b2f89231afa98bf4b12793038,E056,unverified,moderate,descriptive
+C341,si: 12. Sensitivity analysis: share of genotype 3,result,93118d8bd4146f5476342f42991815c9ee9f848bfcd9adef2e85a9e7e4b7a2f5,E056,unverified,moderate,descriptive
+C342,si: 12. Sensitivity analysis: share of genotype 3,result,bb443ef4c53f625d6f84d297b087aec13693dd8872764ce8adca93ede44fee11,E056,unverified,moderate,descriptive
+C343,si: 12. Sensitivity analysis: share of genotype 3,result,cc41ae9b5b04d96700955adf0f9e767902deb977e12d6d00fda3bd4652d4cb9a,E056,unverified,moderate,descriptive
+C344,si: 12. Sensitivity analysis: share of genotype 3,result,0a4039fa1bc0677ace4b0c1ea7d5e8ab764aec92c04f4020eb6c6b6c58c9c682,E056,unverified,moderate,descriptive
+C345,si: 12. Sensitivity analysis: share of genotype 3,result,05fed3ad32002fe2e32055c7cc58c804046547fd8c857c52d1fa86206294acfe,E056,unverified,moderate,descriptive
+C346,si: 12. Sensitivity analysis: share of genotype 3,result,ba64af6e53c3d6099bf584c8983c5775fde374252c3113635aaba37de58638eb,E056,unverified,moderate,descriptive
+C347,si: 12. Sensitivity analysis: share of genotype 3,result,fd624eb0fc604e053d5c0b47dc63c3c48f067ebd7d0a4752d4df16aa8eca5428,E056,unverified,moderate,descriptive
+C348,si: 12. Sensitivity analysis: share of genotype 3,result,f6fefe95734ac1dc69cc78931301c5c9b8054f796a03472e4313b31598620f78,E056,unverified,moderate,descriptive
+C349,si: 12. Sensitivity analysis: share of genotype 3,result,335ce6c6420c5e1932c0f106871917885524b2d6c8c73cce32da203f855378eb,E056,unverified,moderate,descriptive
+C350,si: 12. Sensitivity analysis: share of genotype 3,result,6c0c544b60e57cbbb58069effbf0e0d81009b6dea26ba6018df887b5c3cccfbd,E056,unverified,moderate,descriptive
+C351,si: 12. Sensitivity analysis: share of genotype 3,result,1434d86748f2e5efd71085722af40c16626ba08fd59b81f5854c8efe053b6462,E056,unverified,moderate,descriptive
+C352,si: 12. Sensitivity analysis: share of genotype 3,result,65115d1372b0d1ef14a22db8cea4a629d1f5159c09292ca04777a56be1c7c0cd,E056,unverified,moderate,descriptive
+C353,si: 12. Sensitivity analysis: share of genotype 3,result,4f163bca5b1e2fa386abe4f5e88b92d1241602a4dc4ea6fd087af3f7e44f16a5,E056,unverified,moderate,descriptive
+C354,si: 12. Sensitivity analysis: share of genotype 3,result,1b9350807dc20054b6133c7ff84ab14c47f32d574ae6c3bc76aeb6af03b2ac59,E056,unverified,moderate,descriptive
+C355,si: 12. Sensitivity analysis: share of genotype 3,result,b47949b1a351eca885faab6a48811cdb4d48e92d037ef0d4f43f52cdfbe056df,E056,unverified,moderate,descriptive
+C356,si: 13. One-way sensitivity analysis of the fixed inputs,method,0acf847fec5f1f33a08117b8a48da961b2f43f407c01353277f7a22a4e8452af,E053;E054;E089;E079,unverified,not_applicable,descriptive
+C357,si: 13. One-way sensitivity analysis of the fixed inputs,result,1b9ec77ae214f63bec0238df50c79917be17500a0acce29cbbd978f91af8a493,E054,unverified,not_applicable,descriptive
+C358,si: 13. One-way sensitivity analysis of the fixed inputs,result,79ecffbbc3986c392ba22413c00829d1999bad1e5ef721db1df79d13585a3e1f,E054,unverified,not_applicable,descriptive
+C359,si: 13. One-way sensitivity analysis of the fixed inputs,method,c04fb2b6c74060d5028987895b1aa843122c831285ae3632715a987bf610c136,E054,unverified,not_applicable,descriptive
+C360,si: 13. One-way sensitivity analysis of the fixed inputs,method,25267fcf2f5d9f71986eb27b38526480e0d7d8c492623f810044f2809c603caf,E054,unverified,not_applicable,descriptive
+C361,si: 13. One-way sensitivity analysis of the fixed inputs,method,63c63a916c9d3145816f1c0822bf56bdc9242d7515a4573c2d822799af318771,E054,unverified,not_applicable,descriptive
+C362,si: 13. One-way sensitivity analysis of the fixed inputs,method,3f59cab23529e57634572e1cef9e8272390c2d3136fe5dafca1f065c2f6d863f,E054,unverified,not_applicable,descriptive
+C363,si: 13. One-way sensitivity analysis of the fixed inputs,method,cd04d71652d9985ab80f8598587369d0c484ecd13a91d784d6e08385c62d5f45,E054,unverified,not_applicable,descriptive
+C364,si: 13. One-way sensitivity analysis of the fixed inputs,method,85957573ec1ca825b0ef633dccda8a0b84f23908ab0d6fb5f623e5e8d3355e35,E054,unverified,not_applicable,descriptive
+C365,si: 13. One-way sensitivity analysis of the fixed inputs,method,2e9ec20c897860ed74e51469a6659f2500e0ae6fb418375065ba04e92c119547,E054,unverified,not_applicable,descriptive
+C366,si: 13. One-way sensitivity analysis of the fixed inputs,method,897c9a03af91857a880b30e2e571efe675bb1ae24d3c6a909a7017d1a943a55e,E054,unverified,not_applicable,descriptive
+C367,si: 13. One-way sensitivity analysis of the fixed inputs,method,5eeb526363312d5f22aef2b972fd82797fe504a215a1dfe978cd4d02745e77cf,E054,unverified,not_applicable,descriptive
+C368,si: 13. One-way sensitivity analysis of the fixed inputs,method,f474e6db1a0f7cfdbaf6bc8d75d5e7e5e8326de86239cbad3f0d64a459f73a48,E054,unverified,not_applicable,descriptive
+C369,si: 13. One-way sensitivity analysis of the fixed inputs,method,243fb9a6c4431177e780eb769c5e4f696f6ff067ad662e56437c7af0841cfc76,E054,unverified,not_applicable,descriptive
+C370,si: 13. One-way sensitivity analysis of the fixed inputs,method,e92842ae53b083ee3f2fae66ab82fdf874bb79c5b9195e5564fd437caeaa3716,E054,unverified,not_applicable,descriptive
+C371,si: 13. One-way sensitivity analysis of the fixed inputs,method,85dad31017786ce8da0dca4e1d83d538fd8d7d7d2a7fb48a286de1f0a5380c76,E054,unverified,not_applicable,descriptive
+C372,si: 13. One-way sensitivity analysis of the fixed inputs,method,08a4a3a8fb7c6fcb16418d5e6657c2b2bf552f0d7d582881a7054bd80d27e219,E054,unverified,not_applicable,descriptive
+C373,si: 13. One-way sensitivity analysis of the fixed inputs,method,26d0c566807c741b8337cbe683312540248d0d1d4e97945a55568148ac4e1af6,E054,unverified,not_applicable,descriptive
+C374,si: 13. One-way sensitivity analysis of the fixed inputs,method,4f5801801ecb9a20c6e8951b8adf3c33a0c941929464a4c6810332301df028d6,E054,unverified,not_applicable,descriptive
+C375,si: 13. One-way sensitivity analysis of the fixed inputs,method,2070f577b68505061a57d6297f815e98d7dbf7293d9e5dfda1eb3698ca34c641,E054,unverified,not_applicable,descriptive
+C376,si: 13. One-way sensitivity analysis of the fixed inputs,method,2aa5c2c256175d19b75c02b76b65850e5d38a5308d4b717ab0dc77b25ef245f5,E054,unverified,not_applicable,descriptive
+C377,si: 13. One-way sensitivity analysis of the fixed inputs,method,ffdc763c81d2bbd80b7f7a17aae6f9589c5b0ac0dee0cc411cb22fb82e6e91dd,E054,unverified,not_applicable,descriptive
+C378,si: 13. One-way sensitivity analysis of the fixed inputs,method,bcb1744db3c008b80266be4e8ebb05fff37f70459e2da3db80c7334258f61344,E054,unverified,not_applicable,descriptive
+C379,si: 13. One-way sensitivity analysis of the fixed inputs,method,07a9aae0d869f3cfc20d0f6fcaab8d15bd725e7ae0893718f1d5208a43790598,E054,unverified,not_applicable,descriptive
+C380,si: 13. One-way sensitivity analysis of the fixed inputs,method,61dc44d1f7f7a60fa25bff148fcdf446b95887506e668d66e4170a731e0131a7,E054,unverified,not_applicable,descriptive
+C381,si: 13. One-way sensitivity analysis of the fixed inputs,method,f5402491e9b0da1f055f0b835f6c5bbb02f2ef162bf5a34aaf76f37dabbee2a0,E054,unverified,not_applicable,descriptive
+C382,si: 13. One-way sensitivity analysis of the fixed inputs,method,214884bae73167dee0fd79e27ee97d5ae6a7f7beb712cdba9e13c154b0ba451d,E054,unverified,not_applicable,descriptive
+C383,si: 13. One-way sensitivity analysis of the fixed inputs,method,13e9f50a274a5d644fb419f6bbc8a6b1cfebaecf723ec5d92d28d4b83632ba96,E054,unverified,not_applicable,descriptive
+C384,si: 13. One-way sensitivity analysis of the fixed inputs,method,888d5513fb8ab6146c5608379938ad1a64823588aa9a243b056fa3829b6d525b,E054,unverified,not_applicable,descriptive
+C385,si: 13. One-way sensitivity analysis of the fixed inputs,method,5cf1a20f56fa82bb6200d92fc3cc66c6751e3afa717e6ebd4867ba926ad334e4,E054,unverified,not_applicable,descriptive
+C386,si: 13. One-way sensitivity analysis of the fixed inputs,result,669511a6bc57f926d0e001e800f6eb7557f971723d57bf362c8618f61ea3c6ee,E015,unverified,moderate,descriptive
+C387,si: 13. One-way sensitivity analysis of the fixed inputs,result,6aff8f0a774449c8ee0c7801569958f33fe01cda55dd09d92ab03d399a7ba5a7,E015,unverified,moderate,descriptive
+C388,si: 13. One-way sensitivity analysis of the fixed inputs,result,e27a34da7180aa369db96a2c4269ebeaa0b7abf3a6a27367802e240978ece740,E065;E015,unverified,moderate,descriptive
+C389,si: 14. Assumptions and limitations,method,45cf78938ca53116034b3501ce9400b52ac61a5b003b202a6b824d3a0c5c3283,E006;E040,unverified,high,descriptive
+C390,si: 14. Assumptions and limitations,method,2b977c9b311e61f3ed87af526c2ae69a898257236cc95b7d8c437db35f03c3e9,E006;E041,unverified,high,descriptive
+C391,si: 14. Assumptions and limitations,method,8855b53e6eff95e57c28cb8b79b21860249b27cf82487684a4020038bce4661b,E004;E032;E041,unverified,high,descriptive
+C392,si: 14. Assumptions and limitations,method,a463e43b52e910eb89f8627fed25f900e00e723041c3dc5202b0b20436f0230b,E032;E037,unverified,high,descriptive
+C393,si: 14. Assumptions and limitations,method,7063d0ec9a2c66a36b80cce4eb4770e284fccaf59cac9ba285b74d091685c4cd,E004;E014,unverified,high,descriptive
+C394,si: 14. Assumptions and limitations,method,7d7fa7d13aa35a6ef445213b22ce2154cb6296e1fd5dd9b5850016fd1474b578,E010;E004,unverified,high,descriptive
+C395,si: 14. Assumptions and limitations,method,ea7a47741c221034c2bc7ed8e09783b951cb6b4f88c9f2059efd11663bc1219c,E010;E011;E004,unverified,high,descriptive
+C396,si: 14. Assumptions and limitations,method,0f38fb88bdb74af7afde0420d546da72a9e1d131dfbdf23f20e5aabf3c059243,E061;E042,unverified,high,descriptive
+C397,si: 14. Assumptions and limitations,method,6845e59a84cd67096a59432efc615da92b80e44529dac22db3739df25d7d7a05,E032,unverified,high,descriptive
+C398,si: 14. Assumptions and limitations,method,829720720957257dc09b95405650b58cd93cd8e47508ed1c76321fa97086ff0d,E032;E004,unverified,high,descriptive
+C399,si: 14. Assumptions and limitations,method,23ac45980043fd547ad5a2605aff11aa14106afc7688600afa586052265c3e1b,E004;E015,unverified,high,descriptive
+C400,si: 14. Assumptions and limitations,method,469feb1a26483dad07e943cfee57d8993e2a72f46c9f1c75914d7890a8b8882e,E004;E032;E035;E036;E067,unverified,high,descriptive
+C401,si: 14. Assumptions and limitations,method,a99f580604de513434f4633adda16700f369c19f950d31b5384b69d107bf1722,E007;E042,unverified,high,descriptive
+C402,si: 14. Assumptions and limitations,method,56ed94acaf2d1a6bd4e122828bc65817cff010c0bf942810732121b885ccd892,E007,unverified,high,descriptive
+C403,si: 14. Assumptions and limitations,method,76e3b5690465e7867f3fde7abf186d8316922b03618136616d6c2a300f76d9c1,E001;E013;E017;E024,unverified,high,descriptive
+C404,si: 14. Assumptions and limitations,method,b872b6f9ea9c13ae0231eb22c60a959afa8717b1b8b096982a03550f7d4718ff,E001;E012,unverified,high,descriptive
+C405,si: 14. Assumptions and limitations,method,7e834dddd540c0d95096860982110358e8a00693cb9d32d06c6f6a1e5f819128,E002,unverified,high,descriptive
+C406,si: 14. Assumptions and limitations,method,f0d711a0e960e5e822e64e836981d5cae5263af806c8f17eeaba8d1b6e1bd6dc,E002;E001,unverified,high,descriptive
+C407,si: 14. Assumptions and limitations,method,9d9c1db3d97847af8f097e46c093e03f29d32edf31450841327f9a1d3e15e1cb,E047;E001,unverified,high,descriptive
+C408,si: 14. Assumptions and limitations,method,956dfacd13617030f2f526cda07661dda16a376245d277fe61dea3b72bc3d1c5,E009;E008;E015,unverified,high,descriptive
+C409,si: 15. Software and reproducibility,method,03d94c4aa6bb07b1e8a9436b4f94cbaa4aaf365c9b6fc761fa0eeeea597be57b,E032;E090;E057,unverified,not_applicable,descriptive
+C410,si: 15. Software and reproducibility,declaration,a3b388e032683879c0ffd4ec870e61bdefaa9f5af5cc7acaadb00dac3c672a2a,E090;E068,unverified,not_applicable,descriptive
+C411,si: Figures,result,e8bcca8b61d1fca2c96b47721951df49b155b45c31bd7dc0fd807617a2fe7e4d,E008,unverified,not_applicable,descriptive
+C412,si: Figures,result,9c6dcbc637ca39c98eb289f3c424a5808f865ecb69243234aab59c184eb1d611,E008,unverified,not_applicable,descriptive
+C413,si: Figures,result,52967525403c5d8c0255eefef0c55d8e5e5747444a43d0a40dd95c7a23f3457a,E009,unverified,not_applicable,descriptive
+C414,si: Figures,result,2f8e7a98e2110d9f8a1998458c89910bb66e566c11380d48e92a2df27dfd9efe,E091;E009,unverified,not_applicable,descriptive
+C415,si: Figures,result,517e64ff882116b1f3bb97cfb52ca3ffe76433f0c19b8d98c9a3bd31a8a87207,E013;E088,unverified,not_applicable,descriptive
+C416,si: Figures,result,3c94e441d4b3209b1fe6d96bfcc3e2c6b12e22895bcad29707107303a2ea4cf6,E015,unverified,not_applicable,descriptive
+C417,si: Figures,result,1182455530942e46e1f04512e40e4f11dd3ac18a92489fce12f38069b27d907c,E055;E092,unverified,not_applicable,descriptive

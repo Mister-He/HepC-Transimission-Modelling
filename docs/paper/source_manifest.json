@@ -291,50 +291,6 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/calibration/mcmc_reference/model_prediction_2015_strata.csv",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/calibration/mcmc_reference/model_prediction_2015_strata.csv",
-      "confidentiality": "public",
-      "evidence_id": "E014",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
-      "title": "Project repository file output/prison_2015_counts.csv",
-      "authors": [],
-      "year": 2026,
-      "identifiers": {
-        "doi": "",
-        "isbn": "",
-        "pmcid": "",
-        "pmid": "",
-        "url": ""
-      },
-      "locator": "output/prison_2015_counts.csv",
-      "confidentiality": "restricted",
-      "evidence_id": "E015",
-      "verification": {
-        "source_opened": false,
-        "status": "unverified",
-        "verified_by": "",
-        "verified_on": ""
-      }
-    },
-    {
-      "source_type": "dataset",
       "title": "Project repository file output/calibration/mcmc_reference/mcmc_parameter_summary.csv",
       "authors": [],
       "year": 2026,
@@ -347,7 +303,29 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_parameter_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E016",
+      "evidence_id": "E014",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/tornado/tornado_results.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/tornado/tornado_results.csv",
+      "confidentiality": "public",
+      "evidence_id": "E015",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -376,7 +354,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E017",
+      "evidence_id": "E016",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -405,7 +383,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E018",
+      "evidence_id": "E017",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -429,7 +407,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E019",
+      "evidence_id": "E018",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -458,7 +436,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E020",
+      "evidence_id": "E019",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -487,7 +465,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E021",
+      "evidence_id": "E020",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -512,7 +490,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E022",
+      "evidence_id": "E021",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -536,7 +514,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E023",
+      "evidence_id": "E022",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -565,7 +543,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E024",
+      "evidence_id": "E023",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -593,7 +571,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E025",
+      "evidence_id": "E024",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -622,7 +600,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E026",
+      "evidence_id": "E025",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -651,7 +629,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E027",
+      "evidence_id": "E026",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -675,7 +653,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E028",
+      "evidence_id": "E027",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -699,7 +677,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E029",
+      "evidence_id": "E028",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -723,7 +701,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E030",
+      "evidence_id": "E029",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -752,7 +730,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E031",
+      "evidence_id": "E030",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -779,7 +757,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E032",
+      "evidence_id": "E031",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -801,7 +779,7 @@
       },
       "locator": "scripts/model/sim.cpp",
       "confidentiality": "public",
-      "evidence_id": "E033",
+      "evidence_id": "E032",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -827,6 +805,30 @@
         "pmcid": "",
         "pmid": "",
         "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E033",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Age-specific death rates, annual (table M810141)",
+      "authors": [
+        "Singapore Department of Statistics"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://tablebuilder.singstat.gov.sg/table/TS/M810141"
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
@@ -868,6 +870,35 @@
       }
     },
     {
+      "source_type": "journal_article",
+      "title": "Chronic hepatitis C virus infection increases mortality from hepatic and extrahepatic diseases: a community-based long-term prospective study",
+      "authors": [
+        "Lee, Mei-Hsuan",
+        "Yang, Hwai-I",
+        "Lu, Sheng-Nan",
+        "Jen, Chin-Lan",
+        "You, San-Lin",
+        "Wang, Li-Yu"
+      ],
+      "year": 2012,
+      "identifiers": {
+        "doi": "10.1093/infdis/jis385",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E036",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
       "source_type": "software",
       "title": "Project repository file scripts/calibration/equilibrium.R",
       "authors": [],
@@ -881,7 +912,7 @@
       },
       "locator": "scripts/calibration/equilibrium.R",
       "confidentiality": "public",
-      "evidence_id": "E036",
+      "evidence_id": "E037",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -903,7 +934,7 @@
       },
       "locator": "output/release_rate_fit.rds",
       "confidentiality": "public",
-      "evidence_id": "E037",
+      "evidence_id": "E038",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -927,7 +958,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E038",
+      "evidence_id": "E039",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -951,7 +982,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E039",
+      "evidence_id": "E040",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -973,7 +1004,7 @@
       },
       "locator": "scripts/calibration/likelihood.R",
       "confidentiality": "public",
-      "evidence_id": "E040",
+      "evidence_id": "E041",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -983,7 +1014,7 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/calibration/r_20261030_agepop/run_config.json",
+      "title": "Project repository file output/prison_2015_counts.csv",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -993,9 +1024,31 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/calibration/r_20261030_agepop/run_config.json",
+      "locator": "output/prison_2015_counts.csv",
+      "confidentiality": "restricted",
+      "evidence_id": "E042",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/r_20261103_agepop/run_config.json",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/r_20261103_agepop/run_config.json",
       "confidentiality": "public",
-      "evidence_id": "E041",
+      "evidence_id": "E043",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1021,7 +1074,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E042",
+      "evidence_id": "E044",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1049,7 +1102,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E043",
+      "evidence_id": "E045",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1077,7 +1130,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E044",
+      "evidence_id": "E046",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1099,7 +1152,7 @@
       },
       "locator": "output/scenarios_2026/cost_evidence.csv",
       "confidentiality": "public",
-      "evidence_id": "E045",
+      "evidence_id": "E047",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1128,7 +1181,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E046",
+      "evidence_id": "E048",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1152,7 +1205,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E047",
+      "evidence_id": "E049",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1176,7 +1229,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E048",
+      "evidence_id": "E050",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1200,7 +1253,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E049",
+      "evidence_id": "E051",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1222,7 +1275,95 @@
       },
       "locator": "output/scenarios_2026/draw_validity.txt",
       "confidentiality": "public",
-      "evidence_id": "E050",
+      "evidence_id": "E052",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "software",
+      "title": "Project repository file scripts/tornado.R",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "scripts/tornado.R",
+      "confidentiality": "public",
+      "evidence_id": "E053",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/tornado/ranges.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/tornado/ranges.csv",
+      "confidentiality": "public",
+      "evidence_id": "E054",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026_inflow/scenario_2030_summary.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026_inflow/scenario_2030_summary.csv",
+      "confidentiality": "public",
+      "evidence_id": "E055",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026_gt3/",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026_gt3/",
+      "confidentiality": "public",
+      "evidence_id": "E056",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1247,7 +1388,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E051",
+      "evidence_id": "E057",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1269,7 +1410,7 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_diagnostics.csv",
       "confidentiality": "public",
-      "evidence_id": "E052",
+      "evidence_id": "E058",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1291,7 +1432,7 @@
       },
       "locator": "figures/calibration_interval_overlap.csv",
       "confidentiality": "public",
-      "evidence_id": "E053",
+      "evidence_id": "E059",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1301,7 +1442,7 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/calibration/r_20261030_agepop/predictions.csv",
+      "title": "Project repository file output/calibration/r_20261103_agepop/predictions.csv",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -1311,9 +1452,31 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/calibration/r_20261030_agepop/predictions.csv",
+      "locator": "output/calibration/r_20261103_agepop/predictions.csv",
       "confidentiality": "public",
-      "evidence_id": "E054",
+      "evidence_id": "E060",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/calibration/mcmc_reference/model_prediction_2015_strata.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/calibration/mcmc_reference/model_prediction_2015_strata.csv",
+      "confidentiality": "public",
+      "evidence_id": "E061",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1335,7 +1498,7 @@
       },
       "locator": "output/scenarios_2026/scenario_trajectories.csv",
       "confidentiality": "public",
-      "evidence_id": "E055",
+      "evidence_id": "E062",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1357,7 +1520,7 @@
       },
       "locator": "output/scenarios_2026/no_treatment_trajectory.csv",
       "confidentiality": "public",
-      "evidence_id": "E056",
+      "evidence_id": "E063",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1379,7 +1542,7 @@
       },
       "locator": "output/scenarios_2026/scenario_annual_services_costs.csv",
       "confidentiality": "public",
-      "evidence_id": "E057",
+      "evidence_id": "E064",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1388,27 +1551,20 @@
       }
     },
     {
-      "source_type": "journal_article",
-      "title": "Chronic hepatitis C virus infection increases mortality from hepatic and extrahepatic diseases: a community-based long-term prospective study",
-      "authors": [
-        "Lee, Mei-Hsuan",
-        "Yang, Hwai-I",
-        "Lu, Sheng-Nan",
-        "Jen, Chin-Lan",
-        "You, San-Lin",
-        "Wang, Li-Yu"
-      ],
-      "year": 2012,
+      "source_type": "dataset",
+      "title": "Project repository file output/tornado/pass_flips.csv",
+      "authors": [],
+      "year": 2026,
       "identifiers": {
-        "doi": "10.1093/infdis/jis385",
+        "doi": "",
         "isbn": "",
         "pmcid": "",
         "pmid": "",
         "url": ""
       },
-      "locator": "[to be recorded by the verifying author]",
+      "locator": "output/tornado/pass_flips.csv",
       "confidentiality": "public",
-      "evidence_id": "E058",
+      "evidence_id": "E065",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1437,7 +1593,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E059",
+      "evidence_id": "E066",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1466,7 +1622,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E060",
+      "evidence_id": "E067",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1494,7 +1650,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E061",
+      "evidence_id": "E068",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1523,7 +1679,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E062",
+      "evidence_id": "E069",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1549,7 +1705,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E063",
+      "evidence_id": "E070",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1577,7 +1733,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E064",
+      "evidence_id": "E071",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1606,7 +1762,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E065",
+      "evidence_id": "E072",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1635,7 +1791,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E066",
+      "evidence_id": "E073",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1662,7 +1818,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E067",
+      "evidence_id": "E074",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1691,7 +1847,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E068",
+      "evidence_id": "E075",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1719,7 +1875,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E069",
+      "evidence_id": "E076",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1748,7 +1904,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E070",
+      "evidence_id": "E077",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1777,7 +1933,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E071",
+      "evidence_id": "E078",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1787,18 +1943,18 @@
     },
     {
       "source_type": "journal_article",
-      "title": "Recompensation of Chronic Hepatitis C–Related Decompensated Cirrhosis Following Direct-Acting Antiviral Therapy: Prospective Cohort Study From a Hepatitis C Virus Elimination Program",
+      "title": "Clinical outcomes after treatment with direct antiviral agents: beyond the virological response in patients with previous HCV-related decompensated cirrhosis",
       "authors": [
-        "Premkumar, Madhumita",
-        "Dhiman, Radha K.",
-        "Duseja, Ajay",
-        "Mehtani, Rohit",
-        "Taneja, Sunil",
-        "Gupta, Ekta"
+        "Pageaux, Georges-Philippe",
+        "Nzinga, Clovis Lusivika",
+        "Ganne, Nathalie",
+        "Samuel, Didier",
+        "Dorival, Céline",
+        "Zoulim, Fabien"
       ],
-      "year": 2024,
+      "year": 2022,
       "identifiers": {
-        "doi": "10.1053/j.gastro.2024.08.018",
+        "doi": "10.1186/s12879-022-07076-0",
         "isbn": "",
         "pmcid": "",
         "pmid": "",
@@ -1806,7 +1962,7 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E072",
+      "evidence_id": "E079",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1835,7 +1991,31 @@
       },
       "locator": "[to be recorded by the verifying author]",
       "confidentiality": "public",
-      "evidence_id": "E073",
+      "evidence_id": "E080",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "webpage",
+      "title": "Singapore residents by age group, ethnic group and sex, at end June, annual (table M810011)",
+      "authors": [
+        "Singapore Department of Statistics"
+      ],
+      "year": null,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": "https://tablebuilder.singstat.gov.sg/table/TS/M810011"
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E081",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1857,7 +2037,7 @@
       },
       "locator": "scripts/model/preprocess.R",
       "confidentiality": "public",
-      "evidence_id": "E074",
+      "evidence_id": "E082",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1879,7 +2059,7 @@
       },
       "locator": "scripts/model/release_rate.stan",
       "confidentiality": "public",
-      "evidence_id": "E075",
+      "evidence_id": "E083",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1901,7 +2081,7 @@
       },
       "locator": "scripts/model/rearrest_rate.stan",
       "confidentiality": "public",
-      "evidence_id": "E076",
+      "evidence_id": "E084",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1911,7 +2091,7 @@
     },
     {
       "source_type": "dataset",
-      "title": "Project repository file output/calibration/r_20261030_agepop/solutions.csv",
+      "title": "Project repository file output/calibration/r_20261103_agepop/solutions.csv",
       "authors": [],
       "year": 2026,
       "identifiers": {
@@ -1921,9 +2101,9 @@
         "pmid": "",
         "url": ""
       },
-      "locator": "output/calibration/r_20261030_agepop/solutions.csv",
+      "locator": "output/calibration/r_20261103_agepop/solutions.csv",
       "confidentiality": "public",
-      "evidence_id": "E077",
+      "evidence_id": "E085",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1945,7 +2125,7 @@
       },
       "locator": "output/calibration/mcmc_reference/mcmc_chain_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E078",
+      "evidence_id": "E086",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1967,7 +2147,7 @@
       },
       "locator": "output/calibration/mcmc_sbc/mcmc_sbc_summary.csv",
       "confidentiality": "public",
-      "evidence_id": "E079",
+      "evidence_id": "E087",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -1989,7 +2169,36 @@
       },
       "locator": "output/scenarios_2026_j2019/scenario_trajectories.csv",
       "confidentiality": "public",
-      "evidence_id": "E080",
+      "evidence_id": "E088",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "journal_article",
+      "title": "The effects of female sex, viral genotype, and IL28B genotype on spontaneous clearance of acute hepatitis C virus infection",
+      "authors": [
+        "Grebely, Jason",
+        "Page, Kimberly",
+        "Sacks-Davis, Rachel",
+        "van der Loeff, Maarten Schim",
+        "Rice, Thomas M.",
+        "Bruneau, Julie"
+      ],
+      "year": 2014,
+      "identifiers": {
+        "doi": "10.1002/hep.26639",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "[to be recorded by the verifying author]",
+      "confidentiality": "public",
+      "evidence_id": "E089",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -2011,7 +2220,7 @@
       },
       "locator": "scripts/figures.py",
       "confidentiality": "public",
-      "evidence_id": "E081",
+      "evidence_id": "E090",
       "verification": {
         "source_opened": false,
         "status": "unverified",
@@ -2033,7 +2242,29 @@
       },
       "locator": "output/scenarios_2026/scenario_stratum_totals.csv",
       "confidentiality": "public",
-      "evidence_id": "E082",
+      "evidence_id": "E091",
+      "verification": {
+        "source_opened": false,
+        "status": "unverified",
+        "verified_by": "",
+        "verified_on": ""
+      }
+    },
+    {
+      "source_type": "dataset",
+      "title": "Project repository file output/scenarios_2026_inflow/scenario_trajectories.csv",
+      "authors": [],
+      "year": 2026,
+      "identifiers": {
+        "doi": "",
+        "isbn": "",
+        "pmcid": "",
+        "pmid": "",
+        "url": ""
+      },
+      "locator": "output/scenarios_2026_inflow/scenario_trajectories.csv",
+      "confidentiality": "public",
+      "evidence_id": "E092",
       "verification": {
         "source_opened": false,
         "status": "unverified",

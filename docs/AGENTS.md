@@ -77,10 +77,12 @@ All executable model and calibration code is under `scripts/`:
   centre, proposal covariance, starting points or scenarios. Multi-round NPE,
   MAP/Hessian and pilot proposals are not part of this repository, nor is a
   Laplace approximation.
-- From the 2015 snapshot, 2016--2025 inflow uses the official SingStat/CNB
-  age-specific new-drug-abuser series in `data/singstat_new_drug_abusers.csv`;
-  the latest observed year is held constant through 2030. The same calibrated
-  age-specific beta scales multiply every year of that schedule.
+- Inflow is held at the 2015 level (CNB 2015 age-specific new drug abusers x
+  the heroin/methamphetamine share, times the calibrated entry scales) in every
+  year, 2015 equilibrium and 2016--2030 projection (main analysis). The observed
+  2016--2025 SingStat/CNB series in `data/singstat_new_drug_abusers.csv`, with
+  2025 held through 2030, is a sensitivity analysis (`scenarios_2026.R --inflow
+  observed`, reported in S1 Text).
 
 ## Initial values and references
 

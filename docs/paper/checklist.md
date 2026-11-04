@@ -18,7 +18,7 @@ Items follow the CHEERS 2022 statement [@cheers2022]; the item wording and the l
 | 14 | Measurement and valuation of resources and costs | Methods, Costs; S1 Text Table H |
 | 15 | Currency, price date, and conversion | Methods, Costs; S1 Text Section 7 |
 | 16 | Rationale and description of model | Methods, Model structure; S1 Text Section 1 |
-| 17 | Analytics and assumptions | Methods; S1 Text Sections 1, 4 and 6 |
+| 17 | Analytics and assumptions | Methods; Discussion, Strengths and limitations; S1 Text Sections 1, 4, 6 and 10 |
 | 18 | Characterising heterogeneity | Results by group (D, J, F, X) and age; S1 Text Section 5 |
 | 19 | Characterising distributional effects | Not addressed |
 | 20 | Characterising uncertainty | Methods, Uncertainty and Policy scenarios (prison coverage, start in 2019); S1 Text Sections 8 and 9 |
