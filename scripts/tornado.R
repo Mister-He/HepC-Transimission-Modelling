@@ -12,7 +12,7 @@ args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i + 1] }
 ROOT <- normalizePath(arg("--root", getwd()), mustWork = TRUE)
 FIT <- arg("--fit", "output/calibration/r_20261103_agepop/fit.rds")
-OUT <- file.path(ROOT, arg("--out-dir", "output/tornado"))
+OUT_REL <- arg("--out-dir", "output/tornado"); OUT <- file.path(ROOT, OUT_REL)
 N_CORES <- as.integer(arg("--cores", 8))
 dir.create(file.path(OUT, "runs"), recursive = TRUE, showWarnings = FALSE)
 
@@ -26,19 +26,10 @@ as_draws <- function(f) { d <- readRDS(file.path(ROOT, f))[[2]]; matrix(d, ncol 
 rate_q <- function(f, p) { d <- as_draws(f); unname(apply(exp(d[, grep("^log_lambda\\[", colnames(d))]), 2, quantile, p)) }
 pi_q <- function(p) unname(quantile(plogis(as_draws("output/rearrest_rate_fit.rds")[, "pi_raw"]), p))
 
-# SVR composites in setup.R are rho * GT3 + (1 - rho) * other; one genotype's SVR moves the
-# composite by its weight (RBV-free DC is what the scenarios use for DC; RBV+ is used for HCC).
-gt <- list(a3NC = 0.976, aoNC = 0.988, a3DCm = 0.45, aoDCm = 0.90, a3DCp = 0.87, aoDCp = 0.92)
-svr <- function(name, v) {
-  w <- if (startsWith(name, "a3")) bp$rho else 1 - bp$rho; d <- w * (v - gt[[name]])
-  switch(substr(name, 3, 5), NC = list(alpha_NC = bp$alpha_NC + d), DCm = list(alpha_DC_neg = bp$alpha_DC_neg + d),
-         DCp = list(alpha_DC_pos = bp$alpha_DC_pos + d, alpha_HCC = bp$alpha_HCC + d))
-}
-rho_set <- function(v) list(rho = v,
-  alpha_NC = bp$alpha_NC + (v - bp$rho) * (gt$a3NC - gt$aoNC),
-  alpha_DC_neg = bp$alpha_DC_neg + (v - bp$rho) * (gt$a3DCm - gt$aoDCm),
-  alpha_DC_pos = bp$alpha_DC_pos + (v - bp$rho) * (gt$a3DCp - gt$aoDCp),
-  alpha_HCC = bp$alpha_HCC + (v - bp$rho) * (gt$a3DCp - gt$aoDCp))
+# SVR composites move with the genotype 3 share or with one genotype's SVR (scripts/model/genotype.R).
+source(file.path(ROOT, "scripts/model/genotype.R"))
+svr <- function(name, v) svr_overrides(bp, name, v)
+rho_set <- function(v) rho_overrides(bp, v)
 hr0 <- bp$smr_viraemic / bp$smr_nonviraemic  # extrahepatic HR (Lee 2012), 1.47
 
 # name, label, low, high, source, function(value) -> named list of overrides
@@ -89,8 +80,8 @@ write.csv(ranges, file.path(OUT, "ranges.csv"), row.names = FALSE)
 
 run_one <- function(nm) {
   dir <- file.path(OUT, "runs", nm); dir.create(dir, showWarnings = FALSE)
-  a <- c(file.path(ROOT, "scripts/scenarios_2026.R"), "--root", ROOT, "--fit", FIT, "--posterior-files", theta_file,
-         "--draws-per-seed", "1", "--cores", "1", "--min-valid-share", "1", "--out-dir", file.path("output/tornado/runs", nm))
+  a <- c(file.path(ROOT, "scripts/scenarios_2026.R"), "--root", ROOT, "--fit", file.path(ROOT, FIT), "--posterior-files", theta_file,
+         "--draws-per-seed", "1", "--cores", "1", "--min-valid-share", "1", "--out-dir", file.path(OUT_REL, "runs", nm))
   if (length(runs[[nm]])) { f <- file.path(dir, "override.rds"); saveRDS(runs[[nm]], f); a <- c(a, "--param-file", f) }
   status <- system2("Rscript", a, stdout = file.path(dir, "log.txt"), stderr = file.path(dir, "log.txt"))
   if (status != 0) return(NULL)
@@ -105,7 +96,7 @@ res <- parallel::mclapply(names(runs), run_one, mc.cores = N_CORES, mc.preschedu
 failed <- names(runs)[vapply(res, is.null, TRUE)]
 stopifnot("base run failed" = !"base" %in% failed)
 write.csv(data.frame(run = failed), file.path(OUT, "failed_runs.csv"), row.names = FALSE)
-if (length(failed)) cat("runs without a 2015 equilibrium (see output/tornado/runs/<run>/log.txt):", failed, "\n")
+if (length(failed)) cat("runs without a 2015 equilibrium (see", file.path(OUT_REL, "runs/<run>/log.txt"), "):", failed, "\n")
 res <- do.call(rbind, res)
 res$input <- sub("_(low|high)$", "", res$run); res$side <- ifelse(res$run == "base", "base", sub("^.*_", "", res$run))
 write.csv(res, file.path(OUT, "tornado_results.csv"), row.names = FALSE)

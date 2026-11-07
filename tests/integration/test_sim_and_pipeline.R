@@ -61,7 +61,7 @@ check_equal(rate_components(xd$y0, 0, fa)[["hcv_mortality"]], total_deaths - bac
 ys <- runif(480) * 100
 check_equal(annual_events(rbind(c(0, ys), c(0.5, ys), c(2, ys)), e$params), 2 * rate_components(ys, 0, e$params),
             tol = 1e-12, "annual_events of a constant state is rate x duration")
-xd$t_end <- 1; x1 <- run_sim(fa, xd)
+xd$t_end <- 1; xd$dt <- 1 / 365; x1 <- run_sim(fa, xd)  # daily steps; dt 1e-6 over a year needs ~4 GB
 check_true(annual_events(x1, fa)[["mortality"]] < rate_components(xd$y0, 0, fa)[["mortality"]],
            "annual_events counts deaths over the year, below the start rate as people die")
 

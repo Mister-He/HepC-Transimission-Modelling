@@ -4,7 +4,7 @@ Executable model and analysis code. Each script starts with a short description.
 
 - **`model/`**: the simulator (`sim.cpp`), parameters and initial state (`setup.R`), prison-record
   preprocessing (`preprocess.R`) and its Stan models, and the rate-fit handoff into `setup.R`
-  (`update_rate_params.R`).
+  (`update_rate_params.R`), and the genotype-dependent SVR composites (`genotype.R`).
 - **`calibration/`**: shared functions:
   - targets, J-stratum summaries and the equilibrium check;
   - the likelihood;
@@ -23,6 +23,8 @@ Workflow, in order:
    - `plot_calibration.R`: the calibration figure.
 5. **Scenarios:** `scenarios_2026.R` runs every policy for each posterior draw.
    `post_calibration_analysis.R` is a thin entry point that runs it.
+   Sensitivity: `tornado.R` (one-way, fixed inputs) and `gt3_params.R` (writes the genotype 3
+   share inputs for `scenarios_2026.R --param-file`).
 6. **Manuscript:**
    - `figures.py`: redraws every figure (manuscript, SI, calibration diagnostics) from the saved
      outputs with the `scientific-visualization` skill, as PNG (300 dpi) plus editable SVG. Run it

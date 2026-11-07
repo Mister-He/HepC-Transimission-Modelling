@@ -20,3 +20,5 @@ equilibrium convention described in `docs/AGENTS.md`.
     `output/release_rate_fit.rds` and `output/rearrest_rate_fit.rds`.
 - `update_rate_params.R`: copies those fits into the `lambda2`, `lambda3` and `pi_recid`
   entries of `setup.R` after validating them.
+- `genotype.R`: SVR12 by genotype and the overrides that move the `setup.R` SVR composites
+  with the genotype 3 share (used by `tornado.R` and `gt3_params.R`).

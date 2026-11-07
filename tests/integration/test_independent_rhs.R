@@ -17,7 +17,7 @@ sys.source(file.path(root, "scripts", "calibration", "model_metrics.R"), envir =
 # stratum s (D, J, F, X) -- the column-major reading of the C++ index s*120 + (k-1)*30 + h*6 + i.
 indep_rhs <- function(y, P) {
   Y <- array(y, c(6, 5, 4, 4)); dY <- array(0, dim(Y))
-  U <- 1; A <- 2; C <- 3; T <- 4; R <- 5; Ds <- 1; Js <- 2; Fs <- 3; Xs <- 4
+  U <- 1; A <- 2; C <- 3; Tr <- 4; R <- 5; Ds <- 1; Js <- 2; Fs <- 3; Xs <- 4
   inj <- Y[, , , Ds] + Y[, , , Fs]
   active <- apply(inj, 1, sum); infectious <- apply(inj[, c(A, C), , drop = FALSE], 1, sum)
   gam <- P$q * as.vector(P$C_contact %*% ifelse(active > 0, infectious / active, 0))
@@ -27,7 +27,7 @@ indep_rhs <- function(y, P) {
   alpha <- c(P$alpha_NC, P$alpha_NC, P$alpha_DC, P$alpha_HCC)
   l1 <- P$c_first * P$lambda3; l2 <- P$lambda2; l3 <- P$lambda3
   for (s in 1:4) for (k in 1:4) for (h in 1:5) {
-    smr <- if (h %in% c(A, C, T)) P$smr_viraemic else P$smr_nonviraemic
+    smr <- if (h %in% c(A, C, Tr)) P$smr_viraemic else P$smr_nonviraemic
     liver <- if (k == 3) P$mu_DC * (if (h == R) P$psi_DC else 1) else
       if (k == 4) P$mu_HCC * (if (h == R) P$psi_HCC else 1) else 0
     dY[, h, k, s] <- dY[, h, k, s] - (P$mu * smr + liver) * Y[, h, k, s]
@@ -51,9 +51,9 @@ indep_rhs <- function(y, P) {
     a <- Y[, A, k, s] / P$iota1
     dY[, A, k, s] <- dY[, A, k, s] - a
     dY[, R, k, s] <- dY[, R, k, s] + P$kappa * a; dY[, C, k, s] <- dY[, C, k, s] + (1 - P$kappa) * a
-    st <- P$tau_by_stratum[(s - 1) * 4 + k] * tau_ok * Y[, C, k, s]; fin <- Y[, T, k, s] / P$iota2
+    st <- P$tau_by_stratum[(s - 1) * 4 + k] * tau_ok * Y[, C, k, s]; fin <- Y[, Tr, k, s] / P$iota2
     dY[, C, k, s] <- dY[, C, k, s] - st + (1 - alpha[k]) * fin
-    dY[, T, k, s] <- dY[, T, k, s] + st - fin
+    dY[, Tr, k, s] <- dY[, Tr, k, s] + st - fin
     dY[, R, k, s] <- dY[, R, k, s] + alpha[k] * fin
   }
   for (s in 1:4) for (m in list(c(1, 2, 1), c(2, 3, 2), c(2, 4, 3), c(3, 4, 4))) {

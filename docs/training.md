@@ -173,7 +173,8 @@ Rscript scripts/scenarios_2026.R $SC --j-probability 0.5 --out-dir output/scenar
 Rscript scripts/scenarios_2026.R $SC --j-probability 0.9 --out-dir output/scenarios_2026_jcov/j090
 Rscript scripts/scenarios_2026.R $SC --j-start-year 2019 --out-dir output/scenarios_2026_j2019   # sensitivity
 Rscript scripts/scenarios_2026.R $SC --inflow observed --out-dir output/scenarios_2026_inflow       # sensitivity
-# genotype 3 share 10% / 50% (writes gt3_params.rds first; see output/scenarios_2026_gt3/README.md)
+# genotype 3 share 10% / 50%: write the --param-file inputs first (see output/scenarios_2026_gt3/README.md)
+Rscript scripts/gt3_params.R --root .
 Rscript scripts/scenarios_2026.R $SC --param-file output/scenarios_2026_gt3/rho010/gt3_params.rds --out-dir output/scenarios_2026_gt3/rho010
 Rscript scripts/scenarios_2026.R $SC --param-file output/scenarios_2026_gt3/rho050/gt3_params.rds --out-dir output/scenarios_2026_gt3/rho050
 ```
