@@ -299,7 +299,7 @@ run_policy <- function(row) {
     rows[[paste0(year,"X")]] <- process_row(id,year,3,x,z)
     trajectories[[as.character(year)]] <- rate_row(z,year,id)
   }
-  list(process=add_cost(do.call(rbind,rows)),trajectory=do.call(rbind,trajectories),end_state=y)
+  list(process=add_cost(do.call(rbind,rows)),trajectory=do.call(rbind,trajectories))
 }
 # Counterfactual with no treatment in any stratum, 2015 to END_YEAR (shows the effect of J treatment).
 no_tx <- list(base_rates); y <- initial

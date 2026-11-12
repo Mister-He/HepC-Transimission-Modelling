@@ -37,12 +37,8 @@ check_equilibrium <- function(out, t_lag = 10,
   comp_T5 <- out[row_T5, EQ_COMP]
   max_comp_log_ratio <- max(abs(log(pmax(comp_T, 1e-6) / pmax(comp_T5, 1e-6))))
 
-  hcv_idx <- EQ_HCV; dc_idx <- EQ_DC; hcc_idx <- EQ_HCC
-  state_log_ratio <- max(
-    abs(log(sum(out[row_T, hcv_idx]) / sum(out[row_T5, hcv_idx]))),
-    abs(log(sum(out[row_T, dc_idx]) / sum(out[row_T5, dc_idx]))),
-    abs(log(sum(out[row_T, hcc_idx]) / sum(out[row_T5, hcc_idx])))
-  )
+  sum_log_ratio <- function(cols) abs(log(sum(out[row_T, cols]) / sum(out[row_T5, cols])))
+  state_log_ratio <- max(sum_log_ratio(EQ_HCV), sum_log_ratio(EQ_DC), sum_log_ratio(EQ_HCC))
 
   violation <- sum(pmax(log_ratio / crit_log_pop - 1, 0)) +
     pmax(max(prev_change) / crit_prev - 1, 0) +

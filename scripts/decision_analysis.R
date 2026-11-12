@@ -128,11 +128,11 @@ if (sys.nframe() == 0L) {
 
   summary_rows <- list(); frontier_rows <- list(); budget_rows <- list(); weight_rows <- list()
   for (set in names(sets)) for (h in horizons) {
-    cr <- criteria_at(sets[[set]]$data, h, sets[[set]]$label)
+    cr <- criteria_at(sets[[set]]$data, h, sets[[set]]$label); hz <- paste0("2026-", h)
     ids <- unique(cr$strategy); by_draw <- split(cr, cr$draw)
     stopifnot(all(vapply(by_draw, function(x) identical(x$strategy, ids), logical(1))))
     # Posterior summary per strategy; the main decision matrix uses medians and P(joint pass).
-    s <- data.frame(set = set, horizon = paste0("2026-", h), strategy = ids, stringsAsFactors = FALSE)
+    s <- data.frame(set = set, horizon = hz, strategy = ids, stringsAsFactors = FALSE)
     for (k in c(CRITERIA[-3], "cpa_infection", "cpa_liver_death")) {
       v <- split(cr[[k]], factor(cr$strategy, ids))
       s[[k]] <- vapply(v, median, numeric(1), na.rm = TRUE)
@@ -153,31 +153,31 @@ if (sys.nframe() == 0L) {
     s$p_pareto_efficient <- rowMeans(vapply(per_draw, `[[`, logical(length(ids)), "eff"))
     tops <- vapply(per_draw, `[[`, character(1), "top")
     s$p_topsis_top <- as.numeric(table(factor(tops, ids))) / length(tops)
+    # Random weights: Dirichlet(1) = normalised exponentials (topsis() rescales the weights).
+    W <- matrix(rexp(N_WEIGHTS * length(CRITERIA)), ncol = length(CRITERIA))
+    rtop <- apply(W, 1, function(w) ids[which.max(topsis_pareto(M, MAXIMISE, w))])
+    s$p_top_random_weights <- as.numeric(table(factor(rtop, ids))) / N_WEIGHTS
     summary_rows[[length(summary_rows) + 1]] <- s
     # Efficiency frontiers (medians), cost vs each benefit.
     for (b in c("infections_averted", "liver_deaths_averted"))
-      frontier_rows[[length(frontier_rows) + 1]] <- cbind(set = set, horizon = paste0("2026-", h),
+      frontier_rows[[length(frontier_rows) + 1]] <- cbind(set = set, horizon = hz,
         benefit = b, efficiency_frontier(ids, s$programme_cost, s[[b]]))
     # Rule (a): budget caps spread over the range of median costs.
     caps <- pretty(range(s$programme_cost), n = 8); caps <- caps[caps >= min(s$programme_cost)]
     for (b in c("infections_averted", "liver_deaths_averted")) for (cap in caps) {
       pick <- best_within_budget(ids, s$programme_cost, s[[b]], cap)
       picks <- vapply(by_draw, function(x) best_within_budget(ids, x$programme_cost, x[[b]], cap), character(1))
-      budget_rows[[length(budget_rows) + 1]] <- data.frame(set = set, horizon = paste0("2026-", h),
+      budget_rows[[length(budget_rows) + 1]] <- data.frame(set = set, horizon = hz,
         benefit = b, budget_cap_sgd = cap, best_strategy = pick,
         p_best_strategy = mean(picks == pick, na.rm = TRUE), stringsAsFactors = FALSE)
     }
-    # TOPSIS weight sensitivity on the median matrix: fixed weight sets and Dirichlet(1) weights.
+    # TOPSIS weight sensitivity on the median matrix: fixed weight sets (random weights above).
     for (nm in names(weight_sets)) {
       cl <- topsis_pareto(M, MAXIMISE, weight_sets[[nm]])
-      weight_rows[[length(weight_rows) + 1]] <- data.frame(set = set, horizon = paste0("2026-", h),
+      weight_rows[[length(weight_rows) + 1]] <- data.frame(set = set, horizon = hz,
         weights = nm, weight_vector = paste(weight_sets[[nm]], collapse = "/"),
         top_strategy = ids[which.max(cl)], top_closeness = max(cl, na.rm = TRUE), stringsAsFactors = FALSE)
     }
-    W <- matrix(rexp(N_WEIGHTS * length(CRITERIA)), ncol = length(CRITERIA))
-    rtop <- apply(W, 1, function(w) ids[which.max(topsis_pareto(M, MAXIMISE, w))])
-    s_idx <- length(summary_rows)
-    summary_rows[[s_idx]]$p_top_random_weights <- as.numeric(table(factor(rtop, ids))) / N_WEIGHTS
   }
   summ <- do.call(rbind, summary_rows)
   write.csv(summ, file.path(OUT, "decision_criteria_summary.csv"), row.names = FALSE)
