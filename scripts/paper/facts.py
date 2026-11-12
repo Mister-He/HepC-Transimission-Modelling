@@ -42,6 +42,13 @@ class Facts:
             "gt3": "output/scenarios_2026_gt3/",
             "tornado": "output/tornado/tornado_results.csv", "tornado_ranges": "output/tornado/ranges.csv",
             "tornado_flips": "output/tornado/pass_flips.csv", "tornado_code": "scripts/tornado.R",
+            "cum": S + "scenario_cumulative_summary.csv", "cum_draws": S + "scenario_cumulative_draws.csv",
+            "long": S + "scenario_trajectories_long.csv", "linkage": "output/scenarios_2026_linkage/",
+            "da": "output/decision_analysis/decision_criteria_summary.csv",
+            "da_frontier": "output/decision_analysis/efficiency_frontier.csv",
+            "da_budget": "output/decision_analysis/budget_rule.csv",
+            "da_weights": "output/decision_analysis/topsis_weight_sensitivity.csv",
+            "da_code": "scripts/decision_analysis.R",
         }
         JC = self.files["jcov"]
         self.jcov_dirs = {0.0: JC + "j000/", 0.5: JC + "j050/", 0.9: JC + "j090/"}  # plus the main run
@@ -64,6 +71,15 @@ class Facts:
         self.gt3_par = {rho: r(G3 + d + "/gt3_params.csv")[0] for rho, d in ((0.1, "rho010"), (0.5, "rho050"))}
         self.tor = r(self.files["tornado"]); self.tor_ranges = r(self.files["tornado_ranges"])
         self.tor_flips = r(self.files["tornado_flips"]); self.tor_failed = r("output/tornado/failed_runs.csv")
+        # Long horizon (to the config end year), linkage sensitivity and the decision analysis.
+        self.cum = {x["scenario_id"]: x for x in r(self.files["cum"])}
+        self.long = r(self.files["long"])
+        L = self.files["linkage"]
+        self.link = {l: {x["scenario_id"]: x for x in r(L + d + "/scenario_2030_summary.csv")} for l, d in ((0.6, "l060"), (0.8, "l080"))}
+        self.link_cum = {l: {x["scenario_id"]: x for x in r(L + d + "/scenario_cumulative_summary.csv")} for l, d in ((0.6, "l060"), (0.8, "l080"))}
+        self.da = r(self.files["da"]); self.da_frontier = r(self.files["da_frontier"])
+        self.da_budget = r(self.files["da_budget"]); self.da_weights = r(self.files["da_weights"])
+        self.end_year = int(self.cfg["end_year"]); self.hz = f"2026-{self.end_year}"
         self.setup_txt = open(os.path.join(root, self.files["setup"])).read()
         self.valid = dict(l.split() for l in open(os.path.join(root, self.files["draws_valid"])))
         self.j_start = self.valid["j_start_year"]
@@ -82,6 +98,10 @@ class Facts:
 
     def an(self, sid, yr, st):
         return next(x for x in self.ann if x["scenario_id"] == sid and int(F(x["year"])) == yr and x["stratum"] == st)
+
+    def dac(self, st, hz, sid):
+        """Decision-criteria row of strategy sid in set st (s17/s68) at horizon hz ('2026-2050')."""
+        return next(x for x in self.da if x["set"] == st and x["horizon"] == hz and x["strategy"] == sid)
 
     def j2019_valid(self):
         return dict(l.split() for l in open(os.path.join(self.root, "output/scenarios_2026_j2019/draw_validity.txt")))["j_start_year"]

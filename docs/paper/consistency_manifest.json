@@ -102,8 +102,8 @@
       "analysis_intent": "descriptive",
       "sample_size": 4000,
       "evidence_ids": [
-        "E058",
-        "E059"
+        "E071",
+        "E056"
       ],
       "reported_sections": [
         "Results: Calibration and the 2015 population"
@@ -147,7 +147,7 @@
       "sample_size": 2000,
       "evidence_ids": [
         "E009",
-        "E064"
+        "E075"
       ],
       "reported_sections": [
         "Results: Costs",

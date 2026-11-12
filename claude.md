@@ -1,4 +1,85 @@
-# claude.md — handoff notes (2026-10-05)
+# claude.md — handoff notes
+
+## DONE 2026-11-12 (see "Long horizon, decision analysis, linkage" at the end): align Chapter 2 with the restructured PhD thesis
+
+### Why this changes
+After the PQE (Sep 2026) the examiners said the thesis lacked a coherent aim and a decision framework
+shared across chapters. The thesis is now framed as **risk-concentrated prevention: whom to target,
+through which delivery point, and how intensively**, with one multi-criteria decision approach used in
+every chapter. Chapter 1 (published lung-cancer microsimulation) chooses strategies from a Pareto set and
+ranks them with TOPSIS. This chapter must do the same. Decisions the user has already made (do not
+re-litigate them):
+
+- **Primary outcome = HCV elimination** among PWID in prison and the community: the WHO 2030 targets
+  (incidence −80%, HCV/liver deaths −65% vs 2015), as now. Liver cancer and advanced liver disease are
+  **secondary** outcomes, not the framing.
+- **No QALYs.** Use natural outcomes plus costs. DALYs are optional and need the user's approval first.
+- Costs are **programme budget** only (testing, consultation, DAA). Label them that way everywhere: they
+  exclude downstream DC/HCC care costs and any savings from averted disease.
+- Do **not** recalibrate. Keep the production posterior (reference MCMC), the 17 scenarios and the J-coverage grid.
+
+### What to add, in order
+1. **Longer horizon, with 2030 kept as the WHO check.**
+   - Make the projection end year configurable (`end_year` in `data/scenario_policy_config.json`;
+     run to 2040 and 2050) and keep a separate `WHO_YEAR <- 2030` for PASS/FAIL.
+   - `scripts/scenarios_2026.R` hard-codes 2030 or five policy years in several places:
+     - the `config$end_year == 2030` assert;
+     - `if (year==2030) stopifnot(... -165 ...)`;
+     - the no-treatment loop `2016:2030`;
+     - `endpoint <- subset(trajectories, year==2030)`;
+     - `nrow(process)==nrow(scenario_table)*5*3`;
+     - the `*_2026_2030_sgd` column names;
+     - the plot limits.
+     
+     Generalise them without changing the 2030 results: diff `scenario_2030_summary.csv` before and after.
+   - Inflow is held at 2015 levels to the end year. State that as an assumption. The observed-inflow
+     sensitivity holds 2025 to the end year.
+2. **Cumulative outcomes averted, per posterior draw, then summarised** (median + 95% UI, as now):
+   - new infections averted and liver (DC/HCC) deaths averted;
+   - over 2026–2030 and over 2026–end year;
+   - against both J-only (status quo) and no treatment.
+   
+   Optional: DC and HCC incident cases averted. These need new event counters, because `annual_events()`
+   currently returns only incidence and mortality. Check `sim.cpp` before adding them.
+3. **Efficiency criteria, also per draw:**
+   - incremental programme cost vs J-only per infection averted, and per liver death averted;
+   - report both horizons;
+   - guard near-zero denominators (`safe_ratio`);
+   - add an efficiency frontier (cost vs benefit; dominated and extendedly dominated strategies flagged).
+4. **Multi-criteria strategy selection mirroring Chapter 1.** Put this in a new script,
+   `scripts/decision_analysis.R`, reading the per-draw outputs, and add it to `scripts/README.md`.
+   - **Strategy sets:** the 17 main scenarios, and the 68 combinations from `output/scenarios_2026_jcov/`.
+   - **Benefit criteria:** cumulative infections averted, liver deaths averted, P(joint WHO pass).
+   - **Cost criteria:** programme budget and treatment courses.
+   - **Normalisation:** normalise to 0–1, with burden criteria reverse-coded.
+   - **Decision rules:**
+     - (a) maximum health benefit within a budget cap;
+     - (b) lowest cost per outcome averted;
+     - (c) TOPSIS among Pareto-efficient strategies, with equal weights in the main analysis and a weight
+       sensitivity.
+   - **Uncertainty:** rank within each posterior draw, and report the probability that each strategy is
+     Pareto-efficient and the probability that it is TOPSIS-top.
+5. **Write-up (`docs/main.docx` / Supplementary, and the thesis chapter).**
+   - Reframe the introduction and discussion around elimination and "whom / where / how intensively".
+   - Address these PQE examiner requests explicitly:
+     - define the status quo comparator (J-only);
+     - describe calibration and validation;
+     - state the uncertainty sources (posterior only; not uptake, linkage or price);
+     - state the cascade/adherence assumptions (ideal linkage).
+   - Add a sensitivity on linkage/completion if feasible.
+   - Explain HCV → advanced liver disease latency as the reason for the long horizon.
+
+### Rules
+- Follow `AGENTS.md`, `docs/AGENTS.md` and `commit_rule.md`.
+- Keep results in the existing `output/` directories (the README there is in Chinese; keep it that way).
+- Run `Rscript scripts/run_tests.R --scope all` after code changes.
+- Ask the user before running the full 2000-draw pipeline if it would overwrite current results.
+
+Thesis-level context and the supervisor memo are in `~/Documents/Life/PQE/HANDOFF.md`.
+
+---
+
+# Previous handoff (2026-10-05)
 
 ## Task done
 The 17 policy scenarios (J-only, 15 finite F/X screening policies, no-cap reference) were regenerated so that every
@@ -372,7 +453,7 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - **Open:** Premkumar 2024 ψ_DC unverified; protected `docs/AGENTS.md`/`equations.tex` mortality passages
   still old; `smr_sensitivity/` historical; `r_20261030_agepop/` superseded (not deleted).
 
-## ψ for cured people only, new ψ values, genotype 3 sensitivity (2026-11-04, `REVIEW_REPORT.md` §9) — current state
+## ψ for cured people only, new ψ values, genotype 3 sensitivity (2026-11-04, `REVIEW_REPORT.md` §9) — model state still current
 - Same branch, nothing committed. Logs: `logs/pipeline3_20261104.sh` (NM rerun, tornado, six scenario runs),
   `logs/pipeline4_20261104.sh` (genotype 3 runs).
 - **Model (author decisions):** ψ multiplies liver deaths of cured people (r) only; ψ_DC 0.40 (Pageaux 2022),
@@ -385,3 +466,42 @@ outputs were backed up to the session scratchpad only (not in the repo).
 - **Docs:** `docs/tex_consistency_instructions.md` = how to make `docs/equations.tex` (PDF §3.1–3.5) and the
   PDF Notation table match the code (not applied; protected file, main TeX not in repo).
 - **SI Fig H** = observed-inflow trajectories (`output/scenarios_2026_inflow/scenario_target_trajectories.png`).
+
+## Long horizon, decision analysis, linkage (2026-11-12) — current state
+Task: the NEXT TASK block at the top (thesis framing "whom / where / how intensively", Pareto + TOPSIS as in
+Chapter 1). No recalibration; same posterior, 17 scenarios, J-coverage grid. Summaries for the user:
+`docs/summary_assumptions.md`, `docs/summary_methods.md`, `docs/summary_results.md`.
+- **Horizon:** `end_year` 2050 in the config; `WHO_YEAR <- 2030` in `scenarios_2026.R` keeps pass/fail and all
+  `*_2026_2030` outputs. 16-draw old-vs-new check: every 2030 CSV byte-identical; full rerun also identical.
+  Entry held at 2015 to 2050 (stated as an assumption).
+- **New outputs per run:** `scenario_cumulative_draws.csv` / `_summary.csv` (2026–2030/2040/2050: infections
+  and liver deaths, averted vs no treatment and vs J only, programme budget, incremental budget, courses,
+  cost per outcome averted vs J only with `MIN_AVERTED` = 1 guard; events discounted for the ratios, not for
+  the counts), `scenario_trajectories_long.csv` (2015–2050 incl. no treatment).
+- **`--linkage`:** F/X capacity = chronic found × linkage. Runs `output/scenarios_2026_linkage/{l060,l080}`.
+- **`scripts/decision_analysis.R`** → `output/decision_analysis/` (Chinese README): s17 and s68 sets; criteria
+  infections/liver deaths averted vs no treatment, P(joint pass), budget, courses; Pareto, TOPSIS (equal
+  weights + doubled/zeroed/benefits-only/costs-only + 1,000 Dirichlet weights), frontier with extended
+  dominance, budget-cap rule, per-draw P(Pareto)/P(top). Test `tests/unit/test_decision.R`.
+- **Full pipeline** (`logs/pipeline5_20261112.sh`, frozen copies in `logs/frozen_20261112/`, ~83 min): main,
+  j000/j050/j090, l060/l080 (all 2000/2000 valid), decision. j2019, inflow, gt3, tornado NOT rerun (2030 only).
+- **Results (2026–2050):** J only averts 1,651 liver deaths vs no treatment (93% after 2030). Liver deaths
+  reach 35% of 2015 in 2028 (uncapped), 2035 (S8000_F25), 2041 (S8000_F75), 2048 (J only). Frontier (liver
+  deaths): S1000/2000/5000/8000_F75 → S8000_F50 → SInf; J only and all F25 dominated / ext. dominated.
+  S600–2000_F75 budget-neutral vs J only (UI spans 0). TOPSIS s17 top **S8000_F75** (99.2% of draws);
+  2026–2030 top SInf; s68 top SInf @ J 99.995%; random weights SInf 48%. Cost per liver death averted vs J
+  only: S8000_F75 ~S$117k, S8000_F25 ~S$214k, SInf ~S$256k. Linkage 60%: S8000_F25 2030 deaths −36.6% (main
+  −44.0%); SInf still passes.
+- **Manuscript** reframed (title, abstract, intro, methods: comparators, time horizon, cascade, programme
+  budget, strategy selection, validation; results: long horizon, cost per outcome, strategy selection,
+  linkage; discussion whom/where/how; limitation 8). New Fig 6–8, Table 3; S1 Text §15–17 (Tables P–U),
+  Table O rows, Software → §18. New refs `hwang1981`, `cantor1994`, `thokala2016` (Crossref-checked).
+  `checks()` asserts all new claims. `fmt.py`: typographic minus and "to" for ranges spanning zero.
+- **Figures:** `figures.py` blocks `long_horizon_trajectories`, `decision_frontier` (numbered frontier
+  points + key), `decision_topsis`. Venv: scratch `figvenv3` (Python 3.14, matplotlib 3.11.2).
+- **Not done / open:** DC/HCC incident-case counters (optional; stated as not counted); treatment completion
+  not varied separately; DALYs not added (need user approval); thesis-chapter text beyond the manuscript;
+  sensitivity runs other than coverage/linkage remain 2030-only. Tests: 9 files pass.
+- **Next (user request):** fresh session `/code-review` since `898cdbc`, then `docs/instructions.md`
+  (ponytail audit → refactor → review), one commit per step, no push.
+

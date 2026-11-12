@@ -1,6 +1,6 @@
 ---
 title: "S1 Text. Technical appendix"
-subtitle: "Prison treatment and post-release screening for hepatitis C among people who inject drugs in Singapore: A modelling study"
+subtitle: "Whom to test, where and how intensively: prison treatment and post-release screening to eliminate hepatitis C among people who inject drugs in Singapore. A modelling study with multi-criteria decision analysis"
 ---
 
 Tables and figures in this appendix are numbered Table A, Table B and so on, and Fig A, Fig B and so on.
@@ -224,7 +224,9 @@ In J, every entrant not on treatment (u, a, c, r) was counted as having an antib
 
 New infections in a year were the infections (u and r to a, in D and F) during that calendar year, and HCV deaths the liver deaths in stages 3 and 4 (deaths from HCV-related decompensated cirrhosis and liver cancer, the deaths counted by the WHO target), summed over the year (trapezoid rule over the daily solver output). The 2015 values were one year at the calibrated equilibrium; in the main analysis the 2016–2025 values, still without treatment, differed from them by at most 0.09%. Both were compared with their 2015 values.
 
-For each of 2,000 posterior draws (sampling seed fixed), we ran the 2015 equilibrium, the shared 2016–2025 history and all 17 scenarios to 2030; 2,000 of 2,000 draws were valid.
+For each of 2,000 posterior draws (sampling seed fixed), we ran the 2015 equilibrium, the shared 2016–2025 history and all 17 scenarios to 2050, and no treatment to 2050; 2,000 of 2,000 draws were valid. The WHO targets were assessed in 2030 and the 2030 results do not depend on the end year.
+
+In the linkage sensitivity analysis (Section 17), the year's treatment capacity in F or X was the number of chronic infections found times the linkage share $\ell$ (1 in the main analysis, 0.8 or 0.6); people not linked stay in state c and can be found again in a later year.
 
 # 7. Costs
 
@@ -239,7 +241,7 @@ For each of 2,000 posterior draws (sampling seed fixed), we ran the 2015 equilib
 
 The source abstract for the drug price gives US$32,325 per 12 weeks, which differs from US$2,577 times 12 (US$30,924); we used the weekly figure. Prices were not inflated to 2026. Follow-up visits, tests of cure, care navigation and genotyping were not costed.
 
-Costs were counted in the year they occurred and discounted at 3% a year to 2026; numbers of tests and courses were not discounted. Costs before 2026 were not included.
+Costs were counted in the year they occurred and discounted at 3% a year to 2026; numbers of tests and courses were not discounted. Costs before 2026 were not included. All costs are the programme budget (testing, consultations and drugs): they exclude the care of people with decompensated cirrhosis or liver cancer and any savings from disease averted.
 
 # 8. Additional results
 
@@ -447,12 +449,179 @@ Table O lists the main assumptions of the model and analysis, the basis for each
 | Community target | The 2017 network scale-up estimate applies to 2015 | Entry is constant and there is no treatment before 2019 in any analysis | Small if the injecting population changed little between 2015 and 2017 |
 | Treatment history | Nobody was treated before 2026 in the main analysis | Start and coverage of treatment in prison are not recorded in the project data [@prison2021; @tan2023] | Understates past treatment; the sensitivity analysis (Section 9) gives the other bound |
 | Prison treatment | People with chronic infection in J start treatment with annual probability 0.99995 in the main analysis | Policy assumption; varied from 0 in the coverage analysis | Close to the most that prison treatment can achieve in the model |
-| Screening | Tests are spread over each group in proportion to its HCV states, with perfect linkage within capacity, no loss to follow-up and repeat screening allowed; D is never screened or treated | Aggregate model (Section 6) | Real programmes will find and treat fewer people for the same number of tests |
+| Screening | Tests are spread over each group in proportion to its HCV states, with perfect linkage within capacity, no loss to follow-up and repeat screening allowed; D is never screened or treated | Aggregate model (Section 6) | Real programmes will find and treat fewer people for the same number of tests; Section 17 lowers linkage to 80% and 60% |
+| Treatment completion | Everyone who starts treatment completes it, and cure follows at trial efficacy | Not varied | Overstates cures, more so in the community than in prison |
+| Time horizon | Entry of new injectors, prison rates, prices and treatment efficacy stay at their current values to 2050 | Needed for a long horizon; liver deaths lag infection by decades [@thein2008] | Long-horizon results are scenarios, not forecasts; a fall in new injectors would lower the infections averted by every strategy |
+| Comparators | J only (prison treatment at the main coverage from 2026, no community screening) is the status quo; no treatment is the counterfactual for outcomes averted | Policy design | Incremental results depend on the status quo; past prison treatment is not modelled (Section 9) |
+| Programme budget | Costs include testing, consultations and drugs only; care for advanced liver disease and savings from disease averted are excluded | Section 7 | Understates the value of strategies that avert liver disease |
+| Decision analysis | Five criteria with equal weights in the main analysis; benefits undiscounted; min–max normalisation within each strategy set; TOPSIS among Pareto-efficient strategies | Section 16 | Ranks depend on the weights, on the criteria (infections averted and treatment courses are correlated) and on the set of strategies compared |
 | Targets | Reductions are measured against the modelled 2015 yearly numbers, and a target is met if the median reduction reaches it | WHO 2030 targets for incidence and mortality | Results depend on the modelled 2015 level, not on observed counts |
 | Costs | Published charges and a published drug price, not inflated and not payer costs; follow-up visits, tests of cure and care navigation are excluded | Section 7 | Totals scale almost directly with the drug price |
-| Uncertainty | Intervals reflect posterior uncertainty in the 13 calibrated parameters only, given the fixed inputs; the model is deterministic | Section 4 | Fixed inputs, structural, price and uptake uncertainty are not included, so intervals are likely too narrow; Section 13 shows the effect of each fixed input |
+| Uncertainty | Intervals reflect posterior uncertainty in the 13 calibrated parameters only, given the fixed inputs; the model is deterministic | Section 4 | Fixed inputs, structural, price, uptake, linkage and completion uncertainty are not included, so intervals are likely too narrow; Section 13 shows the effect of each fixed input and Section 17 of linkage |
 
-# 15. Software and reproducibility
+# 15. Cumulative outcomes and cost per outcome averted, 2026–2030 and 2026–2050
+
+For each posterior draw, new infections and liver deaths were summed over 2026–2030 and 2026–2050 and subtracted from the totals without treatment or with J only. Outcomes averted are not discounted. The cost per outcome averted against J only is the incremental programme budget (discounted at 3% to 2026) divided by the outcomes averted discounted at the same rate; it is not computed in a draw with fewer than one outcome averted. Entry of new injectors is held at its 2015 level to 2050 (Table P, Table Q).
+
+**Table P. New infections and liver deaths averted against no treatment (median, 95% UI).**
+
+| Policy | Infections averted, 2026–2030 | Liver deaths averted, 2026–2030 | Infections averted, 2026–2050 | Liver deaths averted, 2026–2050 |
+|---|---|---|---|---|
+| J only | 786 (584–960) | 120 (103–144) | 9,892 (8,279–11,843) | 1,651 (1,397–1,983) |
+| J + 600/year, 25% to F | 851 (647–1,031) | 130 (111–154) | 10,182 (8,572–12,120) | 1,785 (1,511–2,133) |
+| J + 600/year, 50% to F | 916 (712–1,097) | 129 (110–153) | 10,423 (8,869–12,411) | 1,752 (1,485–2,098) |
+| J + 600/year, 75% to F | 979 (772–1,164) | 128 (109–152) | 10,652 (9,076–12,639) | 1,716 (1,454–2,059) |
+| J + 1,000/year, 25% to F | 894 (690–1,075) | 137 (117–162) | 10,344 (8,771–12,338) | 1,865 (1,577–2,225) |
+| J + 1,000/year, 50% to F | 1,000 (792–1,184) | 135 (115–160) | 10,717 (9,147–12,722) | 1,813 (1,535–2,165) |
+| J + 1,000/year, 75% to F | 1,103 (894–1,296) | 133 (113–157) | 11,019 (9,482–13,048) | 1,755 (1,488–2,101) |
+| J + 2,000/year, 25% to F | 1,000 (792–1,184) | 152 (130–179) | 10,717 (9,147–12,722) | 2,038 (1,720–2,427) |
+| J + 2,000/year, 50% to F | 1,204 (996–1,404) | 148 (127–175) | 11,270 (9,728–13,333) | 1,950 (1,649–2,323) |
+| J + 2,000/year, 75% to F | 1,393 (1,183–1,612) | 144 (123–169) | 11,678 (10,095–13,749) | 1,842 (1,561–2,196) |
+| J + 5,000/year, 25% to F | 1,301 (1,089–1,511) | 195 (167–228) | 11,488 (9,931–13,555) | 2,392 (2,016–2,849) |
+| J + 5,000/year, 50% to F | 1,722 (1,494–1,972) | 185 (158–216) | 12,198 (10,524–14,366) | 2,253 (1,900–2,676) |
+| J + 5,000/year, 75% to F | 2,036 (1,781–2,327) | 170 (146–199) | 12,593 (10,856–14,825) | 2,045 (1,730–2,433) |
+| J + 8,000/year, 25% to F | 1,567 (1,348–1,798) | 233 (198–272) | 11,969 (10,327–14,100) | 2,597 (2,183–3,103) |
+| J + 8,000/year, 50% to F | 2,087 (1,824–2,387) | 215 (184–251) | 12,651 (10,897–14,892) | 2,453 (2,066–2,922) |
+| J + 8,000/year, 75% to F | 2,375 (2,055–2,748) | 190 (162–222) | 12,950 (11,111–15,284) | 2,197 (1,853–2,613) |
+| J + uncapped screening | 2,402 (2,065–2,862) | 473 (394–577) | 12,981 (11,132–15,425) | 3,085 (2,574–3,766) |
+
+**Table Q. Outcomes averted, incremental programme budget and cost per outcome averted against prison treatment only, 2026–2050 (median, 95% UI).**
+
+| Policy | Infections averted | Liver deaths averted | Incremental budget, S$ million | S$ per infection averted | S$ per liver death averted |
+|---|---|---|---|---|---|
+| J + 600/year, 25% to F | 276 (205–430) | 134 (110–160) | 21.6 (17.3–26.1) | 103,159 (63,371–136,003) | 243,501 (219,979–254,525) |
+| J + 600/year, 50% to F | 519 (386–819) | 101 (83–120) | 9.4 (5.0–12.6) | 23,983 (9,108–36,144) | 141,235 (78,774–171,049) |
+| J + 600/year, 75% to F | 736 (546–1,166) | 65 (54–77) | −2.6 (−8.6 to 0.1) | −4,613 (−10,375 to 234) | −58,670 (−188,085 to 2,432) |
+| J + 1,000/year, 25% to F | 442 (328–694) | 214 (176–255) | 34.2 (27.3–41.3) | 101,661 (61,863–133,790) | 240,590 (216,266–251,694) |
+| J + 1,000/year, 50% to F | 802 (595–1,271) | 163 (134–193) | 15.6 (8.4–20.6) | 25,505 (9,708–37,931) | 145,032 (81,300–173,647) |
+| J + 1,000/year, 75% to F | 1,098 (816–1,740) | 104 (87–123) | −2.9 (−12.3 to 1.3) | −3,339 (−9,870 to 1,810) | −40,297 (−169,338 to 17,948) |
+| J + 2,000/year, 25% to F | 802 (595–1,271) | 388 (319–461) | 60.6 (48.3–73.1) | 98,255 (58,487–129,206) | 234,177 (208,254–245,415) |
+| J + 2,000/year, 50% to F | 1,345 (1,004–2,124) | 299 (247–355) | 30.6 (17.1–39.6) | 29,021 (11,531–42,186) | 152,876 (90,311–179,053) |
+| J + 2,000/year, 75% to F | 1,732 (1,300–2,719) | 192 (159–226) | 0.0 (−16.0 to 6.7) | −31 (−8,006 to 5,793) | −331 (−121,385 to 50,486) |
+| J + 5,000/year, 25% to F | 1,554 (1,163–2,453) | 740 (612–884) | 111.8 (89.1–135.4) | 90,656 (52,927–118,184) | 221,214 (193,066–232,363) |
+| J + 5,000/year, 50% to F | 2,233 (1,697–3,462) | 603 (500–716) | 68.8 (44.4–86.3) | 37,792 (17,822–51,877) | 168,687 (116,538–188,864) |
+| J + 5,000/year, 75% to F | 2,617 (1,996–3,964) | 395 (327–467) | 20.1 (−4.5 to 31.8) | 9,300 (−1,566 to 16,801) | 75,064 (−18,427 to 112,127) |
+| J + 8,000/year, 25% to F | 2,015 (1,523–3,142) | 947 (782–1,138) | 140.7 (111.9–170.8) | 86,204 (50,639–111,508) | 214,271 (186,161–225,368) |
+| J + 8,000/year, 50% to F | 2,671 (2,040–4,035) | 802 (664–957) | 97.7 (67.8–120.4) | 44,116 (22,710–58,676) | 177,400 (132,172–194,618) |
+| J + 8,000/year, 75% to F | 2,975 (2,261–4,452) | 546 (454–648) | 43.7 (14.3–59.0) | 17,491 (4,327–26,673) | 116,568 (41,437–148,044) |
+| J + uncapped screening | 3,010 (2,270–4,545) | 1,433 (1,176–1,788) | 274.1 (224.9–338.8) | 108,262 (68,991–134,687) | 256,236 (231,967–268,537) |
+
+Negative costs per outcome averted mean that the policy needed a smaller programme budget than J only while averting more outcomes, because the infections it prevented did not need treatment later. A ratio of medians differs from the median ratio shown. Yearly trajectories to 2050 are in output/scenarios_2026/scenario_trajectories_long.csv.
+
+# 16. Strategy selection
+
+Criteria (per strategy and horizon): infections averted and liver deaths averted against no treatment (benefits), the probability of meeting both WHO targets in 2030 (benefit; in each draw 0 or 1), and the discounted programme budget and the number of treatment courses (costs). Each criterion was rescaled by min–max normalisation across the strategy set, with costs reverse-coded ($1 - $ normalised value). A strategy was Pareto-efficient if no other was at least as good on every criterion and better on one. TOPSIS [@hwang1981] was applied to the Pareto-efficient strategies of the normalised matrix: with weights $w_j$ summing to 1, $D^+ = \sqrt{\sum_j w_j^2 (1 - n_j)^2}$, $D^- = \sqrt{\sum_j w_j^2 n_j^2}$ and closeness $D^-/(D^+ + D^-)$.
+
+The efficiency frontier [@cantor1994] used the programme budget and one benefit at a time: strategies that cost no less and gained no more than another (one strictly) were dominated; among the rest, ordered by cost, a strategy whose ratio of incremental cost to incremental benefit against the previous one exceeded that of the next was extendedly dominated, repeatedly until the ratios rose along the frontier.
+
+Uncertainty: Pareto efficiency, TOPSIS and the budget rule were repeated in each of the 2,000 posterior draws. Weight sensitivity: equal weights; each criterion's weight doubled or set to zero in turn; benefits only; costs only; and 1,000 weight vectors drawn uniformly from the simplex (normalised exponential variates, seed fixed). Budget caps were round numbers spanning the range of programme budgets in the set.
+
+Over 2026–2030, 13 of the 17 policies were Pareto-efficient, TOPSIS with equal weights ranked J + uncapped screening first (in 100% of draws), and the lowest cost per outcome averted against no treatment was with J + 8,000/year, 75% to F for infections and J + uncapped screening for liver deaths. Tables R–T give the results over 2026–2050.
+
+**Table R. Cost-effectiveness frontier, 2026–2050 (posterior medians).**
+
+| Benefit | Policy | Programme budget, S$ million | Benefit averted | Status | S$ per extra outcome averted against the previous frontier strategy |
+|---|---|---|---|---|---|
+| Infections | J + 1,000/year, 75% to F | 265.6 | 11,019 | frontier | – |
+| Infections | J + 600/year, 75% to F | 265.9 | 10,652 | dominated | – |
+| Infections | J + 2,000/year, 75% to F | 268.1 | 11,678 | frontier | 3,831 |
+| Infections | J only | 268.7 | 9,892 | dominated | – |
+| Infections | J + 600/year, 50% to F | 278.2 | 10,423 | dominated | – |
+| Infections | J + 1,000/year, 50% to F | 284.4 | 10,717 | dominated | – |
+| Infections | J + 5,000/year, 75% to F | 287.9 | 12,593 | frontier | 21,629 |
+| Infections | J + 600/year, 25% to F | 290.5 | 10,182 | dominated | – |
+| Infections | J + 2,000/year, 50% to F | 299.3 | 11,270 | dominated | – |
+| Infections | J + 1,000/year, 25% to F | 303.0 | 10,344 | dominated | – |
+| Infections | J + 8,000/year, 75% to F | 311.1 | 12,950 | frontier | 65,028 |
+| Infections | J + 2,000/year, 25% to F | 329.6 | 10,717 | dominated | – |
+| Infections | J + 5,000/year, 50% to F | 337.3 | 12,198 | dominated | – |
+| Infections | J + 8,000/year, 50% to F | 365.8 | 12,651 | dominated | – |
+| Infections | J + 5,000/year, 25% to F | 380.6 | 11,488 | dominated | – |
+| Infections | J + 8,000/year, 25% to F | 409.6 | 11,969 | dominated | – |
+| Infections | J + uncapped screening | 543.0 | 12,981 | frontier | 7,422,210 |
+| Liver deaths | J + 1,000/year, 75% to F | 265.6 | 1,755 | frontier | – |
+| Liver deaths | J + 600/year, 75% to F | 265.9 | 1,716 | dominated | – |
+| Liver deaths | J + 2,000/year, 75% to F | 268.1 | 1,842 | frontier | 29,235 |
+| Liver deaths | J only | 268.7 | 1,651 | dominated | – |
+| Liver deaths | J + 600/year, 50% to F | 278.2 | 1,752 | dominated | – |
+| Liver deaths | J + 1,000/year, 50% to F | 284.4 | 1,813 | dominated | – |
+| Liver deaths | J + 5,000/year, 75% to F | 287.9 | 2,045 | frontier | 97,246 |
+| Liver deaths | J + 600/year, 25% to F | 290.5 | 1,785 | dominated | – |
+| Liver deaths | J + 2,000/year, 50% to F | 299.3 | 1,950 | dominated | – |
+| Liver deaths | J + 1,000/year, 25% to F | 303.0 | 1,865 | dominated | – |
+| Liver deaths | J + 8,000/year, 75% to F | 311.1 | 2,197 | frontier | 153,166 |
+| Liver deaths | J + 2,000/year, 25% to F | 329.6 | 2,038 | dominated | – |
+| Liver deaths | J + 5,000/year, 50% to F | 337.3 | 2,253 | extendedly dominated | – |
+| Liver deaths | J + 8,000/year, 50% to F | 365.8 | 2,453 | frontier | 213,271 |
+| Liver deaths | J + 5,000/year, 25% to F | 380.6 | 2,392 | dominated | – |
+| Liver deaths | J + 8,000/year, 25% to F | 409.6 | 2,597 | extendedly dominated | – |
+| Liver deaths | J + uncapped screening | 543.0 | 3,085 | frontier | 280,407 |
+
+**Table S. Budget rule (a): the policy with the most benefit whose programme budget over 2026–2050 is within the cap.**
+
+| Benefit | Budget cap, S$ million | Best policy (medians) | Draws in which it is best |
+|---|---|---|---|
+| Infections | 300 | J + 5,000/year, 75% to F | 41.9% |
+| Infections | 350 | J + 8,000/year, 75% to F | 92.5% |
+| Infections | 400 | J + 8,000/year, 75% to F | 100.0% |
+| Infections | 450 | J + 8,000/year, 75% to F | 99.0% |
+| Infections | 500 | J + 8,000/year, 75% to F | 84.5% |
+| Infections | 550 | J + uncapped screening | 53.5% |
+| Liver deaths | 300 | J + 5,000/year, 75% to F | 41.9% |
+| Liver deaths | 350 | J + 5,000/year, 50% to F | 38.6% |
+| Liver deaths | 400 | J + 8,000/year, 50% to F | 45.9% |
+| Liver deaths | 450 | J + 8,000/year, 25% to F | 84.2% |
+| Liver deaths | 500 | J + 8,000/year, 25% to F | 81.5% |
+| Liver deaths | 550 | J + uncapped screening | 56.0% |
+
+**Table T. TOPSIS weight sensitivity, 2026–2050: the first-ranked strategy for each weight set.**
+
+| Weight set | Weights (infections, liver deaths, both targets, budget, courses) | 17 policies | 68 combinations with prison coverage |
+|---|---|---|---|
+| Equal weights | 1, 1, 1, 1, 1 | J + 8,000/year, 75% to F | J + uncapped screening, prison coverage 99.995% |
+| Double weight: infections averted | 2, 1, 1, 1, 1 | J + 8,000/year, 75% to F | J + uncapped screening, prison coverage 99.995% |
+| Double weight: liver deaths averted | 1, 2, 1, 1, 1 | J + uncapped screening | J + uncapped screening, prison coverage 99.995% |
+| Double weight: both 2030 targets | 1, 1, 2, 1, 1 | J + uncapped screening | J + uncapped screening, prison coverage 99.995% |
+| Double weight: programme budget | 1, 1, 1, 2, 1 | J + 5,000/year, 75% to F | J only with prison coverage 0% (prison testing, no treatment) |
+| Double weight: treatment courses | 1, 1, 1, 1, 2 | J + 5,000/year, 75% to F | J only with prison coverage 0% (prison testing, no treatment) |
+| No weight: infections averted | 0, 1, 1, 1, 1 | J + 2,000/year, 75% to F | J + uncapped screening, prison coverage 99.995% |
+| No weight: liver deaths averted | 1, 0, 1, 1, 1 | J + 5,000/year, 75% to F | J + uncapped screening, prison coverage 99.995% |
+| No weight: both 2030 targets | 1, 1, 0, 1, 1 | J + 8,000/year, 75% to F | J + 5,000/year, 75% to F, prison coverage 99.995% |
+| No weight: programme budget | 1, 1, 1, 0, 1 | J + uncapped screening | J + uncapped screening, prison coverage 99.995% |
+| No weight: treatment courses | 1, 1, 1, 1, 0 | J + uncapped screening | J + uncapped screening, prison coverage 99.995% |
+| Benefits only | 1, 1, 1, 0, 0 | J + uncapped screening | J + uncapped screening, prison coverage 99.995% |
+| Costs only | 0, 0, 0, 1, 1 | J + 1,000/year, 75% to F | J only with prison coverage 0% (prison testing, no treatment) |
+
+Among the 68 combinations, J only with prison coverage 0% has the smallest programme budget (testing of prison entrants, no treatment courses), so it ranks first whenever the costs carry more weight than the benefits.
+
+# 17. Sensitivity analysis: linkage to treatment after community screening
+
+The main analysis assumes that every chronic infection found by community screening is linked to treatment within the year's capacity. Here only 80% or 60% were linked (Section 6). Prison treatment, the posterior draws and all other inputs are unchanged, so J only is the same as in the main analysis (Table U).
+
+Five finite policies met the incidence target with 80% linkage and three with 60% (five in the main analysis); none met the mortality target, and uncapped screening met both at either level.
+
+**Table U. Linkage sensitivity: falls in 2030 compared with 2015 and liver deaths averted against J only over 2026–2050 (median, 95% UI).**
+
+| Policy | Infections, 80% | Liver deaths, 80% | Liver deaths averted, 80% | Infections, 60% | Liver deaths, 60% | Liver deaths averted, 60% |
+|---|---|---|---|---|---|---|
+| J + 600/year, 25% to F | 54.2% (43.3%–59.7%) | 23.7% (22.8%–24.7%) | 109 (89–130) | 53.6% (42.7%–59.1%) | 23.3% (22.4%–24.3%) | 82 (68–98) |
+| J + 600/year, 50% to F | 56.9% (46.1%–62.3%) | 23.5% (22.5%–24.5%) | 82 (67–97) | 55.6% (44.7%–61.0%) | 23.1% (22.2%–24.1%) | 62 (51–74) |
+| J + 600/year, 75% to F | 59.5% (48.7%–64.8%) | 23.2% (22.3%–24.2%) | 53 (44–62) | 57.5% (46.7%–62.9%) | 22.9% (22.0%–23.9%) | 40 (34–47) |
+| J + 1,000/year, 25% to F | 56.0% (45.2%–61.4%) | 24.8% (23.8%–25.8%) | 175 (144–209) | 54.9% (44.0%–60.4%) | 24.2% (23.2%–25.1%) | 134 (110–160) |
+| J + 1,000/year, 50% to F | 60.3% (49.6%–65.6%) | 24.4% (23.4%–25.4%) | 132 (109–157) | 58.2% (47.4%–63.6%) | 23.8% (22.9%–24.8%) | 101 (83–120) |
+| J + 1,000/year, 75% to F | 64.4% (53.9%–69.4%) | 23.9% (22.9%–24.9%) | 85 (71–101) | 61.4% (50.7%–66.6%) | 23.5% (22.5%–24.5%) | 65 (54–77) |
+| J + 2,000/year, 25% to F | 60.3% (49.6%–65.6%) | 27.4% (26.2%–28.5%) | 323 (266–383) | 58.2% (47.4%–63.6%) | 26.1% (25.0%–27.2%) | 252 (207–300) |
+| J + 2,000/year, 50% to F | 68.2% (58.1%–73.0%) | 26.5% (25.3%–27.6%) | 247 (204–293) | 64.4% (53.9%–69.4%) | 25.5% (24.4%–26.5%) | 192 (158–228) |
+| J + 2,000/year, 75% to F | 75.0% (65.7%–79.3%) | 25.4% (24.3%–26.5%) | 158 (132–187) | 70.0% (60.1%–74.7%) | 24.7% (23.6%–25.8%) | 123 (102–145) |
+| J + 5,000/year, 25% to F | 71.7% (62.0%–76.3%) | 34.5% (32.6%–35.9%) | 645 (535–768) | 67.2% (57.0%–72.1%) | 31.6% (30.1%–32.9%) | 529 (437–630) |
+| J + 5,000/year, 50% to F | 85.4% (78.3%–88.9%) | 32.1% (30.5%–33.4%) | 516 (428–613) | 79.3% (71.0%–83.4%) | 29.9% (28.5%–31.1%) | 416 (344–494) |
+| J + 5,000/year, 75% to F | 93.5% (89.0%–95.7%) | 29.1% (27.7%–30.3%) | 334 (277–395) | 87.9% (81.4%–91.1%) | 27.7% (26.4%–28.9%) | 267 (222–315) |
+| J + 8,000/year, 25% to F | 80.7% (72.6%–84.6%) | 40.5% (38.2%–42.2%) | 850 (701–1,018) | 75.0% (65.7%–79.3%) | 36.6% (34.6%–38.1%) | 723 (598–862) |
+| J + 8,000/year, 50% to F | 94.5% (90.5%–96.5%) | 36.7% (34.8%–38.2%) | 705 (583–839) | 89.2% (83.2%–92.2%) | 33.7% (32.0%–35.1%) | 586 (486–696) |
+| J + 8,000/year, 75% to F | 98.9% (97.1%–99.5%) | 31.7% (30.3%–33.0%) | 470 (390–557) | 96.2% (92.9%–97.6%) | 30.0% (28.6%–31.2%) | 383 (317–453) |
+| J + uncapped screening | 99.2% (97.7%–99.5%) | 71.0% (70.8%–71.1%) | 1,411 (1,158–1,761) | 97.0% (94.3%–97.8%) | 68.9% (68.7%–69.1%) | 1,368 (1,122–1,708) |
+
+# 18. Software and reproducibility
 
 The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan and convergence diagnostics the R package posterior. Figures were drawn with matplotlib from the saved outputs.
 

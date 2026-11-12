@@ -1,8 +1,8 @@
 ---
-title: "Prison treatment and post-release screening for hepatitis C among people who inject drugs in Singapore: A modelling study"
+title: "Whom to test, where and how intensively: prison treatment and post-release screening to eliminate hepatitis C among people who inject drugs in Singapore. A modelling study with multi-criteria decision analysis"
 ---
 
-**Short title:** Hepatitis C treatment after prison release in Singapore
+**Short title:** Hepatitis C elimination after prison release in Singapore
 
 Yichen He\*
 
@@ -14,17 +14,17 @@ Yichen He\*
 
 ## Background
 
-Hepatitis C virus (HCV) infection in Singapore is concentrated among people who inject drugs (PWID), many of whom cycle through prison. We asked whether treatment in prison, alone or with community screening of released people from 2026, can meet the World Health Organization 2030 targets (80% fewer new infections and 65% fewer HCV deaths than in 2015), and how limited screening should be shared after release.
+Hepatitis C virus (HCV) infection in Singapore is concentrated among people who inject drugs (PWID), many of whom cycle through prison. Eliminating HCV among PWID needs decisions on whom to test and treat, through which delivery point and how intensively. We asked whether treatment in prison, alone or with community screening of released people from 2026, can meet the World Health Organization 2030 elimination targets (80% fewer new infections and 65% fewer HCV deaths than in 2015), and which strategy is preferred when health benefits, the WHO targets and the programme budget are weighed together.
 
 ## Methods and findings
 
-We built an age-structured model of PWID never imprisoned (D), in prison (J), and released and still injecting (F) or stopped (X), with prison rates estimated from records of 20,720 people. We calibrated it by Markov chain Monte Carlo to 2015 prison seroprevalence, first arrests of new heroin and methamphetamine users and a survey estimate of active injectors. In the main analysis nothing changed from 2015 until 2026, when treatment in prison and 15 community screening policies (600 to 8,000 tests a year, 25%–75% to F) began; we varied prison treatment coverage and, in a sensitivity analysis, started prison treatment in 2019. Results are over 2,000 posterior draws.
+We built an age-structured model of PWID never imprisoned (D), in prison (J), and released and still injecting (F) or stopped (X), with prison rates estimated from records of 20,720 people. We calibrated it by Markov chain Monte Carlo to 2015 prison seroprevalence, first arrests of new heroin and methamphetamine users and a survey estimate of active injectors. In the main analysis nothing changed from 2015 until 2026, when treatment in prison and 15 community screening policies (600 to 8,000 tests a year, 25%–75% to F) began; we varied prison treatment coverage and, in a sensitivity analysis, started prison treatment in 2019. We projected to 2050 because liver deaths lag infection by decades, counted infections and liver deaths averted against prison treatment only (the status quo) and against no treatment, and chose among strategies with Pareto efficiency and TOPSIS, as in a multi-criteria decision analysis. Results are over 2,000 posterior draws.
 
-Prison treatment alone from 2026 reduced new infections in 2030 by 51.5% (95% uncertainty interval [UI] 40.6%–57.3%) and HCV deaths by 22.1% (95% UI 21.2%–23.0%). Five of 15 screening policies met the incidence target, but none met the mortality target; the best, 8,000 tests a year with 25% to F, reduced deaths by 44.0% (95% UI 41.4%–45.9%). Only uncapped screening of all released people met both targets, reducing deaths by 71.4% (95% UI 71.3%–71.6%), but not if cure lowered the risk of liver death in decompensated cirrhosis less than assumed. Moving tests from F to X increased the fall in deaths and reduced the fall in infections. Lower prison treatment coverage reduced every effect. Had prison treatment started in 2019, it alone would have reduced new infections by 85.0% (95% UI 72.7%–89.7%), meeting the incidence target, but no capped policy would have met the mortality target; the best reduced deaths by 56.1% (95% UI 54.0%–57.7%). Limitations include treating new heroin and methamphetamine users as the people who inject, weakly identified entry parameters, liver disease inputs from other settings, to which the fall in deaths was sensitive, charge-based costs, and uncertainty intervals that cover the calibrated parameters only.
+Prison treatment alone from 2026 reduced new infections in 2030 by 51.5% (95% uncertainty interval [UI] 40.6%–57.3%) and HCV deaths by 22.1% (95% UI 21.2%–23.0%). Five of 15 screening policies met the incidence target, but none met the mortality target; the best, 8,000 tests a year with 25% to F, reduced deaths by 44.0% (95% UI 41.4%–45.9%). Only uncapped screening of all released people met both targets, reducing deaths by 71.4% (95% UI 71.3%–71.6%), but not if cure lowered the risk of liver death in decompensated cirrhosis less than assumed. Moving tests from F to X increased the fall in deaths and reduced the fall in infections. Lower prison treatment coverage reduced every effect. Had prison treatment started in 2019, it alone would have reduced new infections by 85.0% (95% UI 72.7%–89.7%), meeting the incidence target, but no capped policy would have met the mortality target; the best reduced deaths by 56.1% (95% UI 54.0%–57.7%). Over 2026–2050, 8,000 tests a year with 75% to F averted 546 (95% UI 454–648) liver deaths more than prison treatment alone for an extra programme budget of S$43.7 million (95% UI 14.3–59.0), and was ranked first by TOPSIS with equal weights in 99% of draws; uncapped screening averted the most liver deaths and was preferred when the WHO targets or liver deaths were weighted more. Limitations include treating new heroin and methamphetamine users as the people who inject, weakly identified entry parameters, liver disease inputs from other settings, to which the fall in deaths was sensitive, charge-based costs, and uncertainty intervals that cover the calibrated parameters only.
 
 ## Conclusions
 
-In this model, prison treatment and capped community screening could not meet the 2030 target for HCV deaths among PWID in Singapore, even with prison treatment from 2019; with treatment from 2026, the incidence target needs thousands of community tests a year in addition to prison treatment.
+In this model, prison treatment and capped community screening could not meet the 2030 target for HCV deaths among PWID in Singapore, even with prison treatment from 2019; with treatment from 2026, the incidence target needs thousands of community tests a year in addition to prison treatment. Over a longer horizon, several thousand community tests a year after release, most of them for people who still inject, gave the best balance of infections and liver deaths averted against the programme budget, while screening every released person each year is needed if meeting the 2030 mortality target is the priority.
 
 # Author summary
 
@@ -34,7 +34,7 @@ In this model, prison treatment and capped community screening could not meet th
 
 - It is unclear whether treatment in prison, with or without community screening after release, can meet the WHO 2030 elimination targets, which ask for large falls in both new infections and deaths.
 
-- Community screening capacity is limited, and it is not known whether it should go to released people who still inject or to those who have stopped.
+- Community screening capacity is limited, and it is not known whether it should go to released people who still inject or to those who have stopped, or how many tests a year are worth their cost.
 
 ## What did the researchers do and find?
 
@@ -44,17 +44,21 @@ In this model, prison treatment and capped community screening could not meet th
 
 - If prison treatment had started in 2019, it alone would have met the infection target, but only testing every released person every year would have met the death target.
 
+- Looking to 2050, and weighing infections and liver deaths prevented, the WHO targets and the programme budget together, 8,000 community tests a year with most given to people who still inject was the preferred strategy; testing every released person each year prevented the most liver deaths but cost much more.
+
 ## What do these findings mean?
 
 - Time matters: the later treatment starts, the less any policy can achieve by 2030. Deaths from liver disease fall slowly after cure, because people with advanced liver disease remain at risk.
 
 - Prison treatment prevents many new infections, but most hepatitis C deaths are among released people who have stopped injecting, who need community testing.
 
+- Because liver disease takes decades to develop, most of the deaths prevented by treatment now occur after 2030, so strategies should be judged over a longer horizon as well as against the 2030 targets.
+
 - These results come from a model with important uncertainties, including the size of the community population and the costs, and should be checked against programme data.
 
 # Abbreviations
 
-CHEERS, Consolidated Health Economic Evaluation Reporting Standards; D, people who inject drugs and have never been imprisoned; F, released people who still inject; HCV, hepatitis C virus; J, people in prison; MCMC, Markov chain Monte Carlo; PWID, people who inject drugs; UI, uncertainty interval; WHO, World Health Organization; X, released people who have stopped injecting.
+CHEERS, Consolidated Health Economic Evaluation Reporting Standards; D, people who inject drugs and have never been imprisoned; DAA, direct-acting antiviral; F, released people who still inject; HCV, hepatitis C virus; J, people in prison; MCMC, Markov chain Monte Carlo; PWID, people who inject drugs; TOPSIS, Technique for Order of Preference by Similarity to Ideal Solution; UI, uncertainty interval; WHO, World Health Organization; X, released people who have stopped injecting.
 
 # Introduction
 
@@ -70,7 +74,11 @@ A previous model examined what is needed to eliminate HCV in Singapore [@chaillo
 
 This distinction matters for policy. People who still inject keep transmitting and are often re-arrested, so prison treatment reaches them again. People who have stopped do not transmit, but they may carry long-standing infections that progress to cirrhosis and liver cancer, and they are less likely to return to prison.
 
-We used a calibrated transmission model to estimate whether prison treatment and community screening starting in 2026 can meet the WHO 2030 targets for PWID in Singapore, how a fixed annual number of community screening tests should be split between released people who still inject and those who have stopped, how the answer depends on prison treatment coverage, and what an earlier start in prison would have achieved.
+Elimination policy for PWID therefore turns on three questions: whom to test and treat (people who have never been imprisoned, people in prison, or released people who still inject or have stopped), through which delivery point (prison or the community after release), and how intensively (how many community tests a year). These choices trade off several criteria at once: the two WHO targets, the infections and deaths averted, and the programme budget. Multi-criteria decision analysis makes such trade-offs explicit [@thokala2016]: strategies that are worse on every criterion than another can be set aside (Pareto efficiency), and the remainder ranked by their closeness to an ideal strategy (TOPSIS) [@hwang1981].
+
+The time horizon also matters. Chronic HCV infection progresses to cirrhosis over decades [@thein2008], so most of the liver deaths that treatment in 2026 prevents will occur after 2030, and a horizon that ends in 2030 understates the value of treating people with long-standing infection.
+
+We used a calibrated transmission model to estimate whether prison treatment and community screening starting in 2026 can meet the WHO 2030 targets for PWID in Singapore, how a fixed annual number of community screening tests should be split between released people who still inject and those who have stopped, how the answer depends on prison treatment coverage, and what an earlier start in prison would have achieved. We then projected the strategies to 2050 and selected among them with Pareto efficiency and TOPSIS, weighing infections and liver deaths averted, the WHO targets and the programme budget.
 
 # Methods
 
@@ -115,9 +123,13 @@ A multistart Nelder–Mead search found the posterior mode. We then sampled the 
 
 We checked the sampler with simulation-based calibration [@talts2018] on simulated data sets (S1 Text, Section 4).
 
+To validate the model, we checked that the 95% posterior predictive interval of every calibration target overlapped the target's range, and compared the modelled 2015 prison population, which was not a calibration target, with the number of people held in prison for drug consumption at the end of 2015. The model code was checked by unit and integration tests, including a comparison with an independent R implementation of the model equations. No observed series of new infections or HCV deaths among PWID in Singapore was available for external validation.
+
 ## Policy scenarios
 
 In the main analysis, nobody was treated before 2026, so the model stayed at its 2015 equilibrium until then. From 2026, people with chronic infection in J were treated at a rate that gives a 99.995% annual probability of starting treatment, and community screening of F and X began. We compared no treatment, prison treatment only (J only), 15 finite policies (600, 1,000, 2,000, 5,000, 8,000 tests per year, with 25%, 50% or 75% given to F and the rest to X), and uncapped screening of everyone in F and X each year as a reference.
+
+Two comparators were used. No treatment, in which nobody is treated in any group, is the counterfactual for the infections and deaths averted by each strategy. Prison treatment only (J only) is the status quo comparator: it represents continuing the treatment offered in prison without community screening after release, and all incremental costs and outcomes of community screening are measured against it.
 
 To show how much depends on prison treatment, we repeated all 17 policies with an annual probability of starting treatment in J of 0%, 50%, 90% and 99.995% (68 combinations).
 
@@ -127,23 +139,41 @@ The smallest capacity, 600 tests per year, was set with reference to a public co
 
 At the start of each year, the tests given to F or X were applied to people not on treatment, in proportion to their HCV states. Each antibody-positive person had an RNA test, and the number of chronic infections found set that year's treatment capacity in the group. Within that capacity, people with chronic infection started treatment at a rate that gives a 99% annual probability. Sofosbuvir–velpatasvir without ribavirin was assumed, and people in D were never treated.
 
+The care cascade was ideal in the main analysis: every chronic infection found by community screening was linked to treatment within the year's capacity, every person who started treatment completed it, and cure followed at the efficacy reported in trials. In a sensitivity analysis, only 80% or 60% of the chronic infections found in F and X were linked to treatment; treatment completion was not varied separately.
+
+## Time horizon
+
+The WHO targets were assessed in 2030. Because HCV-related cirrhosis and liver cancer develop over decades [@thein2008], we also projected every strategy to 2050 and report cumulative outcomes over 2026–2030 and 2026–2050; 2026–2050 was the main horizon for strategy selection. Entry of new injectors was held at its 2015 level to 2050, as before 2026, and the prison rates and model parameters were held constant.
+
 ## Outcomes
 
 The primary outcomes were the reductions in 2030, compared with 2015, of annual new HCV infections among PWID and of annual HCV deaths. New infections were the number of infections in D and F during the calendar year. HCV deaths were the liver deaths in decompensated cirrhosis and hepatocellular carcinoma during the year, the deaths from HCV-related cirrhosis and liver cancer that the WHO target counts. The 2015 values were the yearly numbers at the calibrated equilibrium. As a secondary outcome, we added the extrahepatic excess deaths of viraemic people (S1 Text, Section 10).
 
 A policy met a target if the median reduction was at least 80% for infections or 65% for deaths. We also report the share of posterior draws in which both targets were met.
 
+For each posterior draw we also summed new infections and liver deaths over 2026–2030 and 2026–2050, and subtracted them from the totals without treatment and with J only to give the infections and liver deaths averted. Averted outcomes were not discounted. Incident cases of decompensated cirrhosis and liver cancer were not counted separately.
+
 ## Costs
+
+Costs are the programme budget only: testing, consultations and direct-acting antiviral (DAA) drugs. They exclude the costs of caring for people with decompensated cirrhosis or liver cancer and any savings from the disease that treatment averts, so they are not the net costs of a strategy to the health system.
 
 We costed antibody tests (S$25.31), RNA tests (S$307), one consultation per treatment start (S$25) and a 12-week sofosbuvir–velpatasvir course (S$40,405) in 2026 Singapore dollars, from published charges and a published price (S1 Text, Table H) [@wong2019; @nhg_dsc; @parkway_rna; @sgd_rate].
 
-Costs for 2026–2030 in all three groups (J, F and X) were discounted at 3% a year to 2026. Unit prices were varied together by a factor of 0.5 and 1.5 in a sensitivity analysis. These are charges, not costs to the health system.
+Programme budgets for 2026–2030 and 2026–2050 in all three groups (J, F and X) were discounted at 3% a year to 2026. Unit prices were varied together by a factor of 0.5 and 1.5 in a sensitivity analysis. These are charges, not costs to the health system. The cost per infection or liver death averted was the incremental programme budget against J only divided by the outcomes averted against J only, both discounted at the same rate; it was not computed when fewer than one outcome was averted.
+
+## Strategy selection
+
+We compared strategies on five criteria at each horizon: three benefits (infections averted and liver deaths averted against no treatment, and the probability of meeting both WHO targets in 2030) and two costs (the discounted programme budget and the number of treatment courses). We used two strategy sets: the 17 policies of the main analysis, and the 68 combinations of policy and prison treatment coverage. Each criterion was rescaled to 0–1 across the set, with the costs reverse-coded so that 1 was best.
+
+We applied three decision rules: (a) the strategy with the largest health benefit whose programme budget was within a cap; (b) the strategy with the lowest cost per outcome averted against no treatment; and (c) TOPSIS among the Pareto-efficient strategies, ranking each by its relative closeness to the ideal (best on every criterion) and away from the anti-ideal (worst on every criterion) [@hwang1981]. We also drew the cost-effectiveness frontier for each benefit, flagging strategies that were dominated (another cost no more and gained no less) or extendedly dominated (a mix of two other strategies would do better) [@cantor1994].
+
+The main analysis used posterior medians and equal weights. To carry the uncertainty through, we repeated Pareto efficiency, TOPSIS and the budget rule within each of the 2,000 posterior draws and report the probability that each strategy was Pareto-efficient and that it was ranked first. We varied the weights by doubling or removing each criterion in turn, by using only the benefits or only the costs, and by drawing 1,000 weight vectors uniformly from the simplex.
 
 ## Uncertainty
 
-For each of 2,000 posterior draws we ran every scenario and computed every outcome. We report medians and 95% uncertainty intervals (UI; 2.5th to 97.5th percentiles) across draws, and the share of draws meeting a target. These describe uncertainty in the 13 calibrated parameters given the fixed inputs, not the probability that a target will be met.
+For each of 2,000 posterior draws we ran every scenario and computed every outcome. We report medians and 95% uncertainty intervals (UI; 2.5th to 97.5th percentiles) across draws, and the share of draws meeting a target. These describe uncertainty in the 13 calibrated parameters given the fixed inputs, not the probability that a target will be met. They do not include uncertainty in screening uptake, linkage to care, treatment completion, drug prices or model structure.
 
-To show how much the fixed inputs matter, we held the calibrated parameters at the posterior mode and set each fixed epidemiological input in turn to the low and high end of its literature range, without refitting (S1 Text, Section 13). In further sensitivity analyses, entry of new injectors from 2016 to 2025 followed the observed yearly counts of new drug abusers instead of the 2015 level (S1 Text, Section 11), and the share of infections with genotype 3 was 10% or 50% instead of 78% (S1 Text, Section 12).
+To show how much the fixed inputs matter, we held the calibrated parameters at the posterior mode and set each fixed epidemiological input in turn to the low and high end of its literature range, without refitting (S1 Text, Section 13). In further sensitivity analyses, entry of new injectors from 2016 to 2025 followed the observed yearly counts of new drug abusers instead of the 2015 level (S1 Text, Section 11), and the share of infections with genotype 3 was 10% or 50% instead of 78% (S1 Text, Section 12). These analyses were run to 2030; the coverage and linkage analyses were run to 2050 (S1 Text, Section 17).
 
 ## Software
 
@@ -195,11 +225,41 @@ At no coverage did a finite policy meet the mortality target. Uncapped screening
 
 Had prison treatment started in 2019, prison treatment alone would have reduced new infections by 85.0% (95% UI 72.7%–89.7%) and deaths by 40.8% (95% UI 39.5%–42.1%) by 2030, meeting the incidence target at the median. All 15 finite policies would then have met the incidence target, but none would have met the mortality target: the largest fall in deaths was 56.1% (95% UI 54.0%–57.7%), with 8,000 tests and 25% to F. Only uncapped screening met both targets, reducing deaths by 76.4% (95% UI 76.1%–76.7%) (S1 Text, Section 9).
 
-## Costs
+## Programme budget, 2026–2030
 
-Discounted costs for 2026–2030 were S$211.6 million (95% UI 180.3–252.4) with prison treatment only, mostly for drugs and mostly in 2026. The cheapest policy that met the incidence target, 5,000 tests a year with 75% to F, cost S$244.3 million (95% UI 208.5–288.3), or S$32.5 million (95% UI 27.7–37.8) more than prison treatment only.
+Discounted programme budgets for 2026–2030 were S$211.6 million (95% UI 180.3–252.4) with prison treatment only, mostly for drugs and mostly in 2026. The cheapest policy that met the incidence target, 5,000 tests a year with 75% to F, cost S$244.3 million (95% UI 208.5–288.3), or S$32.5 million (95% UI 27.7–37.8) more than prison treatment only.
 
 Uncapped screening, the only policy that met both targets, cost S$484.1 million (95% UI 408.9–583.6). Drugs made up 98% of the cost of 5,000 tests a year with 25% to F, so totals scale almost directly with the drug price; S1 Text, Section 8 gives all policies.
+
+## Long-term outcomes, 2026–2050
+
+Liver deaths kept falling after 2030 under every strategy (Fig 6). The median yearly number of liver deaths fell to 35% of the 2015 level in 2028 with uncapped screening, 2035 with 8,000 tests and 25% to F, 2041 with 8,000 tests and 75% to F, and 2048 with prison treatment only; new infections under prison treatment only fell to 20% of the 2015 level in 2036.
+
+Against no treatment, prison treatment only averted 9,892 (95% UI 8,279–11,843) new infections and 1,651 (95% UI 1,397–1,983) liver deaths over 2026–2050; 93% of these liver deaths averted occurred after 2030. Against prison treatment only, uncapped screening averted a further 1,433 (95% UI 1,176–1,788) liver deaths, 8,000 tests with 25% to F 947 (95% UI 782–1,138) and with 75% to F 546 (95% UI 454–648) (S1 Text, Section 15).
+
+At every capacity, giving 25% of tests to F averted more liver deaths over 2026–2050 than giving 75%, while giving 75% averted more infections and needed fewer treatment courses, because infections prevented in people who still inject do not need treatment later.
+
+## Cost per outcome averted
+
+Over 2026–2050, the extra programme budget against prison treatment only was S$43.7 million (95% UI 14.3–59.0) with 8,000 tests and 75% to F, S$140.7 million (95% UI 111.9–170.8) with 25% to F and S$274.1 million (95% UI 224.9–338.8) with uncapped screening. The cost per liver death averted was S$117,000 (95% UI S$41,000–S$148,000), S$214,000 (95% UI S$186,000–S$225,000) and S$256,000 (95% UI S$232,000–S$269,000), respectively.
+
+With 600, 1,000 or 2,000 tests a year and 75% to F, the programme budget over 2026–2050 was about the same as with prison treatment only (95% UI of the difference including zero), because the infections they prevented did not need treatment later; these policies averted more infections and liver deaths at no clear extra cost.
+
+## Strategy selection
+
+Over 2026–2050, the cost-effectiveness frontier for liver deaths averted ran, in order of cost, through 1,000/year, 75% to F; 2,000/year, 75% to F; 5,000/year, 75% to F; 8,000/year, 75% to F; 8,000/year, 50% to F; uncapped screening (Fig 7). Prison treatment only was dominated: 1,000/year, 75% to F cost no more and averted more infections and liver deaths. Every policy giving 25% of tests to F was dominated or extendedly dominated; for infections averted the frontier ran through the 75%-to-F policies from 1,000 tests and uncapped screening. By rule (b), the lowest cost per outcome averted against no treatment was with 5,000/year, 75% to F for both infections and liver deaths.
+
+Eight of the 17 strategies were Pareto-efficient at the median. With equal weights, TOPSIS ranked J + 8,000/year, 75% to F first (closeness 0.565; first in 99.2% of posterior draws), followed by J + 5,000/year, 75% to F (0.559) and J + uncapped screening (0.551) (Fig 8 and Table 3). Over 2026–2030 alone, uncapped screening, the only strategy that met both targets, ranked first.
+
+The ranking depended on the weights. Doubling the weight on liver deaths averted or on meeting both targets made uncapped screening first; doubling the weight on the budget or on treatment courses made 5,000/year, 75% to F first. Across 1,000 random weight vectors, the strategy ranked first most often was J + uncapped screening (48%), then J + 5,000/year, 75% to F (18%), J + 8,000/year, 75% to F (17%) and J + 2,000/year, 75% to F (15%).
+
+With a cap on the programme budget over 2026–2050, the strategy averting the most liver deaths was 5,000/year, 75% to F with a cap of S$300 million; 5,000/year, 50% to F with a cap of S$350 million; 8,000/year, 50% to F with a cap of S$400 million; 8,000/year, 25% to F with a cap of S$450–500 million; uncapped screening with a cap of S$550 million (rule a; S1 Text, Section 16).
+
+When prison treatment coverage was also a choice, TOPSIS ranked uncapped screening with full prison coverage first in 100% of draws, and the top four were uncapped screening at each prison coverage. For every screening policy with more than one Pareto-efficient coverage level, TOPSIS closeness rose with prison coverage.
+
+## Linkage to care
+
+If only 80% or 60% of the chronic infections found in F and X were linked to treatment, every finite policy had smaller effects. With 60% linkage, 8,000 tests and 25% to F reduced liver deaths in 2030 by 36.6% (95% UI 34.6%–38.1%) (main analysis 44.0%) and averted 723 (95% UI 598–862) liver deaths over 2026–2050 against prison treatment only. Uncapped screening still met both targets at 80% and 60% linkage (fall in liver deaths 71.0% (95% UI 70.8%–71.1%) and 68.9% (95% UI 68.7%–69.1%)), because people missed in one year were screened again the next (S1 Text, Section 17).
 
 # Discussion
 
@@ -207,7 +267,11 @@ In this model of PWID in Singapore, starting HCV treatment in 2026 left too litt
 
 Timing mattered most for new infections. With the same prison treatment starting in 2019, prison treatment alone met the incidence target, but even then no capped policy met the mortality target. Each year without treatment adds to the pool of chronic infections that progress to cirrhosis and liver cancer. Cure lowers but does not remove the risk of liver death in people who already have decompensated cirrhosis or liver cancer, and people with compensated cirrhosis can still progress, so liver deaths fall much more slowly than infections after treatment begins.
 
-The two WHO targets pull screening in different directions. Tests given to people who still inject prevent more infections, while tests given to people who have stopped prevent more deaths. Because the mortality target was harder to meet in every analysis, screening policy should be judged mainly by the deaths it prevents.
+The two WHO targets pull screening in different directions. Tests given to people who still inject prevent more infections, while tests given to people who have stopped prevent more deaths. Because the mortality target was harder to meet in every analysis, a policy aimed at the 2030 targets should be judged mainly by the deaths it prevents.
+
+Over a longer horizon the choice looks different. Most of the liver deaths that treatment averts occur after 2030, and preventing infections in people who still inject also saves the treatment they would later need. Over 2026–2050, policies giving most community tests to F lay on the cost-effectiveness frontier, the smallest of them at no clear extra budget over prison treatment only, and 8,000 tests a year with 75% to F was ranked first with equal weights in almost every posterior draw. Giving more tests to X averted more liver deaths but cost more, because it found and treated more long-standing infections; uncapped screening averted the most liver deaths and was the only strategy to meet the 2030 targets, but at the highest budget.
+
+In terms of whom, where and how intensively, the analysis gives a consistent picture. Whom: people released from prison, both those who still inject (to prevent infections) and those who have stopped (to prevent liver deaths); people who have never been imprisoned were not reached by any strategy. Where: prison treatment is the base on which community screening builds, and higher prison coverage was preferred in every comparison. How intensively: several thousand community tests a year, well above the 600 a year of the smallest policy, which was set with reference to a public programme, and screening every released person if the 2030 mortality target is to be met. Which strategy is preferred depends on the weight placed on meeting the 2030 targets and on averting liver deaths relative to the budget, and the decision analysis makes that dependence explicit rather than resolving it.
 
 This suggests that the people who matter most for HCV mortality are not those most visible to drug services. People who have stopped injecting may no longer be in contact with prison or drug services, and reaching them may need testing in primary care or other community settings [@hsiang2022].
 
@@ -229,15 +293,17 @@ Fourth, the entry and first-arrest parameters were weakly identified. The entry 
 
 Fifth, we assumed that released people who are eventually re-arrested return to injecting and that the others stop permanently and are never re-arrested, and that there is no transmission in prison. Relapse after a long gap would put more infections back into F.
 
-Sixth, screening was an aggregate approximation: tests were spread across each group in proportion to its HCV states, with perfect linkage within capacity and no loss to follow-up, and people who had never been imprisoned were never screened or treated. Real programmes will find and treat fewer people for the same number of tests.
+Sixth, screening was an aggregate approximation: tests were spread across each group in proportion to its HCV states, with perfect linkage within capacity and no loss to follow-up, and people who had never been imprisoned were never screened or treated. Real programmes will find and treat fewer people for the same number of tests. The linkage sensitivity analysis shows that lower linkage reduces the effect of every finite policy; treatment completion and reinfection after cure in the community were not varied separately.
 
 Seventh, the model assumed that the epidemic was in a steady state in 2015, with constant prison rates, mixing that depends only on age, and the same mortality ratios for people who have stopped injecting as for those who still inject. Costs were published charges and a published drug price carried forward without inflation, not payer costs, and follow-up visits were excluded. Our uncertainty intervals cover the calibrated parameters only, not the fixed inputs, structural assumptions, prices or uptake, so they are too narrow. The one-way analysis shows that the fall in deaths depends most on the liver disease inputs, such as the risk of liver death after cure in decompensated cirrhosis (with uncapped screening, 59.4% to 78.9% across its range), which come from cohorts outside Singapore. S1 Text, Section 14 (Table O) lists every assumption with its basis and its likely effect on the results.
+
+Eighth, the projection to 2050 holds entry of new injectors, prison rates, prices and treatment efficacy at their current values for 25 years, so the long-horizon results are scenarios rather than forecasts. The programme budget excludes the cost of caring for advanced liver disease and so understates the value of strategies that avert liver deaths. The decision analysis depends on the criteria and weights chosen: infections averted and treatment courses are correlated, the benefit criteria were not discounted, and TOPSIS ranks can change when strategies are added to or removed from the set, as the different first choices in the two strategy sets show. We did not value outcomes in quality-adjusted life years, by design.
 
 Finally, the seroprevalence targets could not be reproduced exactly from the current processing of the prison records (largest difference 0.5 percentage points).
 
 ## Conclusions
 
-In this model, treatment for PWID in Singapore that starts in 2026 can meet the 2030 target for new HCV infections only with prison treatment and thousands of community tests a year, and cannot meet the target for HCV deaths without screening every released person; even then the result depends on liver disease inputs from other settings. Reducing deaths requires finding and treating people who have stopped injecting after release, and every year of delay makes the target harder to reach.
+In this model, treatment for PWID in Singapore that starts in 2026 can meet the 2030 target for new HCV infections only with prison treatment and thousands of community tests a year, and cannot meet the target for HCV deaths without screening every released person; even then the result depends on liver disease inputs from other settings. Reducing deaths requires finding and treating people who have stopped injecting after release, and every year of delay makes the target harder to reach. Judged over 2026–2050 on infections and liver deaths averted, the WHO targets and the programme budget together, prison treatment combined with several thousand community tests a year, most of them for released people who still inject, was the preferred strategy unless meeting the 2030 mortality target is given priority.
 
 # Data availability
 
@@ -279,6 +345,12 @@ In this model, treatment for PWID in Singapore that starts in 2026 can meet the 
 **Fig 4. Reductions in 2030 by screening capacity and share of tests given to F.** (A) New infections. (B) HCV deaths. Points are medians and bars are 95% uncertainty intervals. Dashed lines mark the targets; the dotted line is prison treatment only and the solid line is uncapped screening.
 
 **Fig 5. Reductions in 2030 by prison treatment coverage.** Median reductions in new infections (A) and HCV deaths (B) compared with 2015, for each policy (rows) and annual probability of starting treatment in prison from 2026 (columns). Bold values meet the target.
+
+**Fig 6. New infections and liver deaths, 2015–2050.** Annual new HCV infections (A) and liver deaths from decompensated cirrhosis and hepatocellular carcinoma (B) relative to 2015, for no treatment, prison treatment only, 8,000 community tests a year with 25% or 75% to F, and uncapped screening. Lines are medians and bands are 95% uncertainty intervals across 2,000 posterior draws. Dashed lines mark the WHO 2030 targets; dotted lines mark 2026 and 2030. Entry of new injectors is held at its 2015 level throughout.
+
+**Fig 7. Cost-effectiveness frontiers, 2026–2050.** Discounted programme budget (testing, consultations and drugs; 2026 Singapore dollars) against new infections averted (A) and liver deaths averted (B) compared with no treatment, for the 17 policies (posterior medians). Numbered points are on the frontier; squares are extendedly dominated and crosses dominated. Costs exclude care for advanced liver disease.
+
+**Fig 8. TOPSIS ranking of the Pareto-efficient strategies, 2026–2050.** Relative closeness to the ideal strategy with equal weights on infections averted, liver deaths averted, the probability of meeting both WHO targets, the programme budget and treatment courses. (A) The 17 policies at full prison treatment coverage. (B) The 68 combinations of policy and prison treatment coverage (at most 15 shown). Labels give the share of posterior draws in which each strategy ranked first and was Pareto-efficient.
 
 # Tables
 
@@ -329,6 +401,21 @@ UI, uncertainty interval across posterior draws. Costs are 2026 Singapore dollar
 | J + uncapped screening | 89.5% / 65.4% | 98.2% / 70.3% | 99.6% / 71.3% | 99.8% / 71.4% |
 
 Each cell gives the fall in new infections / the fall in HCV deaths (medians across posterior draws). The last column is the main analysis (Table 1). Targets: 80% and 65%.
+
+**Table 3. Pareto-efficient strategies over 2026–2050: decision criteria, TOPSIS closeness with equal weights and probabilities across posterior draws.**
+
+| Policy | Infections averted | Liver deaths averted | Draws meeting both 2030 targets | Programme budget, S$ million | Treatment courses | TOPSIS closeness | Pareto-efficient, % of draws | Ranked first, % of draws |
+|---|---|---|---|---|---|---|---|---|
+| J + 8,000/year, 75% to F | 12,950 (11,111–15,284) | 2,197 (1,853–2,613) | 0.0% | 311.1 (266.2–365.9) | 7,752 (6,596–9,155) | 0.565 | 100.0% | 99.2% |
+| J + 5,000/year, 75% to F | 12,593 (10,856–14,825) | 2,045 (1,730–2,433) | 0.0% | 287.9 (245.6–339.3) | 7,220 (6,132–8,552) | 0.559 | 100.0% | 0.8% |
+| J + uncapped screening | 12,981 (11,132–15,425) | 3,085 (2,574–3,766) | 100.0% | 543.0 (460.0–652.8) | 11,419 (9,630–13,783) | 0.551 | 100.0% | 0.0% |
+| J + 2,000/year, 75% to F | 11,678 (10,095–13,749) | 1,842 (1,561–2,196) | 0.0% | 268.1 (227.1–321.2) | 6,795 (5,733–8,172) | 0.524 | 99.9% | 0.0% |
+| J + 8,000/year, 50% to F | 12,651 (10,897–14,892) | 2,453 (2,066–2,922) | 0.0% | 365.8 (312.0–432.6) | 9,243 (7,842–11,000) | 0.509 | 100.0% | 0.0% |
+| J + 5,000/year, 50% to F | 12,198 (10,524–14,366) | 2,253 (1,900–2,676) | 0.0% | 337.3 (286.6–398.8) | 8,651 (7,318–10,279) | 0.501 | 100.0% | 0.0% |
+| J + 1,000/year, 75% to F | 11,019 (9,482–13,048) | 1,755 (1,488–2,101) | 0.0% | 265.6 (224.0–320.1) | 6,802 (5,707–8,244) | 0.493 | 86.5% | 0.0% |
+| J + 8,000/year, 25% to F | 11,969 (10,327–14,100) | 2,597 (2,183–3,103) | 0.0% | 409.6 (347.3–486.5) | 10,387 (8,766–12,434) | 0.428 | 100.0% | 0.0% |
+
+Medians (95% UI) across posterior draws. Outcomes averted are against no treatment, summed over 2026–2050 and not discounted. The programme budget covers testing, consultations and drugs in J, F and X, discounted at 3% a year to 2026; it excludes care for advanced liver disease. Strategies are ordered by TOPSIS closeness.
 
 # Supporting information
 

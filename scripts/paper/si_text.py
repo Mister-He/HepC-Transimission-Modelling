@@ -12,7 +12,7 @@ def build(reg, f):
     d = Doc(reg, "si")
     s = f.summ; caps = f.cfg["annual_screening_totals"]; shares = [round(100 * x) for x in f.cfg["f_allocation_fractions"]]
     st = f.setup
-    d.raw("---\ntitle: \"S1 Text. Technical appendix\"\nsubtitle: \"Prison treatment and post-release screening for hepatitis C among people who inject drugs in Singapore: A modelling study\"\n---")
+    d.raw("---\ntitle: \"S1 Text. Technical appendix\"\nsubtitle: \"Whom to test, where and how intensively: prison treatment and post-release screening to eliminate hepatitis C among people who inject drugs in Singapore. A modelling study with multi-criteria decision analysis\"\n---")
     d.raw("Tables and figures in this appendix are numbered Table A, Table B and so on, and Fig A, Fig B and so on.")
 
     # ---------------- 1 model ----------------
@@ -193,7 +193,8 @@ def build(reg, f):
     d.p("The solver located the moment in each year at which a group used its capacity and then stopped new starts in that group for the rest of the year. Unused capacity was not moved between F and X or carried over. The same person can be counted as screened in more than one year, and the model counts treatment courses, not people.", ("sim", "scen_code"), kind="method")
     d.p("In J, every entrant not on treatment (u, a, c, r) was counted as having an antibody test and every antibody-positive entrant (a, c, r) an RNA test; each treatment start was costed as one course and one consultation.", ("scen_code",), kind="method")
     d.p(f"New infections in a year were the infections (u and r to a, in D and F) during that calendar year, and HCV deaths the liver deaths in stages 3 and 4 (deaths from HCV-related decompensated cirrhosis and liver cancer, the deaths counted by the WHO target), summed over the year (trapezoid rule over the daily solver output). The 2015 values were one year at the calibrated equilibrium; in the main analysis the 2016–2025 values, still without treatment, differed from them by at most {100 * f.history_dev:.2f}%. Both were compared with their 2015 values.", ("scen_code", "sim", "traj"), kind="method")
-    d.p(f"For each of {f.ndraw:,} posterior draws (sampling seed fixed), we ran the 2015 equilibrium, the shared 2016–2025 history and all {len(s)} scenarios to 2030; {int(f.valid['draws_valid']):,} of {int(f.valid['draws_requested']):,} draws were valid.", ("summary", "draws_valid", "scen_code"))
+    d.p(f"For each of {f.ndraw:,} posterior draws (sampling seed fixed), we ran the 2015 equilibrium, the shared 2016–2025 history and all {len(s)} scenarios to {f.end_year}, and no treatment to {f.end_year}; {int(f.valid['draws_valid']):,} of {int(f.valid['draws_requested']):,} draws were valid. The WHO targets were assessed in 2030 and the 2030 results do not depend on the end year.", ("summary", "draws_valid", "scen_code", "long"))
+    d.p("In the linkage sensitivity analysis (Section 17), the year's treatment capacity in F or X was the number of chronic infections found times the linkage share $\\ell$ (1 in the main analysis, 0.8 or 0.6); people not linked stay in state c and can be found again in a later year.", ("scen_code", "linkage"), kind="method")
 
     # ---------------- 7 costs ----------------
     d.h(1, "7. Costs")
@@ -206,7 +207,7 @@ def build(reg, f):
     for x in f.costev:
         d.p(f"| {x['item']} | S${F(x['base_cost_sgd']):,.2f} | S${F(x['low_sgd']):,.2f}–S${F(x['high_sgd']):,.2f} | {basis[x['item']]} |", ("costev",), kind="method")
     d.p("The source abstract for the drug price gives US$32,325 per 12 weeks, which differs from US$2,577 times 12 (US$30,924); we used the weekly figure. Prices were not inflated to 2026. Follow-up visits, tests of cure, care navigation and genotyping were not costed.", ("costev",), kind="method")
-    d.p(f"Costs were counted in the year they occurred and discounted at {pct(f.cfg['discount_rate'], 0)} a year to 2026; numbers of tests and courses were not discounted. Costs before 2026 were not included.", ("config",), kind="method")
+    d.p(f"Costs were counted in the year they occurred and discounted at {pct(f.cfg['discount_rate'], 0)} a year to 2026; numbers of tests and courses were not discounted. Costs before 2026 were not included. All costs are the programme budget (testing, consultations and drugs): they exclude the care of people with decompensated cirrhosis or liver cancer and any savings from disease averted.", ("config", "scen_code"), kind="method")
 
     # ---------------- 8 additional results ----------------
     d.h(1, "8. Additional results")
@@ -336,16 +337,101 @@ def build(reg, f):
         (f"| Community target | The {f.tg['community_pwid_year']} network scale-up estimate applies to 2015 | Entry is constant and there is no treatment before 2019 in any analysis | Small if the injecting population changed little between 2015 and {f.tg['community_pwid_year']} |", ("targets",)),
         ("| Treatment history | Nobody was treated before 2026 in the main analysis | Start and coverage of treatment in prison are not recorded in the project data [@prison2021; @tan2023] | Understates past treatment; the sensitivity analysis (Section 9) gives the other bound |", ("config", "j2019")),
         (f"| Prison treatment | People with chronic infection in J start treatment with annual probability {f.cfg['j_annual_start_probability']} in the main analysis | Policy assumption; varied from 0 in the coverage analysis | Close to the most that prison treatment can achieve in the model |", ("config", "jcov")),
-        ("| Screening | Tests are spread over each group in proportion to its HCV states, with perfect linkage within capacity, no loss to follow-up and repeat screening allowed; D is never screened or treated | Aggregate model (Section 6) | Real programmes will find and treat fewer people for the same number of tests |", ("scen_code",)),
+        ("| Screening | Tests are spread over each group in proportion to its HCV states, with perfect linkage within capacity, no loss to follow-up and repeat screening allowed; D is never screened or treated | Aggregate model (Section 6) | Real programmes will find and treat fewer people for the same number of tests; Section 17 lowers linkage to 80% and 60% |", ("scen_code", "linkage")),
+        ("| Treatment completion | Everyone who starts treatment completes it, and cure follows at trial efficacy | Not varied | Overstates cures, more so in the community than in prison |", ("scen_code", "setup")),
+        (f"| Time horizon | Entry of new injectors, prison rates, prices and treatment efficacy stay at their current values to {f.end_year} | Needed for a long horizon; liver deaths lag infection by decades [@thein2008] | Long-horizon results are scenarios, not forecasts; a fall in new injectors would lower the infections averted by every strategy |", ("config", "long")),
+        ("| Comparators | J only (prison treatment at the main coverage from 2026, no community screening) is the status quo; no treatment is the counterfactual for outcomes averted | Policy design | Incremental results depend on the status quo; past prison treatment is not modelled (Section 9) |", ("config", "cum")),
+        ("| Programme budget | Costs include testing, consultations and drugs only; care for advanced liver disease and savings from disease averted are excluded | Section 7 | Understates the value of strategies that avert liver disease |", ("scen_code", "config")),
+        ("| Decision analysis | Five criteria with equal weights in the main analysis; benefits undiscounted; min–max normalisation within each strategy set; TOPSIS among Pareto-efficient strategies | Section 16 | Ranks depend on the weights, on the criteria (infections averted and treatment courses are correlated) and on the set of strategies compared |", ("da_code", "da_weights")),
         ("| Targets | Reductions are measured against the modelled 2015 yearly numbers, and a target is met if the median reduction reaches it | WHO 2030 targets for incidence and mortality | Results depend on the modelled 2015 level, not on observed counts |", ("scen_code", "config")),
         ("| Costs | Published charges and a published drug price, not inflated and not payer costs; follow-up visits, tests of cure and care navigation are excluded | Section 7 | Totals scale almost directly with the drug price |", ("costev", "config")),
-        ("| Uncertainty | Intervals reflect posterior uncertainty in the 13 calibrated parameters only, given the fixed inputs; the model is deterministic | Section 4 | Fixed inputs, structural, price and uptake uncertainty are not included, so intervals are likely too narrow; Section 13 shows the effect of each fixed input |", ("summary", "mcmc_cfg", "tornado")),
+        ("| Uncertainty | Intervals reflect posterior uncertainty in the 13 calibrated parameters only, given the fixed inputs; the model is deterministic | Section 4 | Fixed inputs, structural, price, uptake, linkage and completion uncertainty are not included, so intervals are likely too narrow; Section 13 shows the effect of each fixed input and Section 17 of linkage |", ("summary", "mcmc_cfg", "tornado", "linkage")),
     ]
     for text, ev in rows:
         d.p(text, ev, kind="method", unc="high")
 
-    # ---------------- 14 software ----------------
-    d.h(1, "15. Software and reproducibility")
+
+    # ---------------- 15 long horizon and cost per outcome averted ----------------
+    E, hz = f.end_year, f.hz; H = f"2026–{E}"; C = f.cum
+    d.h(1, f"15. Cumulative outcomes and cost per outcome averted, 2026–2030 and {H}")
+    d.p(f"For each posterior draw, new infections and liver deaths were summed over 2026–2030 and {H} and subtracted from the totals without treatment or with J only. Outcomes averted are not discounted. The cost per outcome averted against J only is the incremental programme budget (discounted at {pct(f.cfg['discount_rate'], 0)} to 2026) divided by the outcomes averted discounted at the same rate; it is not computed in a draw with fewer than one outcome averted. Entry of new injectors is held at its 2015 level to {E} (Table P, Table Q).",
+        ("scen_code", "cum", "config"), kind="method")
+    d.p(f"**Table P. New infections and liver deaths averted against no treatment (median, 95% UI).**", ("cum",), kind="result")
+    d.p(f"| Policy | Infections averted, 2026–2030 | Liver deaths averted, 2026–2030 | Infections averted, {H} | Liver deaths averted, {H} |", ("cum",), kind="result")
+    d.raw("|---|---|---|---|---|")
+    for k in order:
+        r = C[k]; c = lambda n: interval(r[n], r[n + "_lo"], r[n + "_hi"])
+        d.p(f"| {scen_label(s[k])} | {c('infections_averted_vs_no_treatment_2026_2030')} | {c('liver_deaths_averted_vs_no_treatment_2026_2030')} | {c(f'infections_averted_vs_no_treatment_2026_{E}')} | {c(f'liver_deaths_averted_vs_no_treatment_2026_{E}')} |", ("cum",), unc="moderate")
+    d.p(f"**Table Q. Outcomes averted, incremental programme budget and cost per outcome averted against prison treatment only, {H} (median, 95% UI).**", ("cum",), kind="result")
+    d.p("| Policy | Infections averted | Liver deaths averted | Incremental budget, S$ million | S$ per infection averted | S$ per liver death averted |", ("cum",), kind="result")
+    d.raw("|---|---|---|---|---|---|")
+    for k in order[1:]:
+        r = C[k]; c = lambda n, d=0, sc=1.0: interval(r[n], r[n + "_lo"], r[n + "_hi"], d=d, scale=sc)
+        d.p(f"| {scen_label(s[k])} | {c(f'infections_averted_vs_j_only_2026_{E}')} | {c(f'liver_deaths_averted_vs_j_only_2026_{E}')} | {c(f'incremental_programme_cost_vs_j_only_sgd_2026_{E}', 1, 1e-6)} | "
+            f"{c(f'cost_per_infection_averted_vs_j_only_sgd_2026_{E}')} | {c(f'cost_per_liver_death_averted_vs_j_only_sgd_2026_{E}')} |", ("cum",), unc="moderate")
+    d.p(f"Negative costs per outcome averted mean that the policy needed a smaller programme budget than J only while averting more outcomes, because the infections it prevented did not need treatment later. A ratio of medians differs from the median ratio shown. Yearly trajectories to {E} are in output/scenarios_2026/scenario_trajectories_long.csv.", ("cum", "long"), kind="method")
+
+    # ---------------- 16 strategy selection ----------------
+    d.h(1, "16. Strategy selection")
+    d.p("Criteria (per strategy and horizon): infections averted and liver deaths averted against no treatment (benefits), the probability of meeting both WHO targets in 2030 (benefit; in each draw 0 or 1), and the discounted programme budget and the number of treatment courses (costs). "
+        "Each criterion was rescaled by min–max normalisation across the strategy set, with costs reverse-coded ($1 - $ normalised value). A strategy was Pareto-efficient if no other was at least as good on every criterion and better on one. "
+        "TOPSIS [@hwang1981] was applied to the Pareto-efficient strategies of the normalised matrix: with weights $w_j$ summing to 1, $D^+ = \\sqrt{\\sum_j w_j^2 (1 - n_j)^2}$, $D^- = \\sqrt{\\sum_j w_j^2 n_j^2}$ and closeness $D^-/(D^+ + D^-)$.", ("da_code",), kind="method")
+    d.p("The efficiency frontier [@cantor1994] used the programme budget and one benefit at a time: strategies that cost no less and gained no more than another (one strictly) were dominated; among the rest, ordered by cost, a strategy whose ratio of incremental cost to incremental benefit against the previous one exceeded that of the next was extendedly dominated, repeatedly until the ratios rose along the frontier.", ("da_code",), kind="method")
+    d.p(f"Uncertainty: Pareto efficiency, TOPSIS and the budget rule were repeated in each of the {f.ndraw:,} posterior draws. Weight sensitivity: equal weights; each criterion's weight doubled or set to zero in turn; benefits only; costs only; and 1,000 weight vectors drawn uniformly from the simplex (normalised exponential variates, seed fixed). Budget caps were round numbers spanning the range of programme budgets in the set.", ("da_code", "da_weights"), kind="method")
+    d17_30 = {x["strategy"]: x for x in f.da if x["set"] == "s17" and x["horizon"] == "2026-2030"}
+    par30 = [k for k, x in d17_30.items() if x["pareto_efficient"] == "TRUE"]
+    top30 = next(k for k, x in d17_30.items() if x["topsis_rank"] == "1")
+    cpa30 = {c: next(k for k, x in d17_30.items() if x[f"rank_{c}"] == "1") for c in ("cpa_infection", "cpa_liver_death")}
+    d.p(f"Over 2026–2030, {len(par30)} of the {len(s)} policies were Pareto-efficient, TOPSIS with equal weights ranked {scen_label(s[top30])} first (in {pct(d17_30[top30]['p_topsis_top'], 0)} of draws), and the lowest cost per outcome averted against no treatment was with {scen_label(s[cpa30['cpa_infection']])} for infections and {scen_label(s[cpa30['cpa_liver_death']])} for liver deaths. Tables R–T give the results over {H}.",
+        ("da",), unc="moderate")
+    d.p(f"**Table R. Cost-effectiveness frontier, {H} (posterior medians).**", ("da_frontier",), kind="result")
+    d.p("| Benefit | Policy | Programme budget, S$ million | Benefit averted | Status | S$ per extra outcome averted against the previous frontier strategy |", ("da_frontier",), kind="result")
+    d.raw("|---|---|---|---|---|---|")
+    bl = {"infections_averted": "Infections", "liver_deaths_averted": "Liver deaths"}
+    for x in sorted((x for x in f.da_frontier if x["set"] == "s17" and x["horizon"] == hz), key=lambda x: (x["benefit"], F(x["cost"]))):
+        ic = f"{F(x['icer_vs_previous']):,.0f}" if x["icer_vs_previous"] not in ("NA", "") else "–"
+        d.p(f"| {bl[x['benefit']]} | {scen_label(s[x['strategy']])} | {F(x['cost']) / 1e6:,.1f} | {F(x['effect']):,.0f} | {x['status']} | {ic} |", ("da_frontier",), unc="moderate")
+    d.p(f"**Table S. Budget rule (a): the policy with the most benefit whose programme budget over {H} is within the cap.**", ("da_budget",), kind="result")
+    d.p("| Benefit | Budget cap, S$ million | Best policy (medians) | Draws in which it is best |", ("da_budget",), kind="result")
+    d.raw("|---|---|---|---|")
+    for x in (x for x in f.da_budget if x["set"] == "s17" and x["horizon"] == hz):
+        d.p(f"| {bl[x['benefit']]} | {F(x['budget_cap_sgd']) / 1e6:,.0f} | {scen_label(s[x['best_strategy']])} | {pct(x['p_best_strategy'], 1)} |", ("da_budget",), unc="moderate")
+    d.p(f"**Table T. TOPSIS weight sensitivity, {H}: the first-ranked strategy for each weight set.**", ("da_weights",), kind="result")
+    d.p("| Weight set | Weights (infections, liver deaths, both targets, budget, courses) | 17 policies | 68 combinations with prison coverage |", ("da_weights",), kind="result")
+    d.raw("|---|---|---|---|")
+    w68 = {x["weights"]: x["top_strategy"] for x in f.da_weights if x["set"] == "s68" and x["horizon"] == hz}
+    def lab68(v):
+        pol, cov = (x.strip() for x in v.split(" @ J "))
+        return "J only with prison coverage 0% (prison testing, no treatment)" if (pol, cov) == ("J_only", "0%") else f"{scen_label(s[pol])}, prison coverage {cov}"
+    crit = {"infections_averted": "infections averted", "liver_deaths_averted": "liver deaths averted", "who_joint_pass": "both 2030 targets",
+            "programme_cost": "programme budget", "treatment_courses": "treatment courses"}
+    def wname(w):
+        for k, v in crit.items(): w = w.replace(k, v)
+        return w.replace("_", " ").replace("double ", "Double weight: ").replace("zero ", "No weight: ").replace("equal", "Equal weights") \
+                .replace("benefits only", "Benefits only").replace("costs only", "Costs only")
+    for x in (x for x in f.da_weights if x["set"] == "s17" and x["horizon"] == hz):
+        d.p(f"| {wname(x['weights'])} | {x['weight_vector'].replace('/', ', ')} | {scen_label(s[x['top_strategy']])} | {lab68(w68[x['weights']])} |", ("da_weights",), unc="moderate")
+    d.p("Among the 68 combinations, J only with prison coverage 0% has the smallest programme budget (testing of prison entrants, no treatment courses), so it ranks first whenever the costs carry more weight than the benefits.", ("da_weights", "da"), kind="interpretive", unc="moderate")
+
+    # ---------------- 17 sensitivity: linkage ----------------
+    L8, L6 = f.link[0.8], f.link[0.6]; LC8, LC6 = f.link_cum[0.8], f.link_cum[0.6]
+    d.h(1, "17. Sensitivity analysis: linkage to treatment after community screening")
+    d.p(f"The main analysis assumes that every chronic infection found by community screening is linked to treatment within the year's capacity. Here only 80% or 60% were linked (Section 6). Prison treatment, the posterior draws and all other inputs are unchanged, so J only is the same as in the main analysis (Table U).",
+        ("linkage", "scen_code"), kind="method")
+    mp = lambda L: [k for k in f.finite if L[k]["who_incidence_pass"] == "TRUE"]
+    d.p(f"{cap_word(len(mp(L8)))} finite policies met the incidence target with 80% linkage and {WORDS[len(mp(L6))]} with 60% ({WORDS[len(f.inc_pass)]} in the main analysis); none met the mortality target, and uncapped screening met both at either level.", ("linkage", "summary"), unc="moderate")
+    d.p(f"**Table U. Linkage sensitivity: falls in 2030 compared with 2015 and liver deaths averted against J only over {H} (median, 95% UI).**", ("linkage",), kind="result")
+    d.p("| Policy | Infections, 80% | Liver deaths, 80% | Liver deaths averted, 80% | Infections, 60% | Liver deaths, 60% | Liver deaths averted, 60% |", ("linkage",), kind="result")
+    d.raw("|---|---|---|---|---|---|---|")
+    for k in order[1:]:
+        cells = []
+        for L, LC in ((L8, LC8), (L6, LC6)):
+            r = LC[k]; n = f"liver_deaths_averted_vs_j_only_2026_{E}"
+            cells += [red(L[k], "incidence_reduction").replace(" (95% UI ", " ("), red(L[k], "mortality_reduction").replace(" (95% UI ", " ("), interval(r[n], r[n + "_lo"], r[n + "_hi"])]
+        d.p(f"| {scen_label(s[k])} | " + " | ".join(cells) + " |", ("linkage",), unc="moderate")
+
+    # ---------------- 18 software ----------------
+    d.h(1, "18. Software and reproducibility")
     d.p("The model is in C++ (scripts/model/sim.cpp), called from R through Rcpp [@rcpp2011]. Rate models used Stan and convergence diagnostics the R package posterior. Figures were drawn with matplotlib from the saved outputs.", ("sim", "figures"), kind="method")
     d.p("Analysis commands, run times and expected outputs are listed in docs/training.md in the repository. This appendix and the main text were generated from the saved outputs by scripts/build_paper.py; drafting followed the procedures of Scientific Agent Skills [@kassis2026].", ("figures",), kind="declaration")
 
@@ -367,6 +453,7 @@ def build(reg, f):
     d.raw(f"![]({dict(SI_FIGURES)['Fig G']}){{width=95%}}")
     d.p("**Fig H. Sensitivity analysis with observed entry of new drug abusers, 2016–2025.** (A) New infections and HCV deaths relative to 2015 (medians), 2015–2030; the dashed line marks the start of prison treatment and community screening (2026). (B) Reductions in 2030 by policy, with 95% uncertainty intervals.", ("inflow", "inflow_traj"), kind="result")
     d.raw(f"![]({dict(SI_FIGURES)['Fig H']}){{width=95%}}")
+
     d.h(1, "References")
     d.raw("::: {#refs}\n:::")
     return d

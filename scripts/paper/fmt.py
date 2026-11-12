@@ -9,10 +9,19 @@ def pct(x, d=1):
     return f"{100 * F(x):.{d}f}%"
 
 
+def _num(v, scale, d, pre="", suf=""):  # typographic minus for negatives
+    x = round(F(v) * scale, d) + 0.0  # no "−0.0"
+    return f"{'−' if x < 0 else ''}{pre}{abs(x):,.{d}f}{suf}"
+
+
+def _sep(lo, scale):  # an en dash reads as a minus next to negative numbers
+    return " to " if F(lo) * scale < 0 else "–"
+
+
 def ui(m, lo, hi, scale=1.0, d=1, pre="", suf="", first=False):
-    f = lambda v: f"{pre}{F(v) * scale:,.{d}f}{suf}"
+    f = lambda v: _num(v, scale, d, pre, suf)
     tag = "95% uncertainty interval [UI]" if first else "95% UI"
-    return f"{f(m)} ({tag} {f(lo)}–{f(hi)})"
+    return f"{f(m)} ({tag} {f(lo)}{_sep(lo, scale)}{f(hi)})"
 
 
 def col(row, c, **k):
@@ -33,8 +42,8 @@ def n0(x):
 
 
 def interval(m, lo, hi, d=0, scale=1.0):
-    f = lambda v: f"{F(v) * scale:,.{d}f}"
-    return f"{f(m)} ({f(lo)}–{f(hi)})"
+    f = lambda v: _num(v, scale, d)
+    return f"{f(m)} ({f(lo)}{_sep(lo, scale)}{f(hi)})"
 
 
 def lc(s):  # lower-case the first letter unless it starts an abbreviation (GT3, NC, PWID)
