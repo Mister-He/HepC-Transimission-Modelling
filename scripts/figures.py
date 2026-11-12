@@ -596,4 +596,81 @@ if want("tornado") and (TOR / "tornado_results.csv").exists():
                       "an end without a 2015 equilibrium (failed_runs.csv) has no bar.", fontsize=7)
         save(fig, TOR / "tornado", ["output/tornado/tornado_results.csv", "output/tornado/ranges.csv"])
 
+# ---------------------------------------------------------------- long horizon (scenarios_2026.R to end_year)
+if want("long_horizon_trajectories") and (SC / "scenario_trajectories_long.csv").exists():
+    lt = pd.read_csv(SC / "scenario_trajectories_long.csv")
+    pick = {"no_treatment": ("No treatment", "0.35", (0, (1, 1.5))), "J_only": ("Prison treatment only (J)", STRATUM["J"], "-"),
+            "S8000_F25": ("J + 8,000 screens/yr, F 25%", STRATUM["F"], (0, (4, 2))),
+            "S8000_F75": ("J + 8,000 screens/yr, F 75%", STRATUM["X"], (0, (6, 1.5, 1, 1.5))),
+            "SInf": ("J + no screening cap", "black", "-")}
+    with style_context("default", palette_name="okabe_ito_on_white"):
+        fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 85 * MM), layout="constrained", sharey=True)
+        for ax, (m, title, thr) in zip(axes, [("incidence_ratio_2015", "A  New HCV infections", 0.2),
+                                              ("mortality_ratio_2015", "B  Liver (DC/HCC) deaths", 0.35)]):
+            for sid, (lab, col, ls) in pick.items():
+                s = lt[lt.scenario_id == sid].sort_values("year")
+                ax.fill_between(s.year + 0.5, s[m + "_lo"], s[m + "_hi"], color=col, alpha=0.12, lw=0)
+                ax.plot(s.year + 0.5, s[m], color=col, ls=ls, lw=1.2, label=lab)
+            ax.axhline(thr, color="black", ls="--", lw=0.7)
+            ax.text(2015.5, thr, f"2030 target ({thr:.0%})", va="bottom", fontsize=7)
+            for x in sorted({J0, 2026, 2030}):
+                ax.axvline(x, color="0.6", ls=":", lw=0.7)
+            end = int(lt.year.max())
+            ax.set(xlim=(2015, end + 1), xticks=sorted({2015, 2026, 2030, 2040, end}), xlabel="Calendar year", ylim=(0, 1.4))
+            ax.yaxis.set_major_formatter(pct); panel_label(ax, title)
+        axes[0].set_ylabel("Annual events relative to 2015 (median, 95% UI)")
+        fig.legend(*axes[0].get_legend_handles_labels(), loc="outside lower center", ncols=3)
+        save(fig, SC / "long_horizon_trajectories", ["scenario_trajectories_long.csv"])
+
+# ---------------------------------------------------------------- decision analysis (decision_analysis.R)
+DA = ROOT / "output/decision_analysis"
+FR_COL = {"frontier": "#0072B2", "extendedly dominated": "#E69F00", "dominated": "0.6"}
+FR_MARK = {"frontier": "o", "extendedly dominated": "s", "dominated": "x"}
+if want("decision_frontier") and (DA / "efficiency_frontier.csv").exists():
+    fr = pd.read_csv(DA / "efficiency_frontier.csv")
+    hz = sorted(fr.horizon.unique())[-1]  # main horizon: 2026 to the end year
+    fr = fr[(fr.set == "s17") & (fr.horizon == hz)]
+    with style_context("default", palette_name="okabe_ito_on_white"):
+        fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 95 * MM), layout="constrained")
+        for ax, (b, title) in zip(axes, [("infections_averted", "A  New infections averted"),
+                                         ("liver_deaths_averted", "B  Liver deaths averted")]):
+            d = fr[fr.benefit == b]
+            for st, g in d.groupby("status"):
+                ax.scatter(g.effect, g.cost / 1e6, color=FR_COL[st], marker=FR_MARK[st], s=18, label=st.capitalize())
+            f = d[d.status == "frontier"].sort_values("cost")
+            ax.plot(f.effect, f.cost / 1e6, color=FR_COL["frontier"], lw=0.9)
+            key = []  # number the frontier points and list them in the empty upper-left corner (labels collide)
+            for i, (_, r) in enumerate(f.iterrows(), 1):
+                ax.annotate(str(i), (r.effect, r.cost / 1e6), xytext=(4, -4), textcoords="offset points",
+                            fontsize=6.5, va="top", fontweight="bold")
+                key.append(f"{i}  {label[r.strategy].replace(' [reference]', '')}")
+            ax.text(0.03, 0.97, "Frontier\n" + "\n".join(key), transform=ax.transAxes, ha="left", va="top",
+                    fontsize=6.5, linespacing=1.3)
+            ax.set(xlabel=f"{title[3:]} vs no treatment, {hz} (median)", ylabel="Programme budget, discounted (2026 S$ million)")
+            ax.xaxis.set_major_formatter(comma); panel_label(ax, title)
+        fig.legend(handles=[Line2D([], [], ls="", color=FR_COL[k], marker=FR_MARK[k], label=k.capitalize()) for k in FR_COL],
+                   loc="outside lower center", ncols=3)
+        save(fig, DA / "decision_frontier", ["output/decision_analysis/efficiency_frontier.csv"])
+
+if want("decision_topsis") and (DA / "decision_criteria_summary.csv").exists():
+    cs = pd.read_csv(DA / "decision_criteria_summary.csv")
+    hz = sorted(cs.horizon.unique())[-1]
+    with style_context("default", palette_name="okabe_ito_on_white"):
+        fig, axes = plt.subplots(1, 2, figsize=(FULL * MM, 100 * MM), layout="constrained")
+        for ax, (st, title) in zip(axes, [("s17", "A  17 strategies (J coverage 99.995%)"),
+                                          ("s68", "B  68 strategies (J coverage grid)")]):
+            d = cs[(cs.set == st) & (cs.horizon == hz) & cs.pareto_efficient].sort_values("topsis_closeness").tail(15)
+            y = np.arange(len(d))
+            ax.barh(y, d.topsis_closeness, color="#0072B2", alpha=0.85, height=0.7)
+            for yi, (_, r) in zip(y, d.iterrows()):
+                ax.text(r.topsis_closeness + 0.01, yi, f"P(top) {r.p_topsis_top:.0%}, P(Pareto) {r.p_pareto_efficient:.0%}",
+                        va="center", fontsize=6)
+            names = [label.get(s, s).replace(" [reference]", "") if st == "s17" else
+                     " @ ".join([label.get(s.split(" @ ")[0], s).replace(" [reference]", ""), s.split(" @ ")[1]]) for s in d.strategy]
+            ax.set(yticks=y, yticklabels=names, xlim=(0, 1), xlabel=f"TOPSIS closeness, equal weights ({hz})")
+            panel_label(ax, title)
+        fig.supxlabel("Pareto-efficient strategies (posterior medians; P(joint WHO pass) as a criterion), at most 15 shown. "
+                      "P(top), P(Pareto): share of posterior draws.", fontsize=7)
+        save(fig, DA / "decision_topsis", ["output/decision_analysis/decision_criteria_summary.csv"])
+
 print("\n".join(f"wrote {w}.png/.svg" for w in written))

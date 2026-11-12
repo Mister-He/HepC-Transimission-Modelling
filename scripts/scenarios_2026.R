@@ -1,9 +1,12 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# scenarios_2026.R — 2026–2030 policy analysis (J treatment from --j-start-year, default the
+# scenarios_2026.R — policy analysis from 2026 (J treatment from --j-start-year, default the
 # config's 2026, at annual start probability --j-probability; F/X screening quotas from 2026): runs
-# every scenario per posterior draw and reports medians and 95% UIs. --inflow observed is a
-# sensitivity analysis with the observed 2016-2025 entry series.
+# every scenario per posterior draw to the config's end_year (--end-year) and reports medians and
+# 95% UIs. WHO pass/fail and all 2026-2030 outputs use WHO_YEAR (2030); cumulative outcomes averted
+# and cost per outcome averted are reported to 2030 and to the end year. --inflow observed is a
+# sensitivity analysis with the observed 2016-2025 entry series; --linkage < 1 a sensitivity
+# analysis in which only that share of chronic infections found by F/X screening start treatment.
 # =============================================================================
 args <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) { i <- match(name, args); if (is.na(i)) default else args[i+1] }
@@ -19,6 +22,10 @@ J_PROB <- as.numeric(arg("--j-probability", config$j_annual_start_probability))
 # entry_i(year) = entry_i(2015) x CNB new drug abusers_i(year) / 2015 count, 2016-2025 from
 # data/singstat_new_drug_abusers.csv, 2025 held to 2030). The 2015 equilibrium is unchanged.
 INFLOW <- arg("--inflow", "constant")
+WHO_YEAR <- 2030L  # year of the WHO targets (pass/fail and the *_2026_2030 outputs)
+END_YEAR <- as.integer(arg("--end-year", config$end_year))
+# --linkage: share of the chronic infections found by F/X screening who start treatment (1 = ideal).
+LINKAGE <- as.numeric(arg("--linkage", 1))
 stopifnot(INFLOW %in% c("constant", "observed"))
 inflow_factor <- local({
   x <- read.csv(file.path(ROOT, "data/singstat_new_drug_abusers.csv"))
@@ -29,7 +36,7 @@ inflow_factor <- local({
 })
 stopifnot(config$policy_start_year == 2026, J_START >= 2017, J_START <= config$policy_start_year,  # 2016 is the equilibrium check
           J_PROB >= 0, J_PROB < 1,
-          config$end_year == 2030,
+          END_YEAR >= WHO_YEAR, LINKAGE > 0, LINKAGE <= 1,
           identical(as.numeric(config$annual_screening_totals),c(600,1000,2000,5000,8000)),
           config$discount_base_year==2026,config$discount_rate==0.03)
 old <- setwd(file.path(ROOT, "scripts/model")); setup_env <- new.env(parent = globalenv())
@@ -104,7 +111,7 @@ screen_plan <- function(y, s, quota) {
   p_c <- if (n>0) chronic/n else 0
   list(eligible=n, chronic_stock=chronic, screening_quota=quota, screened=tested,
        antibody_tests=tested, rna_tests=tested*p_ab, rna_positive=tested*p_rna,
-       chronic_identified=tested*p_c, treatment_capacity=tested*p_c,
+       chronic_identified=tested*p_c, treatment_capacity=tested*p_c*LINKAGE,
        p_ab=p_ab,p_rna=p_rna,p_c=p_c)
 }
 stopifnot(screen_plan(rep(0,480),2,Inf)$treatment_capacity==0,
@@ -195,6 +202,44 @@ add_pass <- function(x) {
   x
 }
 
+# Cumulative outcomes from 2026 to each horizon (2030, 2040 and END_YEAR), one row per scenario:
+# new infections and liver deaths (the WHO mortality outcome), events averted against J only and
+# against no treatment, discounted programme cost (testing, consultation, DAA; no downstream care)
+# and treatment courses. Cost per event averted divides discounted cost by events averted
+# discounted at the same rate to 2026; it is NA when fewer than MIN_AVERTED events are averted.
+MIN_AVERTED <- 1
+HORIZONS <- sort(unique(c(WHO_YEAR,intersect(2040L,WHO_YEAR:END_YEAR),END_YEAR)))
+per_averted <- function(cost,averted) ifelse(averted>=MIN_AVERTED,cost/averted,NA_real_)
+cumulative_outcomes <- function(traj,no_tx,process,endpoint) {
+  ids <- endpoint$scenario_id
+  disc <- function(year) (1+config$discount_rate)^-(year-config$discount_base_year)
+  out <- data.frame(scenario_id=ids,who_joint_pass=endpoint$who_joint_pass,stringsAsFactors=FALSE)
+  for (h in HORIZONS) {
+    tr <- traj[traj$year>=config$policy_start_year & traj$year<=h,]
+    nt <- no_tx[no_tx$year>=config$policy_start_year & no_tx$year<=h,]
+    pr <- process[process$year<=h,]
+    tot <- function(d,col,w=1) as.numeric(tapply(d[[col]]*w,d$scenario_id,sum)[ids])
+    inf <- tot(tr,"incidence"); ld <- tot(tr,"mortality"); hd <- tot(tr,"hcv_mortality")
+    dinf <- tot(tr,"incidence",disc(tr$year)); dld <- tot(tr,"mortality",disc(tr$year))
+    nt_inf <- sum(nt$incidence); nt_ld <- sum(nt$mortality)
+    nt_dinf <- sum(nt$incidence*disc(nt$year)); nt_dld <- sum(nt$mortality*disc(nt$year))
+    cost <- tot(pr,"discounted_cost_total_sgd"); courses <- tot(pr,"treatment_starts")
+    j <- ids=="J_only"; incr <- cost-cost[j]
+    v <- list(new_infections=inf,liver_deaths=ld,hcv_deaths=hd,
+      infections_averted_vs_no_treatment=nt_inf-inf,liver_deaths_averted_vs_no_treatment=nt_ld-ld,
+      infections_averted_vs_j_only=inf[j]-inf,liver_deaths_averted_vs_j_only=ld[j]-ld,
+      programme_cost_sgd=cost,incremental_programme_cost_vs_j_only_sgd=incr,treatment_courses=courses,
+      cost_per_infection_averted_vs_no_treatment_sgd=per_averted(cost,nt_dinf-dinf),
+      cost_per_liver_death_averted_vs_no_treatment_sgd=per_averted(cost,nt_dld-dld),
+      cost_per_infection_averted_vs_j_only_sgd=per_averted(incr,dinf[j]-dinf),
+      cost_per_liver_death_averted_vs_j_only_sgd=per_averted(incr,dld[j]-dld))
+    for (k in names(v)) out[[paste0(k,"_2026_",h)]] <- v[[k]]
+  }
+  stopifnot(all(is.finite(out[[paste0("programme_cost_sgd_2026_",END_YEAR)]])),
+            all(abs(out$programme_cost_sgd_2026_2030-endpoint$total_discounted_cost_2026_2030_sgd)<1e-5))
+  out
+}
+
 # One full policy analysis for one posterior parameter vector. Returns list(invalid = TRUE) if the
 # 2015 snapshot is not at equilibrium (NULL is reserved for a worker that died).
 evaluate_draw <- function(theta) {
@@ -241,13 +286,13 @@ stopifnot(length(hist_j_starts)==config$policy_start_year-J_START,J_PROB==0 || a
 run_policy <- function(row) {
   id <- row$scenario_id; y <- common_2026_state
   rows <- list(); trajectories <- list()
-  for (year in config$policy_start_year:config$end_year) {
+  for (year in config$policy_start_year:END_YEAR) {
     f <- screen_plan(y,2,row$f_screening_quota)
     x <- screen_plan(y,3,row$x_screening_quota)
     cap <- c(Inf,Inf,f$treatment_capacity,x$treatment_capacity)
     pm <- if (row$scenario_type=="control") j_pm else fx_pm
     z <- run_year(y,year,pm,cap)
-    if (year==2030) stopifnot(abs(z[nrow(z),1]-165)<1e-8)
+    if (year==WHO_YEAR) stopifnot(abs(z[nrow(z),1]-(150+WHO_YEAR-2015))<1e-8)
     y <- state_from(z)
     rows[[paste0(year,"J")]] <- process_row(id,year,1,NULL,z,j_tests(z,pm))
     rows[[paste0(year,"F")]] <- process_row(id,year,2,f,z)
@@ -256,9 +301,9 @@ run_policy <- function(row) {
   }
   list(process=add_cost(do.call(rbind,rows)),trajectory=do.call(rbind,trajectories),end_state=y)
 }
-# Counterfactual with no treatment in any stratum, 2015-2030 (shows the effect of J treatment).
+# Counterfactual with no treatment in any stratum, 2015 to END_YEAR (shows the effect of J treatment).
 no_tx <- list(base_rates); y <- initial
-for (year in 2016:2030) {
+for (year in 2016:END_YEAR) {
   z <- run_year(y,year,pre_pm); y <- state_from(z)
   no_tx[[as.character(year)]] <- rate_row(z,year,"no_treatment")
 }
@@ -267,13 +312,14 @@ for (metric in c("incidence","mortality","fx_incidence","fx_mortality","hcv_mort
   no_tx[[paste0(metric,"_ratio_2015")]] <- no_tx[[metric]]/base_rates[[metric]]
 runs <- lapply(seq_len(nrow(scenario_table)),function(i) run_policy(scenario_table[i,]))
 process <- do.call(rbind,lapply(runs,`[[`,"process"))
+process_all <- process; process <- process[process$year<=WHO_YEAR,]
 trajectories <- do.call(rbind,lapply(seq_along(runs),function(i) {
   h <- history_trajectory; h$scenario_id <- scenario_table$scenario_id[i]
   rbind(h,runs[[i]]$trajectory)
 }))
 rownames(process)<-NULL;rownames(trajectories)<-NULL
 stopifnot(all(is.finite(process$cost_total_sgd)),all(process$cost_total_sgd>=0),
-          nrow(process)==nrow(scenario_table)*5*3,
+          nrow(process)==nrow(scenario_table)*(WHO_YEAR-2025)*3,
           all(table(process$scenario_id,process$year,process$stratum)==1),
           all(abs(process$cost_total_sgd-rowSums(process[,c("cost_antibody_sgd",
             "cost_rna_sgd","cost_consultation_sgd","cost_daa_sgd")]))<1e-7),
@@ -289,7 +335,14 @@ safe_ratio <- function(x,denominator) if (is.finite(denominator) && denominator>
 for (metric in c("incidence","mortality","fx_incidence","fx_mortality","hcv_mortality"))
   trajectories[[paste0(metric,"_ratio_2015")]] <- safe_ratio(trajectories[[metric]],as.numeric(b[[metric]]))
 trajectories <- add_pass(trajectories)
-endpoint <- subset(trajectories,year==2030)
+# Full horizon (policies and no treatment) for the long trajectories; 2026-2030 outputs below as before.
+long_cols <- c("scenario_id","year","incidence","mortality","hcv_mortality",
+  paste0(c("incidence","mortality","hcv_mortality"),"_ratio_2015"))
+long_trajectories <- rbind(trajectories[long_cols],no_tx[long_cols])
+trajectories_all <- trajectories
+trajectories <- trajectories[trajectories$year<=WHO_YEAR,]; rownames(trajectories) <- NULL
+no_tx_all <- no_tx; no_tx <- no_tx[no_tx$year<=WHO_YEAR,]; rownames(no_tx) <- NULL
+endpoint <- subset(trajectories,year==WHO_YEAR)
 endpoint <- endpoint[match(scenario_table$scenario_id,endpoint$scenario_id),]
 fxsum <- aggregate(cbind(actual_screened,antibody_tests,rna_tests,rna_positive,
   chronic_identified,treatment_capacity,treatment_starts,treatment_completions,
@@ -337,8 +390,10 @@ stopifnot(all(abs(rowSums(item_totals[-1])-
   endpoint$total_discounted_cost_2026_2030_sgd[match(item_totals$scenario_id,endpoint$scenario_id)])<1e-5))
 endpoint$total_treatment_starts <- as.numeric(tapply(process$treatment_starts,process$scenario_id,sum)[endpoint$scenario_id])
 stratum_totals <- aggregate(cbind(discounted_cost_total_sgd,treatment_starts)~scenario_id+stratum,process,sum)
+cumulative <- cumulative_outcomes(trajectories_all,no_tx_all,process_all,endpoint)
 list(no_tx=no_tx,process=annual,trajectories=trajectories,endpoint=endpoint,treatment=treatment,
-     item_totals=item_totals,stratum_totals=stratum_totals)
+     item_totals=item_totals,stratum_totals=stratum_totals,cumulative=cumulative,
+     long_trajectories=long_trajectories)
 }
 
 # ---- Aggregate over posterior draws: median and 95% UI (2.5th-97.5th percentile) ----
@@ -374,6 +429,8 @@ stopifnot(length(results) > 0, length(results)>=MIN_VALID_SHARE*length(valid))
 writeLines(c(paste("draws_requested", length(valid)), paste("draws_valid", sum(valid)),
              paste("j_start_year", J_START), paste("j_annual_start_probability", J_PROB),
              if (INFLOW != "constant") paste("inflow", INFLOW),
+             if (END_YEAR != WHO_YEAR) paste("end_year", END_YEAR),
+             if (LINKAGE != 1) paste("linkage", LINKAGE),
              if (!is.null(PARAM_FILE)) paste("param_override", jsonlite::toJSON(override, auto_unbox = TRUE, digits = NA))),
            file.path(OUT,"draw_validity.txt"))
 collect <- function(name) lapply(results,`[[`,name)
@@ -391,6 +448,13 @@ write.csv(do.call(rbind,lapply(seq_along(endpoint_draws),function(i)
   cbind(draw=i,seed=draw_seed[i],endpoint_draws[[i]][,intersect(key_cols,names(endpoint_draws[[i]]))]))),
   file.path(OUT,"scenario_2030_draws.csv"),row.names=FALSE)
 treatment <- agg_draws(collect("treatment"),c("scenario_id","stratum"))
+# Cumulative outcomes and cost per event averted: per draw, then median and 95% UI.
+cumulative_draws <- collect("cumulative")
+write.csv(do.call(rbind,lapply(seq_along(cumulative_draws),function(i)
+  cbind(draw=i,seed=draw_seed[i],cumulative_draws[[i]]))),file.path(OUT,"scenario_cumulative_draws.csv"),row.names=FALSE)
+write.csv(agg_draws(cumulative_draws,"scenario_id"),file.path(OUT,"scenario_cumulative_summary.csv"),row.names=FALSE)
+write.csv(agg_draws(collect("long_trajectories"),c("scenario_id","year")),
+  file.path(OUT,"scenario_trajectories_long.csv"),row.names=FALSE)
 item_totals <- agg_draws(collect("item_totals"),"scenario_id")
 stratum_totals <- agg_draws(collect("stratum_totals"),c("scenario_id","stratum"))
 # Pass flags use the median reductions shown in the figures; *_prob columns give the share of draws passing.
@@ -434,7 +498,7 @@ endpoint$j_starts_text <- local({
   sprintf("%s (95%% UI: %s\u2013%s)",f(jd$treatment_starts),f(jd$treatment_starts_lo),f(jd$treatment_starts_hi))})
 endpoint$joint_pass_probability <- endpoint$who_joint_pass_prob
 annual <- process
-stopifnot(nrow(process)==nrow(scenario_table)*5*3)
+stopifnot(nrow(process)==nrow(scenario_table)*(WHO_YEAR-2025)*3)
 writeLines(paste0("Posterior draws: ",DRAWS_PER_SEED," random draws from each posterior file (valid: ",
   paste(paste0("file ",sort(unique(draw_seed)),": ",as.vector(table(draw_seed))),collapse=", "),
   "); sampling seed ",SAMPLE_SEED,". Medians and 95% UIs (2.5th-97.5th percentiles) across draws.\nSources: ",

@@ -18,6 +18,7 @@ taken from the CI.
   `https://tablebuilder.singstat.gov.sg/api/table/tabledata/M891521`. Heroin and methamphetamine
   are taken as the injected drugs; the table has no age split, so one share applies to all ages.
 - `scenario_policy_config.json`: 2026 policy and cost parameters, reconstructed from
-  `docs/structured_prompt.md` and `output/scenarios_2026/cost_evidence.csv`.
+  `docs/structured_prompt.md` and `output/scenarios_2026/cost_evidence.csv`. `end_year` (2050) is the
+  last projection year; the WHO targets are still checked in 2030 (`WHO_YEAR` in `scripts/scenarios_2026.R`).
 - `sps.csv` (Singapore Prison Service records; not tracked by git) is read only by
   `scripts/model/preprocess.R` for the rate fits.

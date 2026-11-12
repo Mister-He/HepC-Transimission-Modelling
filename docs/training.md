@@ -166,11 +166,14 @@ Rscript scripts/plot_calibration.R --cores 14 --max-draws 2000
 ## 5. 2026 treatment scenarios
 
 ```bash
-SC="--root . --draws-per-seed 2000 --cores 8 --sample-seed 20261005"   # ~7.5 min per run on 8 cores, ~3.5 on 14
-Rscript scripts/scenarios_2026.R $SC                                    # main: J from 2026, coverage 99.995%
+SC="--root . --draws-per-seed 2000 --cores 14 --sample-seed 20261005"  # zsh: use ${=SC} (zsh does not split $SC)
+Rscript scripts/scenarios_2026.R $SC                                    # main: J from 2026, coverage 99.995%, to 2050
 Rscript scripts/scenarios_2026.R $SC --j-probability 0   --out-dir output/scenarios_2026_jcov/j000
 Rscript scripts/scenarios_2026.R $SC --j-probability 0.5 --out-dir output/scenarios_2026_jcov/j050
 Rscript scripts/scenarios_2026.R $SC --j-probability 0.9 --out-dir output/scenarios_2026_jcov/j090
+Rscript scripts/scenarios_2026.R $SC --linkage 0.6 --out-dir output/scenarios_2026_linkage/l060   # sensitivity
+Rscript scripts/scenarios_2026.R $SC --linkage 0.8 --out-dir output/scenarios_2026_linkage/l080   # sensitivity
+Rscript scripts/decision_analysis.R --root .                            # after the main and J-coverage runs
 Rscript scripts/scenarios_2026.R $SC --j-start-year 2019 --out-dir output/scenarios_2026_j2019   # sensitivity
 Rscript scripts/scenarios_2026.R $SC --inflow observed --out-dir output/scenarios_2026_inflow       # sensitivity
 # genotype 3 share 10% / 50%: write the --param-file inputs first (see output/scenarios_2026_gt3/README.md)
@@ -179,6 +182,17 @@ Rscript scripts/scenarios_2026.R $SC --param-file output/scenarios_2026_gt3/rho0
 Rscript scripts/scenarios_2026.R $SC --param-file output/scenarios_2026_gt3/rho050/gt3_params.rds --out-dir output/scenarios_2026_gt3/rho050
 ```
 
+- **Horizon (2026-11-12):** runs go to `end_year` in `data/scenario_policy_config.json` (2050; `--end-year`
+  overrides). The WHO check stays in 2030 (`WHO_YEAR`), and every 2030 output is unchanged (16-draw runs before
+  and after the change were byte-identical). Extra outputs: `scenario_cumulative_draws.csv` /
+  `scenario_cumulative_summary.csv` (2026–2030, 2026–2040, 2026–2050: new infections and liver deaths, events
+  averted vs J only and vs no treatment, discounted programme budget, treatment courses, cost per event averted
+  with events discounted at 3%, NA when < 1 event averted) and `scenario_trajectories_long.csv`. About 9 min
+  per run on 14 cores. Entry stays at the 2015 level to the end year (observed-inflow run: 2025 held).
+- **Linkage sensitivity (`--linkage`):** only that share of the chronic infections found by F/X screening start
+  treatment (main analysis 1 = ideal linkage).
+- **Decision analysis:** `scripts/decision_analysis.R` reads `scenario_cumulative_draws.csv` from the main run
+  and the three J-coverage runs and writes `output/decision_analysis/` (see its README). About 20 s.
 - **Inflow sensitivity (`--inflow observed`, added by the 2026-11-03 review):** entry into D in 2016–2025
   follows the observed CNB new drug abusers by age (`data/singstat_new_drug_abusers.csv`) relative to 2015;
   2025 is held to 2030. The main analysis keeps entry constant.

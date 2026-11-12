@@ -21,10 +21,14 @@ Workflow, in order:
 4. **Checks:**
    - `predict_2015_posterior.R`: 2015 predictions by stratum.
    - `plot_calibration.R`: the calibration figure.
-5. **Scenarios:** `scenarios_2026.R` runs every policy for each posterior draw.
-   `post_calibration_analysis.R` is a thin entry point that runs it.
-   Sensitivity: `tornado.R` (one-way, fixed inputs) and `gt3_params.R` (writes the genotype 3
-   share inputs for `scenarios_2026.R --param-file`).
+5. **Scenarios:** `scenarios_2026.R` runs every policy for each posterior draw, to the config's
+   `end_year` (2050), with the WHO check in 2030. `post_calibration_analysis.R` is a thin entry point
+   that runs it.
+   - Sensitivity: `tornado.R` (one-way, fixed inputs) and `gt3_params.R` (writes the genotype 3
+     share inputs for `scenarios_2026.R --param-file`).
+   - `decision_analysis.R`: multi-criteria strategy selection (Pareto set, efficiency frontier,
+     budget rule, cost per outcome averted, TOPSIS with weight sensitivity) over the 17 main
+     scenarios and the 68 J-coverage combinations, from each run's `scenario_cumulative_draws.csv`.
 6. **Manuscript:**
    - `figures.py`: redraws every figure (manuscript, SI, calibration diagnostics) from the saved
      outputs with the `scientific-visualization` skill, as PNG (300 dpi) plus editable SVG. Run it
