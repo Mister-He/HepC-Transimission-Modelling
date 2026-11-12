@@ -20,7 +20,7 @@ J_START <- as.integer(arg("--j-start-year", config$j_start_year))
 J_PROB <- as.numeric(arg("--j-probability", config$j_annual_start_probability))
 # --inflow: "constant" (main analysis; entry held at the 2015 CNB counts) or "observed" (sensitivity:
 # entry_i(year) = entry_i(2015) x CNB new drug abusers_i(year) / 2015 count, 2016-2025 from
-# data/singstat_new_drug_abusers.csv, 2025 held to 2030). The 2015 equilibrium is unchanged.
+# data/singstat_new_drug_abusers.csv, 2025 held to the end year). The 2015 equilibrium is unchanged.
 INFLOW <- arg("--inflow", "constant")
 WHO_YEAR <- 2030L  # year of the WHO targets (pass/fail and the *_2026_2030 outputs)
 END_YEAR <- as.integer(arg("--end-year", config$end_year))
@@ -319,7 +319,7 @@ trajectories <- do.call(rbind,lapply(seq_along(runs),function(i) {
 }))
 rownames(process)<-NULL;rownames(trajectories)<-NULL
 stopifnot(all(is.finite(process$cost_total_sgd)),all(process$cost_total_sgd>=0),
-          nrow(process)==nrow(scenario_table)*(WHO_YEAR-2025)*3,
+          nrow(process)==nrow(scenario_table)*(WHO_YEAR-config$policy_start_year+1)*3,
           all(table(process$scenario_id,process$year,process$stratum)==1),
           all(abs(process$cost_total_sgd-rowSums(process[,c("cost_antibody_sgd",
             "cost_rna_sgd","cost_consultation_sgd","cost_daa_sgd")]))<1e-7),
@@ -380,7 +380,7 @@ for (id in scenario_table$scenario_id) {
   stopifnot(abs(sum(annual$discounted_cost_total_sgd[ix])-
     endpoint$total_discounted_cost_2026_2030_sgd[endpoint$scenario_id==id])<1e-5)
 }
-stopifnot(all(process$year>=2026 & process$year<=2030),
+stopifnot(all(process$year>=config$policy_start_year & process$year<=WHO_YEAR),
   all(is.finite(process$discounted_cost_total_sgd)),
   all(abs(process$discount_factor-(1.03)^-(process$year-2026))<1e-12))
 item_cols <- c("discounted_cost_daa_sgd","discounted_cost_antibody_sgd",
@@ -498,7 +498,7 @@ endpoint$j_starts_text <- local({
   sprintf("%s (95%% UI: %s\u2013%s)",f(jd$treatment_starts),f(jd$treatment_starts_lo),f(jd$treatment_starts_hi))})
 endpoint$joint_pass_probability <- endpoint$who_joint_pass_prob
 annual <- process
-stopifnot(nrow(process)==nrow(scenario_table)*(WHO_YEAR-2025)*3)
+stopifnot(nrow(process)==nrow(scenario_table)*(WHO_YEAR-config$policy_start_year+1)*3)
 writeLines(paste0("Posterior draws: ",DRAWS_PER_SEED," random draws from each posterior file (valid: ",
   paste(paste0("file ",sort(unique(draw_seed)),": ",as.vector(table(draw_seed))),collapse=", "),
   "); sampling seed ",SAMPLE_SEED,". Medians and 95% UIs (2.5th-97.5th percentiles) across draws.\nSources: ",
