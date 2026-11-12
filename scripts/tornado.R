@@ -80,8 +80,10 @@ write.csv(ranges, file.path(OUT, "ranges.csv"), row.names = FALSE)
 
 run_one <- function(nm) {
   dir <- file.path(OUT, "runs", nm); dir.create(dir, showWarnings = FALSE)
-  a <- c(file.path(ROOT, "scripts/scenarios_2026.R"), "--root", ROOT, "--fit", file.path(ROOT, FIT), "--posterior-files", theta_file,
-         "--draws-per-seed", "1", "--cores", "1", "--min-valid-share", "1", "--out-dir", file.path(OUT_REL, "runs", nm))
+  # Only 2030 is read, so stop there; --out-dir is relative to --root, the same folder as dir.
+  a <- c(file.path(ROOT, "scripts/scenarios_2026.R"), "--root", ROOT, "--fit", file.path(ROOT, FIT),
+         "--posterior-files", theta_file, "--end-year", "2030", "--draws-per-seed", "1", "--cores", "1",
+         "--min-valid-share", "1", "--out-dir", file.path(OUT_REL, "runs", nm))
   if (length(runs[[nm]])) { f <- file.path(dir, "override.rds"); saveRDS(runs[[nm]], f); a <- c(a, "--param-file", f) }
   status <- system2("Rscript", a, stdout = file.path(dir, "log.txt"), stderr = file.path(dir, "log.txt"))
   if (status != 0) return(NULL)
@@ -96,7 +98,7 @@ res <- parallel::mclapply(names(runs), run_one, mc.cores = N_CORES, mc.preschedu
 failed <- names(runs)[vapply(res, is.null, TRUE)]
 stopifnot("base run failed" = !"base" %in% failed)
 write.csv(data.frame(run = failed), file.path(OUT, "failed_runs.csv"), row.names = FALSE)
-if (length(failed)) cat("runs without a 2015 equilibrium (see", file.path(OUT_REL, "runs/<run>/log.txt"), "):", failed, "\n")
+if (length(failed)) cat("runs without a 2015 equilibrium (see", file.path(OUT_REL, "runs/<run>/log.txt):"), failed, "\n")
 res <- do.call(rbind, res)
 res$input <- sub("_(low|high)$", "", res$run); res$side <- ifelse(res$run == "base", "base", sub("^.*_", "", res$run))
 write.csv(res, file.path(OUT, "tornado_results.csv"), row.names = FALSE)
