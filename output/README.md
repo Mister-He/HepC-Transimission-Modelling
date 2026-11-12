@@ -12,11 +12,19 @@ parallel results are requested.
   - `mcmc_reference/`: reference MCMC posterior (production).
   - `mcmc_sbc/`: direct MCMC simulation-based calibration on 8 synthetic datasets (check only). NPE was
     removed on 2026-10-30.
-- `scenarios_2026/`: 2026–2030 policy scenarios and manuscript figures, run from the reference MCMC
-  posterior. See `scenarios_2026/README.md`.
+- `scenarios_2026/`: policy scenarios from 2026 and manuscript figures, run from the reference MCMC
+  posterior: 2030 WHO results, plus cumulative outcomes, cost per outcome averted and trajectories to
+  2050 (`scenario_cumulative_*.csv`, `scenario_trajectories_long.csv`). See `scenarios_2026/README.md`.
 - `scenarios_2026_jcov/`: the same scenarios at prison (J) treatment coverage 0%, 50% and 90% (main
   analysis has 99.995%), with the coverage heatmap.
+- `scenarios_2026_linkage/`: sensitivity analysis in which only 60% (`l060/`) or 80% (`l080/`) of the
+  chronic infections found by F/X screening start treatment (`--linkage`; main analysis 100%).
+- `decision_analysis/`: Pareto set, efficiency frontier, budget rule, cost per outcome averted and
+  TOPSIS ranking over the 17 scenarios and the 68 J-coverage combinations (`scripts/decision_analysis.R`).
+  See `decision_analysis/README.md`.
 - `scenarios_2026_j2019/`: sensitivity analysis with prison treatment from 2019.
+- The j2019, inflow, gt3 and tornado runs below were run to 2030 before the horizon was extended (2026-11-12)
+  and were not rerun; their 2030 results are unaffected.
 - `scenarios_2026_inflow/`: sensitivity analysis with the observed 2016–2025 CNB inflow series
   (`--inflow observed`; `REVIEW_REPORT.md` R-02).
 - `scenarios_2026_gt3/`: sensitivity analysis with a genotype 3 share of 10% (`rho010/`) and 50% (`rho050/`)

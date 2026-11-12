@@ -1,0 +1,511 @@
+"set","horizon","benefit","strategy","cost","effect","status","icer_vs_previous"
+"s17","2026-2030","infections_averted","J_only",211648536.24475,786.292239740892,"frontier",NA
+"s17","2026-2030","infections_averted","S600_F25",223556216.823523,851.347036756218,"dominated",NA
+"s17","2026-2030","infections_averted","S1000_F25",231226608.120158,894.394787796972,"dominated",NA
+"s17","2026-2030","infections_averted","S2000_F25",249394792.960946,999.782031704623,"dominated",NA
+"s17","2026-2030","infections_averted","S5000_F25",296008034.058125,1300.53970304935,"dominated",NA
+"s17","2026-2030","infections_averted","S8000_F25",332708290.691682,1566.85421076833,"dominated",NA
+"s17","2026-2030","infections_averted","S600_F50",221146428.962063,916.203988311208,"dominated",NA
+"s17","2026-2030","infections_averted","S1000_F50",227021202.713093,999.782031704459,"dominated",NA
+"s17","2026-2030","infections_averted","S2000_F50",240591584.893042,1203.86173715856,"dominated",NA
+"s17","2026-2030","infections_averted","S5000_F50",272874197.718444,1721.85295360664,"dominated",NA
+"s17","2026-2030","infections_averted","S8000_F50",297465621.50951,2086.74448005308,"dominated",NA
+"s17","2026-2030","infections_averted","S600_F75",218589292.615107,978.741739506328,"extendedly dominated",NA
+"s17","2026-2030","infections_averted","S1000_F75",222432059.621709,1103.43127174477,"extendedly dominated",NA
+"s17","2026-2030","infections_averted","S2000_F75",230210445.459045,1393.49819309658,"extendedly dominated",NA
+"s17","2026-2030","infections_averted","S5000_F75",244339842.697923,2036.28314858906,"frontier",26153.2353729656
+"s17","2026-2030","infections_averted","S8000_F75",255797921.85136,2374.67994387,"frontier",33859.8926267142
+"s17","2026-2030","infections_averted","SInf",484076622.151911,2402.37061462661,"frontier",8243884.81979914
+"s17","2026-2030","liver_deaths_averted","J_only",211648536.24475,120.432544361237,"frontier",NA
+"s17","2026-2030","liver_deaths_averted","S600_F25",223556216.823523,130.180096298603,"dominated",NA
+"s17","2026-2030","liver_deaths_averted","S1000_F25",231226608.120158,136.611368058514,"dominated",NA
+"s17","2026-2030","liver_deaths_averted","S2000_F25",249394792.960946,152.179870769961,"dominated",NA
+"s17","2026-2030","liver_deaths_averted","S5000_F25",296008034.058125,195.169923624821,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S8000_F25",332708290.691682,232.999430142536,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S600_F50",221146428.962063,129.179315449221,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S1000_F50",227021202.713093,134.770023952746,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S2000_F50",240591584.893042,148.40767695715,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S5000_F50",272874197.718444,184.540717996282,"dominated",NA
+"s17","2026-2030","liver_deaths_averted","S8000_F50",297465621.50951,215.107588657981,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S600_F75",218589292.615107,128.094426227367,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S1000_F75",222432059.621709,132.847231323466,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S2000_F75",230210445.459045,143.755651782897,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S5000_F75",244339842.697923,170.069620915908,"extendedly dominated",NA
+"s17","2026-2030","liver_deaths_averted","S8000_F75",255797921.85136,189.684426535193,"frontier",637518.926860497
+"s17","2026-2030","liver_deaths_averted","SInf",484076622.151911,472.618251243373,"frontier",806827.181359457
+"s17","2026-2040","infections_averted","J_only",260795929.721454,4886.70490992321,"dominated",NA
+"s17","2026-2040","infections_averted","S600_F25",279941157.37233,5101.43868034194,"dominated",NA
+"s17","2026-2040","infections_averted","S1000_F25",291342316.092875,5236.14843159333,"dominated",NA
+"s17","2026-2040","infections_averted","S2000_F25",316124677.999701,5536.27610212068,"dominated",NA
+"s17","2026-2040","infections_averted","S5000_F25",368485991.132022,6234.54395042428,"dominated",NA
+"s17","2026-2040","infections_averted","S8000_F25",400033107.69992,6693.66643694305,"dominated",NA
+"s17","2026-2040","infections_averted","S600_F50",269969889.957057,5300.84224784776,"dominated",NA
+"s17","2026-2040","infections_averted","S1000_F50",275827931.492306,5536.27610212015,"dominated",NA
+"s17","2026-2040","infections_averted","S2000_F50",289389600.850423,6029.89710691098,"dominated",NA
+"s17","2026-2040","infections_averted","S5000_F50",325003835.680335,6921.53566064488,"dominated",NA
+"s17","2026-2040","infections_averted","S8000_F50",354162435.841237,7356.53045292154,"dominated",NA
+"s17","2026-2040","infections_averted","S600_F75",260120471.216079,5476.92807703917,"dominated",NA
+"s17","2026-2040","infections_averted","S1000_F75",259913859.045608,5802.85001932449,"frontier",NA
+"s17","2026-2040","infections_averted","S2000_F75",261611062.526891,6410.10453005232,"frontier",2794.87999068016
+"s17","2026-2040","infections_averted","S5000_F75",277377670.574209,7301.64122182669,"frontier",17684.7550894835
+"s17","2026-2040","infections_averted","S8000_F75",298467635.003788,7660.62227336321,"frontier",58749.5198961287
+"s17","2026-2040","infections_averted","SInf",520106210.948445,7689.44940218569,"frontier",7688541.48845573
+"s17","2026-2040","liver_deaths_averted","J_only",260795929.721454,699.104372885081,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S600_F25",279941157.37233,764.484682001903,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S1000_F25",291342316.092875,805.327907031156,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S2000_F25",316124677.999701,898.179869220231,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S5000_F25",368485991.132022,1113.60736126093,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S8000_F25",400033107.69992,1262.62687003863,"extendedly dominated",NA
+"s17","2026-2040","liver_deaths_averted","S600_F50",269969889.957057,749.528992421303,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S1000_F50",275827931.492306,781.614802087105,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S2000_F50",289389600.850423,854.296480549687,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S5000_F50",325003835.680335,1029.6451206599,"extendedly dominated",NA
+"s17","2026-2040","liver_deaths_averted","S8000_F50",354162435.841237,1159.91675152302,"extendedly dominated",NA
+"s17","2026-2040","liver_deaths_averted","S600_F75",260120471.216079,734.28432993449,"dominated",NA
+"s17","2026-2040","liver_deaths_averted","S1000_F75",259913859.045608,755.388664119572,"frontier",NA
+"s17","2026-2040","liver_deaths_averted","S2000_F75",261611062.526891,802.641508256281,"frontier",35917.4884028834
+"s17","2026-2040","liver_deaths_averted","S5000_F75",277377670.574209,914.486534360846,"frontier",140968.34339846
+"s17","2026-2040","liver_deaths_averted","S8000_F75",298467635.003788,1002.01694476989,"frontier",240944.425269133
+"s17","2026-2040","liver_deaths_averted","SInf",520106210.948445,1705.91311766337,"frontier",314873.960791087
+"s17","2026-2050","infections_averted","J_only",268746654.188621,9891.9175287759,"dominated",NA
+"s17","2026-2050","infections_averted","S600_F25",290456294.28554,10182.1308579008,"dominated",NA
+"s17","2026-2050","infections_averted","S1000_F25",302992071.89814,10344.4501419023,"dominated",NA
+"s17","2026-2050","infections_averted","S2000_F25",329618318.378136,10716.7850230966,"dominated",NA
+"s17","2026-2050","infections_averted","S5000_F25",380615940.702383,11487.6703037283,"dominated",NA
+"s17","2026-2050","infections_averted","S8000_F25",409556725.3716,11968.7307966581,"dominated",NA
+"s17","2026-2050","infections_averted","S600_F50",278176758.333277,10423.069483166,"dominated",NA
+"s17","2026-2050","infections_averted","S1000_F50",284380032.471974,10716.7850230956,"dominated",NA
+"s17","2026-2050","infections_averted","S2000_F50",299317606.212024,11269.8035832923,"dominated",NA
+"s17","2026-2050","infections_averted","S5000_F50",337291847.300453,12198.2922136453,"dominated",NA
+"s17","2026-2050","infections_averted","S8000_F50",365836022.124692,12651.2797779351,"dominated",NA
+"s17","2026-2050","infections_averted","S600_F75",265938677.586923,10651.6491588453,"dominated",NA
+"s17","2026-2050","infections_averted","S1000_F75",265573005.268233,11018.7283277895,"frontier",NA
+"s17","2026-2050","infections_averted","S2000_F75",268097472.741315,11677.7026779737,"frontier",3830.90399857911
+"s17","2026-2050","infections_averted","S5000_F75",287895392.848252,12593.0360629021,"frontier",21629.1904489921
+"s17","2026-2050","infections_averted","S8000_F75",311085675.550427,12949.654830996,"frontier",65028.2171802827
+"s17","2026-2050","infections_averted","SInf",543041310.375648,12980.906390012,"frontier",7422210.03139285
+"s17","2026-2050","liver_deaths_averted","J_only",268746654.188621,1650.62681232442,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S600_F25",290456294.28554,1784.77705452756,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S1000_F25",302992071.89814,1865.07186691615,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S2000_F25",329618318.378136,2038.40054382754,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S5000_F25",380615940.702383,2392.35710094526,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S8000_F25",409556725.3716,2597.49879073488,"extendedly dominated",NA
+"s17","2026-2050","liver_deaths_averted","S600_F50",278176758.333277,1751.99732096149,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S1000_F50",284380032.471974,1812.96123035801,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S2000_F50",299317606.212024,1950.38519220938,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S5000_F50",337291847.300453,2252.92087641617,"extendedly dominated",NA
+"s17","2026-2050","liver_deaths_averted","S8000_F50",365836022.124692,2453.3491925004,"frontier",213270.829214469
+"s17","2026-2050","liver_deaths_averted","S600_F75",265938677.586923,1716.0833333975,"dominated",NA
+"s17","2026-2050","liver_deaths_averted","S1000_F75",265573005.268233,1755.28981455196,"frontier",NA
+"s17","2026-2050","liver_deaths_averted","S2000_F75",268097472.741315,1841.64081979952,"frontier",29234.9517627963
+"s17","2026-2050","liver_deaths_averted","S5000_F75",287895392.848252,2045.22586273731,"frontier",97246.4372689044
+"s17","2026-2050","liver_deaths_averted","S8000_F75",311085675.550427,2196.6317277823,"frontier",153166.343293795
+"s17","2026-2050","liver_deaths_averted","SInf",543041310.375648,3085.30655990836,"frontier",280407.029635217
+"s68","2026-2030","infections_averted","J_only @ J  0%",2372284.08674921,0,"frontier",NA
+"s68","2026-2030","infections_averted","S600_F25 @ J  0%",23422334.1854485,50.2946360128528,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S1000_F25 @ J  0%",36940767.5252016,85.3576963726027,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F25 @ J  0%",69045278.0383568,177.453769606837,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F25 @ J  0%",152059493.339649,478.207683177164,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F25 @ J  0%",217683929.85719,786.769625089079,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F50 @ J  0%",28574186.1367652,103.269411862755,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S1000_F50 @ J  0%",44860936.2070484,177.453769606419,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S2000_F50 @ J  0%",81851406.3659993,375.257715391636,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S5000_F50 @ J  0%",166063599.929212,984.799170032208,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F50 @ J  0%",221750779.89827,1499.76942770216,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F75 @ J  0%",33252997.8504096,158.61957250084,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S1000_F75 @ J  0%",51521003.3183703,274.361120573647,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S2000_F75 @ J  0%",90077748.4452664,581.810912146958,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S5000_F75 @ J  0%",161088722.976387,1424.5696274892,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","S8000_F75 @ J  0%",196621635.256625,1957.09220724068,"frontier",99254.0619451697
+"s68","2026-2030","infections_averted","SInf @ J  0%",447699259.884813,2010.10957638375,"dominated",NA
+"s68","2026-2030","infections_averted","J_only @ J 50%",143773474.503045,317.628152056279,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F25 @ J 50%",159809474.036698,383.136436641891,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F25 @ J 50%",169924996.341268,427.519679698351,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F25 @ J 50%",194032193.957977,538.621553786911,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F25 @ J 50%",255348011.827552,867.882697098094,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F25 @ J 50%",303421678.318555,1177.67386014865,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F50 @ J 50%",160539112.303619,449.877812052305,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F50 @ J 50%",170782104.94329,538.621553786441,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F50 @ J 50%",193766254.072475,758.803228005984,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F50 @ J 50%",245490263.691065,1363.42051822823,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F50 @ J 50%",280155184.640008,1820.36626496379,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F75 @ J 50%",160821457.68886,516.120480089675,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F75 @ J 50%",170609679.046166,649.110996849658,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F75 @ J 50%",190410813.112791,974.813596601046,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F75 @ J 50%",224353941.652141,1755.37202110749,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F75 @ J 50%",242178640.272835,2193.76155931713,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","SInf @ J 50%",479587358.482234,2235.08208993855,"dominated",NA
+"s68","2026-2030","infections_averted","J_only @ J 90%",192804491.144213,597.814855193935,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F25 @ J 90%",206013807.260899,665.564997746111,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F25 @ J 90%",214446243.529707,710.235652268661,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F25 @ J 90%",234610410.694429,821.059308117673,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F25 @ J 90%",285617235.28326,1138.93006476383,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F25 @ J 90%",325816611.548555,1424.3636476286,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F50 @ J 90%",204524157.882884,732.647386787934,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F50 @ J 90%",211797896.529981,821.059308116924,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F50 @ J 90%",228312777.478702,1036.53765520489,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F50 @ J 90%",266314307.476463,1595.65152679097,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F50 @ J 90%",293381245.136624,1994.08876883644,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F75 @ J 90%",202906025.283723,798.881194333235,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F75 @ J 90%",208507048.438066,930.098301550882,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F75 @ J 90%",220013349.104058,1238.52017622695,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F75 @ J 90%",239379250.07767,1938.13578102345,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F75 @ J 90%",252139666.885561,2312.62294665555,"extendedly dominated",NA
+"s68","2026-2030","infections_averted","SInf @ J 90%",483473647.24585,2346.95885843084,"dominated",NA
+"s68","2026-2030","infections_averted","J_only @ J 99.995%",211648536.24475,786.292239740892,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F25 @ J 99.995%",223556216.823523,851.347036756218,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F25 @ J 99.995%",231226608.120158,894.394787796972,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F25 @ J 99.995%",249394792.960946,999.782031704623,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F25 @ J 99.995%",296008034.058125,1300.53970304935,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F25 @ J 99.995%",332708290.691682,1566.85421076833,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F50 @ J 99.995%",221146428.962063,916.203988311208,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F50 @ J 99.995%",227021202.713093,999.782031704459,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F50 @ J 99.995%",240591584.893042,1203.86173715856,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F50 @ J 99.995%",272874197.718444,1721.85295360664,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F50 @ J 99.995%",297465621.50951,2086.74448005308,"dominated",NA
+"s68","2026-2030","infections_averted","S600_F75 @ J 99.995%",218589292.615107,978.741739506328,"dominated",NA
+"s68","2026-2030","infections_averted","S1000_F75 @ J 99.995%",222432059.621709,1103.43127174477,"dominated",NA
+"s68","2026-2030","infections_averted","S2000_F75 @ J 99.995%",230210445.459045,1393.49819309658,"dominated",NA
+"s68","2026-2030","infections_averted","S5000_F75 @ J 99.995%",244339842.697923,2036.28314858906,"dominated",NA
+"s68","2026-2030","infections_averted","S8000_F75 @ J 99.995%",255797921.85136,2374.67994387,"frontier",141709.828627618
+"s68","2026-2030","infections_averted","SInf @ J 99.995%",484076622.151911,2402.37061462661,"frontier",8243884.81979914
+"s68","2026-2030","liver_deaths_averted","J_only @ J  0%",2372284.08674921,0,"frontier",NA
+"s68","2026-2030","liver_deaths_averted","S600_F25 @ J  0%",23422334.1854485,12.2291487675548,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F25 @ J  0%",36940767.5252016,20.2076149150451,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F25 @ J  0%",69045278.0383568,39.5904562982432,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F25 @ J  0%",152059493.339649,93.07766220641,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F25 @ J  0%",217683929.85719,139.965752656553,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F50 @ J  0%",28574186.1367652,13.1650920363021,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F50 @ J  0%",44860936.2070484,21.6445536840154,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F50 @ J  0%",81851406.3659993,41.8186521853781,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F50 @ J  0%",166063599.929212,94.4495573134014,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F50 @ J  0%",221750779.89827,137.279078620434,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F75 @ J  0%",33252997.8504096,13.9722290419815,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F75 @ J  0%",51521003.3183703,22.7141129517209,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F75 @ J  0%",90077748.4452664,42.733015527997,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F75 @ J  0%",161088722.976387,89.2700266167451,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F75 @ J  0%",196621635.256625,120.936224184862,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","SInf @ J  0%",447699259.884813,412.825259735892,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","J_only @ J 50%",143773474.503045,63.5335853316441,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F25 @ J 50%",159809474.036698,74.5449582912139,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F25 @ J 50%",169924996.341268,81.8494799854915,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F25 @ J 50%",194032193.957977,99.3617641141634,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F25 @ J 50%",255348011.827552,147.764591089157,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F25 @ J 50%",303421678.318555,190.184986089536,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F50 @ J 50%",160539112.303619,74.5476100855043,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F50 @ J 50%",170782104.94329,81.7205774073815,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F50 @ J 50%",193766254.072475,98.7147893359513,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F50 @ J 50%",245490263.691065,143.183749702024,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F50 @ J 50%",280155184.640008,179.782546392776,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F75 @ J 50%",160821457.68886,74.4346209628015,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F75 @ J 50%",170609679.046166,81.2778855158319,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F75 @ J 50%",190410813.112791,96.8931873841696,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F75 @ J 50%",224353941.652141,133.247399954034,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F75 @ J 50%",242178640.272835,158.59392963049,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","SInf @ J 50%",479587358.482234,446.426181749123,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","J_only @ J 90%",192804491.144213,99.8453217034283,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F25 @ J 90%",206013807.260899,110.091173039385,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F25 @ J 90%",214446243.529707,116.797909947278,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F25 @ J 90%",234610410.694429,133.246767821314,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F25 @ J 90%",285617235.28326,178.189053766762,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F25 @ J 90%",325816611.548555,217.704478074959,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F50 @ J 90%",204524157.882884,109.488323137462,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F50 @ J 90%",211797896.529981,115.641935699547,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F50 @ J 90%",228312777.478702,130.559806420808,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F50 @ J 90%",266314307.476463,169.798675032149,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F50 @ J 90%",293381245.136624,202.582423770281,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F75 @ J 90%",202906025.283723,108.745705545694,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F75 @ J 90%",208507048.438066,114.258955903476,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F75 @ J 90%",220013349.104058,126.993693971889,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F75 @ J 90%",239379250.07767,156.976832440976,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F75 @ J 90%",252139666.885561,178.596335847568,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","SInf @ J 90%",483473647.24585,463.658267789022,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","J_only @ J 99.995%",211648536.24475,120.432544361237,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F25 @ J 99.995%",223556216.823523,130.180096298603,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F25 @ J 99.995%",231226608.120158,136.611368058514,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F25 @ J 99.995%",249394792.960946,152.179870769961,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F25 @ J 99.995%",296008034.058125,195.169923624821,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F25 @ J 99.995%",332708290.691682,232.999430142536,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F50 @ J 99.995%",221146428.962063,129.179315449221,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F50 @ J 99.995%",227021202.713093,134.770023952746,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F50 @ J 99.995%",240591584.893042,148.40767695715,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F50 @ J 99.995%",272874197.718444,184.540717996282,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F50 @ J 99.995%",297465621.50951,215.107588657981,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S600_F75 @ J 99.995%",218589292.615107,128.094426227367,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S1000_F75 @ J 99.995%",222432059.621709,132.847231323466,"dominated",NA
+"s68","2026-2030","liver_deaths_averted","S2000_F75 @ J 99.995%",230210445.459045,143.755651782897,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S5000_F75 @ J 99.995%",244339842.697923,170.069620915908,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","S8000_F75 @ J 99.995%",255797921.85136,189.684426535193,"extendedly dominated",NA
+"s68","2026-2030","liver_deaths_averted","SInf @ J 99.995%",484076622.151911,472.618251243373,"frontier",1019225.00199238
+"s68","2026-2040","infections_averted","J_only @ J  0%",6183892.1974316,0,"frontier",NA
+"s68","2026-2040","infections_averted","S600_F25 @ J  0%",58817285.1195962,284.341733099669,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S1000_F25 @ J  0%",90331232.5024635,489.947898455694,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F25 @ J  0%",158373587.534168,1039.45754036111,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F25 @ J  0%",292173588.139835,2743.72820904719,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F25 @ J  0%",361361372.552258,4171.09707452023,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F50 @ J  0%",69907223.9140306,596.229845558882,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S1000_F50 @ J  0%",105215334.686235,1039.45754035804,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S2000_F50 @ J  0%",173675746.76199,2188.49431702858,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F50 @ J  0%",279871617.253637,4900.28468711761,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F50 @ J  0%",326703585.865613,6275.1888303171,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F75 @ J  0%",78335287.379555,926.455937722155,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S1000_F75 @ J  0%",113391738.79782,1612.29564948137,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S2000_F75 @ J  0%",170874085.406358,3260.7649760701,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S5000_F75 @ J  0%",236375717.34711,6112.9019271886,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S8000_F75 @ J  0%",267533543.683268,7066.56616639844,"frontier",36983.9672242163
+"s68","2026-2040","infections_averted","SInf @ J  0%",511402846.636587,7157.71741251798,"dominated",NA
+"s68","2026-2040","infections_averted","J_only @ J 50%",229017102.878161,2812.59620937794,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F25 @ J 50%",254431217.20063,3164.08422251874,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F25 @ J 50%",269353099.250736,3383.93913664272,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F25 @ J 50%",300965839.295808,3902.15930051024,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F25 @ J 50%",363832290.926053,5131.77002147226,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F25 @ J 50%",398186448.707583,5955.14750062747,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F50 @ J 50%",246893168.565046,3492.01745463493,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F50 @ J 50%",256774328.904167,3902.15930050861,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F50 @ J 50%",276581878.858004,4773.06481487514,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F50 @ J 50%",317747991.797248,6338.44640033116,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F50 @ J 50%",348157282.449399,7033.37737022252,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F75 @ J 50%",238571335.266392,3804.27485515078,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F75 @ J 50%",242496282.615277,4361.0886291133,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F75 @ J 50%",249063864.148525,5445.7889476503,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F75 @ J 50%",267205007.299248,6949.00521023344,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S8000_F75 @ J 50%",289660665.037066,7474.16235457866,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","SInf @ J 50%",518197787.628828,7512.86841482394,"dominated",NA
+"s68","2026-2040","infections_averted","J_only @ J 90%",255473127.20086,4246.35663005809,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F25 @ J 90%",275839123.563208,4509.36512723937,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F25 @ J 90%",287998719.41349,4674.59897815034,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F25 @ J 90%",314056863.325318,5050.93087734177,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F25 @ J 90%",368156659.330675,5913.8025475865,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F25 @ J 90%",399985098.993585,6482.61042313332,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F50 @ J 90%",266078536.646648,4752.79667848175,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F50 @ J 90%",272474533.599915,5050.93087734081,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F50 @ J 90%",286971875.7557,5663.2030430282,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F50 @ J 90%",322986722.489661,6750.47317676624,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F50 @ J 90%",352468812.966588,7254.94155971892,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F75 @ J 90%",256108979.3655,4978.46338298828,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F75 @ J 90%",256328412.004733,5377.61110532574,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F75 @ J 90%",258487623.054666,6128.97922890553,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S5000_F75 @ J 90%",274373813.053065,7190.0272977514,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S8000_F75 @ J 90%",295825501.235686,7599.11056420998,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","SInf @ J 90%",519760081.082244,7631.40006572242,"dominated",NA
+"s68","2026-2040","infections_averted","J_only @ J 99.995%",260795929.721454,4886.70490992321,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F25 @ J 99.995%",279941157.37233,5101.43868034194,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F25 @ J 99.995%",291342316.092875,5236.14843159333,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F25 @ J 99.995%",316124677.999701,5536.27610212068,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F25 @ J 99.995%",368485991.132022,6234.54395042428,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F25 @ J 99.995%",400033107.69992,6693.66643694305,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F50 @ J 99.995%",269969889.957057,5300.84224784776,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F50 @ J 99.995%",275827931.492306,5536.27610212015,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F50 @ J 99.995%",289389600.850423,6029.89710691098,"dominated",NA
+"s68","2026-2040","infections_averted","S5000_F50 @ J 99.995%",325003835.680335,6921.53566064488,"dominated",NA
+"s68","2026-2040","infections_averted","S8000_F50 @ J 99.995%",354162435.841237,7356.53045292154,"dominated",NA
+"s68","2026-2040","infections_averted","S600_F75 @ J 99.995%",260120471.216079,5476.92807703917,"dominated",NA
+"s68","2026-2040","infections_averted","S1000_F75 @ J 99.995%",259913859.045608,5802.85001932449,"dominated",NA
+"s68","2026-2040","infections_averted","S2000_F75 @ J 99.995%",261611062.526891,6410.10453005232,"extendedly dominated",NA
+"s68","2026-2040","infections_averted","S5000_F75 @ J 99.995%",277377670.574209,7301.64122182669,"frontier",41876.5269373573
+"s68","2026-2040","infections_averted","S8000_F75 @ J 99.995%",298467635.003788,7660.62227336321,"frontier",58749.5198961287
+"s68","2026-2040","infections_averted","SInf @ J 99.995%",520106210.948445,7689.44940218569,"frontier",7688541.48845573
+"s68","2026-2040","liver_deaths_averted","J_only @ J  0%",6183892.1974316,0,"frontier",NA
+"s68","2026-2040","liver_deaths_averted","S600_F25 @ J  0%",58817285.1195962,114.135634956285,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F25 @ J  0%",90331232.5024635,185.179881539901,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F25 @ J  0%",158373587.534168,346.486957450939,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F25 @ J  0%",292173588.139835,716.548994068638,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F25 @ J  0%",361361372.552258,965.395171440117,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F50 @ J  0%",69907223.9140306,131.530031686112,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F50 @ J  0%",105215334.686235,210.572608474351,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F50 @ J  0%",173675746.76199,382.474530271894,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F50 @ J  0%",279871617.253637,739.03877792203,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F50 @ J  0%",326703585.865613,956.024765695802,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F75 @ J  0%",78335287.379555,145.633300860631,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F75 @ J  0%",113391738.79782,227.384039480546,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F75 @ J  0%",170874085.406358,391.108182149135,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F75 @ J  0%",236375717.34711,676.668417459592,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F75 @ J  0%",267533543.683268,828.391519075283,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","SInf @ J  0%",511402846.636587,1603.85776951795,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","J_only @ J 50%",229017102.878161,503.529763673684,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F25 @ J 50%",254431217.20063,583.241579796666,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F25 @ J 50%",269353099.250736,633.116811209808,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F25 @ J 50%",300965839.295808,745.551925263007,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F25 @ J 50%",363832290.926053,1004.93271375397,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F25 @ J 50%",398186448.707583,1180.14436600441,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F50 @ J 50%",246893168.565046,576.987057319365,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F50 @ J 50%",256774328.904167,621.52961705967,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F50 @ J 50%",276581878.858004,721.304038626919,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F50 @ J 50%",317747991.797248,943.886147803606,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F50 @ J 50%",348157282.449399,1097.06253691032,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F75 @ J 50%",238571335.266392,569.050750150971,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F75 @ J 50%",242496282.615277,606.19600591117,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F75 @ J 50%",249063864.148525,683.892046508244,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F75 @ J 50%",267205007.299248,839.743545393,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F75 @ J 50%",289660665.037066,944.544704933203,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","SInf @ J 50%",518197787.628828,1674.84817964795,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","J_only @ J 90%",255473127.20086,641.694739187944,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F25 @ J 90%",275839123.563208,711.348821080745,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F25 @ J 90%",287998719.41349,754.378330756408,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F25 @ J 90%",314056863.325318,853.202103025056,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F25 @ J 90%",368156659.330675,1080.96305331842,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F25 @ J 90%",399985098.993585,1237.45170333346,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F50 @ J 90%",266078536.646648,698.588759582743,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F50 @ J 90%",272474533.599915,734.33997634604,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F50 @ J 90%",286971875.7557,814.098331179916,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F50 @ J 90%",322986722.489661,1003.01974355692,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F50 @ J 90%",352468812.966588,1139.61481560703,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F75 @ J 90%",256108979.3655,684.938538343878,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F75 @ J 90%",256328412.004733,710.801971966294,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F75 @ J 90%",258487623.054666,766.20522666259,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F75 @ J 90%",274373813.053065,890.400800184023,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F75 @ J 90%",295825501.235686,982.699300177287,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","SInf @ J 90%",519760081.082244,1695.7678417744,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","J_only @ J 99.995%",260795929.721454,699.104372885081,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F25 @ J 99.995%",279941157.37233,764.484682001903,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F25 @ J 99.995%",291342316.092875,805.327907031156,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F25 @ J 99.995%",316124677.999701,898.179869220231,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F25 @ J 99.995%",368485991.132022,1113.60736126093,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F25 @ J 99.995%",400033107.69992,1262.62687003863,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F50 @ J 99.995%",269969889.957057,749.528992421303,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F50 @ J 99.995%",275827931.492306,781.614802087105,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F50 @ J 99.995%",289389600.850423,854.296480549687,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F50 @ J 99.995%",325003835.680335,1029.6451206599,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F50 @ J 99.995%",354162435.841237,1159.91675152302,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S600_F75 @ J 99.995%",260120471.216079,734.28432993449,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S1000_F75 @ J 99.995%",259913859.045608,755.388664119572,"dominated",NA
+"s68","2026-2040","liver_deaths_averted","S2000_F75 @ J 99.995%",261611062.526891,802.641508256281,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S5000_F75 @ J 99.995%",277377670.574209,914.486534360846,"extendedly dominated",NA
+"s68","2026-2040","liver_deaths_averted","S8000_F75 @ J 99.995%",298467635.003788,1002.01694476989,"frontier",291695.409276215
+"s68","2026-2040","liver_deaths_averted","SInf @ J 99.995%",520106210.948445,1705.91311766337,"frontier",314873.960791087
+"s68","2026-2050","infections_averted","J_only @ J  0%",9020117.91766577,0,"frontier",NA
+"s68","2026-2050","infections_averted","S600_F25 @ J  0%",83433020.8898131,626.580358417265,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S1000_F25 @ J  0%",125756124.416939,1089.36370367495,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F25 @ J  0%",210597958.272418,2343.38551595454,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F25 @ J  0%",347286410.615072,6044.23100538895,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F25 @ J  0%",398642073.809973,8638.1422892745,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F50 @ J  0%",97649856.9944874,1331.20309385067,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S1000_F50 @ J  0%",142661033.906817,2343.38551595221,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S2000_F50 @ J  0%",219404862.90517,4899.95721091364,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F50 @ J  0%",310094406.614237,9755.17652746656,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F50 @ J  0%",345632543.895858,11502.4703593614,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F75 @ J  0%",106873999.996608,2083.85544970153,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S1000_F75 @ J  0%",148177581.941589,3636.19081532207,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S2000_F75 @ J  0%",203526337.880154,7052.8677826676,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S5000_F75 @ J  0%",253780908.313019,11318.8295573386,"frontier",21624.2138072184
+"s68","2026-2050","infections_averted","S8000_F75 @ J  0%",283773705.160295,12351.0267558594,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","SInf @ J  0%",535497019.78182,12429.4931926049,"dominated",NA
+"s68","2026-2050","infections_averted","J_only @ J 50%",258955802.573283,6567.15381896764,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F25 @ J 50%",285238128.817883,7212.01871015427,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F25 @ J 50%",300097195.951622,7600.7854583583,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F25 @ J 50%",330383383.677557,8466.54314305981,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F25 @ J 50%",383103502.697641,10225.9707777215,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F25 @ J 50%",410561930.564029,11193.3726189935,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F50 @ J 50%",272161378.959911,7784.29240019768,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F50 @ J 50%",279445345.79769,8466.54314305774,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F50 @ J 50%",294846563.98204,9759.59761974258,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F50 @ J 50%",331798020.115867,11605.7601888863,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F50 @ J 50%",360787632.294691,12318.6630450896,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F75 @ J 50%",258822285.56603,8303.70167177116,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F75 @ J 50%",258284473.101103,9168.57647534616,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F75 @ J 50%",259301457.222616,10611.4514213524,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F75 @ J 50%",278603793.050491,12228.5533023656,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S8000_F75 @ J 50%",302989390.471087,12756.8569726263,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","SInf @ J 50%",541327019.678953,12802.6463609556,"dominated",NA
+"s68","2026-2050","infections_averted","J_only @ J 90%",268796788.121322,8996.32841196308,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F25 @ J 90%",290864455.490416,9386.64929356299,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F25 @ J 90%",304093790.649053,9617.99488326749,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F25 @ J 90%",330835558.554763,10120.8081435272,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F25 @ J 90%",381680997.154156,11146.1590735899,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F25 @ J 90%",410086472.681097,11749.5448034903,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F50 @ J 90%",278142681.00195,9723.56369586869,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F50 @ J 90%",283961600.854615,10120.8081435266,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F50 @ J 90%",298388612.93499,10871.0401386488,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F50 @ J 90%",335747858.054721,12021.699544671,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F50 @ J 90%",364491018.553877,12546.5207412854,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F75 @ J 90%",265113058.055619,10027.3081023379,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F75 @ J 90%",263921507.517027,10532.0914363187,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F75 @ J 90%",265678577.135242,11378.1650846848,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S5000_F75 @ J 90%",285184242.474063,12485.1868056626,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S8000_F75 @ J 90%",308773864.861194,12883.8098816057,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","SInf @ J 90%",542724083.72595,12925.6202622664,"dominated",NA
+"s68","2026-2050","infections_averted","J_only @ J 99.995%",268746654.188621,9891.9175287759,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F25 @ J 99.995%",290456294.28554,10182.1308579008,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F25 @ J 99.995%",302992071.89814,10344.4501419023,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F25 @ J 99.995%",329618318.378136,10716.7850230966,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F25 @ J 99.995%",380615940.702383,11487.6703037283,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F25 @ J 99.995%",409556725.3716,11968.7307966581,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F50 @ J 99.995%",278176758.333277,10423.069483166,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F50 @ J 99.995%",284380032.471974,10716.7850230956,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F50 @ J 99.995%",299317606.212024,11269.8035832923,"dominated",NA
+"s68","2026-2050","infections_averted","S5000_F50 @ J 99.995%",337291847.300453,12198.2922136453,"dominated",NA
+"s68","2026-2050","infections_averted","S8000_F50 @ J 99.995%",365836022.124692,12651.2797779351,"dominated",NA
+"s68","2026-2050","infections_averted","S600_F75 @ J 99.995%",265938677.586923,10651.6491588453,"dominated",NA
+"s68","2026-2050","infections_averted","S1000_F75 @ J 99.995%",265573005.268233,11018.7283277895,"dominated",NA
+"s68","2026-2050","infections_averted","S2000_F75 @ J 99.995%",268097472.741315,11677.7026779737,"extendedly dominated",NA
+"s68","2026-2050","infections_averted","S5000_F75 @ J 99.995%",287895392.848252,12593.0360629021,"frontier",26773.1206725761
+"s68","2026-2050","infections_averted","S8000_F75 @ J 99.995%",311085675.550427,12949.654830996,"frontier",65028.2171802827
+"s68","2026-2050","infections_averted","SInf @ J 99.995%",543041310.375648,12980.906390012,"frontier",7422210.03139285
+"s68","2026-2050","liver_deaths_averted","J_only @ J  0%",9020117.91766577,0,"frontier",NA
+"s68","2026-2050","liver_deaths_averted","S600_F25 @ J  0%",83433020.8898131,317.07104187649,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F25 @ J  0%",125756124.416939,506.416003995423,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F25 @ J  0%",210597958.272418,914.058295071919,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F25 @ J  0%",347286410.615072,1723.87045408143,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F25 @ J  0%",398642073.809973,2168.7905919964,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F50 @ J  0%",97649856.9944874,386.466381625054,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F50 @ J  0%",142661033.906817,607.559559108495,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F50 @ J  0%",219404862.90517,1052.41489498159,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F50 @ J  0%",310094406.614237,1818.28315430987,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F50 @ J  0%",345632543.895858,2187.43669273545,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F75 @ J  0%",106873999.996608,442.85533969348,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F75 @ J  0%",148177581.941589,674.905882696013,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F75 @ J  0%",203526337.880154,1096.88875396777,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F75 @ J  0%",253780908.313019,1696.55376108884,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F75 @ J  0%",283773705.160295,1961.91552163317,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","SInf @ J  0%",535497019.78182,2969.52146299744,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","J_only @ J 50%",258955802.573283,1298.96676006252,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F25 @ J 50%",285238128.817883,1474.0164557001,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F25 @ J 50%",300097195.951622,1578.24065092102,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F25 @ J 50%",330383383.677557,1800.94631728007,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F25 @ J 50%",383103502.697641,2246.29357679191,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F25 @ J 50%",410561930.564029,2498.33927344549,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F50 @ J 50%",272161378.959911,1459.0298279379,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F50 @ J 50%",279445345.79769,1550.98449452175,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F50 @ J 50%",294846563.98204,1747.88606790134,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F50 @ J 50%",331798020.115867,2140.89343973022,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F50 @ J 50%",360787632.294691,2376.97835461243,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F75 @ J 50%",258822285.56603,1438.72811131535,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F75 @ J 50%",258284473.101103,1514.16451844546,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F75 @ J 50%",259301457.222616,1661.48230645045,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F75 @ J 50%",278603793.050491,1942.57480666762,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F75 @ J 50%",302989390.471087,2121.96147557786,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","SInf @ J 50%",541327019.678953,3050.95968557576,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","J_only @ J 90%",268796788.121322,1555.57229899438,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F25 @ J 90%",290864455.490416,1700.50000208764,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F25 @ J 90%",304093790.649053,1786.79341661308,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F25 @ J 90%",330835558.554763,1972.8048593262,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F25 @ J 90%",381680997.154156,2350.52139047251,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F25 @ J 90%",410086472.681097,2567.70514180113,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F50 @ J 90%",278142681.00195,1671.98174603744,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F50 @ J 90%",283961600.854615,1740.77745248599,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F50 @ J 90%",298388612.93499,1892.36929042669,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F50 @ J 90%",335747858.054721,2218.89624806715,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F50 @ J 90%",364491018.553877,2428.73303861495,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F75 @ J 90%",265113058.055619,1638.7268014156,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F75 @ J 90%",263921507.517027,1686.85132844755,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F75 @ J 90%",265678577.135242,1789.00743233906,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F75 @ J 90%",285184242.474063,2011.99136730274,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F75 @ J 90%",308773864.861194,2171.5525002832,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","SInf @ J 90%",542724083.72595,3074.08785300765,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","J_only @ J 99.995%",268746654.188621,1650.62681232442,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F25 @ J 99.995%",290456294.28554,1784.77705452756,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F25 @ J 99.995%",302992071.89814,1865.07186691615,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F25 @ J 99.995%",329618318.378136,2038.40054382754,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F25 @ J 99.995%",380615940.702383,2392.35710094526,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F25 @ J 99.995%",409556725.3716,2597.49879073488,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S600_F50 @ J 99.995%",278176758.333277,1751.99732096149,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F50 @ J 99.995%",284380032.471974,1812.96123035801,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F50 @ J 99.995%",299317606.212024,1950.38519220938,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F50 @ J 99.995%",337291847.300453,2252.92087641617,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S8000_F50 @ J 99.995%",365836022.124692,2453.3491925004,"frontier",213270.829214469
+"s68","2026-2050","liver_deaths_averted","S600_F75 @ J 99.995%",265938677.586923,1716.0833333975,"dominated",NA
+"s68","2026-2050","liver_deaths_averted","S1000_F75 @ J 99.995%",265573005.268233,1755.28981455196,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S2000_F75 @ J 99.995%",268097472.741315,1841.64081979952,"extendedly dominated",NA
+"s68","2026-2050","liver_deaths_averted","S5000_F75 @ J 99.995%",287895392.848252,2045.22586273731,"frontier",136354.267766466
+"s68","2026-2050","liver_deaths_averted","S8000_F75 @ J 99.995%",311085675.550427,2196.6317277823,"frontier",153166.343293795
+"s68","2026-2050","liver_deaths_averted","SInf @ J 99.995%",543041310.375648,3085.30655990836,"frontier",280407.029635217

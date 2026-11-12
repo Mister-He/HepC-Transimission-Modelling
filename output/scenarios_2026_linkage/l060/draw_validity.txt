@@ -1,0 +1,6 @@
+draws_requested 2000
+draws_valid 2000
+j_start_year 2026
+j_annual_start_probability 0.99995
+end_year 2050
+linkage 0.6

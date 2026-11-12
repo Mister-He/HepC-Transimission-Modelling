@@ -1,0 +1,101 @@
+"set","horizon","benefit","budget_cap_sgd","best_strategy","p_best_strategy"
+"s17","2026-2030","infections_averted",2.5e+08,"S5000_F75",0.220846233230134
+"s17","2026-2030","infections_averted",3e+08,"S8000_F75",0.972
+"s17","2026-2030","infections_averted",3.5e+08,"S8000_F75",1
+"s17","2026-2030","infections_averted",4e+08,"S8000_F75",0.9935
+"s17","2026-2030","infections_averted",4.5e+08,"S8000_F75",0.872
+"s17","2026-2030","infections_averted",5e+08,"SInf",0.518
+"s17","2026-2030","liver_deaths_averted",2.5e+08,"S5000_F75",0.220846233230134
+"s17","2026-2030","liver_deaths_averted",3e+08,"S8000_F50",0.444
+"s17","2026-2030","liver_deaths_averted",3.5e+08,"S8000_F25",0.7315
+"s17","2026-2030","liver_deaths_averted",4e+08,"S8000_F25",0.974
+"s17","2026-2030","liver_deaths_averted",4.5e+08,"S8000_F25",0.809
+"s17","2026-2030","liver_deaths_averted",5e+08,"SInf",0.635
+"s17","2026-2040","infections_averted",3e+08,"S8000_F75",0.556673728813559
+"s17","2026-2040","infections_averted",3.5e+08,"S8000_F75",0.973
+"s17","2026-2040","infections_averted",4e+08,"S8000_F75",1
+"s17","2026-2040","infections_averted",4.5e+08,"S8000_F75",0.9605
+"s17","2026-2040","infections_averted",5e+08,"S8000_F75",0.706
+"s17","2026-2040","infections_averted",5.5e+08,"SInf",0.694
+"s17","2026-2040","liver_deaths_averted",3e+08,"S8000_F75",0.377648305084746
+"s17","2026-2040","liver_deaths_averted",3.5e+08,"S5000_F50",0.3655
+"s17","2026-2040","liver_deaths_averted",4e+08,"S8000_F50",0.427
+"s17","2026-2040","liver_deaths_averted",4.5e+08,"S8000_F25",0.8655
+"s17","2026-2040","liver_deaths_averted",5e+08,"S8000_F25",0.668
+"s17","2026-2040","liver_deaths_averted",5.5e+08,"SInf",0.7315
+"s17","2026-2050","infections_averted",3e+08,"S5000_F75",0.419178082191781
+"s17","2026-2050","infections_averted",3.5e+08,"S8000_F75",0.925350701402806
+"s17","2026-2050","infections_averted",4e+08,"S8000_F75",0.9995
+"s17","2026-2050","infections_averted",4.5e+08,"S8000_F75",0.99
+"s17","2026-2050","infections_averted",5e+08,"S8000_F75",0.8455
+"s17","2026-2050","infections_averted",5.5e+08,"SInf",0.535
+"s17","2026-2050","liver_deaths_averted",3e+08,"S5000_F75",0.419178082191781
+"s17","2026-2050","liver_deaths_averted",3.5e+08,"S5000_F50",0.385771543086172
+"s17","2026-2050","liver_deaths_averted",4e+08,"S8000_F50",0.459
+"s17","2026-2050","liver_deaths_averted",4.5e+08,"S8000_F25",0.8425
+"s17","2026-2050","liver_deaths_averted",5e+08,"S8000_F25",0.815
+"s17","2026-2050","liver_deaths_averted",5.5e+08,"SInf",0.56
+"s68","2026-2030","infections_averted",5e+07,"S1000_F50 @ J  0%",0.6195
+"s68","2026-2030","infections_averted",1e+08,"S2000_F75 @ J  0%",0.948
+"s68","2026-2030","infections_averted",1.5e+08,"S2000_F75 @ J  0%",0.8415
+"s68","2026-2030","infections_averted",2e+08,"S8000_F75 @ J  0%",0.5755
+"s68","2026-2030","infections_averted",2.5e+08,"S8000_F75 @ J 50%",0.189
+"s68","2026-2030","infections_averted",3e+08,"S8000_F75 @ J 99.995%",0.972
+"s68","2026-2030","infections_averted",3.5e+08,"S8000_F75 @ J 99.995%",1
+"s68","2026-2030","infections_averted",4e+08,"S8000_F75 @ J 99.995%",0.9935
+"s68","2026-2030","infections_averted",4.5e+08,"S8000_F75 @ J 99.995%",0.872
+"s68","2026-2030","infections_averted",5e+08,"SInf @ J 99.995%",0.518
+"s68","2026-2030","liver_deaths_averted",5e+07,"S1000_F50 @ J  0%",0.6195
+"s68","2026-2030","liver_deaths_averted",1e+08,"S2000_F75 @ J  0%",0.9455
+"s68","2026-2030","liver_deaths_averted",1.5e+08,"J_only @ J 50%",0.2775
+"s68","2026-2030","liver_deaths_averted",2e+08,"S8000_F75 @ J  0%",0.394
+"s68","2026-2030","liver_deaths_averted",2.5e+08,"S5000_F75 @ J 99.995%",0.1455
+"s68","2026-2030","liver_deaths_averted",3e+08,"S8000_F50 @ J 99.995%",0.4045
+"s68","2026-2030","liver_deaths_averted",3.5e+08,"S8000_F25 @ J 99.995%",0.7275
+"s68","2026-2030","liver_deaths_averted",4e+08,"S8000_F25 @ J 99.995%",0.8805
+"s68","2026-2030","liver_deaths_averted",4.5e+08,"SInf @ J  0%",0.3025
+"s68","2026-2030","liver_deaths_averted",5e+08,"SInf @ J 99.995%",0.635
+"s68","2026-2040","infections_averted",5e+07,"J_only @ J  0%",0.9805
+"s68","2026-2040","infections_averted",1e+08,"S600_F75 @ J  0%",0.7645
+"s68","2026-2040","infections_averted",1.5e+08,"S1000_F75 @ J  0%",0.9505
+"s68","2026-2040","infections_averted",2e+08,"S2000_F75 @ J  0%",0.955
+"s68","2026-2040","infections_averted",2.5e+08,"S5000_F75 @ J  0%",0.4235
+"s68","2026-2040","infections_averted",3e+08,"S8000_F75 @ J 99.995%",0.5255
+"s68","2026-2040","infections_averted",3.5e+08,"S8000_F75 @ J 99.995%",0.973
+"s68","2026-2040","infections_averted",4e+08,"S8000_F75 @ J 99.995%",1
+"s68","2026-2040","infections_averted",4.5e+08,"S8000_F75 @ J 99.995%",0.9605
+"s68","2026-2040","infections_averted",5e+08,"S8000_F75 @ J 99.995%",0.705
+"s68","2026-2040","infections_averted",5.5e+08,"SInf @ J 99.995%",0.694
+"s68","2026-2040","liver_deaths_averted",5e+07,"J_only @ J  0%",0.9805
+"s68","2026-2040","liver_deaths_averted",1e+08,"S1000_F25 @ J  0%",0.6895
+"s68","2026-2040","liver_deaths_averted",1.5e+08,"S1000_F75 @ J  0%",0.7615
+"s68","2026-2040","liver_deaths_averted",2e+08,"S2000_F75 @ J  0%",0.9165
+"s68","2026-2040","liver_deaths_averted",2.5e+08,"S2000_F75 @ J 50%",0.0935
+"s68","2026-2040","liver_deaths_averted",3e+08,"S8000_F75 @ J 99.995%",0.3465
+"s68","2026-2040","liver_deaths_averted",3.5e+08,"S8000_F50 @ J 50%",0.0655
+"s68","2026-2040","liver_deaths_averted",4e+08,"S8000_F25 @ J 90%",0.001
+"s68","2026-2040","liver_deaths_averted",4.5e+08,"S8000_F25 @ J 99.995%",0.8445
+"s68","2026-2040","liver_deaths_averted",5e+08,"S8000_F25 @ J 99.995%",0.5995
+"s68","2026-2040","liver_deaths_averted",5.5e+08,"SInf @ J 99.995%",0.7315
+"s68","2026-2050","infections_averted",5e+07,"J_only @ J  0%",1
+"s68","2026-2050","infections_averted",1e+08,"S600_F50 @ J  0%",0.46
+"s68","2026-2050","infections_averted",1.5e+08,"S1000_F75 @ J  0%",0.5625
+"s68","2026-2050","infections_averted",2e+08,"S1000_F75 @ J  0%",0.592
+"s68","2026-2050","infections_averted",2.5e+08,"S2000_F75 @ J  0%",0.5515
+"s68","2026-2050","infections_averted",3e+08,"S5000_F75 @ J 99.995%",0.2515
+"s68","2026-2050","infections_averted",3.5e+08,"S8000_F75 @ J 99.995%",0.9235
+"s68","2026-2050","infections_averted",4e+08,"S8000_F75 @ J 99.995%",0.9995
+"s68","2026-2050","infections_averted",4.5e+08,"S8000_F75 @ J 99.995%",0.99
+"s68","2026-2050","infections_averted",5e+08,"S8000_F75 @ J 99.995%",0.8455
+"s68","2026-2050","infections_averted",5.5e+08,"SInf @ J 99.995%",0.535
+"s68","2026-2050","liver_deaths_averted",5e+07,"J_only @ J  0%",1
+"s68","2026-2050","liver_deaths_averted",1e+08,"S600_F50 @ J  0%",0.46
+"s68","2026-2050","liver_deaths_averted",1.5e+08,"S1000_F75 @ J  0%",0.5625
+"s68","2026-2050","liver_deaths_averted",2e+08,"S1000_F75 @ J  0%",0.584
+"s68","2026-2050","liver_deaths_averted",2.5e+08,"S2000_F75 @ J  0%",0.5495
+"s68","2026-2050","liver_deaths_averted",3e+08,"S5000_F75 @ J 99.995%",0.2515
+"s68","2026-2050","liver_deaths_averted",3.5e+08,"S5000_F50 @ J 99.995%",0.319
+"s68","2026-2050","liver_deaths_averted",4e+08,"S8000_F50 @ J 99.995%",0.4585
+"s68","2026-2050","liver_deaths_averted",4.5e+08,"S8000_F25 @ J 99.995%",0.834
+"s68","2026-2050","liver_deaths_averted",5e+08,"S8000_F25 @ J 99.995%",0.7855
+"s68","2026-2050","liver_deaths_averted",5.5e+08,"SInf @ J 99.995%",0.56

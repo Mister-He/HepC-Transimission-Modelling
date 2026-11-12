@@ -8,7 +8,7 @@
 | `j050/` | 50% | `--j-probability 0.5 --out-dir output/scenarios_2026_jcov/j050` |
 | `j090/` | 90% | `--j-probability 0.9 --out-dir output/scenarios_2026_jcov/j090` |
 
-每个子目录的文件与 `output/scenarios_2026/` 相同（不含图）。`jcov_heatmap.png/.svg`（`scripts/figures.py`）：17 个情景 × 4 个覆盖率的 2030 年发病（A）和死亡（B）降幅中位数，粗体为达标。
+每个子目录的文件与 `output/scenarios_2026/` 相同（不含图），包括延长到 2050 年的 `scenario_cumulative_*.csv` 和 `scenario_trajectories_long.csv`（2026-11-12 重跑，2030 年结果不变）；`output/decision_analysis/` 用它们构成 68 个组合。`jcov_heatmap.png/.svg`（`scripts/figures.py`）：17 个情景 × 4 个覆盖率的 2030 年发病（A）和死亡（B）降幅中位数，粗体为达标。
 
 - 所有降幅随 J 覆盖率单调上升。
 - 发病目标达标的有限情景数：0% 时 1 个（8000/年 F75%），50% 时 3 个，90% 与 99.995% 时 5 个。

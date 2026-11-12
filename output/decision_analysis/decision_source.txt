@@ -1,0 +1,6 @@
+sources: output/scenarios_2026; output/scenarios_2026_jcov/j000; output/scenarios_2026_jcov/j050; output/scenarios_2026_jcov/j090
+posterior draws: 2000
+horizons: 2026-2030
+horizons: 2026-2040
+horizons: 2026-2050
+random weight draws: 1000
