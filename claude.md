@@ -502,6 +502,12 @@ Chapter 1). No recalibration; same posterior, 17 scenarios, J-coverage grid. Sum
 - **Not done / open:** DC/HCC incident-case counters (optional; stated as not counted); treatment completion
   not varied separately; DALYs not added (need user approval); thesis-chapter text beyond the manuscript;
   sensitivity runs other than coverage/linkage remain 2030-only. Tests: 9 files pass.
-- **Next (user request):** fresh session `/code-review` since `898cdbc`, then `docs/instructions.md`
-  (ponytail audit → refactor → review), one commit per step, no push.
+- **Review done (2026-11-13):** `/code-review` + ponytail pass in a fresh session: `c7cc356` (remaining
+  2026–2030 checks from `WHO_YEAR`), `3a3503c` (tornado honours `--out-dir`/`--root`, child runs stop at 2030),
+  `99f126e` (simplifications). Outputs byte-identical; tests 9 files, 130 checks pass. Pushed.
+- **Open decisions (user):** (1) count draws with nothing affordable as "not best" in `p_best_strategy`
+  (`decision_analysis.R`, changes Table S); (2) add the no-treatment origin to the efficiency frontier (may
+  change Fig 7 / extended dominance); (3) `trim = TRUE` for padded s68 labels. Each needs only
+  `decision_analysis.R` (~20 s) → `figures.py` → `build_paper.py`. Also open: the six untracked
+  `scenario_cumulative_draws.csv` (~23 MB each) and `docs/limitations_assumptions.md`.
 
